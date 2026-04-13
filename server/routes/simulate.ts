@@ -188,7 +188,6 @@ r.post("/clients/:id/simulate", async (req: AuthRequest, res: Response) => {
         monteCarloResults: result,
         successRate:       String((result.successRate * 100).toFixed(1)),
         projectedBalance:  String(result.finalBalancePercentiles.p50),
-        updatedAt:         new Date(),
       })
       .where(eq(retirementProjections.id, proj.id));
   }

@@ -6,6 +6,7 @@ const sql = `
 CREATE TABLE IF NOT EXISTS users (
   id SERIAL PRIMARY KEY, email TEXT NOT NULL UNIQUE, password_hash TEXT NOT NULL,
   first_name TEXT NOT NULL, last_name TEXT NOT NULL, firm_name TEXT,
+  security_question TEXT, security_answer_hash TEXT,
   created_at TIMESTAMP DEFAULT NOW() NOT NULL, updated_at TIMESTAMP DEFAULT NOW() NOT NULL
 );
 CREATE TABLE IF NOT EXISTS clients (

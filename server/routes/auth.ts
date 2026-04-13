@@ -15,9 +15,10 @@ r.post("/register", async (req: Request, res: Response) => {
     const hash = await hashPassword(body.password);
     const [u] = await db.insert(users).values({ email: body.email, passwordHash: hash, firstName: body.firstName, lastName: body.lastName, firmName: body.firmName ?? null }).returning({ id: users.id, email: users.email, firstName: users.firstName, lastName: users.lastName, firmName: users.firmName });
     res.status(201).json({ token: signToken(u.id), user: u });
-  } catch (e) {
+  } catch (e: any) {
+    console.error("[register error]", e?.message, e?.stack);
     if (e instanceof z.ZodError) return res.status(400).json({ message: "Validation error", errors: e.errors });
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({ message: e?.message ?? "Server error" });
   }
 });
 

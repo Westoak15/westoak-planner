@@ -13,9 +13,13 @@ export const users = pgTable("users", {
   createdAt:    timestamp("created_at").defaultNow().notNull(),
   updatedAt:    timestamp("updated_at").defaultNow().notNull(),
 });
-export const insertUserSchema = createInsertSchema(users)
-  .omit({ id: true, passwordHash: true, createdAt: true, updatedAt: true })
-  .extend({ password: z.string().min(8) });
+export const insertUserSchema = z.object({
+  email:     z.string().email(),
+  password:  z.string().min(8),
+  firstName: z.string().min(1),
+  lastName:  z.string().min(1),
+  firmName:  z.string().optional().nullable(),
+});
 export type User = typeof users.$inferSelect;
 
 // ── Clients ───────────────────────────────────────────────────────────────────

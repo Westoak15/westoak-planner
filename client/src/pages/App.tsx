@@ -6,7 +6,7 @@ import { MonteCarloResults } from "../components/MonteCarloResults";
 import { fmt$, fmtPct, initials, avatarBg, cn } from "../lib/utils";
 import {
   Plus, Pencil, Trash2, X, Check, ChevronRight, Search,
-  User, Users, Home, Calendar, Briefcase, LogOut, Save, KeyRound, Eye, EyeOff, Check, X
+  User, Users, Home, Calendar, Briefcase, LogOut, Save, KeyRound, Eye, EyeOff
 } from "lucide-react";
 
 // ─────────────────────────────────────────────────────────────────────────────

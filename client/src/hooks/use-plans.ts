@@ -30,7 +30,6 @@ export function useCreatePlan() {
         method: api.plans.create.method,
         headers: { Authorization: `Bearer ${localStorage.getItem("fp_token") ?? ""}`, "Content-Type": "application/json" },
         body: JSON.stringify(data),
-        ,
       });
       if (!res.ok) throw new Error("Failed to create plan");
       return api.plans.create.responses[201].parse(await res.json());

@@ -158,7 +158,7 @@ export default function Login() {
           <div className="text-white/60 text-sm">Financial Planning Suite</div>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-2xl p-8">
+        <div className="bg-white rounded-2xl shadow-2xl p-8"><form autoComplete="off" onSubmit={e => e.preventDefault()}>
 
           {/* ── Sign In / Register tabs ── */}
           {(mode === "login" || mode === "register") && (
@@ -176,17 +176,17 @@ export default function Login() {
                 {mode === "register" && (
                   <>
                     <div className="grid grid-cols-2 gap-3">
-                      <input placeholder="First name" value={form.firstName} onChange={e => u("firstName", e.target.value)} className={INPUT} />
-                      <input placeholder="Last name"  value={form.lastName}  onChange={e => u("lastName",  e.target.value)} className={INPUT} />
+                      <input placeholder="First name" autoComplete="off" value={form.firstName} onChange={e => u("firstName", e.target.value)} className={INPUT} />
+                      <input placeholder="Last name" autoComplete="off" value={form.lastName}  onChange={e => u("lastName",  e.target.value)} className={INPUT} />
                     </div>
                     <input placeholder="Firm / Council name (optional)" value={form.firmName} onChange={e => u("firmName", e.target.value)} className={INPUT} />
                   </>
                 )}
 
-                <input type="email" placeholder="Email address" value={form.email} onChange={e => u("email", e.target.value)} className={INPUT} />
+                <input type="email" placeholder="Email address" autoComplete="off" value={form.email} onChange={e => u("email", e.target.value)} className={INPUT} />
 
                 <div className="relative">
-                  <input type={showPw ? "text" : "password"} placeholder="Password" value={form.password}
+                  <input type={showPw ? "text" : "password"} placeholder="Password" autoComplete="new-password" value={form.password}
                     onChange={e => u("password", e.target.value)}
                     onKeyDown={e => e.key === "Enter" && mode === "login" && submitLogin()}
                     className={INPUT + " pr-11"} />
@@ -239,7 +239,7 @@ export default function Login() {
                 <h2 className="text-lg font-bold text-gray-900">Reset Password</h2>
                 <p className="text-sm text-gray-500 mt-1">Enter your email to retrieve your security question.</p>
               </div>
-              <input type="email" placeholder="Email address" value={forgotEmail} onChange={e => setForgotEmail(e.target.value)} className={INPUT} />
+              <input type="email" placeholder="Email address" autoComplete="off" value={forgotEmail} onChange={e => setForgotEmail(e.target.value)} className={INPUT} />
               {error && <p className="text-red-500 text-sm bg-red-50 rounded-lg px-3 py-2">{error}</p>}
               <button onClick={submitForgotEmail} disabled={busy || !forgotEmail}
                 className="w-full bg-[#0c1e3a] hover:bg-[#0e2a4a] disabled:opacity-50 text-white font-semibold py-3 rounded-xl text-sm">
@@ -278,7 +278,7 @@ export default function Login() {
                 <p className="text-sm text-gray-500 mt-1">Choose a strong new password.</p>
               </div>
               <div className="relative">
-                <input type={showNewPw ? "text" : "password"} placeholder="New password" value={newPassword}
+                <input type={showNewPw ? "text" : "password"} placeholder="New password" autoComplete="new-password" value={newPassword}
                   onChange={e => setNewPassword(e.target.value)} className={INPUT + " pr-11"} />
                 <button type="button" onClick={() => setShowNewPw(s => !s)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
@@ -287,7 +287,7 @@ export default function Login() {
               </div>
               <PasswordStrength password={newPassword} />
               <div>
-                <input type="password" placeholder="Confirm new password" value={confirmPassword}
+                <input type="password" placeholder="Confirm new password" autoComplete="new-password" value={confirmPassword}
                   onChange={e => setConfirmPassword(e.target.value)}
                   className={`${INPUT} ${confirmPassword && !pwMatch ? "border-red-300" : ""}`} />
                 {confirmPassword && !pwMatch && <p className="text-xs text-red-500 mt-1">Passwords do not match</p>}
@@ -317,7 +317,7 @@ export default function Login() {
             </div>
           )}
 
-        </div>
+        </form>
       </div>
     </div>
   );

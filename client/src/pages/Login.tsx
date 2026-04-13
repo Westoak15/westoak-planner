@@ -23,7 +23,7 @@ export default function Login() {
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
-          <div className="text-yellow-400 font-black text-2xl tracking-tight">Knights of Columbus</div>
+          <img src="/koc-logo.png" alt="Knights of Columbus" className="w-24 h-24 object-contain mx-auto mb-3" />
           <div className="text-white/60 text-sm mt-1">Financial Planning Suite</div>
         </div>
 

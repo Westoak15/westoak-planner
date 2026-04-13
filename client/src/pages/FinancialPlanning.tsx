@@ -1,4 +1,10 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, Component, type ReactNode } from "react";
+
+class ErrorBoundary extends Component<{children:ReactNode;fallback?:ReactNode},{error:boolean}> {
+  state = { error: false };
+  static getDerivedStateFromError() { return { error: true }; }
+  render() { return this.state.error ? (this.props.fallback ?? null) : this.props.children; }
+}
 import { useQuery } from "@tanstack/react-query";
 import {
   useClientPlans, useNetWorthEntries, useCreateNetWorthEntry, useDeleteNetWorthEntry,
@@ -353,8 +359,8 @@ function RetirementTab({ clientId, planId }: { clientId: number; planId: number 
         </div>
       )}
 
-      <ModuleScenarioPreview planId={planId} module="retirement" />
-      <CppOasTimingView assumptions={assumptions} />
+      <ErrorBoundary><ModuleScenarioPreview planId={planId} module="retirement" /></ErrorBoundary>
+      <ErrorBoundary><CppOasTimingView assumptions={assumptions} /></ErrorBoundary>
 
       {showCalc && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">

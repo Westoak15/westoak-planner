@@ -92,7 +92,20 @@ r.delete("/net-worth/:id", async (req: AuthRequest, res: Response) => {
 r.get("/clients/:clientId/retirement-projections", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.clientId;
   if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
-  res.json(await db.select().from(retirementProjections).where(eq(retirementProjections.clientId, cid)).orderBy(desc(retirementProjections.createdAt)));
+  const rows = await db.select().from(retirementProjections).where(eq(retirementProjections.clientId, cid)).orderBy(desc(retirementProjections.createdAt));
+  // Map to BrokersEdge field names (currentSavings = sum of RRSP+TFSA+NonReg)
+  const mapped = rows.map(r => ({
+    ...r,
+    currentSavings: String((Number(r.currentRrsp ?? 0) + Number(r.currentTfsa ?? 0) + Number(r.currentNonReg ?? 0)) || 0),
+    annualContribution: r.annualContribution ?? "0",
+    expectedReturn: r.expectedReturn ?? "7",
+    inflationRate: r.inflationRate ?? "2",
+    desiredRetirementIncome: r.desiredIncome ?? "0",
+    projectedBalance: r.projectedBalance ?? "0",
+    shortfallSurplus: r.projectedBalance ?? "0",
+    lifeExpectancy: r.retirementAge ? (r.retirementAge + 25) : 90,
+  }));
+  res.json(mapped);
 });
 r.post("/clients/:clientId/retirement-projections", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.clientId;

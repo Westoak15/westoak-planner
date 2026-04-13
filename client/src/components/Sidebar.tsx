@@ -1,11 +1,11 @@
 import {
-  Users, LayoutDashboard, BarChart2, Scale, PiggyBank,
+  Users, LayoutDashboard, Scale, PiggyBank,
   Shield, GraduationCap, CreditCard, Receipt, ScrollText, Brain
 } from "lucide-react";
 import { cn } from "../lib/utils";
 
 export type Tab =
-  | "clients" | "dashboard" | "overview"
+  | "clients" | "dashboard"
   | "networth" | "retirement" | "insurance"
   | "resp" | "debt" | "tax" | "estate" | "ai";
 
@@ -18,7 +18,6 @@ interface Props {
 const TABS: { key: Tab; label: string; icon: any; dividerBefore?: boolean }[] = [
   { key: "clients",    label: "Clients",     icon: Users },
   { key: "dashboard",  label: "Dashboard",   icon: LayoutDashboard, dividerBefore: true },
-  { key: "overview",   label: "Overview",    icon: BarChart2 },
   { key: "networth",   label: "Net Worth",   icon: Scale },
   { key: "retirement", label: "Retirement",  icon: PiggyBank },
   { key: "insurance",  label: "Insurance",   icon: Shield },
@@ -29,7 +28,7 @@ const TABS: { key: Tab; label: string; icon: any; dividerBefore?: boolean }[] = 
   { key: "ai",         label: "AI Insights", icon: Brain },
 ];
 
-const PLAN_TABS: Tab[] = ["dashboard","overview","networth","retirement","insurance","resp","debt","tax","estate","ai"];
+const PLAN_TABS: Tab[] = ["dashboard","networth","retirement","insurance","resp","debt","tax","estate","ai"];
 
 export function Sidebar({ activeTab, onTab, clientName }: Props) {
   return (

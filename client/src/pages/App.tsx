@@ -1173,7 +1173,6 @@ export default function App() {
             </div>
           )}
           {tab === "dashboard"  && client && <DashboardTab  clientId={client.id} />}
-          {tab === "overview"   && client && <OverviewTab   clientId={client.id} onTabChange={setTab} />}
           {tab === "networth"   && client && <NetWorthTab   clientId={client.id} />}
           {tab === "retirement" && client && <RetirementTab clientId={client.id} />}
           {tab === "insurance"  && client && <InsuranceTab  clientId={client.id} />}

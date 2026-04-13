@@ -8,6 +8,13 @@ import {
 import { isAuthenticated, type AuthRequest } from "../auth/index.js";
 import { eq, and, desc , sql} from "drizzle-orm";
 
+
+// Strip timestamp/id fields that should never be set from client payload
+function safe(body: any) {
+  const { id, createdAt, updatedAt, userId, clientId, planId, ...rest } = body;
+  return rest;
+}
+
 const r = Router();
 r.use(isAuthenticated);
 
@@ -69,14 +76,14 @@ r.get("/clients/:id/net-worth", async (req: AuthRequest, res: Response) => {
 r.post("/clients/:id/net-worth", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.id;
   if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
-  const [row] = await db.insert(netWorthEntries).values({ clientId: cid, ...req.body }).returning();
+  const [row] = await db.insert(netWorthEntries).values({ clientId: cid, ...safe(req.body) }).returning();
   res.status(201).json(row);
 });
 
 r.patch("/net-worth/:id", async (req: AuthRequest, res: Response) => {
   const [ex] = await db.select({ id: netWorthEntries.id, clientId: netWorthEntries.clientId }).from(netWorthEntries).where(eq(netWorthEntries.id, +req.params.id));
   if (!ex || !await ownsClient(ex.clientId, req.userId!)) return res.status(404).json({ message: "Not found" });
-  const [u] = await db.update(netWorthEntries).set({ ...req.body }).where(eq(netWorthEntries.id, ex.id)).returning();
+  const [u] = await db.update(netWorthEntries).set(safe(req.body)).where(eq(netWorthEntries.id, ex.id)).returning();
   res.json(u);
 });
 
@@ -97,14 +104,14 @@ r.get("/clients/:id/retirement", async (req: AuthRequest, res: Response) => {
 r.post("/clients/:id/retirement", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.id;
   if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
-  const [row] = await db.insert(retirementProjections).values({ clientId: cid, ...req.body }).returning();
+  const [row] = await db.insert(retirementProjections).values({ clientId: cid, ...safe(req.body) }).returning();
   res.status(201).json(row);
 });
 
 r.patch("/retirement/:id", async (req: AuthRequest, res: Response) => {
   const [ex] = await db.select({ id: retirementProjections.id, clientId: retirementProjections.clientId }).from(retirementProjections).where(eq(retirementProjections.id, +req.params.id));
   if (!ex || !await ownsClient(ex.clientId, req.userId!)) return res.status(404).json({ message: "Not found" });
-  const [u] = await db.update(retirementProjections).set({ ...req.body }).where(eq(retirementProjections.id, ex.id)).returning();
+  const [u] = await db.update(retirementProjections).set(safe(req.body)).where(eq(retirementProjections.id, ex.id)).returning();
   res.json(u);
 });
 
@@ -125,14 +132,14 @@ r.get("/clients/:id/insurance", async (req: AuthRequest, res: Response) => {
 r.post("/clients/:id/insurance", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.id;
   if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
-  const [row] = await db.insert(insuranceAnalyses).values({ clientId: cid, ...req.body }).returning();
+  const [row] = await db.insert(insuranceAnalyses).values({ clientId: cid, ...safe(req.body) }).returning();
   res.status(201).json(row);
 });
 
 r.patch("/insurance/:id", async (req: AuthRequest, res: Response) => {
   const [ex] = await db.select({ id: insuranceAnalyses.id, clientId: insuranceAnalyses.clientId }).from(insuranceAnalyses).where(eq(insuranceAnalyses.id, +req.params.id));
   if (!ex || !await ownsClient(ex.clientId, req.userId!)) return res.status(404).json({ message: "Not found" });
-  const [u] = await db.update(insuranceAnalyses).set({ ...req.body }).where(eq(insuranceAnalyses.id, ex.id)).returning();
+  const [u] = await db.update(insuranceAnalyses).set(safe(req.body)).where(eq(insuranceAnalyses.id, ex.id)).returning();
   res.json(u);
 });
 
@@ -153,14 +160,14 @@ r.get("/clients/:id/education", async (req: AuthRequest, res: Response) => {
 r.post("/clients/:id/education", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.id;
   if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
-  const [row] = await db.insert(educationPlans).values({ clientId: cid, ...req.body }).returning();
+  const [row] = await db.insert(educationPlans).values({ clientId: cid, ...safe(req.body) }).returning();
   res.status(201).json(row);
 });
 
 r.patch("/education/:id", async (req: AuthRequest, res: Response) => {
   const [ex] = await db.select({ id: educationPlans.id, clientId: educationPlans.clientId }).from(educationPlans).where(eq(educationPlans.id, +req.params.id));
   if (!ex || !await ownsClient(ex.clientId, req.userId!)) return res.status(404).json({ message: "Not found" });
-  const [u] = await db.update(educationPlans).set({ ...req.body }).where(eq(educationPlans.id, ex.id)).returning();
+  const [u] = await db.update(educationPlans).set(safe(req.body)).where(eq(educationPlans.id, ex.id)).returning();
   res.json(u);
 });
 
@@ -181,14 +188,14 @@ r.get("/clients/:id/debt", async (req: AuthRequest, res: Response) => {
 r.post("/clients/:id/debt", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.id;
   if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
-  const [row] = await db.insert(debtEntries).values({ clientId: cid, ...req.body }).returning();
+  const [row] = await db.insert(debtEntries).values({ clientId: cid, ...safe(req.body) }).returning();
   res.status(201).json(row);
 });
 
 r.patch("/debt/:id", async (req: AuthRequest, res: Response) => {
   const [ex] = await db.select({ id: debtEntries.id, clientId: debtEntries.clientId }).from(debtEntries).where(eq(debtEntries.id, +req.params.id));
   if (!ex || !await ownsClient(ex.clientId, req.userId!)) return res.status(404).json({ message: "Not found" });
-  const [u] = await db.update(debtEntries).set({ ...req.body }).where(eq(debtEntries.id, ex.id)).returning();
+  const [u] = await db.update(debtEntries).set(safe(req.body)).where(eq(debtEntries.id, ex.id)).returning();
   res.json(u);
 });
 
@@ -209,14 +216,14 @@ r.get("/clients/:id/tax", async (req: AuthRequest, res: Response) => {
 r.post("/clients/:id/tax", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.id;
   if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
-  const [row] = await db.insert(taxNotes).values({ clientId: cid, ...req.body }).returning();
+  const [row] = await db.insert(taxNotes).values({ clientId: cid, ...safe(req.body) }).returning();
   res.status(201).json(row);
 });
 
 r.patch("/tax/:id", async (req: AuthRequest, res: Response) => {
   const [ex] = await db.select({ id: taxNotes.id, clientId: taxNotes.clientId }).from(taxNotes).where(eq(taxNotes.id, +req.params.id));
   if (!ex || !await ownsClient(ex.clientId, req.userId!)) return res.status(404).json({ message: "Not found" });
-  const [u] = await db.update(taxNotes).set({ ...req.body }).where(eq(taxNotes.id, ex.id)).returning();
+  const [u] = await db.update(taxNotes).set(safe(req.body)).where(eq(taxNotes.id, ex.id)).returning();
   res.json(u);
 });
 
@@ -240,10 +247,10 @@ r.put("/clients/:id/estate", async (req: AuthRequest, res: Response) => {
   if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
   const [ex] = await db.select({ id: estateNotes.id }).from(estateNotes).where(eq(estateNotes.clientId, cid)).limit(1);
   if (ex) {
-    const [u] = await db.update(estateNotes).set({ ...req.body }).where(eq(estateNotes.id, ex.id)).returning();
+    const [u] = await db.update(estateNotes).set(safe(req.body)).where(eq(estateNotes.id, ex.id)).returning();
     return res.json(u);
   }
-  const [row] = await db.insert(estateNotes).values({ clientId: cid, ...req.body }).returning();
+  const [row] = await db.insert(estateNotes).values({ clientId: cid, ...safe(req.body) }).returning();
   res.status(201).json(row);
 });
 
@@ -279,7 +286,7 @@ r.post("/clients/:id/ai/generate", async (req: AuthRequest, res: Response) => {
 r.patch("/ai/:id", async (req: AuthRequest, res: Response) => {
   const [ex] = await db.select({ id: aiRecommendations.id, clientId: aiRecommendations.clientId }).from(aiRecommendations).where(eq(aiRecommendations.id, +req.params.id));
   if (!ex || !await ownsClient(ex.clientId, req.userId!)) return res.status(404).json({ message: "Not found" });
-  const [u] = await db.update(aiRecommendations).set({ ...req.body }).where(eq(aiRecommendations.id, ex.id)).returning();
+  const [u] = await db.update(aiRecommendations).set(safe(req.body)).where(eq(aiRecommendations.id, ex.id)).returning();
   res.json(u);
 });
 

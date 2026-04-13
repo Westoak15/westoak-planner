@@ -6,6 +6,7 @@ import { fileURLToPath } from "url";
 import { authRouter }    from "./routes/auth.js";
 import { clientsRouter } from "./routes/clients.js";
 import { fpRouter }      from "./routes/fp.js";
+import { simulateRouter } from "./routes/simulate.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = parseInt(process.env.PORT ?? "5000", 10);
@@ -17,6 +18,7 @@ app.use(express.json({ limit: "10mb" }));
 app.use("/api/auth",    authRouter);
 app.use("/api/clients", clientsRouter);
 app.use("/api",         fpRouter);
+app.use("/api",         simulateRouter);
 app.get("/api/health",  (_req, res) => res.json({ ok: true }));
 
 if (process.env.NODE_ENV === "production") {

@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "../lib/auth";
 import { api } from "../lib/api";
 import { Sidebar, type Tab } from "../components/Sidebar";
+import { MonteCarloResults } from "../components/MonteCarloResults";
 import { fmt$, fmtPct, initials, avatarBg, cn } from "../lib/utils";
 import {
   Plus, Pencil, Trash2, X, Check, ChevronRight, Search,
@@ -525,10 +526,31 @@ function NetWorthTab({ clientId }: { clientId: number }) {
 // Retirement Tab
 // ─────────────────────────────────────────────────────────────────────────────
 function RetirementTab({ clientId }: { clientId: number }) {
-  const [rows, setRows]     = useState<RetirementProj[]>([]);
+  const [rows, setRows]       = useState<RetirementProj[]>([]);
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm]     = useState({ label:"Base Case", currentAge:"", retirementAge:"", currentRrsp:"", currentTfsa:"", currentNonReg:"", annualContribution:"", expectedReturn:"6.5", inflationRate:"2.5", desiredIncome:"", cppStartAge:"65", oasStartAge:"65", cppMonthly:"900", oasMonthly:"700", notes:"" });
-  const [busy, setBusy]     = useState(false);
+  const [simResult, setSimResult] = useState<any>(null);
+  const [simulating, setSimulating] = useState(false);
+  const [showSimSettings, setShowSimSettings] = useState(false);
+  const [simSettings, setSimSettings] = useState({
+    simulations: 1000,
+    equityAllocation: 60,
+    equityReturn: 7.0,
+    equityStdDev: 12.0,
+    bondReturn: 4.0,
+    bondStdDev: 5.0,
+    inflationRate: 2.5,
+    lifeExpectancy: 90,
+    guardrailFloor: 0.80,
+    guardrailCeiling: 1.20,
+    spendingFlexDown: 0.10,
+    spendingFlexUp: 0.10,
+  });
+  const [form, setForm] = useState({
+    label:"Base Case", currentAge:"", retirementAge:"", currentRrsp:"", currentTfsa:"",
+    currentNonReg:"", annualContribution:"", expectedReturn:"6.5", inflationRate:"2.5",
+    desiredIncome:"", cppStartAge:"65", oasStartAge:"65", cppMonthly:"900", oasMonthly:"700", notes:""
+  });
+  const [busy, setBusy] = useState(false);
 
   const load = () => api.get<RetirementProj[]>(`/api/clients/${clientId}/retirement`).then(setRows);
   useEffect(() => { load(); }, [clientId]);
@@ -545,9 +567,72 @@ function RetirementTab({ clientId }: { clientId: number }) {
     await api.delete(`/api/retirement/${id}`); await load();
   }
 
+  async function runSimulation() {
+    setSimulating(true);
+    try {
+      const result = await api.post<any>(`/api/clients/${clientId}/simulate`, simSettings);
+      setSimResult(result);
+      await load(); // refresh to show updated success rate
+    } catch (e: any) { alert(e.message); }
+    finally { setSimulating(false); }
+  }
+
+  const ss = (k: string, v: any) => setSimSettings(s => ({ ...s, [k]: v }));
+
   return (
     <div className="p-6 max-w-4xl mx-auto">
-      <SectionHeader title="Retirement Projections" onAdd={() => setShowForm(true)} />
+      {simResult && (
+        <MonteCarloResults
+          result={simResult}
+          onClose={() => setSimResult(null)}
+          onPrint={() => window.print()}
+        />
+      )}
+
+      <div className="flex items-center justify-between mb-5">
+        <h2 className="text-xl font-bold text-gray-900">Retirement Projections</h2>
+        <div className="flex gap-2">
+          <button onClick={() => setShowSimSettings(!showSimSettings)}
+            className="text-sm font-semibold text-[#0c1e3a] border border-[#0c1e3a] hover:bg-[#0c1e3a] hover:text-white px-3 py-1.5 rounded-lg transition-colors">
+            ⚙ Simulation Settings
+          </button>
+          <button onClick={runSimulation} disabled={simulating}
+            className="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-sm font-semibold px-4 py-1.5 rounded-lg">
+            {simulating ? "Running…" : "▶ Run Monte Carlo"}
+          </button>
+          <button onClick={() => setShowForm(true)}
+            className="flex items-center gap-1.5 text-sm font-semibold text-white bg-[#0c1e3a] hover:bg-[#0e2a4a] px-3 py-1.5 rounded-lg">
+            <Plus className="w-3.5 h-3.5" /> Add Projection
+          </button>
+        </div>
+      </div>
+
+      {showSimSettings && (
+        <Card className="mb-5 border-indigo-200 bg-indigo-50/30">
+          <h3 className="font-bold text-gray-800 mb-4">Monte Carlo Simulation Settings</h3>
+          <div className="grid grid-cols-4 gap-3 mb-4">
+            <Input label="Simulations" type="number" value={String(simSettings.simulations)} onChange={v => ss("simulations", +v)} />
+            <Input label="Equity Allocation (%)" type="number" value={String(simSettings.equityAllocation)} onChange={v => ss("equityAllocation", +v)} />
+            <Input label="Life Expectancy" type="number" value={String(simSettings.lifeExpectancy)} onChange={v => ss("lifeExpectancy", +v)} />
+            <Input label="Inflation Rate (%)" type="number" value={String(simSettings.inflationRate)} onChange={v => ss("inflationRate", +v)} />
+          </div>
+          <div className="grid grid-cols-4 gap-3 mb-4">
+            <Input label="Equity Return (%)" type="number" value={String(simSettings.equityReturn)} onChange={v => ss("equityReturn", +v)} />
+            <Input label="Equity Std Dev (%)" type="number" value={String(simSettings.equityStdDev)} onChange={v => ss("equityStdDev", +v)} />
+            <Input label="Bond Return (%)" type="number" value={String(simSettings.bondReturn)} onChange={v => ss("bondReturn", +v)} />
+            <Input label="Bond Std Dev (%)" type="number" value={String(simSettings.bondStdDev)} onChange={v => ss("bondStdDev", +v)} />
+          </div>
+          <div className="border-t border-indigo-200 pt-4">
+            <p className="text-xs font-bold text-indigo-700 uppercase tracking-wide mb-3">Guardrail Rules</p>
+            <div className="grid grid-cols-4 gap-3">
+              <Input label="Floor (% of target)" type="number" value={String(simSettings.guardrailFloor * 100)} onChange={v => ss("guardrailFloor", +v / 100)} />
+              <Input label="Ceiling (% of target)" type="number" value={String(simSettings.guardrailCeiling * 100)} onChange={v => ss("guardrailCeiling", +v / 100)} />
+              <Input label="Max Spending Cut (%)" type="number" value={String(simSettings.spendingFlexDown * 100)} onChange={v => ss("spendingFlexDown", +v / 100)} />
+              <Input label="Max Spending Raise (%)" type="number" value={String(simSettings.spendingFlexUp * 100)} onChange={v => ss("spendingFlexUp", +v / 100)} />
+            </div>
+          </div>
+        </Card>
+      )}
 
       {showForm && (
         <Card className="mb-5">
@@ -585,27 +670,35 @@ function RetirementTab({ clientId }: { clientId: number }) {
       )}
 
       {rows.length === 0 && !showForm ? (
-        <Card><p className="text-center text-gray-400 py-8">No retirement projections yet. Click Add to create one.</p></Card>
+        <Card>
+          <p className="text-center text-gray-400 py-4">No projections yet — add one then click Run Monte Carlo.</p>
+        </Card>
       ) : (
         <div className="space-y-4">
           {rows.map(p => (
             <Card key={p.id}>
               <div className="flex items-start justify-between mb-4">
                 <h3 className="font-bold text-gray-900">{p.label}</h3>
-                <button onClick={() => del(p.id)} className="text-gray-300 hover:text-red-500 transition-colors"><Trash2 className="w-4 h-4" /></button>
+                <div className="flex items-center gap-2">
+                  {p.successRate && (
+                    <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${Number(p.successRate) >= 85 ? "bg-emerald-100 text-emerald-700" : Number(p.successRate) >= 70 ? "bg-amber-100 text-amber-700" : "bg-red-100 text-red-700"}`}>
+                      {p.successRate}% success
+                    </span>
+                  )}
+                  <button onClick={() => del(p.id)} className="text-gray-300 hover:text-red-500 transition-colors"><Trash2 className="w-4 h-4" /></button>
+                </div>
               </div>
               <div className="grid grid-cols-4 gap-4">
                 <Field label="Age → Retirement" value={p.currentAge && p.retirementAge ? `${p.currentAge} → ${p.retirementAge}` : null} />
-                <Field label="Current RRSP"    value={fmt$(p.currentRrsp)} />
-                <Field label="Current TFSA"    value={fmt$(p.currentTfsa)} />
+                <Field label="RRSP"             value={fmt$(p.currentRrsp)} />
+                <Field label="TFSA"             value={fmt$(p.currentTfsa)} />
                 <Field label="Non-Reg"          value={fmt$(p.currentNonReg)} />
                 <Field label="Annual Contribution" value={fmt$(p.annualContribution)} />
                 <Field label="Expected Return"  value={fmtPct(p.expectedReturn)} />
                 <Field label="Desired Income"   value={fmt$(p.desiredIncome)} />
-                <Field label="Projected Balance" value={fmt$(p.projectedBalance)} />
-                <Field label="CPP @ {age}" value={p.cppStartAge ? `${fmt$(p.cppMonthly)}/mo @ ${p.cppStartAge}` : null} />
-                <Field label="OAS @ {age}" value={p.oasStartAge ? `${fmt$(p.oasMonthly)}/mo @ ${p.oasStartAge}` : null} />
-                <Field label="Success Rate"     value={fmtPct(p.successRate)} />
+                <Field label="Projected Balance (median)" value={fmt$(p.projectedBalance)} />
+                <Field label="CPP" value={p.cppStartAge ? `${fmt$(p.cppMonthly)}/mo @ ${p.cppStartAge}` : null} />
+                <Field label="OAS" value={p.oasStartAge ? `${fmt$(p.oasMonthly)}/mo @ ${p.oasStartAge}` : null} />
               </div>
               {p.notes && <p className="text-xs text-gray-500 mt-3 pt-3 border-t border-gray-100">{p.notes}</p>}
             </Card>

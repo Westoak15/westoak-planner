@@ -33,17 +33,16 @@ const PLAN_TABS: Tab[] = ["dashboard","overview","networth","retirement","insura
 
 export function Sidebar({ activeTab, onTab, clientName }: Props) {
   return (
-    <aside className="w-[144px] flex-shrink-0 flex flex-col select-none" style={{
+    <aside className="w-[180px] flex-shrink-0 flex flex-col select-none" style={{
       background: "linear-gradient(180deg, #0c1e3a 0%, #0e2a4a 60%, #0a3556 100%)"
     }}>
       {/* Logo */}
-      <div className="py-4 flex flex-col items-center border-b border-white/10 px-2">
+      <div className="py-5 flex flex-col items-center border-b border-white/10 px-3">
+        <img src="/koc-logo.png" alt="Knights of Columbus" className="w-16 h-16 object-contain mb-3" />
         <div className="text-center leading-none">
-          <div className="text-yellow-400 font-black text-[12px] tracking-tight leading-tight">Knights of</div>
-          <div className="text-yellow-400 font-black text-[12px] tracking-tight leading-tight">Columbus</div>
-          <div className="w-10 border-t border-white/20 mx-auto my-1.5"></div>
-          <div className="text-white/70 font-medium text-[9px] tracking-wide leading-tight">Financial Planning</div>
-          <div className="text-white/70 font-medium text-[9px] tracking-wide leading-tight">Suite</div>
+          <div className="text-yellow-400 font-black text-[13px] tracking-tight leading-snug">Knights of Columbus</div>
+          <div className="w-12 border-t border-white/20 mx-auto my-1.5"></div>
+          <div className="text-white/60 font-medium text-[10px] tracking-wide leading-tight">Financial Planning Suite</div>
         </div>
       </div>
 
@@ -73,7 +72,7 @@ export function Sidebar({ activeTab, onTab, clientName }: Props) {
                 style={{ width: "calc(100% - 12px)", marginLeft: "6px" }}
               >
                 <tab.icon className={cn("w-5 h-5 mb-1.5 flex-shrink-0", isActive && "text-cyan-400")} />
-                <span className="text-[11px] font-medium leading-tight text-center">{tab.label}</span>
+                <span className="text-[12px] font-medium leading-tight text-center">{tab.label}</span>
                 {isActive && (
                   <div className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-6 bg-cyan-400 rounded-r" />
                 )}

@@ -33,7 +33,7 @@ const PLAN_TABS: Tab[] = ["dashboard","overview","networth","retirement","insura
 
 export function Sidebar({ activeTab, onTab, clientName }: Props) {
   return (
-    <aside className="w-[72px] flex-shrink-0 flex flex-col select-none" style={{
+    <aside className="w-[144px] flex-shrink-0 flex flex-col select-none" style={{
       background: "linear-gradient(180deg, #0c1e3a 0%, #0e2a4a 60%, #0a3556 100%)"
     }}>
       {/* Logo */}
@@ -60,7 +60,7 @@ export function Sidebar({ activeTab, onTab, clientName }: Props) {
                 title={tab.label}
                 disabled={disabled}
                 className={cn(
-                  "w-full flex flex-col items-center justify-center py-2.5 px-1 rounded-lg mx-auto transition-all relative group",
+                  "w-full flex flex-col items-center justify-center py-3 px-2 rounded-lg mx-auto transition-all relative group",
                   "focus:outline-none",
                   isActive
                     ? "bg-white/15 text-white"
@@ -70,8 +70,8 @@ export function Sidebar({ activeTab, onTab, clientName }: Props) {
                 )}
                 style={{ width: "calc(100% - 12px)", marginLeft: "6px" }}
               >
-                <tab.icon className={cn("w-4 h-4 mb-1 flex-shrink-0", isActive && "text-cyan-400")} />
-                <span className="text-[9px] font-medium leading-tight text-center">{tab.label}</span>
+                <tab.icon className={cn("w-5 h-5 mb-1.5 flex-shrink-0", isActive && "text-cyan-400")} />
+                <span className="text-[11px] font-medium leading-tight text-center">{tab.label}</span>
                 {isActive && (
                   <div className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-6 bg-cyan-400 rounded-r" />
                 )}

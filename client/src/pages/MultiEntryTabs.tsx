@@ -95,60 +95,6 @@ export function NetWorthTab({ clientId }: { clientId: number }) {
     await load();
   }
 
-  const EntryTable = ({ rows, type }: { rows: NWEntry[]; type: "asset"|"liability" }) => {
-    const draftRows = drafts.filter(d => d.type === type);
-    const cats = type === "asset" ? NW_ASSET_CATS : NW_LIAB_CATS;
-    return (
-      <Card>
-        <div className="p-4 border-b border-gray-100 flex items-center justify-between">
-          <div>
-            <h3 className="font-bold text-gray-800">{type === "asset" ? "Assets" : "Liabilities"}</h3>
-            <p className={`text-lg font-bold ${type === "asset" ? "text-emerald-600" : "text-red-500"}`}>
-              {fmt$(type === "asset" ? totalA : totalL)}
-            </p>
-          </div>
-          <button onClick={() => addDraft(type)}
-            className="flex items-center gap-1.5 text-sm font-semibold text-white bg-[#0c1e3a] hover:bg-[#0e2a4a] px-3 py-1.5 rounded-lg">
-            <Plus className="w-3.5 h-3.5" /> Add {type === "asset" ? "Asset" : "Liability"}
-          </button>
-        </div>
-        <table className="w-full text-sm">
-          <thead className="bg-gray-50 border-b border-gray-100">
-            <tr><TH>Category</TH><TH>Name</TH><TH>Value ($)</TH><TH>Notes</TH><TH></TH></tr>
-          </thead>
-          <tbody className="divide-y divide-gray-100">
-            {rows.map(e => (
-              <tr key={e.id} className="hover:bg-gray-50">
-                <TD><span className="bg-gray-100 text-gray-600 text-xs px-2 py-0.5 rounded-full">{e.category}</span></TD>
-                <TD><span className="font-medium text-gray-800">{e.name}</span></TD>
-                <TD right><span className="font-semibold">{fmt$(e.value)}</span></TD>
-                <TD><span className="text-gray-400 text-xs">{e.notes ?? ""}</span></TD>
-                <TD><button onClick={() => del(e.id)} className="text-gray-300 hover:text-red-500"><Trash2 className="w-3.5 h-3.5" /></button></TD>
-              </tr>
-            ))}
-            {/* Draft rows */}
-            {draftRows.map((d, i) => {
-              const gi = drafts.findIndex((x, idx) => x === d || drafts.indexOf(d) === idx);
-              const realIdx = drafts.indexOf(d);
-              return (
-                <tr key={`draft-${i}`} className="bg-blue-50/50">
-                  <TD><InlineSelect value={d.category} onChange={v => updateDraft(realIdx, "category", v)} options={cats} /></TD>
-                  <TD><InlineInput value={d.name} onChange={v => updateDraft(realIdx, "name", v)} placeholder="e.g. TD Bank RRSP" /></TD>
-                  <TD><InlineInput value={d.value} onChange={v => updateDraft(realIdx, "value", v)} type="number" placeholder="0" /></TD>
-                  <TD><InlineInput value={d.notes} onChange={v => updateDraft(realIdx, "notes", v)} placeholder="optional" /></TD>
-                  <TD><button onClick={() => removeDraft(realIdx)} className="text-gray-300 hover:text-red-500"><X className="w-3.5 h-3.5" /></button></TD>
-                </tr>
-              );
-            })}
-            {rows.length === 0 && draftRows.length === 0 && (
-              <tr><td colSpan={5} className="px-4 py-6 text-center text-gray-400 text-sm">No {type}s yet — click Add to add one</td></tr>
-            )}
-          </tbody>
-        </table>
-      </Card>
-    );
-  };
-
   return (
     <div className="p-6 max-w-5xl mx-auto">
       <SummaryBar items={[
@@ -158,8 +104,57 @@ export function NetWorthTab({ clientId }: { clientId: number }) {
       ]} />
 
       <div className="space-y-5">
-        <EntryTable rows={assets} type="asset" />
-        <EntryTable rows={liabs}  type="liability" />
+        {(["asset","liability"] as const).map(type => {
+          const rows = type === "asset" ? assets : liabs;
+          const total = type === "asset" ? totalA : totalL;
+          const draftRows = drafts.filter(d => d.type === type);
+          const cats = type === "asset" ? NW_ASSET_CATS : NW_LIAB_CATS;
+          return (
+            <Card key={type}>
+              <div className="p-4 border-b border-gray-100 flex items-center justify-between">
+                <div>
+                  <h3 className="font-bold text-gray-800">{type === "asset" ? "Assets" : "Liabilities"}</h3>
+                  <p className={`text-lg font-bold ${type === "asset" ? "text-emerald-600" : "text-red-500"}`}>{fmt$(total)}</p>
+                </div>
+                <button onClick={() => addDraft(type)}
+                  className="flex items-center gap-1.5 text-sm font-semibold text-white bg-[#0c1e3a] hover:bg-[#0e2a4a] px-3 py-1.5 rounded-lg">
+                  <Plus className="w-3.5 h-3.5" /> Add {type === "asset" ? "Asset" : "Liability"}
+                </button>
+              </div>
+              <table className="w-full text-sm">
+                <thead className="bg-gray-50 border-b border-gray-100">
+                  <tr><TH>Category</TH><TH>Name</TH><TH>Value ($)</TH><TH>Notes</TH><TH></TH></tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {rows.map(e => (
+                    <tr key={e.id} className="hover:bg-gray-50">
+                      <TD><span className="bg-gray-100 text-gray-600 text-xs px-2 py-0.5 rounded-full">{e.category}</span></TD>
+                      <TD><span className="font-medium text-gray-800">{e.name}</span></TD>
+                      <TD right><span className="font-semibold">{fmt$(e.value)}</span></TD>
+                      <TD><span className="text-gray-400 text-xs">{e.notes ?? ""}</span></TD>
+                      <TD><button onClick={() => del(e.id)} className="text-gray-300 hover:text-red-500"><Trash2 className="w-3.5 h-3.5" /></button></TD>
+                    </tr>
+                  ))}
+                  {draftRows.map((d) => {
+                    const realIdx = drafts.indexOf(d);
+                    return (
+                      <tr key={realIdx} className="bg-blue-50/50">
+                        <TD><InlineSelect value={d.category} onChange={v => updateDraft(realIdx, "category", v)} options={cats} /></TD>
+                        <TD><InlineInput value={d.name} onChange={v => updateDraft(realIdx, "name", v)} placeholder="e.g. TD Bank RRSP" /></TD>
+                        <TD><InlineInput value={d.value} onChange={v => updateDraft(realIdx, "value", v)} type="number" placeholder="0" /></TD>
+                        <TD><InlineInput value={d.notes} onChange={v => updateDraft(realIdx, "notes", v)} placeholder="optional" /></TD>
+                        <TD><button onClick={() => removeDraft(realIdx)} className="text-gray-300 hover:text-red-500"><X className="w-3.5 h-3.5" /></button></TD>
+                      </tr>
+                    );
+                  })}
+                  {rows.length === 0 && draftRows.length === 0 && (
+                    <tr><td colSpan={5} className="px-4 py-6 text-center text-gray-400 text-sm">No {type}s yet — click Add to add one</td></tr>
+                  )}
+                </tbody>
+              </table>
+            </Card>
+          );
+        })}
       </div>
 
       {drafts.length > 0 && (

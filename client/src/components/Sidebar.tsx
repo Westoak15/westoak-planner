@@ -38,12 +38,8 @@ export function Sidebar({ activeTab, onTab, clientName }: Props) {
     }}>
       {/* Logo */}
       <div className="py-5 flex flex-col items-center border-b border-white/10 px-3">
-        <img src="/koc-logo.png" alt="Knights of Columbus" className="w-16 h-16 object-contain mb-3" />
-        <div className="text-center leading-none">
-          <div className="text-yellow-400 font-black text-[13px] tracking-tight leading-snug">Knights of Columbus</div>
-          <div className="w-12 border-t border-white/20 mx-auto my-1.5"></div>
-          <div className="text-white/60 font-medium text-[10px] tracking-wide leading-tight">Financial Planning Suite</div>
-        </div>
+        <img src="/koc-logo.png" alt="Knights of Columbus" className="w-24 h-24 object-contain mb-3" />
+        <div className="text-white/60 font-medium text-[10px] tracking-wide text-center">Financial Planning Suite</div>
       </div>
 
       {/* Nav */}

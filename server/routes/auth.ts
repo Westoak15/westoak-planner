@@ -42,3 +42,27 @@ r.get("/me", isAuthenticated, async (req: AuthRequest, res: Response) => {
 });
 
 export { r as authRouter };
+
+// POST /api/auth/change-password
+r.post("/change-password", isAuthenticated, async (req: AuthRequest, res: Response) => {
+  try {
+    const { currentPassword, newPassword } = z.object({
+      currentPassword: z.string().min(1),
+      newPassword:     z.string().min(8),
+    }).parse(req.body);
+
+    const [u] = await db.select().from(users).where(eq(users.id, req.userId!)).limit(1);
+    if (!u) return res.status(404).json({ message: "User not found" });
+
+    const valid = await checkPassword(currentPassword, u.passwordHash);
+    if (!valid) return res.status(401).json({ message: "Current password is incorrect" });
+
+    const hash = await hashPassword(newPassword);
+    await db.update(users).set({ passwordHash: hash, updatedAt: new Date() }).where(eq(users.id, req.userId!));
+    res.json({ message: "Password changed successfully" });
+  } catch (e: any) {
+    if (e instanceof z.ZodError) return res.status(400).json({ message: "Validation error", errors: e.errors });
+    console.error("[change-password]", e.message);
+    res.status(500).json({ message: e.message ?? "Server error" });
+  }
+});

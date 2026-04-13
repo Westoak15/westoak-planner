@@ -1,9 +1,9 @@
 import { Router, Response } from "express";
 import { db } from "../db/index.js";
 import {
-  clients, plans, netWorthEntries, retirementProjections,
-  insuranceAnalyses, educationPlans, debtEntries,
-  taxNotes, estateNotes, aiRecommendations,
+  clients, financialPlans as plans, netWorthEntries, retirementProjections,
+  insuranceAnalyses, educationSavings as educationPlans, debtEntries,
+  taxPlanningNotes as taxNotes, estatePlanningNotes as estateNotes, aiRecommendations,
 } from "../../shared/schema.js";
 import { isAuthenticated, type AuthRequest } from "../auth/index.js";
 import { eq, and, desc , sql} from "drizzle-orm";

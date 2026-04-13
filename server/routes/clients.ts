@@ -1,6 +1,6 @@
 import { Router, Response } from "express";
 import { db } from "../db/index.js";
-import { clients, plans } from "../../shared/schema.js";
+import { clients, financialPlans as plans } from "../../shared/schema.js";
 import { isAuthenticated, type AuthRequest } from "../auth/index.js";
 import { eq, and, desc, ilike, or } from "drizzle-orm";
 

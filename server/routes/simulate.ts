@@ -22,7 +22,6 @@ r.post("/clients/:id/simulate", async (req: AuthRequest, res: Response) => {
   const [client] = await db.select().from(clients).where(eq(clients.id, cid));
   const [proj]   = await db.select().from(retirementProjections)
     .where(eq(retirementProjections.clientId, cid))
-    .orderBy(retirementProjections.updatedAt)
     .limit(1);
 
   const {
@@ -44,11 +43,11 @@ r.post("/clients/:id/simulate", async (req: AuthRequest, res: Response) => {
   // Build profile from client + projection data
   const currentAge    = proj?.currentAge    ?? (new Date().getFullYear() - new Date(client.dateOfBirth ?? "1970-01-01").getFullYear());
   const retirementAge = proj?.retirementAge ?? client.retirementAge ?? 65;
-  const rrsp          = Number(proj?.currentRrsp    ?? client.annualIncome ?? 0) * 10;
-  const tfsa          = Number(proj?.currentTfsa    ?? 0);
-  const nonReg        = Number(proj?.currentNonReg  ?? 0);
+  const rrsp          = Number(proj?.rrspBalance    ?? client.annualIncome ?? 0) * 10;
+  const tfsa          = Number(proj?.tfsaBalance    ?? 0);
+  const nonReg        = Number(proj?.nonRegBalance  ?? 0);
   const annualContrib = Number(proj?.annualContribution ?? 0);
-  const desiredIncome = Number(proj?.desiredIncome  ?? client.desiredRetirementIncome ?? 50000);
+  const desiredIncome = Number(proj?.desiredRetirementIncome  ?? client.desiredRetirementIncome ?? 50000);
   const cppMonthly    = Number(proj?.cppMonthly     ?? 900);
   const oasMonthly    = Number(proj?.oasMonthly     ?? 700);
   const cppAge        = proj?.cppStartAge  ?? 65;
@@ -184,7 +183,7 @@ r.post("/clients/:id/simulate", async (req: AuthRequest, res: Response) => {
 
   // Save to projection record
   if (proj) {
-    await db.update(retirementProjections).set({ successRate: String((result.successRate * 100).toFixed(1)), projectedBalance: String(result.finalBalancePercentiles.p50) }).where(eq(retirementProjections.id, proj.id));
+    await (db.update(retirementProjections) as any).set({ successRate: String((result.successRate * 100).toFixed(1)), projectedBalance: String(result.finalBalancePercentiles.p50) }).where(eq(retirementProjections.id, proj.id));
   }
 
   res.json(result);

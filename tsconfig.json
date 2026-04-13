@@ -4,7 +4,11 @@
     "module": "ESNext", "skipLibCheck": true,
     "moduleResolution": "bundler", "allowImportingTsExtensions": true,
     "resolveJsonModule": true, "isolatedModules": true, "noEmit": true,
-    "jsx": "react-jsx", "strict": false
+    "jsx": "react-jsx", "strict": false,
+    "paths": {
+      "@/*": ["./client/src/*"],
+      "@shared/*": ["./shared/*"]
+    }
   },
   "include": ["client/src", "shared"]
 }

@@ -19,7 +19,7 @@ r.get("/", async (req: AuthRequest, res: Response) => {
     .where(s
       ? and(eq(clients.userId, req.userId!), or(ilike(clients.firstName, `%${s}%`), ilike(clients.lastName, `%${s}%`)))
       : eq(clients.userId, req.userId!))
-    .orderBy(desc(clients.createdAt));
+    ;
   res.json(rows);
 });
 
@@ -61,7 +61,7 @@ r.delete("/:id", async (req: AuthRequest, res: Response) => {
 r.get("/:id/plans", async (req: AuthRequest, res: Response) => {
   const [c] = await db.select({ id: clients.id }).from(clients).where(and(eq(clients.id, +req.params.id), eq(clients.userId, req.userId!)));
   if (!c) return res.status(404).json({ message: "Not found" });
-  const rows = await db.select().from(plans).where(eq(plans.clientId, +req.params.id)).orderBy(desc(plans.createdAt));
+  const rows = await db.select().from(plans).where(eq(plans.clientId, +req.params.id));
   res.json(rows);
 });
 

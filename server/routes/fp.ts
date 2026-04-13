@@ -69,15 +69,21 @@ r.get("/clients/:id/overview", async (req: AuthRequest, res: Response) => {
 r.get("/clients/:id/net-worth", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.id;
   if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
-  const rows = await db.select().from(netWorthEntries).where(eq(netWorthEntries.clientId, cid)).orderBy(netWorthEntries.type, netWorthEntries.category);
+  const rows = await db.select().from(netWorthEntries).where(eq(netWorthEntries.clientId, cid));
   res.json(rows);
 });
 
 r.post("/clients/:id/net-worth", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.id;
   if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
-  const [row] = await db.insert(netWorthEntries).values({ clientId: cid, ...safe(req.body) }).returning();
-  res.status(201).json(row);
+  try {
+    const payload = { clientId: cid, ...safe(req.body) };
+    const [row] = await db.insert(netWorthEntries).values(payload as any).returning();
+    res.status(201).json(row);
+  } catch (e: any) {
+    console.error("[net-worth/post]", e.message, JSON.stringify(req.body));
+    res.status(500).json({ message: e.message });
+  }
 });
 
 r.patch("/net-worth/:id", async (req: AuthRequest, res: Response) => {
@@ -98,7 +104,7 @@ r.delete("/net-worth/:id", async (req: AuthRequest, res: Response) => {
 r.get("/clients/:id/retirement", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.id;
   if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
-  res.json(await db.select().from(retirementProjections).where(eq(retirementProjections.clientId, cid)).orderBy(desc(retirementProjections.updatedAt)));
+  res.json(await db.select().from(retirementProjections).where(eq(retirementProjections.clientId, cid)));
 });
 
 r.post("/clients/:id/retirement", async (req: AuthRequest, res: Response) => {
@@ -126,7 +132,7 @@ r.delete("/retirement/:id", async (req: AuthRequest, res: Response) => {
 r.get("/clients/:id/insurance", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.id;
   if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
-  res.json(await db.select().from(insuranceAnalyses).where(eq(insuranceAnalyses.clientId, cid)).orderBy(desc(insuranceAnalyses.updatedAt)));
+  res.json(await db.select().from(insuranceAnalyses).where(eq(insuranceAnalyses.clientId, cid)));
 });
 
 r.post("/clients/:id/insurance", async (req: AuthRequest, res: Response) => {
@@ -154,7 +160,7 @@ r.delete("/insurance/:id", async (req: AuthRequest, res: Response) => {
 r.get("/clients/:id/education", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.id;
   if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
-  res.json(await db.select().from(educationPlans).where(eq(educationPlans.clientId, cid)).orderBy(desc(educationPlans.updatedAt)));
+  res.json(await db.select().from(educationPlans).where(eq(educationPlans.clientId, cid)));
 });
 
 r.post("/clients/:id/education", async (req: AuthRequest, res: Response) => {
@@ -182,7 +188,7 @@ r.delete("/education/:id", async (req: AuthRequest, res: Response) => {
 r.get("/clients/:id/debt", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.id;
   if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
-  res.json(await db.select().from(debtEntries).where(eq(debtEntries.clientId, cid)).orderBy(desc(debtEntries.updatedAt)));
+  res.json(await db.select().from(debtEntries).where(eq(debtEntries.clientId, cid)));
 });
 
 r.post("/clients/:id/debt", async (req: AuthRequest, res: Response) => {
@@ -210,7 +216,7 @@ r.delete("/debt/:id", async (req: AuthRequest, res: Response) => {
 r.get("/clients/:id/tax", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.id;
   if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
-  res.json(await db.select().from(taxNotes).where(eq(taxNotes.clientId, cid)).orderBy(desc(taxNotes.updatedAt)));
+  res.json(await db.select().from(taxNotes).where(eq(taxNotes.clientId, cid)));
 });
 
 r.post("/clients/:id/tax", async (req: AuthRequest, res: Response) => {
@@ -258,7 +264,7 @@ r.put("/clients/:id/estate", async (req: AuthRequest, res: Response) => {
 r.get("/clients/:id/ai", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.id;
   if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
-  res.json(await db.select().from(aiRecommendations).where(eq(aiRecommendations.clientId, cid)).orderBy(desc(aiRecommendations.createdAt)));
+  res.json(await db.select().from(aiRecommendations).where(eq(aiRecommendations.clientId, cid)));
 });
 
 r.post("/clients/:id/ai/generate", async (req: AuthRequest, res: Response) => {

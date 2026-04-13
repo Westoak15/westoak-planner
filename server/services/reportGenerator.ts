@@ -414,7 +414,7 @@ export function generateComprehensiveReport(data: {
     </div>
   </div>
   ${sim ? `
-  <h3>Portfolio Projection (${sim.yearsProjected}-Year Monte Carlo — ${sim.simulationCount?.toLocaleString() ?? "N/A"} simulations)</h3>
+  <h3>Portfolio Projection (${sim.yearsProjected}-Year Monte Carlo — ${sim.simulations?.toLocaleString() ?? sim.simulationCount?.toLocaleString() ?? "N/A"} simulations)</h3>
   <div class="chart-container">${mcChart}</div>
   <table>
     <thead><tr><th>Scenario</th><th style="text-align:right">Final Portfolio Balance</th></tr></thead>

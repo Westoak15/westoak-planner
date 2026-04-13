@@ -41,18 +41,17 @@ export const clients = pgTable("clients", {
   spouseFirstName:         text("spouse_first_name"),
   spouseLastName:          text("spouse_last_name"),
   spouseDateOfBirth:       text("spouse_date_of_birth"),
-  spouseOccupation:               text("spouse_occupation"),
-  spouseRetirementAge:            integer("spouse_retirement_age"),
-  spouseDesiredRetirementIncome:  decimal("spouse_desired_retirement_income", { precision: 15, scale: 2 }),
+  spouseOccupation:        text("spouse_occupation"),
   // Dependants
   dependants:              jsonb("dependants"),  // [{name, dob, relationship}]
   // Income
   annualIncome:            decimal("annual_income", { precision: 15, scale: 2 }),
   spouseAnnualIncome:      decimal("spouse_annual_income", { precision: 15, scale: 2 }),
   // Retirement goals
-  retirementAge:           integer("retirement_age"),
-  spouseRetirementAge:     integer("spouse_retirement_age"),
+  retirementAge:                 integer("retirement_age"),
+  spouseRetirementAge:           integer("spouse_retirement_age"),
   desiredRetirementIncome: decimal("desired_retirement_income", { precision: 15, scale: 2 }),
+  spouseDesiredRetirementIncome: decimal("spouse_desired_retirement_income", { precision: 15, scale: 2 }),
   // Notes
   notes:                   text("notes"),
   createdAt:               timestamp("created_at", { mode: "date" }).defaultNow().notNull(),

@@ -1,30 +1,37 @@
-import { z } from 'zod';
-import { financialPlans, insertFinancialPlanSchema } from './schema';
+import { z } from "zod";
 
 export const errorSchemas = {
   validation: z.object({ message: z.string(), field: z.string().optional() }),
-  notFound: z.object({ message: z.string() }),
-  internal: z.object({ message: z.string() }),
+  notFound:   z.object({ message: z.string() }),
+  internal:   z.object({ message: z.string() }),
 };
 
 export const api = {
   plans: {
     list: {
-      method: 'GET' as const,
-      path: '/api/clients/:clientId/plans' as const,
-      responses: {
-        200: z.array(z.custom<typeof financialPlans.$inferSelect>()),
-      },
+      method:    "GET" as const,
+      path:      "/api/clients/:clientId/plans" as const,
+      responses: { 200: z.array(z.any()) },
+    },
+    create: {
+      method:    "POST" as const,
+      path:      "/api/clients/:clientId/plans" as const,
+      responses: { 201: z.any() },
+    },
+  },
 };
 
-export function buildUrl(path: string, params?: Record<string, string | number>): string {
+export function buildUrl(path: string, params?: Record<string, string | number | boolean | undefined>): string {
   let url = path;
-  if (params) {
-    Object.entries(params).forEach(([key, value]) => {
-      if (url.includes(`:${key}`)) {
-        url = url.replace(`:${key}`, String(value));
-      }
-    });
+  const remaining: Record<string, string> = {};
+  for (const [k, v] of Object.entries(params ?? {})) {
+    if (v === undefined) continue;
+    if (url.includes(`:${k}`)) {
+      url = url.replace(`:${k}`, String(v));
+    } else {
+      remaining[k] = String(v);
+    }
   }
-  return url;
+  const qs = Object.entries(remaining).map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`).join("&");
+  return qs ? `${url}?${qs}` : url;
 }

@@ -6,6 +6,7 @@ import { FinancialPlanningContent } from "./FinancialPlanning";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "../lib/queryClient";
 import { MonteCarloResults } from "../components/MonteCarloResults";
+import { NetWorthTab as NetWorthTabNew, RetirementTab as RetirementTabNew, InsuranceTab as InsuranceTabNew, RespTab as RespTabNew, DebtTab as DebtTabNew } from "./MultiEntryTabs";
 import { fmt$, fmtPct, initials, avatarBg, cn } from "../lib/utils";
 import {
   Plus, Pencil, Trash2, X, Check, ChevronRight, Search,
@@ -1425,11 +1426,17 @@ export default function App() {
               </button>
             </div>
           )}
-          {tab !== "clients" && client && (
+          {tab === "planning" && client && (
             <QueryClientProvider client={queryClient}>
               <FinancialPlanningContent initialClientId={client.id} />
             </QueryClientProvider>
           )}
+          {tab === "networth"   && client && <NetWorthTabNew   clientId={client.id} />}
+          {tab === "retirement" && client && <RetirementTabNew clientId={client.id} />}
+          {tab === "insurance"  && client && <InsuranceTabNew  clientId={client.id} />}
+          {tab === "resp"       && client && <RespTabNew       clientId={client.id} />}
+          {tab === "debt"       && client && <DebtTabNew       clientId={client.id} />}
+          {tab === "dashboard"  && client && <DashboardTab     clientId={client.id} />}
         </div>
       </div>
     </div>

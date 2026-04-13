@@ -85,8 +85,10 @@ export const netWorthEntries = pgTable("net_worth_entries", {
   type:      text("type").notNull(),
   category:  text("category").notNull(),
   name:      text("name").notNull(),
+  owner:     text("owner").default("primary"),   // "primary" | "spouse"
   value:     numeric("value", { precision: 14, scale: 2 }).notNull(),
   notes:     text("notes"),
+  metadata:  jsonb("metadata"),   // category-specific extra fields
   createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
 });
 export type NetWorthEntry = typeof netWorthEntries.$inferSelect;

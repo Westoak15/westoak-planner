@@ -1431,7 +1431,7 @@ export default function App() {
               <FinancialPlanningContent initialClientId={client.id} />
             </QueryClientProvider>
           )}
-          {tab === "networth"   && client && <NetWorthTabNew   clientId={client.id} />}
+          {tab === "networth"   && client && <NetWorthTabNew   clientId={client.id} client={client} />}
           {tab === "retirement" && client && <RetirementTabNew clientId={client.id} />}
           {tab === "insurance"  && client && <InsuranceTabNew  clientId={client.id} />}
           {tab === "resp"       && client && <RespTabNew       clientId={client.id} />}

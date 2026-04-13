@@ -47,18 +47,71 @@ function InlineSelect({ value, onChange, options }: { value: string; onChange: (
 }
 
 const PROVINCES = ["AB","BC","MB","NB","NL","NS","NT","NU","ON","PE","QC","SK","YT"];
-const NW_ASSET_CATS = ["RRSP","TFSA","Non-Registered","Real Estate","Business","Pension","Cash/Bank","Other Asset"];
+const NW_ASSET_CATS = ["RRSP","TFSA","Non-Registered","Real Estate","Business","Pension","Cash/Bank","ESU","RSU","Other Asset"];
 const NW_LIAB_CATS  = ["Mortgage","HELOC","Car Loan","Credit Card","Student Loan","Line of Credit","Other Liability"];
 const DEBT_TYPES    = ["mortgage","heloc","car_loan","credit_card","student_loan","line_of_credit","other"];
+const PENSION_TYPES = ["DBPP","DCPP","Self-Directed","Matching Contributions"];
 
 // ── NET WORTH ─────────────────────────────────────────────────────────────────
-interface NWEntry { id: number; type: string; category: string; name: string; value: string; notes: string | null; }
-type NWDraft = { type: "asset"|"liability"; category: string; name: string; value: string; notes: string };
+interface NWEntry { id: number; type: string; category: string; name: string; owner: string; value: string; notes: string | null; metadata: any; }
+type NWDraft = {
+  type: "asset"|"liability"; category: string; name: string; owner: string; value: string; notes: string;
+  // RRSP extras
+  isSpousal: boolean; rrspContributor: string;
+  // Pension extras
+  pensionType: string; matchPct: string;
+};
 
-export function NetWorthTab({ clientId }: { clientId: number }) {
+function emptyDraft(type: "asset"|"liability"): NWDraft {
+  return { type, category: type === "asset" ? "RRSP" : "Mortgage", name: "", owner: "primary", value: "", notes: "", isSpousal: false, rrspContributor: "", pensionType: "DBPP", matchPct: "" };
+}
+
+// Conditional extra fields based on category
+function ExtraFields({ draft, onChange, spouseName }: { draft: NWDraft; onChange: (k: keyof NWDraft, v: any) => void; spouseName: string }) {
+  if (draft.category === "RRSP") {
+    return (
+      <div className="flex items-center gap-3 mt-1">
+        <label className="flex items-center gap-1.5 text-xs text-gray-600 cursor-pointer">
+          <input type="checkbox" checked={draft.isSpousal} onChange={e => onChange("isSpousal", e.target.checked)}
+            className="w-3.5 h-3.5 rounded border-gray-300" />
+          Spousal RRSP
+        </label>
+        {draft.isSpousal && (
+          <div className="flex items-center gap-1.5">
+            <span className="text-xs text-gray-500">Contributor:</span>
+            <InlineInput value={draft.rrspContributor} onChange={v => onChange("rrspContributor", v)} placeholder="Contributor name" className="w-36" />
+          </div>
+        )}
+      </div>
+    );
+  }
+  if (draft.category === "Pension") {
+    return (
+      <div className="flex items-center gap-3 mt-1">
+        <div className="flex items-center gap-1.5">
+          <span className="text-xs text-gray-500">Type:</span>
+          <InlineSelect value={draft.pensionType} onChange={v => onChange("pensionType", v)} options={PENSION_TYPES} />
+        </div>
+        {draft.pensionType === "Matching Contributions" && (
+          <div className="flex items-center gap-1.5">
+            <span className="text-xs text-gray-500">Match up to:</span>
+            <InlineInput value={draft.matchPct} onChange={v => onChange("matchPct", v)} placeholder="e.g. 4%" className="w-20" />
+          </div>
+        )}
+      </div>
+    );
+  }
+  return null;
+}
+
+export function NetWorthTab({ clientId, client }: { clientId: number; client?: { firstName: string; lastName: string; spouseFirstName?: string | null; spouseLastName?: string | null } }) {
   const [entries, setEntries] = useState<NWEntry[]>([]);
   const [drafts, setDrafts]   = useState<NWDraft[]>([]);
   const [saving, setSaving]   = useState(false);
+
+  const spouseName = client?.spouseFirstName ? `${client.spouseFirstName} ${client.spouseLastName ?? ""}`.trim() : "";
+  const primaryName = client ? `${client.firstName} ${client.lastName}` : "Primary";
+  const ownerOptions = spouseName ? [primaryName, spouseName] : [primaryName];
 
   const load = () => api.get<NWEntry[]>(`/api/clients/${clientId}/net-worth`).then(setEntries);
   useEffect(() => { load(); }, [clientId]);
@@ -66,105 +119,159 @@ export function NetWorthTab({ clientId }: { clientId: number }) {
   const assets = entries.filter(e => e.type === "asset");
   const liabs  = entries.filter(e => e.type === "liability");
   const totalA = assets.reduce((s, e) => s + Number(e.value), 0);
-  const totalL = liabs.reduce((s,  e) => s + Number(e.value), 0);
+  const totalL = liabs.reduce((s, e) => s + Number(e.value), 0);
 
-  function addDraft(type: "asset"|"liability") {
-    setDrafts(d => [...d, { type, category: type === "asset" ? "RRSP" : "Mortgage", name: "", value: "", notes: "" }]);
-  }
-  function updateDraft(i: number, k: keyof NWDraft, v: string) {
-    setDrafts(d => d.map((x, idx) => idx === i ? { ...x, [k]: v } : x));
-  }
-  function removeDraft(i: number) {
-    setDrafts(d => d.filter((_, idx) => idx !== i));
-  }
+  function addDraft(type: "asset"|"liability") { setDrafts(d => [...d, emptyDraft(type)]); }
+  function updateDraft(i: number, k: keyof NWDraft, v: any) { setDrafts(d => d.map((x, idx) => idx === i ? { ...x, [k]: v } : x)); }
+  function removeDraft(i: number) { setDrafts(d => d.filter((_, idx) => idx !== i)); }
 
   async function saveAll() {
-    const valid = drafts.filter(d => d.name && d.value);
+    const valid = drafts.filter(d => d.value);
     if (!valid.length) return;
     setSaving(true);
     try {
-      await Promise.all(valid.map(d => api.post(`/api/clients/${clientId}/net-worth`, d)));
-      setDrafts([]);
-      await load();
+      await Promise.all(valid.map(d => {
+        // Build metadata from extra fields
+        const metadata: any = {};
+        if (d.category === "RRSP" && d.isSpousal) { metadata.spousal = true; metadata.contributor = d.rrspContributor; }
+        if (d.category === "Pension") { metadata.pensionType = d.pensionType; if (d.matchPct) metadata.matchPct = d.matchPct; }
+        return api.post(`/api/clients/${clientId}/net-worth`, {
+          type: d.type, category: d.category, name: d.name || d.category,
+          owner: d.owner === primaryName ? "primary" : "spouse",
+          value: d.value, notes: d.notes || null, metadata: Object.keys(metadata).length ? metadata : null,
+        });
+      }));
+      setDrafts([]); await load();
     } finally { setSaving(false); }
   }
 
   async function del(id: number) {
     if (!confirm("Delete this entry?")) return;
-    await api.delete(`/api/net-worth/${id}`);
-    await load();
+    await api.delete(`/api/net-worth/${id}`); await load();
+  }
+
+  function ownerLabel(entry: NWEntry) {
+    return entry.owner === "spouse" ? (spouseName || "Spouse") : primaryName;
+  }
+
+  function metaBadge(entry: NWEntry) {
+    const m = entry.metadata as any;
+    if (!m) return null;
+    if (entry.category === "RRSP" && m.spousal) return <span className="text-[10px] bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded-full">Spousal · {m.contributor}</span>;
+    if (entry.category === "Pension" && m.pensionType) return <span className="text-[10px] bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-full">{m.pensionType}{m.matchPct ? ` · ${m.matchPct}` : ""}</span>;
+    return null;
   }
 
   return (
     <div className="p-6 max-w-5xl mx-auto">
       <SummaryBar items={[
-        { label: "Total Assets",     value: fmt$(totalA),          color: "text-emerald-600", bg: "bg-emerald-50" },
-        { label: "Total Liabilities",value: fmt$(totalL),          color: "text-red-500",     bg: "bg-red-50" },
-        { label: "Net Worth",        value: fmt$(totalA - totalL), color: totalA - totalL >= 0 ? "text-blue-600" : "text-red-500", bg: totalA - totalL >= 0 ? "bg-blue-50" : "bg-red-50" },
+        { label: "Total Assets",      value: fmt$(totalA),          color: "text-emerald-600", bg: "bg-emerald-50" },
+        { label: "Total Liabilities", value: fmt$(totalL),          color: "text-red-500",     bg: "bg-red-50" },
+        { label: "Net Worth",         value: fmt$(totalA - totalL), color: totalA - totalL >= 0 ? "text-blue-600" : "text-red-500", bg: totalA - totalL >= 0 ? "bg-blue-50" : "bg-red-50" },
       ]} />
 
-      <div className="space-y-5">
-        {(["asset","liability"] as const).map(type => {
-          const rows = type === "asset" ? assets : liabs;
-          const total = type === "asset" ? totalA : totalL;
-          const draftRows = drafts.filter(d => d.type === type);
-          const cats = type === "asset" ? NW_ASSET_CATS : NW_LIAB_CATS;
-          return (
-            <Card key={type}>
-              <div className="p-4 border-b border-gray-100 flex items-center justify-between">
-                <div>
-                  <h3 className="font-bold text-gray-800">{type === "asset" ? "Assets" : "Liabilities"}</h3>
-                  <p className={`text-lg font-bold ${type === "asset" ? "text-emerald-600" : "text-red-500"}`}>{fmt$(total)}</p>
-                </div>
-                <button onClick={() => addDraft(type)}
-                  className="flex items-center gap-1.5 text-sm font-semibold text-white bg-[#0c1e3a] hover:bg-[#0e2a4a] px-3 py-1.5 rounded-lg">
-                  <Plus className="w-3.5 h-3.5" /> Add {type === "asset" ? "Asset" : "Liability"}
-                </button>
+      {/* Assets */}
+      {(["asset","liability"] as const).map(type => {
+        const rows = type === "asset" ? assets : liabs;
+        const total = type === "asset" ? totalA : totalL;
+        const cats = type === "asset" ? NW_ASSET_CATS : NW_LIAB_CATS;
+        const draftRows = drafts.filter(d => d.type === type);
+        return (
+          <Card key={type} className="mb-5">
+            <div className="p-4 border-b border-gray-100 flex items-center justify-between">
+              <div>
+                <h3 className="font-bold text-gray-800">{type === "asset" ? "Assets" : "Liabilities"}</h3>
+                <p className={`text-lg font-bold ${type === "asset" ? "text-emerald-600" : "text-red-500"}`}>{fmt$(total)}</p>
               </div>
-              <table className="w-full text-sm">
-                <thead className="bg-gray-50 border-b border-gray-100">
-                  <tr><TH>Category</TH><TH>Name</TH><TH>Value ($)</TH><TH>Notes</TH><TH></TH></tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {rows.map(e => (
-                    <tr key={e.id} className="hover:bg-gray-50">
-                      <TD><span className="bg-gray-100 text-gray-600 text-xs px-2 py-0.5 rounded-full">{e.category}</span></TD>
-                      <TD><span className="font-medium text-gray-800">{e.name}</span></TD>
-                      <TD right><span className="font-semibold">{fmt$(e.value)}</span></TD>
-                      <TD><span className="text-gray-400 text-xs">{e.notes ?? ""}</span></TD>
-                      <TD><button onClick={() => del(e.id)} className="text-gray-300 hover:text-red-500"><Trash2 className="w-3.5 h-3.5" /></button></TD>
+              <button onClick={() => addDraft(type)} className="flex items-center gap-1.5 text-sm font-semibold text-white bg-[#0c1e3a] hover:bg-[#0e2a4a] px-3 py-1.5 rounded-lg">
+                <Plus className="w-3.5 h-3.5" /> Add {type === "asset" ? "Asset" : "Liability"}
+              </button>
+            </div>
+            <table className="w-full text-sm">
+              <thead className="bg-gray-50 border-b border-gray-100">
+                <tr>
+                  <TH>Owner</TH><TH>Category</TH><TH>Name / Description</TH>
+                  <TH>{type === "asset" ? "Value" : "Balance Owing"}</TH><TH>Notes</TH><TH></TH>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {rows.map(e => (
+                  <tr key={e.id} className="hover:bg-gray-50">
+                    <TD><span className="text-xs text-gray-500">{ownerLabel(e)}</span></TD>
+                    <TD>
+                      <div className="flex flex-col gap-1">
+                        <span className="bg-gray-100 text-gray-600 text-xs px-2 py-0.5 rounded-full w-fit">{e.category}</span>
+                        {metaBadge(e)}
+                      </div>
+                    </TD>
+                    <TD><span className="font-medium text-gray-800">{e.name}</span></TD>
+                    <TD right><span className="font-semibold">{fmt$(e.value)}</span></TD>
+                    <TD><span className="text-gray-400 text-xs">{e.notes ?? ""}</span></TD>
+                    <TD><button onClick={() => del(e.id)} className="text-gray-300 hover:text-red-500"><Trash2 className="w-3.5 h-3.5" /></button></TD>
+                  </tr>
+                ))}
+
+                {/* Draft rows */}
+                {draftRows.map(d => {
+                  const ri = drafts.indexOf(d);
+                  return (
+                    <tr key={ri} className="bg-blue-50/50 border-b border-blue-100">
+                      <td colSpan={6} className="px-3 py-2">
+                        <div className="grid grid-cols-5 gap-2 mb-1">
+                          {/* Owner */}
+                          <div>
+                            <label className="text-[10px] text-gray-400 uppercase font-semibold block mb-0.5">Owner</label>
+                            <select value={d.owner} onChange={e => updateDraft(ri, "owner", e.target.value)}
+                              className="border border-gray-200 rounded-lg px-2 py-1.5 text-sm w-full focus:outline-none focus:ring-2 focus:ring-cyan-500/20 bg-white">
+                              {ownerOptions.map(o => <option key={o} value={o}>{o}</option>)}
+                            </select>
+                          </div>
+                          {/* Category */}
+                          <div>
+                            <label className="text-[10px] text-gray-400 uppercase font-semibold block mb-0.5">Category</label>
+                            <InlineSelect value={d.category} onChange={v => updateDraft(ri, "category", v)} options={cats} />
+                          </div>
+                          {/* Name */}
+                          <div>
+                            <label className="text-[10px] text-gray-400 uppercase font-semibold block mb-0.5">Name / Description</label>
+                            <InlineInput value={d.name} onChange={v => updateDraft(ri, "name", v)} placeholder={d.category} />
+                          </div>
+                          {/* Value */}
+                          <div>
+                            <label className="text-[10px] text-gray-400 uppercase font-semibold block mb-0.5">{type === "asset" ? "Value ($)" : "Balance Owing ($)"}</label>
+                            <InlineInput value={d.value} onChange={v => updateDraft(ri, "value", v)} type="number" placeholder="0" />
+                          </div>
+                          {/* Notes + remove */}
+                          <div className="flex gap-1 items-end">
+                            <div className="flex-1">
+                              <label className="text-[10px] text-gray-400 uppercase font-semibold block mb-0.5">Notes</label>
+                              <InlineInput value={d.notes} onChange={v => updateDraft(ri, "notes", v)} placeholder="optional" />
+                            </div>
+                            <button onClick={() => removeDraft(ri)} className="text-gray-300 hover:text-red-500 mb-1.5"><X className="w-4 h-4" /></button>
+                          </div>
+                        </div>
+                        {/* Conditional extra fields */}
+                        <ExtraFields draft={d} onChange={(k, v) => updateDraft(ri, k, v)} spouseName={spouseName} />
+                      </td>
                     </tr>
-                  ))}
-                  {draftRows.map((d) => {
-                    const realIdx = drafts.indexOf(d);
-                    return (
-                      <tr key={realIdx} className="bg-blue-50/50">
-                        <TD><InlineSelect value={d.category} onChange={v => updateDraft(realIdx, "category", v)} options={cats} /></TD>
-                        <TD><InlineInput value={d.name} onChange={v => updateDraft(realIdx, "name", v)} placeholder="e.g. TD Bank RRSP" /></TD>
-                        <TD><InlineInput value={d.value} onChange={v => updateDraft(realIdx, "value", v)} type="number" placeholder="0" /></TD>
-                        <TD><InlineInput value={d.notes} onChange={v => updateDraft(realIdx, "notes", v)} placeholder="optional" /></TD>
-                        <TD><button onClick={() => removeDraft(realIdx)} className="text-gray-300 hover:text-red-500"><X className="w-3.5 h-3.5" /></button></TD>
-                      </tr>
-                    );
-                  })}
-                  {rows.length === 0 && draftRows.length === 0 && (
-                    <tr><td colSpan={5} className="px-4 py-6 text-center text-gray-400 text-sm">No {type}s yet — click Add to add one</td></tr>
-                  )}
-                </tbody>
-              </table>
-            </Card>
-          );
-        })}
-      </div>
+                  );
+                })}
+
+                {rows.length === 0 && draftRows.length === 0 && (
+                  <tr><td colSpan={6} className="px-4 py-6 text-center text-gray-400 text-sm">No {type}s yet — click Add to add one</td></tr>
+                )}
+              </tbody>
+            </table>
+          </Card>
+        );
+      })}
 
       {drafts.length > 0 && (
-        <div className="flex justify-end mt-4 gap-2">
-          <button onClick={() => setDrafts([])} className="text-sm text-gray-500 px-4 py-2 border border-gray-200 rounded-lg hover:bg-gray-50">
-            Discard All
-          </button>
+        <div className="flex justify-end gap-2 mt-2">
+          <button onClick={() => setDrafts([])} className="text-sm text-gray-500 px-4 py-2 border border-gray-200 rounded-lg hover:bg-gray-50">Discard All</button>
           <button onClick={saveAll} disabled={saving}
             className="flex items-center gap-1.5 bg-[#0c1e3a] hover:bg-[#0e2a4a] disabled:opacity-50 text-white text-sm font-semibold px-5 py-2 rounded-lg">
-            <Save className="w-3.5 h-3.5" /> {saving ? "Saving…" : `Save ${drafts.filter(d=>d.name&&d.value).length} Entries`}
+            <Save className="w-3.5 h-3.5" /> {saving ? "Saving…" : `Save ${drafts.filter(d=>d.value).length} Entries`}
           </button>
         </div>
       )}

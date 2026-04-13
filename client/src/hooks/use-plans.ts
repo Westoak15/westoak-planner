@@ -13,7 +13,7 @@ export function useClientPlans(clientId: number) {
     queryKey: [api.plans.list.path, clientId],
     queryFn: async () => {
       const url = buildUrl(api.plans.list.path, { clientId });
-      const res = await fetch(url, { credentials: "include" });
+      const res = await fetch(url, { headers: { Authorization: `Bearer ${localStorage.getItem("fp_token") ?? ""}`, "Content-Type": "application/json" } });
       if (!res.ok) throw new Error("Failed to fetch plans");
       return api.plans.list.responses[200].parse(await res.json());
     },
@@ -28,9 +28,9 @@ export function useCreatePlan() {
       const url = buildUrl(api.plans.create.path, { clientId });
       const res = await fetch(url, {
         method: api.plans.create.method,
-        headers: { "Content-Type": "application/json" },
+        headers: { Authorization: `Bearer ${localStorage.getItem("fp_token") ?? ""}`, "Content-Type": "application/json" },
         body: JSON.stringify(data),
-        credentials: "include",
+        ,
       });
       if (!res.ok) throw new Error("Failed to create plan");
       return api.plans.create.responses[201].parse(await res.json());
@@ -72,7 +72,7 @@ export function useNetWorthEntries(clientId: number) {
   return useQuery({
     queryKey: ["/api/clients/:clientId/net-worth", clientId],
     queryFn: async () => {
-      const res = await fetch(`/api/clients/${clientId}/net-worth`, { credentials: "include" });
+      const res = await fetch(`/api/clients/${clientId}/net-worth`, { headers: { Authorization: `Bearer ${localStorage.getItem("fp_token") ?? ""}`, "Content-Type": "application/json" } });
       if (!res.ok) throw new Error("Failed to fetch net worth entries");
       return res.json();
     },
@@ -124,7 +124,7 @@ export function useRetirementProjections(clientId: number) {
   return useQuery({
     queryKey: ["/api/clients/:clientId/retirement-projections", clientId],
     queryFn: async () => {
-      const res = await fetch(`/api/clients/${clientId}/retirement-projections`, { credentials: "include" });
+      const res = await fetch(`/api/clients/${clientId}/retirement-projections`, { headers: { Authorization: `Bearer ${localStorage.getItem("fp_token") ?? ""}`, "Content-Type": "application/json" } });
       if (!res.ok) throw new Error("Failed to fetch retirement projections");
       return res.json();
     },
@@ -163,7 +163,7 @@ export function useInsuranceAnalyses(clientId: number) {
   return useQuery({
     queryKey: ["/api/clients/:clientId/insurance-analyses", clientId],
     queryFn: async () => {
-      const res = await fetch(`/api/clients/${clientId}/insurance-analyses`, { credentials: "include" });
+      const res = await fetch(`/api/clients/${clientId}/insurance-analyses`, { headers: { Authorization: `Bearer ${localStorage.getItem("fp_token") ?? ""}`, "Content-Type": "application/json" } });
       if (!res.ok) throw new Error("Failed to fetch insurance analyses");
       return res.json();
     },
@@ -215,7 +215,7 @@ export function useEducationSavings(clientId: number) {
   return useQuery({
     queryKey: ["/api/clients/:clientId/education-savings", clientId],
     queryFn: async () => {
-      const res = await fetch(`/api/clients/${clientId}/education-savings`, { credentials: "include" });
+      const res = await fetch(`/api/clients/${clientId}/education-savings`, { headers: { Authorization: `Bearer ${localStorage.getItem("fp_token") ?? ""}`, "Content-Type": "application/json" } });
       if (!res.ok) throw new Error("Failed to fetch education savings");
       return res.json();
     },
@@ -267,7 +267,7 @@ export function useDebtEntries(clientId: number) {
   return useQuery({
     queryKey: ["/api/clients/:clientId/debt-entries", clientId],
     queryFn: async () => {
-      const res = await fetch(`/api/clients/${clientId}/debt-entries`, { credentials: "include" });
+      const res = await fetch(`/api/clients/${clientId}/debt-entries`, { headers: { Authorization: `Bearer ${localStorage.getItem("fp_token") ?? ""}`, "Content-Type": "application/json" } });
       if (!res.ok) throw new Error("Failed to fetch debt entries");
       return res.json();
     },
@@ -319,7 +319,7 @@ export function useTaxPlanningNotes(clientId: number) {
   return useQuery({
     queryKey: ["/api/clients/:clientId/tax-planning-notes", clientId],
     queryFn: async () => {
-      const res = await fetch(`/api/clients/${clientId}/tax-planning-notes`, { credentials: "include" });
+      const res = await fetch(`/api/clients/${clientId}/tax-planning-notes`, { headers: { Authorization: `Bearer ${localStorage.getItem("fp_token") ?? ""}`, "Content-Type": "application/json" } });
       if (!res.ok) throw new Error("Failed to fetch tax planning notes");
       return res.json();
     },
@@ -523,7 +523,7 @@ export function useEstatePlanningNotes(clientId: number) {
   return useQuery({
     queryKey: ["/api/clients/:clientId/estate-planning-notes", clientId],
     queryFn: async () => {
-      const res = await fetch(`/api/clients/${clientId}/estate-planning-notes`, { credentials: "include" });
+      const res = await fetch(`/api/clients/${clientId}/estate-planning-notes`, { headers: { Authorization: `Bearer ${localStorage.getItem("fp_token") ?? ""}`, "Content-Type": "application/json" } });
       if (!res.ok) throw new Error("Failed to fetch estate planning notes");
       return res.json();
     },
@@ -575,7 +575,7 @@ export function useAiRecommendations(clientId: number) {
   return useQuery({
     queryKey: ["/api/clients/:clientId/ai-recommendations", clientId],
     queryFn: async () => {
-      const res = await fetch(`/api/clients/${clientId}/ai-recommendations`, { credentials: "include" });
+      const res = await fetch(`/api/clients/${clientId}/ai-recommendations`, { headers: { Authorization: `Bearer ${localStorage.getItem("fp_token") ?? ""}`, "Content-Type": "application/json" } });
       if (!res.ok) throw new Error("Failed to fetch AI recommendations");
       return res.json();
     },
@@ -627,7 +627,7 @@ export function useFinancialPlanningOverview(clientId: number) {
   return useQuery({
     queryKey: ["/api/clients/:clientId/financial-planning-overview", clientId],
     queryFn: async () => {
-      const res = await fetch(`/api/clients/${clientId}/financial-planning-overview`, { credentials: "include" });
+      const res = await fetch(`/api/clients/${clientId}/financial-planning-overview`, { headers: { Authorization: `Bearer ${localStorage.getItem("fp_token") ?? ""}`, "Content-Type": "application/json" } });
       if (!res.ok) throw new Error("Failed to fetch overview");
       return res.json();
     },
@@ -648,7 +648,7 @@ export function useAvailableReports(clientId: number) {
   }>({
     queryKey: ["/api/reports/:clientId/available", clientId],
     queryFn: async () => {
-      const res = await fetch(`/api/reports/${clientId}/available`, { credentials: "include" });
+      const res = await fetch(`/api/reports/${clientId}/available`, { headers: { Authorization: `Bearer ${localStorage.getItem("fp_token") ?? ""}`, "Content-Type": "application/json" } });
       if (!res.ok) throw new Error("Failed to check available reports");
       return res.json();
     },
@@ -660,7 +660,7 @@ export function useFinancialPlanningReport(clientId: number | null) {
   return useQuery({
     queryKey: ["/api/clients/:clientId/financial-planning-report", clientId],
     queryFn: async () => {
-      const res = await fetch(`/api/clients/${clientId}/financial-planning-report`, { credentials: "include" });
+      const res = await fetch(`/api/clients/${clientId}/financial-planning-report`, { headers: { Authorization: `Bearer ${localStorage.getItem("fp_token") ?? ""}`, "Content-Type": "application/json" } });
       if (!res.ok) throw new Error("Failed to fetch report");
       return res.json();
     },
@@ -674,7 +674,7 @@ export function usePlanStaleFlags(planId: number | null) {
   return useQuery<Array<{ id: number; planId: number; module: string; triggeredBy: string; resolvedAt: string | null; createdAt: string }>>({
     queryKey: ["/api/plans/:planId/stale-flags", planId],
     queryFn: async () => {
-      const res = await fetch(`/api/plans/${planId}/stale-flags`, { credentials: "include" });
+      const res = await fetch(`/api/plans/${planId}/stale-flags`, { headers: { Authorization: `Bearer ${localStorage.getItem("fp_token") ?? ""}`, "Content-Type": "application/json" } });
       if (!res.ok) throw new Error("Failed to fetch stale flags");
       return res.json();
     },
@@ -687,7 +687,7 @@ export function useSimulationResults(planId: number | null) {
   return useQuery<SimulationResult[]>({
     queryKey: ["/api/plans/:planId/simulation-results", planId],
     queryFn: async () => {
-      const res = await fetch(`/api/plans/${planId}/simulation-results`, { credentials: "include" });
+      const res = await fetch(`/api/plans/${planId}/simulation-results`, { headers: { Authorization: `Bearer ${localStorage.getItem("fp_token") ?? ""}`, "Content-Type": "application/json" } });
       if (!res.ok) throw new Error("Failed to fetch simulation results");
       return res.json();
     },
@@ -699,7 +699,7 @@ export function useScenarioComparison(planId: number | null) {
   return useQuery<Record<string, ScenarioComparisonEntry>>({
     queryKey: ["/api/plans/:planId/scenario-comparison", planId],
     queryFn: async () => {
-      const res = await fetch(`/api/plans/${planId}/scenario-comparison`, { credentials: "include" });
+      const res = await fetch(`/api/plans/${planId}/scenario-comparison`, { headers: { Authorization: `Bearer ${localStorage.getItem("fp_token") ?? ""}`, "Content-Type": "application/json" } });
       if (!res.ok) throw new Error("Failed to fetch scenario comparison");
       return res.json();
     },
@@ -711,7 +711,7 @@ export function usePlanAssumptions(planId: number | null) {
   return useQuery<PlanAssumption[]>({
     queryKey: ["/api/plans/:planId/assumptions", planId],
     queryFn: async () => {
-      const res = await fetch(`/api/plans/${planId}/assumptions`, { credentials: "include" });
+      const res = await fetch(`/api/plans/${planId}/assumptions`, { headers: { Authorization: `Bearer ${localStorage.getItem("fp_token") ?? ""}`, "Content-Type": "application/json" } });
       if (!res.ok) throw new Error("Failed to fetch assumptions");
       return res.json();
     },
@@ -766,7 +766,7 @@ export function usePlanActionItems(planId: number | null) {
   return useQuery<PlanActionItem[]>({
     queryKey: ["/api/plans/:planId/action-items", planId],
     queryFn: async () => {
-      const res = await fetch(`/api/plans/${planId}/action-items`, { credentials: "include" });
+      const res = await fetch(`/api/plans/${planId}/action-items`, { headers: { Authorization: `Bearer ${localStorage.getItem("fp_token") ?? ""}`, "Content-Type": "application/json" } });
       if (!res.ok) throw new Error("Failed to fetch action items");
       return res.json();
     },
@@ -816,7 +816,7 @@ export function usePlanSnapshots(planId: number | null) {
   return useQuery<PlanSnapshot[]>({
     queryKey: ["/api/plans/:planId/snapshots", planId],
     queryFn: async () => {
-      const res = await fetch(`/api/plans/${planId}/snapshots`, { credentials: "include" });
+      const res = await fetch(`/api/plans/${planId}/snapshots`, { headers: { Authorization: `Bearer ${localStorage.getItem("fp_token") ?? ""}`, "Content-Type": "application/json" } });
       if (!res.ok) throw new Error("Failed to fetch snapshots");
       return res.json();
     },
@@ -841,7 +841,7 @@ export function useSnapshotComparison(planId: number | null) {
   return useQuery<{ current: Record<string, number>; previous: Record<string, number>; deltas: Record<string, number> } | null>({
     queryKey: ["/api/plans/:planId/snapshot-comparison", planId],
     queryFn: async () => {
-      const res = await fetch(`/api/plans/${planId}/snapshot-comparison`, { credentials: "include" });
+      const res = await fetch(`/api/plans/${planId}/snapshot-comparison`, { headers: { Authorization: `Bearer ${localStorage.getItem("fp_token") ?? ""}`, "Content-Type": "application/json" } });
       if (!res.ok) return null;
       return res.json();
     },

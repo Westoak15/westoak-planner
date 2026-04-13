@@ -2,6 +2,9 @@ import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "../lib/auth";
 import { api } from "../lib/api";
 import { Sidebar, type Tab } from "../components/Sidebar";
+import { FinancialPlanningContent } from "./FinancialPlanning";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { queryClient } from "../lib/queryClient";
 import { MonteCarloResults } from "../components/MonteCarloResults";
 import { fmt$, fmtPct, initials, avatarBg, cn } from "../lib/utils";
 import {
@@ -1360,7 +1363,7 @@ export default function App() {
   function selectPlan(p: Plan) {
     setPlan(p);
     setShowClientDetail(false);
-    setTab("dashboard");
+    setTab("planning");
   }
 
   function backToClients() {
@@ -1422,15 +1425,11 @@ export default function App() {
               </button>
             </div>
           )}
-          {tab === "dashboard"  && client && <DashboardTab  clientId={client.id} />}
-          {tab === "networth"   && client && <NetWorthTab   clientId={client.id} />}
-          {tab === "retirement" && client && <RetirementTab clientId={client.id} />}
-          {tab === "insurance"  && client && <InsuranceTab  clientId={client.id} />}
-          {tab === "resp"       && client && <RespTab       clientId={client.id} />}
-          {tab === "debt"       && client && <DebtTab       clientId={client.id} />}
-          {tab === "tax"        && client && <TaxTab        clientId={client.id} />}
-          {tab === "estate"     && client && <EstateTab     clientId={client.id} />}
-          {tab === "ai"         && client && <AiTab         clientId={client.id} />}
+          {tab !== "clients" && client && (
+            <QueryClientProvider client={queryClient}>
+              <FinancialPlanningContent initialClientId={client.id} />
+            </QueryClientProvider>
+          )}
         </div>
       </div>
     </div>

@@ -1,13 +1,9 @@
 import {
-  Users, LayoutDashboard, Scale, PiggyBank,
-  Shield, GraduationCap, CreditCard, Receipt, ScrollText, Brain
+  Users, LayoutDashboard
 } from "lucide-react";
 import { cn } from "../lib/utils";
 
-export type Tab =
-  | "clients" | "dashboard"
-  | "networth" | "retirement" | "insurance"
-  | "resp" | "debt" | "tax" | "estate" | "ai";
+export type Tab = "clients" | "planning";
 
 interface Props {
   activeTab: Tab;
@@ -16,16 +12,8 @@ interface Props {
 }
 
 const TABS: { key: Tab; label: string; icon: any; dividerBefore?: boolean }[] = [
-  { key: "clients",    label: "Clients",     icon: Users },
-  { key: "dashboard",  label: "Dashboard",   icon: LayoutDashboard, dividerBefore: true },
-  { key: "networth",   label: "Net Worth",   icon: Scale },
-  { key: "retirement", label: "Retirement",  icon: PiggyBank },
-  { key: "insurance",  label: "Insurance",   icon: Shield },
-  { key: "resp",       label: "RESP",        icon: GraduationCap },
-  { key: "debt",       label: "Debt",        icon: CreditCard },
-  { key: "tax",        label: "Tax",         icon: Receipt },
-  { key: "estate",     label: "Estate",      icon: ScrollText },
-  { key: "ai",         label: "AI Insights", icon: Brain },
+  { key: "clients",  label: "Clients",          icon: Users },
+  { key: "planning", label: "Financial Planning", icon: LayoutDashboard, dividerBefore: true },
 ];
 
 const PLAN_TABS: Tab[] = ["dashboard","networth","retirement","insurance","resp","debt","tax","estate","ai"];

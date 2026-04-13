@@ -230,3 +230,9 @@ export const aiRecommendations = pgTable("ai_recommendations", {
   updatedAt:   timestamp("updated_at", { mode: "date" }).defaultNow().notNull(),
 });
 export type AiRecommendation = typeof aiRecommendations.$inferSelect;
+
+// ── Type aliases expected by BrokersEdge FP components ────────────────────────
+export type InsertFinancialPlan = typeof plans.$inferInsert;
+export type InsertEducationSaving = typeof educationPlans.$inferInsert;
+export type InsertTaxPlanningNote = typeof taxNotes.$inferInsert;
+export type InsertEstatePlanningNote = typeof estateNotes.$inferInsert;

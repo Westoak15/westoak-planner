@@ -1,4 +1,4 @@
-const BASE = (import.meta as any).env?.VITE_API_URL ?? "";
+const BASE = "";
 
 export const token = {
   get: () => localStorage.getItem("fp_token"),

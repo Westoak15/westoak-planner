@@ -31,7 +31,7 @@ r.post("/", async (req: AuthRequest, res: Response) => {
 r.patch("/:id", async (req: AuthRequest, res: Response) => {
   const [ex] = await db.select({ id: clients.id }).from(clients).where(and(eq(clients.id, +req.params.id), eq(clients.userId, req.userId!)));
   if (!ex) return res.status(404).json({ message: "Not found" });
-  const [u] = await db.update(clients).set({ ...req.body, updatedAt: sql`NOW()` }).where(eq(clients.id, +req.params.id)).returning();
+  const [u] = await db.update(clients).set({ ...req.body, updatedAt: new Date() }).where(eq(clients.id, +req.params.id)).returning();
   res.json(u);
 });
 

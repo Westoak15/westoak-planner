@@ -75,7 +75,7 @@ r.post("/change-password", isAuthenticated, async (req: AuthRequest, res: Respon
       return res.status(401).json({ message: "Current password is incorrect" });
 
     const hash = await hashPassword(newPassword);
-    await db.update(users).set({ passwordHash: hash, updatedAt: sql`NOW()` }).where(eq(users.id, req.userId!));
+    await db.update(users).set({ passwordHash: hash, updatedAt: new Date() }).where(eq(users.id, req.userId!));
     res.json({ message: "Password changed successfully" });
   } catch (e: any) {
     if (e instanceof z.ZodError) return res.status(400).json({ message: "Validation error", errors: e.errors });
@@ -117,7 +117,7 @@ r.post("/forgot/reset", async (req: Request, res: Response) => {
       return res.status(401).json({ message: "Security answer is incorrect." });
 
     const hash = await hashPassword(newPassword);
-    await db.update(users).set({ passwordHash: hash, updatedAt: sql`NOW()` }).where(eq(users.id, u.id));
+    await db.update(users).set({ passwordHash: hash, updatedAt: new Date() }).where(eq(users.id, u.id));
     res.json({ message: "Password reset successfully. You can now sign in." });
   } catch (e: any) {
     if (e instanceof z.ZodError) return res.status(400).json({ message: e.errors[0]?.message ?? "Validation error" });

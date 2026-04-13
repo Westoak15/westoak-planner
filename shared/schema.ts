@@ -12,8 +12,8 @@ export const users = pgTable("users", {
   firmName:             text("firm_name"),
   securityQuestion:     text("security_question"),
   securityAnswerHash:   text("security_answer_hash"),
-  createdAt:    timestamp("created_at").defaultNow().notNull(),
-  updatedAt:    timestamp("updated_at").defaultNow().notNull(),
+  createdAt:    timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+  updatedAt:    timestamp("updated_at", { mode: "date" }).defaultNow().notNull(),
 });
 export const insertUserSchema = z.object({
   email:     z.string().email(),
@@ -53,8 +53,8 @@ export const clients = pgTable("clients", {
   desiredRetirementIncome: decimal("desired_retirement_income", { precision: 15, scale: 2 }),
   // Notes
   notes:                   text("notes"),
-  createdAt:               timestamp("created_at").defaultNow().notNull(),
-  updatedAt:               timestamp("updated_at").defaultNow().notNull(),
+  createdAt:               timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+  updatedAt:               timestamp("updated_at", { mode: "date" }).defaultNow().notNull(),
 });
 export const insertClientSchema = createInsertSchema(clients).omit({ id: true, createdAt: true, updatedAt: true });
 export type Client = typeof clients.$inferSelect;
@@ -67,8 +67,8 @@ export const plans = pgTable("plans", {
   name:          text("name").notNull().default("Financial Plan"),
   status:        text("status").notNull().default("active"),
   planningNotes: text("planning_notes"),
-  createdAt:     timestamp("created_at").defaultNow().notNull(),
-  updatedAt:     timestamp("updated_at").defaultNow().notNull(),
+  createdAt:     timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+  updatedAt:     timestamp("updated_at", { mode: "date" }).defaultNow().notNull(),
 });
 export type Plan = typeof plans.$inferSelect;
 
@@ -82,8 +82,8 @@ export const netWorthEntries = pgTable("net_worth_entries", {
   name:      text("name").notNull(),
   value:     decimal("value", { precision: 15, scale: 2 }).notNull(),
   notes:     text("notes"),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { mode: "date" }).defaultNow().notNull(),
 });
 export const insertNetWorthSchema = createInsertSchema(netWorthEntries).omit({ id: true, createdAt: true, updatedAt: true });
 export type NetWorthEntry = typeof netWorthEntries.$inferSelect;
@@ -113,8 +113,8 @@ export const retirementProjections = pgTable("retirement_projections", {
   projectionData:     jsonb("projection_data"),
   monteCarloResults:  jsonb("monte_carlo_results"),
   notes:              text("notes"),
-  createdAt:          timestamp("created_at").defaultNow().notNull(),
-  updatedAt:          timestamp("updated_at").defaultNow().notNull(),
+  createdAt:          timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+  updatedAt:          timestamp("updated_at", { mode: "date" }).defaultNow().notNull(),
 });
 export const insertRetirementSchema = createInsertSchema(retirementProjections).omit({ id: true, createdAt: true, updatedAt: true });
 export type RetirementProjection = typeof retirementProjections.$inferSelect;
@@ -139,8 +139,8 @@ export const insuranceAnalyses = pgTable("insurance_analyses", {
   criticalIllnessGap:         decimal("critical_illness_gap", { precision: 15, scale: 2 }),
   worksheetData:              jsonb("worksheet_data"),
   notes:                      text("notes"),
-  createdAt:                  timestamp("created_at").defaultNow().notNull(),
-  updatedAt:                  timestamp("updated_at").defaultNow().notNull(),
+  createdAt:                  timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+  updatedAt:                  timestamp("updated_at", { mode: "date" }).defaultNow().notNull(),
 });
 export const insertInsuranceSchema = createInsertSchema(insuranceAnalyses).omit({ id: true, createdAt: true, updatedAt: true });
 export type InsuranceAnalysis = typeof insuranceAnalyses.$inferSelect;
@@ -160,8 +160,8 @@ export const educationPlans = pgTable("education_plans", {
   cespGrant:           decimal("cesg_grant", { precision: 15, scale: 2 }),
   projectionData:      jsonb("projection_data"),
   notes:               text("notes"),
-  createdAt:           timestamp("created_at").defaultNow().notNull(),
-  updatedAt:           timestamp("updated_at").defaultNow().notNull(),
+  createdAt:           timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+  updatedAt:           timestamp("updated_at", { mode: "date" }).defaultNow().notNull(),
 });
 export const insertEducationSchema = createInsertSchema(educationPlans).omit({ id: true, createdAt: true, updatedAt: true });
 export type EducationPlan = typeof educationPlans.$inferSelect;
@@ -179,8 +179,8 @@ export const debtEntries = pgTable("debt_entries", {
   minimumPayment: decimal("minimum_payment", { precision: 10, scale: 2 }),
   payoffStrategy: text("payoff_strategy").default("avalanche"),
   notes:          text("notes"),
-  createdAt:      timestamp("created_at").defaultNow().notNull(),
-  updatedAt:      timestamp("updated_at").defaultNow().notNull(),
+  createdAt:      timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+  updatedAt:      timestamp("updated_at", { mode: "date" }).defaultNow().notNull(),
 });
 export const insertDebtSchema = createInsertSchema(debtEntries).omit({ id: true, createdAt: true, updatedAt: true });
 export type DebtEntry = typeof debtEntries.$inferSelect;
@@ -194,8 +194,8 @@ export const taxNotes = pgTable("tax_notes", {
   subTab:    text("sub_tab").notNull().default("notes"),
   content:   text("content"),
   data:      jsonb("data"),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { mode: "date" }).defaultNow().notNull(),
 });
 export type TaxNote = typeof taxNotes.$inferSelect;
 
@@ -209,8 +209,8 @@ export const estateNotes = pgTable("estate_notes", {
   hasPoa:         boolean("has_poa").default(false),
   hasHcDirective: boolean("has_hc_directive").default(false),
   data:           jsonb("data"),
-  createdAt:      timestamp("created_at").defaultNow().notNull(),
-  updatedAt:      timestamp("updated_at").defaultNow().notNull(),
+  createdAt:      timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+  updatedAt:      timestamp("updated_at", { mode: "date" }).defaultNow().notNull(),
 });
 export type EstateNote = typeof estateNotes.$inferSelect;
 
@@ -224,7 +224,7 @@ export const aiRecommendations = pgTable("ai_recommendations", {
   title:       text("title").notNull(),
   description: text("description"),
   status:      text("status").notNull().default("pending"),
-  createdAt:   timestamp("created_at").defaultNow().notNull(),
-  updatedAt:   timestamp("updated_at").defaultNow().notNull(),
+  createdAt:   timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+  updatedAt:   timestamp("updated_at", { mode: "date" }).defaultNow().notNull(),
 });
 export type AiRecommendation = typeof aiRecommendations.$inferSelect;

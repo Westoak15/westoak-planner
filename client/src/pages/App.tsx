@@ -78,6 +78,31 @@ function Select({ label, value, onChange, options }: { label: string; value: str
   );
 }
 
+
+function DobInput({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
+  function handleChange(raw: string) {
+    // Strip everything except digits
+    const digits = raw.replace(/\D/g, "").slice(0, 8);
+    // Auto-insert dashes: YYYY-MM-DD
+    let formatted = digits;
+    if (digits.length > 4) formatted = digits.slice(0, 4) + "-" + digits.slice(4);
+    if (digits.length > 6) formatted = digits.slice(0, 4) + "-" + digits.slice(4, 6) + "-" + digits.slice(6);
+    onChange(formatted);
+  }
+  return (
+    <div>
+      <label className="block text-xs font-semibold text-gray-500 mb-1">{label}</label>
+      <input
+        value={value}
+        onChange={e => handleChange(e.target.value)}
+        placeholder="YYYY-MM-DD"
+        maxLength={10}
+        className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500"
+      />
+    </div>
+  );
+}
+
 function Textarea({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
   return (
     <div>
@@ -262,7 +287,7 @@ function ClientDetail({ client, onBack, onPlanSelect }: { client: Client; onBack
               <Input label="Last Name"   value={form.lastName ?? ""}  onChange={v => u("lastName", v)} />
               <Input label="Email" type="email" value={form.email ?? ""} onChange={v => u("email", v)} />
               <Input label="Phone"       value={form.phone ?? ""}     onChange={v => u("phone", v)} />
-              <Input label="Date of Birth" value={form.dateOfBirth ?? ""} onChange={v => u("dateOfBirth", v)} placeholder="YYYY-MM-DD" />
+              <DobInput label="Date of Birth" value={form.dateOfBirth ?? ""} onChange={v => u("dateOfBirth", v)} />
               <Select label="Province"   value={form.province ?? "ON"} onChange={v => u("province", v)} options={PROVINCES} />
               <Input label="Occupation"  value={form.occupation ?? ""} onChange={v => u("occupation", v)} />
               <Input label="Annual Income" type="number" value={form.annualIncome ?? ""} onChange={v => u("annualIncome", v)} />
@@ -293,7 +318,7 @@ function ClientDetail({ client, onBack, onPlanSelect }: { client: Client; onBack
             <div className="grid grid-cols-2 gap-3">
               <Input label="Spouse First Name" value={form.spouseFirstName ?? ""} onChange={v => u("spouseFirstName", v)} />
               <Input label="Spouse Last Name"  value={form.spouseLastName ?? ""}  onChange={v => u("spouseLastName", v)} />
-              <Input label="Spouse DOB"        value={form.spouseDateOfBirth ?? ""} onChange={v => u("spouseDateOfBirth", v)} placeholder="YYYY-MM-DD" />
+              <DobInput label="Spouse DOB" value={form.spouseDateOfBirth ?? ""} onChange={v => u("spouseDateOfBirth", v)} />
               <Input label="Spouse Occupation" value={form.spouseOccupation ?? ""} onChange={v => u("spouseOccupation", v)} />
               <Input label="Spouse Income" type="number" value={form.spouseAnnualIncome ?? ""} onChange={v => u("spouseAnnualIncome", v)} />
             </div>
@@ -836,7 +861,7 @@ function RespTab({ clientId }: { clientId: number }) {
           <h3 className="font-bold text-gray-800 mb-4">Add Child / RESP</h3>
           <div className="grid grid-cols-3 gap-3 mb-3">
             <Input label="Child's Name"  value={form.childName}  onChange={v => setForm(f=>({...f,childName:v}))} />
-            <Input label="Date of Birth" value={form.childDob}   onChange={v => setForm(f=>({...f,childDob:v}))}   placeholder="YYYY-MM-DD" />
+            <DobInput label="Date of Birth" value={form.childDob} onChange={v => setForm(f=>({...f,childDob:v}))} />
             <Input label="Current RESP Balance ($)" type="number" value={form.currentRespBalance} onChange={v => setForm(f=>({...f,currentRespBalance:v}))} />
           </div>
           <div className="grid grid-cols-3 gap-3 mb-3">

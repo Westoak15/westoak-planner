@@ -23,8 +23,8 @@ export default function Login() {
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
-          <div className="text-white font-black text-3xl tracking-tight">BROKERS<span className="text-cyan-400">EDGE</span></div>
-          <div className="text-white/40 text-sm mt-1">Financial Planning</div>
+          <div className="text-yellow-400 font-black text-2xl tracking-tight">Knights of Columbus</div>
+          <div className="text-white/60 text-sm mt-1">Financial Planning Suite</div>
         </div>
 
         <div className="bg-white rounded-2xl shadow-2xl p-8">

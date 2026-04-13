@@ -37,11 +37,13 @@ export function Sidebar({ activeTab, onTab, clientName }: Props) {
       background: "linear-gradient(180deg, #0c1e3a 0%, #0e2a4a 60%, #0a3556 100%)"
     }}>
       {/* Logo */}
-      <div className="py-4 flex flex-col items-center border-b border-white/10">
+      <div className="py-4 flex flex-col items-center border-b border-white/10 px-2">
         <div className="text-center leading-none">
-          <div className="text-white font-black text-[11px] tracking-tight">BROKERS</div>
-          <div className="text-cyan-400 font-black text-[11px] tracking-tight">EDGE</div>
-          <div className="text-white/30 text-[7px] tracking-widest mt-0.5">FP</div>
+          <div className="text-yellow-400 font-black text-[12px] tracking-tight leading-tight">Knights of</div>
+          <div className="text-yellow-400 font-black text-[12px] tracking-tight leading-tight">Columbus</div>
+          <div className="w-10 border-t border-white/20 mx-auto my-1.5"></div>
+          <div className="text-white/70 font-medium text-[9px] tracking-wide leading-tight">Financial Planning</div>
+          <div className="text-white/70 font-medium text-[9px] tracking-wide leading-tight">Suite</div>
         </div>
       </div>
 

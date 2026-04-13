@@ -12,7 +12,7 @@ import {
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
 // ─────────────────────────────────────────────────────────────────────────────
-interface Client { id: number; firstName: string; lastName: string; email: string | null; phone: string | null; dateOfBirth: string | null; province: string | null; occupation: string | null; employmentStatus: string | null; annualIncome: string | null; spouseFirstName: string | null; spouseLastName: string | null; spouseDateOfBirth: string | null; spouseOccupation: string | null; spouseAnnualIncome: string | null; dependants: any; retirementAge: number | null; desiredRetirementIncome: string | null; notes: string | null; updatedAt: string; }
+interface Client { id: number; firstName: string; lastName: string; email: string | null; phone: string | null; dateOfBirth: string | null; province: string | null; occupation: string | null; employmentStatus: string | null; annualIncome: string | null; spouseFirstName: string | null; spouseLastName: string | null; spouseDateOfBirth: string | null; spouseOccupation: string | null; spouseAnnualIncome: string | null; spouseRetirementAge: number | null; spouseDesiredRetirementIncome: string | null; dependants: any; retirementAge: number | null; desiredRetirementIncome: string | null; notes: string | null; updatedAt: string; }
 interface Plan { id: number; name: string; status: string; createdAt: string; }
 interface NWEntry { id: number; type: string; category: string; name: string; value: string; notes: string | null; }
 interface RetirementProj { id: number; label: string; currentAge: number | null; retirementAge: number | null; currentRrsp: string | null; currentTfsa: string | null; currentNonReg: string | null; annualContribution: string | null; expectedReturn: string | null; desiredIncome: string | null; cppStartAge: number | null; oasStartAge: number | null; cppMonthly: string | null; oasMonthly: string | null; projectedBalance: string | null; successRate: string | null; notes: string | null; }
@@ -321,13 +321,17 @@ function ClientDetail({ client, onBack, onPlanSelect }: { client: Client; onBack
               <DobInput label="Spouse DOB" value={form.spouseDateOfBirth ?? ""} onChange={v => u("spouseDateOfBirth", v)} />
               <Input label="Spouse Occupation" value={form.spouseOccupation ?? ""} onChange={v => u("spouseOccupation", v)} />
               <Input label="Spouse Income" type="number" value={form.spouseAnnualIncome ?? ""} onChange={v => u("spouseAnnualIncome", v)} />
+              <Input label="Spouse Retirement Age" type="number" value={String(form.spouseRetirementAge ?? "")} onChange={v => u("spouseRetirementAge", +v)} />
+              <Input label="Spouse Desired Income" type="number" value={form.spouseDesiredRetirementIncome ?? ""} onChange={v => u("spouseDesiredRetirementIncome", v)} />
             </div>
           ) : (
             <div className="grid grid-cols-2 gap-y-3 gap-x-5">
               <Field label="Name"       value={client.spouseFirstName ? `${client.spouseFirstName} ${client.spouseLastName}` : null} />
               <Field label="DOB"        value={client.spouseDateOfBirth} />
-              <Field label="Occupation" value={client.spouseOccupation} />
-              <Field label="Income"     value={fmt$(client.spouseAnnualIncome)} />
+              <Field label="Occupation"        value={client.spouseOccupation} />
+              <Field label="Income"            value={fmt$(client.spouseAnnualIncome)} />
+              <Field label="Retirement Age"    value={client.spouseRetirementAge} />
+              <Field label="Desired Income"    value={fmt$(client.spouseDesiredRetirementIncome)} />
             </div>
           )}
           {editing && (

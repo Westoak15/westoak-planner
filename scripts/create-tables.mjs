@@ -14,6 +14,7 @@ CREATE TABLE IF NOT EXISTS clients (
   first_name TEXT NOT NULL, last_name TEXT NOT NULL, email TEXT, phone TEXT,
   date_of_birth TEXT, province TEXT DEFAULT 'ON', occupation TEXT, employment_status TEXT,
   spouse_first_name TEXT, spouse_last_name TEXT, spouse_date_of_birth TEXT, spouse_occupation TEXT,
+  spouse_retirement_age INTEGER, spouse_desired_retirement_income DECIMAL(15,2),
   dependants JSONB, annual_income DECIMAL(15,2), spouse_annual_income DECIMAL(15,2),
   retirement_age INTEGER, spouse_retirement_age INTEGER, desired_retirement_income DECIMAL(15,2),
   notes TEXT, created_at TIMESTAMP DEFAULT NOW() NOT NULL, updated_at TIMESTAMP DEFAULT NOW() NOT NULL

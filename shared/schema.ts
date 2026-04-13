@@ -41,7 +41,9 @@ export const clients = pgTable("clients", {
   spouseFirstName:         text("spouse_first_name"),
   spouseLastName:          text("spouse_last_name"),
   spouseDateOfBirth:       text("spouse_date_of_birth"),
-  spouseOccupation:        text("spouse_occupation"),
+  spouseOccupation:               text("spouse_occupation"),
+  spouseRetirementAge:            integer("spouse_retirement_age"),
+  spouseDesiredRetirementIncome:  decimal("spouse_desired_retirement_income", { precision: 15, scale: 2 }),
   // Dependants
   dependants:              jsonb("dependants"),  // [{name, dob, relationship}]
   // Income

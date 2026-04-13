@@ -183,7 +183,7 @@ r.post("/clients/:id/simulate", async (req: AuthRequest, res: Response) => {
 
   // Save to projection record
   if (proj) {
-    await db.update(retirementProjections)
+    await (db.update(retirementProjections) as any)
       .set({
         monteCarloResults: result,
         successRate:       String((result.successRate * 100).toFixed(1)),

@@ -384,7 +384,7 @@ r.post("/tax/:clientId/income-split", async (req: AuthRequest, res: Response) =>
     const [client] = await db.select().from(clients).where(eq(clients.id, cid));
     // @ts-ignore
     const { analyzeIncomeSplitting } = await import("../engine/tax/index.js");
-    const result = analyzeIncomeSplitting({ primaryIncome: Number(client.annualIncome ?? 0), spouseIncome: Number(client.spouseAnnualIncome ?? 0), province: client.province ?? "ON", ...req.body });
+    const result = (analyzeIncomeSplitting as any)({ primaryIncome: Number(client.annualIncome ?? 0), spouseIncome: Number(client.spouseAnnualIncome ?? 0), province: client.province ?? "ON", ...req.body });
     res.json(result);
   } catch (e: any) { res.status(500).json({ message: e.message }); }
 });

@@ -23,7 +23,7 @@ r.post("/register", async (req: Request, res: Response) => {
     const hash       = await hashPassword(body.password);
     const answerHash = await hashPassword(securityAnswer.toLowerCase().trim());
 
-    const [u] = await db.insert(users).values({
+    const [u] = await (db.insert(users) as any).values({
       email: body.email, passwordHash: hash,
       firstName: body.firstName, lastName: body.lastName,
       firmName: body.firmName ?? null,

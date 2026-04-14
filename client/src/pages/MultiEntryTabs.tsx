@@ -6,7 +6,7 @@
 import { useState, useEffect } from "react";
 import { api } from "../lib/api";
 import { fmt$, fmtPct, cn } from "../lib/utils";
-import { Plus, Trash2, Save, X } from "lucide-react";
+import { Plus, Trash2, Save, X, Pencil } from "lucide-react";
 import { MonteCarloResults } from "../components/MonteCarloResults";
 
 // ── Shared mini components ────────────────────────────────────────────────────
@@ -108,6 +108,8 @@ export function NetWorthTab({ clientId, client }: { clientId: number; client?: {
   const [entries, setEntries] = useState<NWEntry[]>([]);
   const [drafts, setDrafts]   = useState<NWDraft[]>([]);
   const [saving, setSaving]   = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editForm, setEditForm]   = useState<Partial<NWEntry & { isSpousal: boolean; rrspContributor: string; pensionType: string; matchPct: string }>>({});
 
   const spouseName = client?.spouseFirstName ? `${client.spouseFirstName} ${client.spouseLastName ?? ""}`.trim() : "";
   const primaryName = client ? `${client.firstName} ${client.lastName}` : "Primary";
@@ -125,6 +127,35 @@ export function NetWorthTab({ clientId, client }: { clientId: number; client?: {
   function updateDraft(i: number, k: keyof NWDraft, v: any) { setDrafts(d => d.map((x, idx) => idx === i ? { ...x, [k]: v } : x)); }
   function removeDraft(i: number) { setDrafts(d => d.filter((_, idx) => idx !== i)); }
 
+  function startEdit(e: NWEntry) {
+    const m = (e.metadata ?? {}) as any;
+    setEditingId(e.id);
+    setEditForm({
+      ...e,
+      isSpousal: !!m.spousal,
+      rrspContributor: m.contributor ?? "",
+      pensionType: m.pensionType ?? "DBPP",
+      matchPct: m.matchPct ?? "",
+    });
+  }
+
+  async function saveEdit() {
+    if (!editingId || !editForm.value) return;
+    setSaving(true);
+    try {
+      const m: any = {};
+      if (editForm.category === "RRSP" && editForm.isSpousal) { m.spousal = true; m.contributor = editForm.rrspContributor; }
+      if (editForm.category === "Pension") { m.pensionType = editForm.pensionType; if (editForm.matchPct) m.matchPct = editForm.matchPct; }
+      await api.put(`/api/net-worth/${editingId}`, {
+        category: editForm.category, name: editForm.name || editForm.category,
+        owner: editForm.owner, value: editForm.value, notes: editForm.notes || null,
+        metadata: Object.keys(m).length ? m : null,
+      });
+      setEditingId(null); setEditForm({});
+      await load();
+    } finally { setSaving(false); }
+  }
+
   async function saveAll() {
     const valid = drafts.filter(d => d.value);
     if (!valid.length) return;
@@ -137,7 +168,7 @@ export function NetWorthTab({ clientId, client }: { clientId: number; client?: {
         if (d.category === "Pension") { metadata.pensionType = d.pensionType; if (d.matchPct) metadata.matchPct = d.matchPct; }
         return api.post(`/api/clients/${clientId}/net-worth`, {
           type: d.type, category: d.category, name: d.name || d.category,
-          owner: d.owner === primaryName ? "primary" : "spouse",
+          owner: d.owner,  // already "primary" or "spouse"
           value: d.value, notes: d.notes || null, metadata: Object.keys(metadata).length ? metadata : null,
         });
       }));
@@ -195,8 +226,67 @@ export function NetWorthTab({ clientId, client }: { clientId: number; client?: {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {rows.map(e => (
-                  <tr key={e.id} className="hover:bg-gray-50">
+                {rows.map(e => editingId === e.id ? (
+                  // ── Edit mode ──────────────────────────────────────────
+                  <tr key={e.id} className="bg-amber-50/50 border-b border-amber-100">
+                    <td colSpan={6} className="px-3 py-2">
+                      <div className="grid grid-cols-5 gap-2 mb-1">
+                        <div>
+                          <label className="text-[10px] text-gray-400 uppercase font-semibold block mb-0.5">Owner</label>
+                          <select value={editForm.owner ?? "primary"} onChange={e => setEditForm(f => ({...f, owner: e.target.value}))}
+                            className="border border-amber-300 rounded-lg px-2 py-1.5 text-sm w-full bg-white focus:outline-none focus:ring-2 focus:ring-amber-400/30">
+                            <option value="primary">{primaryName}</option>
+                            {spouseName && <option value="spouse">{spouseName}</option>}
+                          </select>
+                        </div>
+                        <div>
+                          <label className="text-[10px] text-gray-400 uppercase font-semibold block mb-0.5">Category</label>
+                          <InlineSelect value={editForm.category ?? ""} onChange={v => setEditForm(f => ({...f, category: v}))} options={cats} />
+                        </div>
+                        <div>
+                          <label className="text-[10px] text-gray-400 uppercase font-semibold block mb-0.5">Name</label>
+                          <InlineInput value={editForm.name ?? ""} onChange={v => setEditForm(f => ({...f, name: v}))} />
+                        </div>
+                        <div>
+                          <label className="text-[10px] text-gray-400 uppercase font-semibold block mb-0.5">{type === "asset" ? "Value ($)" : "Balance ($)"}</label>
+                          <InlineInput value={String(editForm.value ?? "")} onChange={v => setEditForm(f => ({...f, value: v}))} type="number" />
+                        </div>
+                        <div className="flex gap-1 items-end">
+                          <div className="flex-1">
+                            <label className="text-[10px] text-gray-400 uppercase font-semibold block mb-0.5">Notes</label>
+                            <InlineInput value={editForm.notes ?? ""} onChange={v => setEditForm(f => ({...f, notes: v}))} />
+                          </div>
+                          <div className="flex gap-1 mb-1.5">
+                            <button onClick={saveEdit} disabled={saving} title="Save" className="text-emerald-500 hover:text-emerald-700"><Save className="w-4 h-4" /></button>
+                            <button onClick={() => { setEditingId(null); setEditForm({}); }} title="Cancel" className="text-gray-400 hover:text-gray-600"><X className="w-4 h-4" /></button>
+                          </div>
+                        </div>
+                      </div>
+                      {/* Conditional extras in edit mode */}
+                      {editForm.category === "RRSP" && (
+                        <div className="flex items-center gap-3 mt-1">
+                          <label className="flex items-center gap-1.5 text-xs text-gray-600 cursor-pointer">
+                            <input type="checkbox" checked={!!editForm.isSpousal} onChange={ev => setEditForm(f => ({...f, isSpousal: ev.target.checked}))} className="w-3.5 h-3.5 rounded" />
+                            Spousal RRSP
+                          </label>
+                          {editForm.isSpousal && (
+                            <InlineInput value={editForm.rrspContributor ?? ""} onChange={v => setEditForm(f => ({...f, rrspContributor: v}))} placeholder="Contributor name" className="w-36" />
+                          )}
+                        </div>
+                      )}
+                      {editForm.category === "Pension" && (
+                        <div className="flex items-center gap-3 mt-1">
+                          <InlineSelect value={editForm.pensionType ?? "DBPP"} onChange={v => setEditForm(f => ({...f, pensionType: v}))} options={PENSION_TYPES} />
+                          {editForm.pensionType === "Matching Contributions" && (
+                            <InlineInput value={editForm.matchPct ?? ""} onChange={v => setEditForm(f => ({...f, matchPct: v}))} placeholder="Match %" className="w-20" />
+                          )}
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                ) : (
+                  // ── View mode ──────────────────────────────────────────
+                  <tr key={e.id} className="hover:bg-gray-50 cursor-pointer group" onClick={() => startEdit(e)}>
                     <TD><span className="text-xs text-gray-500">{ownerLabel(e)}</span></TD>
                     <TD>
                       <div className="flex flex-col gap-1">
@@ -207,7 +297,12 @@ export function NetWorthTab({ clientId, client }: { clientId: number; client?: {
                     <TD><span className="font-medium text-gray-800">{e.name}</span></TD>
                     <TD right><span className="font-semibold">{fmt$(e.value)}</span></TD>
                     <TD><span className="text-gray-400 text-xs">{e.notes ?? ""}</span></TD>
-                    <TD><button onClick={() => del(e.id)} className="text-gray-300 hover:text-red-500"><Trash2 className="w-3.5 h-3.5" /></button></TD>
+                    <TD>
+                      <div className="flex items-center gap-2">
+                        <Pencil className="w-3.5 h-3.5 text-gray-300 group-hover:text-blue-400 transition-colors" />
+                        <button onClick={ev => { ev.stopPropagation(); del(e.id); }} className="text-gray-300 hover:text-red-500"><Trash2 className="w-3.5 h-3.5" /></button>
+                      </div>
+                    </TD>
                   </tr>
                 ))}
 
@@ -223,7 +318,8 @@ export function NetWorthTab({ clientId, client }: { clientId: number; client?: {
                             <label className="text-[10px] text-gray-400 uppercase font-semibold block mb-0.5">Owner</label>
                             <select value={d.owner} onChange={e => updateDraft(ri, "owner", e.target.value)}
                               className="border border-gray-200 rounded-lg px-2 py-1.5 text-sm w-full focus:outline-none focus:ring-2 focus:ring-cyan-500/20 bg-white">
-                              {ownerOptions.map(o => <option key={o} value={o}>{o}</option>)}
+                              <option value="primary">{primaryName}</option>
+                              {spouseName && <option value="spouse">{spouseName}</option>}
                             </select>
                           </div>
                           {/* Category */}
@@ -301,6 +397,35 @@ export function RetirementTab({ clientId }: { clientId: number }) {
   function updateDraft(i: number, k: keyof RetDraft, v: string) { setDrafts(d => d.map((x, idx) => idx === i ? { ...x, [k]: v } : x)); }
   function removeDraft(i: number) { setDrafts(d => d.filter((_, idx) => idx !== i)); }
   const ss = (k: string, v: any) => setSimSettings(s => ({ ...s, [k]: v }));
+
+  function startEdit(e: NWEntry) {
+    const m = (e.metadata ?? {}) as any;
+    setEditingId(e.id);
+    setEditForm({
+      ...e,
+      isSpousal: !!m.spousal,
+      rrspContributor: m.contributor ?? "",
+      pensionType: m.pensionType ?? "DBPP",
+      matchPct: m.matchPct ?? "",
+    });
+  }
+
+  async function saveEdit() {
+    if (!editingId || !editForm.value) return;
+    setSaving(true);
+    try {
+      const m: any = {};
+      if (editForm.category === "RRSP" && editForm.isSpousal) { m.spousal = true; m.contributor = editForm.rrspContributor; }
+      if (editForm.category === "Pension") { m.pensionType = editForm.pensionType; if (editForm.matchPct) m.matchPct = editForm.matchPct; }
+      await api.put(`/api/net-worth/${editingId}`, {
+        category: editForm.category, name: editForm.name || editForm.category,
+        owner: editForm.owner, value: editForm.value, notes: editForm.notes || null,
+        metadata: Object.keys(m).length ? m : null,
+      });
+      setEditingId(null); setEditForm({});
+      await load();
+    } finally { setSaving(false); }
+  }
 
   async function saveAll() {
     const valid = drafts.filter(d => d.currentAge && d.retirementAge);
@@ -474,6 +599,35 @@ export function InsuranceTab({ clientId }: { clientId: number }) {
 
   function updateDraft(i: number, k: keyof InsDraft, v: string) { setDrafts(d => d.map((x, idx) => idx === i ? { ...x, [k]: v } : x)); }
 
+  function startEdit(e: NWEntry) {
+    const m = (e.metadata ?? {}) as any;
+    setEditingId(e.id);
+    setEditForm({
+      ...e,
+      isSpousal: !!m.spousal,
+      rrspContributor: m.contributor ?? "",
+      pensionType: m.pensionType ?? "DBPP",
+      matchPct: m.matchPct ?? "",
+    });
+  }
+
+  async function saveEdit() {
+    if (!editingId || !editForm.value) return;
+    setSaving(true);
+    try {
+      const m: any = {};
+      if (editForm.category === "RRSP" && editForm.isSpousal) { m.spousal = true; m.contributor = editForm.rrspContributor; }
+      if (editForm.category === "Pension") { m.pensionType = editForm.pensionType; if (editForm.matchPct) m.matchPct = editForm.matchPct; }
+      await api.put(`/api/net-worth/${editingId}`, {
+        category: editForm.category, name: editForm.name || editForm.category,
+        owner: editForm.owner, value: editForm.value, notes: editForm.notes || null,
+        metadata: Object.keys(m).length ? m : null,
+      });
+      setEditingId(null); setEditForm({});
+      await load();
+    } finally { setSaving(false); }
+  }
+
   async function saveAll() {
     setSaving(true);
     try {
@@ -583,6 +737,35 @@ export function RespTab({ clientId }: { clientId: number }) {
 
   function updateDraft(i: number, k: keyof EduDraft, v: string) { setDrafts(d => d.map((x, idx) => idx === i ? { ...x, [k]: v } : x)); }
 
+  function startEdit(e: NWEntry) {
+    const m = (e.metadata ?? {}) as any;
+    setEditingId(e.id);
+    setEditForm({
+      ...e,
+      isSpousal: !!m.spousal,
+      rrspContributor: m.contributor ?? "",
+      pensionType: m.pensionType ?? "DBPP",
+      matchPct: m.matchPct ?? "",
+    });
+  }
+
+  async function saveEdit() {
+    if (!editingId || !editForm.value) return;
+    setSaving(true);
+    try {
+      const m: any = {};
+      if (editForm.category === "RRSP" && editForm.isSpousal) { m.spousal = true; m.contributor = editForm.rrspContributor; }
+      if (editForm.category === "Pension") { m.pensionType = editForm.pensionType; if (editForm.matchPct) m.matchPct = editForm.matchPct; }
+      await api.put(`/api/net-worth/${editingId}`, {
+        category: editForm.category, name: editForm.name || editForm.category,
+        owner: editForm.owner, value: editForm.value, notes: editForm.notes || null,
+        metadata: Object.keys(m).length ? m : null,
+      });
+      setEditingId(null); setEditForm({});
+      await load();
+    } finally { setSaving(false); }
+  }
+
   async function saveAll() {
     const valid = drafts.filter(d => d.childName);
     if (!valid.length) return;
@@ -687,6 +870,35 @@ export function DebtTab({ clientId }: { clientId: number }) {
 
   const totalDebt = rows.reduce((s, d) => s + Number(d.balance), 0);
   function updateDraft(i: number, k: keyof DebtDraft, v: string) { setDrafts(d => d.map((x, idx) => idx === i ? { ...x, [k]: v } : x)); }
+
+  function startEdit(e: NWEntry) {
+    const m = (e.metadata ?? {}) as any;
+    setEditingId(e.id);
+    setEditForm({
+      ...e,
+      isSpousal: !!m.spousal,
+      rrspContributor: m.contributor ?? "",
+      pensionType: m.pensionType ?? "DBPP",
+      matchPct: m.matchPct ?? "",
+    });
+  }
+
+  async function saveEdit() {
+    if (!editingId || !editForm.value) return;
+    setSaving(true);
+    try {
+      const m: any = {};
+      if (editForm.category === "RRSP" && editForm.isSpousal) { m.spousal = true; m.contributor = editForm.rrspContributor; }
+      if (editForm.category === "Pension") { m.pensionType = editForm.pensionType; if (editForm.matchPct) m.matchPct = editForm.matchPct; }
+      await api.put(`/api/net-worth/${editingId}`, {
+        category: editForm.category, name: editForm.name || editForm.category,
+        owner: editForm.owner, value: editForm.value, notes: editForm.notes || null,
+        metadata: Object.keys(m).length ? m : null,
+      });
+      setEditingId(null); setEditForm({});
+      await load();
+    } finally { setSaving(false); }
+  }
 
   async function saveAll() {
     const valid = drafts.filter(d => d.name && d.balance);

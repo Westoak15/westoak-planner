@@ -382,6 +382,7 @@ type RetDraft = { label: string; currentAge: string; retirementAge: string; curr
 const emptyRet = (): RetDraft => ({ label:"Base Case", currentAge:"", retirementAge:"65", currentRrsp:"", currentTfsa:"", currentNonReg:"", annualContribution:"", expectedReturn:"6.5", inflationRate:"2.5", desiredIncome:"", cppStartAge:"65", oasStartAge:"65", cppMonthly:"900", oasMonthly:"700", notes:"" });
 
 export function RetirementTab({ clientId }: { clientId: number }) {
+  const [netWorth, setNetWorth] = useState<any[]>([]);
   const [rows, setRows]       = useState<RetirementProj[]>([]);
   const [drafts, setDrafts]   = useState<RetDraft[]>([]);
   const [saving, setSaving]   = useState(false);
@@ -391,9 +392,26 @@ export function RetirementTab({ clientId }: { clientId: number }) {
   const [simSettings, setSimSettings] = useState({ simulations:1000, equityAllocation:60, equityReturn:7.0, equityStdDev:12.0, bondReturn:4.0, bondStdDev:5.0, inflationRate:2.5, lifeExpectancy:90, guardrailFloor:0.80, guardrailCeiling:1.20, spendingFlexDown:0.10, spendingFlexUp:0.10 });
 
   const load = () => api.get<RetirementProj[]>(`/api/clients/${clientId}/retirement`).then(setRows);
-  useEffect(() => { load(); }, [clientId]);
+  useEffect(() => {
+    load();
+    api.get<any[]>(`/api/clients/${clientId}/net-worth`).then(setNetWorth);
+  }, [clientId]);
 
-  function addDraft() { setDrafts(d => [...d, emptyRet()]); }
+  function addDraft() {
+    // Pre-populate from net worth entries
+    const primaryAssets = netWorth.filter(e => e.type === "asset" && e.owner !== "spouse");
+    const rrsp    = primaryAssets.filter(e => e.category === "RRSP").reduce((s, e) => s + Number(e.value), 0);
+    const tfsa    = primaryAssets.filter(e => e.category === "TFSA").reduce((s, e) => s + Number(e.value), 0);
+    const nonReg  = primaryAssets.filter(e => e.category === "Non-Registered").reduce((s, e) => s + Number(e.value), 0);
+    const pension = primaryAssets.filter(e => e.category === "Pension").reduce((s, e) => s + Number(e.value), 0);
+    const draft = {
+      ...emptyRet(),
+      currentRrsp:   rrsp    > 0 ? String(rrsp)    : "",
+      currentTfsa:   tfsa    > 0 ? String(tfsa)     : "",
+      currentNonReg: nonReg  > 0 ? String(nonReg)   : "",
+    };
+    setDrafts(d => [...d, draft]);
+  }
   function updateDraft(i: number, k: keyof RetDraft, v: string) { setDrafts(d => d.map((x, idx) => idx === i ? { ...x, [k]: v } : x)); }
   function removeDraft(i: number) { setDrafts(d => d.filter((_, idx) => idx !== i)); }
   const ss = (k: string, v: any) => setSimSettings(s => ({ ...s, [k]: v }));
@@ -516,8 +534,9 @@ export function RetirementTab({ clientId }: { clientId: number }) {
                 <InlineInput value={d[k]} onChange={v => updateDraft(i, k, v)} type={t} /></div>
             ))}
           </div>
+          <div className="text-xs text-blue-600 bg-blue-50 border border-blue-200 rounded-lg px-3 py-1.5 mb-2">💡 RRSP, TFSA &amp; Non-Reg balances are pre-filled from Net Worth — edit if needed</div>
           <div className="grid grid-cols-3 gap-3 mb-3">
-            {([["RRSP ($)","currentRrsp","number"],["TFSA ($)","currentTfsa","number"],["Non-Reg ($)","currentNonReg","number"]] as [string,keyof RetDraft,string][]).map(([l,k,t]) => (
+            {([["RRSP — from Net Worth ($)","currentRrsp","number"],["TFSA — from Net Worth ($)","currentTfsa","number"],["Non-Reg — from Net Worth ($)","currentNonReg","number"]] as [string,keyof RetDraft,string][]).map(([l,k,t]) => (
               <div key={k}><label className="text-xs font-semibold text-gray-500 mb-1 block">{l}</label>
                 <InlineInput value={d[k]} onChange={v => updateDraft(i, k, v)} type={t} /></div>
             ))}

@@ -232,10 +232,10 @@ function ClientDetail({ client, onBack, onPlanSelect, onUpdate }: { client: Clie
   }, [client.id]);
 
   async function save() {
-    setBusy(true);
-    try { await api.patch\(`/api/clients/\$\{client.id\}`, form\); setEditing\(false\); }', 'try { const updated = await api.patch<Client>(`/api/clients/${client.id}`, form); setEditing(false); onUpdate(updated); }
-    catch (e: any) { alert(e.message); }
-    finally { setBusy(false); }
+  setBusy(true);
+  try { const updated = await api.patch<Client>(`/api/clients/${client.id}`, form); setEditing(false); onUpdate(updated); }
+  catch (e: any) { alert(e.message); }
+  finally { setBusy(false); }
   }
 
   async function createPlan() {
@@ -1410,7 +1410,7 @@ export default function App() {
             <ClientsTab onSelect={selectClient} />
           )}
           {tab === "clients" && showClientDetail && client && (
-            <ClientDetail client=\{client\} onBack=\{backToClients\} onPlanSelect=\{selectPlan\} />', '<ClientDetail client={client} onBack={backToClients} onPlanSelect={selectPlan} onUpdate={setClient} />
+            <ClientDetail client={client} onBack={backToClients} onPlanSelect={selectPlan} onUpdate={setClient} />
           )}
           {tab !== "clients" && !client && (
             <div className="flex flex-col items-center justify-center h-full text-center p-8">

@@ -398,19 +398,51 @@ export function RetirementTab({ clientId }: { clientId: number }) {
   }, [clientId]);
 
   function addDraft() {
-    // Pre-populate from net worth entries
-    const primaryAssets = netWorth.filter(e => e.type === "asset" && e.owner !== "spouse");
-    const rrsp    = primaryAssets.filter(e => e.category === "RRSP").reduce((s, e) => s + Number(e.value), 0);
-    const tfsa    = primaryAssets.filter(e => e.category === "TFSA").reduce((s, e) => s + Number(e.value), 0);
-    const nonReg  = primaryAssets.filter(e => e.category === "Non-Registered").reduce((s, e) => s + Number(e.value), 0);
-    const pension = primaryAssets.filter(e => e.category === "Pension").reduce((s, e) => s + Number(e.value), 0);
-    const draft = {
+    const primary = netWorth.filter(e => e.type === "asset" && e.owner !== "spouse");
+    const spouse  = netWorth.filter(e => e.type === "asset" && e.owner === "spouse");
+    const hasSpouse = spouse.length > 0;
+
+    const sum = (arr: any[], cat: string) => arr.filter(e => e.category === cat).reduce((s, e) => s + Number(e.value), 0);
+
+    const pRrsp   = sum(primary, "RRSP");
+    const pTfsa   = sum(primary, "TFSA");
+    const pNonReg = sum(primary, "Non-Registered");
+    const sRrsp   = sum(spouse,  "RRSP");
+    const sTfsa   = sum(spouse,  "TFSA");
+    const sNonReg = sum(spouse,  "Non-Registered");
+
+    const newDrafts: RetDraft[] = [];
+
+    // 1. Combined household projection
+    newDrafts.push({
       ...emptyRet(),
-      currentRrsp:   rrsp    > 0 ? String(rrsp)    : "",
-      currentTfsa:   tfsa    > 0 ? String(tfsa)     : "",
-      currentNonReg: nonReg  > 0 ? String(nonReg)   : "",
-    };
-    setDrafts(d => [...d, draft]);
+      label: "Household Combined",
+      currentRrsp:   String(pRrsp + sRrsp)   || "",
+      currentTfsa:   String(pTfsa + sTfsa)   || "",
+      currentNonReg: String(pNonReg + sNonReg) || "",
+    });
+
+    // 2. Primary individual
+    newDrafts.push({
+      ...emptyRet(),
+      label: "Primary",
+      currentRrsp:   pRrsp   > 0 ? String(pRrsp)   : "",
+      currentTfsa:   pTfsa   > 0 ? String(pTfsa)   : "",
+      currentNonReg: pNonReg > 0 ? String(pNonReg) : "",
+    });
+
+    // 3. Spouse individual (only if spouse assets exist)
+    if (hasSpouse) {
+      newDrafts.push({
+        ...emptyRet(),
+        label: "Spouse",
+        currentRrsp:   sRrsp   > 0 ? String(sRrsp)   : "",
+        currentTfsa:   sTfsa   > 0 ? String(sTfsa)   : "",
+        currentNonReg: sNonReg > 0 ? String(sNonReg) : "",
+      });
+    }
+
+    setDrafts(d => [...d, ...newDrafts]);
   }
   function updateDraft(i: number, k: keyof RetDraft, v: string) { setDrafts(d => d.map((x, idx) => idx === i ? { ...x, [k]: v } : x)); }
   function removeDraft(i: number) { setDrafts(d => d.filter((_, idx) => idx !== i)); }
@@ -525,7 +557,12 @@ export function RetirementTab({ clientId }: { clientId: number }) {
       {drafts.map((d, i) => (
         <Card key={i} className="mb-4 p-5 border-blue-200 bg-blue-50/20">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="font-bold text-gray-800">New Projection</h3>
+            <div className="flex items-center gap-2">
+              <h3 className="font-bold text-gray-800">New Projection</h3>
+              {d.label === "Household Combined" && <span className="text-xs bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full font-semibold">Household Combined</span>}
+              {d.label === "Primary" && <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-semibold">Primary</span>}
+              {d.label === "Spouse" && <span className="text-xs bg-pink-100 text-pink-700 px-2 py-0.5 rounded-full font-semibold">Spouse</span>}
+            </div>
             <button onClick={() => removeDraft(i)} className="text-gray-400 hover:text-red-500"><X className="w-4 h-4" /></button>
           </div>
           <div className="grid grid-cols-3 gap-3 mb-3">
@@ -576,6 +613,9 @@ export function RetirementTab({ clientId }: { clientId: number }) {
             <div className="flex items-start justify-between mb-3">
               <div className="flex items-center gap-3">
                 <h3 className="font-bold text-gray-900">{p.label}</h3>
+                {p.label === "Household Combined" && <span className="text-xs bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full">Combined</span>}
+                {p.label === "Spouse" && <span className="text-xs bg-pink-100 text-pink-700 px-2 py-0.5 rounded-full">Spouse</span>}
+                {p.label === "Primary" && <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">Primary</span>}
                 {p.successRate && (
                   <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${Number(p.successRate) >= 85 ? "bg-emerald-100 text-emerald-700" : Number(p.successRate) >= 70 ? "bg-amber-100 text-amber-700" : "bg-red-100 text-red-700"}`}>
                     {p.successRate}% success

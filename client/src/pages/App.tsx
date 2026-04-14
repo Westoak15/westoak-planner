@@ -221,9 +221,7 @@ function ClientsTab({ onSelect }: { onSelect: (c: Client) => void }) {
 // ─────────────────────────────────────────────────────────────────────────────
 // Client Detail — shown when a client is selected (name, family, plans)
 // ─────────────────────────────────────────────────────────────────────────────
-function ClientDetail({ client, onBack, onPlanSelect }: { client: Client; onBack: () => void; onPlanSelect: (p: Plan) => void }) {
-  const [editing, setEditing]   = useState(false);
-  const [form, setForm]         = useState<Partial<Client>>({ ...client });
+function ClientDetail({ client, onBack, onPlanSelect, onUpdate }: { client: Client; onBack: () => void; onPlanSelect: (p: Plan) => void; onUpdate: (c: Client) => void }) {
   const [plans, setPlans]       = useState<Plan[]>([]);
   const [busy, setBusy]         = useState(false);
   const [newPlanName, setNewPlanName] = useState("Financial Plan");
@@ -235,7 +233,7 @@ function ClientDetail({ client, onBack, onPlanSelect }: { client: Client; onBack
 
   async function save() {
     setBusy(true);
-    try { await api.patch(`/api/clients/${client.id}`, form); setEditing(false); }
+    try { await api.patch\(`/api/clients/\$\{client.id\}`, form\); setEditing\(false\); }', 'try { const updated = await api.patch<Client>(`/api/clients/${client.id}`, form); setEditing(false); onUpdate(updated); }
     catch (e: any) { alert(e.message); }
     finally { setBusy(false); }
   }
@@ -1412,7 +1410,7 @@ export default function App() {
             <ClientsTab onSelect={selectClient} />
           )}
           {tab === "clients" && showClientDetail && client && (
-            <ClientDetail client={client} onBack={backToClients} onPlanSelect={selectPlan} />
+            <ClientDetail client=\{client\} onBack=\{backToClients\} onPlanSelect=\{selectPlan\} />', '<ClientDetail client={client} onBack={backToClients} onPlanSelect={selectPlan} onUpdate={setClient} />
           )}
           {tab !== "clients" && !client && (
             <div className="flex flex-col items-center justify-center h-full text-center p-8">

@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "../lib/auth";
 import { api } from "../lib/api";
@@ -1390,7 +1391,7 @@ export default function App() {
   function selectPlan(p: Plan) {
     setPlan(p);
     setShowClientDetail(false);
-    setTab("planning");
+    setTab(level === "standard" ? "fna" : "planning");
   }
 
   function backToClients() {
@@ -1475,6 +1476,7 @@ export default function App() {
     </div>
   );
 }
+
 
 
 

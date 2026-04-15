@@ -20,25 +20,25 @@ interface Props {
 }
 
 const ALL_TABS: { key: Tab; label: string; icon: any; dividerBefore?: boolean; gaOnly?: boolean }[] = [
-  { key: "clients",    label: "Clients",      icon: Users },
+  { key: "admin",      label: "Admin",        icon: Settings, gaOnly: true }, 
+  { key: "agents",     label: "Agents",       icon: UserCheck, dividerBefore: true, gaOnly: true }, 
   { key: "dashboard",  label: "Dashboard",    icon: LayoutDashboard, dividerBefore: true },
   { key: "networth",   label: "Net Worth",    icon: Scale },
+  { key: "debt",       label: "Debt",         icon: CreditCard },  
   { key: "retirement", label: "Retirement",   icon: PiggyBank },
   { key: "insurance",  label: "Policies",     icon: Shield },
   { key: "fna",        label: "FNA",          icon: FileHeart },
   { key: "resp",       label: "RESP",         icon: GraduationCap },
-  { key: "debt",       label: "Debt",         icon: CreditCard },
   { key: "tax",        label: "Tax",          icon: Receipt },
   { key: "estate",     label: "Estate",       icon: ScrollText },
   { key: "ai",         label: "AI Insights",  icon: Brain },
   { key: "planning",   label: "Full FP View", icon: ClipboardList, dividerBefore: true },
-  { key: "agents",     label: "Agents",       icon: UserCheck, dividerBefore: true, gaOnly: true },
-  { key: "admin",      label: "Admin",        icon: Settings, gaOnly: true },
+   
 ];
 
 const STANDARD_TABS: Tab[] = ["clients", "insurance", "fna"];
 const PLAN_TABS: Tab[] = ["dashboard","networth","retirement","insurance","fna","resp","debt","tax","estate","ai","planning"];
-const NO_CLIENT_TABS: Tab[] = ["clients", "admin", "agents"];
+const NO_CLIENT_TABS: Tab[] = ["admin", "agents"];
 
 export function Sidebar({ activeTab, onTab, clientName, role, level }: Props) {
   const isGA = role === "ga";

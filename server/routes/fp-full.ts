@@ -134,7 +134,8 @@ r.post("/clients/:clientId/insurance-worksheet", async (req: AuthRequest, res: R
   try {
     const { analyzeInsurance } = await import("../engine/insurance/index.js") as any;
     const result = analyzeInsurance ? analyzeInsurance(req.body.calc ?? req.body) : null;
-    const [row] = await (db.insert(insuranceAnalyses) as any).values({ clientId: cid, ...safe(req.body.data ?? req.body), worksheetData: result, analysisResults: result }).returning();
+    const formData = req.body.data ?? req.body;
+    const [row] = await (db.insert(insuranceAnalyses) as any).values({ clientId: cid, ...safe(formData), worksheetData: formData, analysisResults: result }).returning();
     res.status(201).json(row);
   } catch {
     const [row] = await (db.insert(insuranceAnalyses) as any).values({ clientId: cid, ...safe(req.body.data ?? req.body) }).returning();
@@ -483,3 +484,4 @@ r.get("/clients/:clientId/financial-planning-report", async (req: AuthRequest, r
 });
 
 export { r as fpFullRouter };
+

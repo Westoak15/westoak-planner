@@ -6,9 +6,9 @@ import { FinancialPlanningContent } from "./FinancialPlanning";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "../lib/queryClient";
 import { MonteCarloResults } from "../components/MonteCarloResults";
-import { NetWorthTab as NetWorthTabNew, RetirementTab as RetirementTabNew, RespTab as RespTabNew, DebtTab as DebtTabNew } from "./MultiEntryTabs";
+import { NetWorthTab as NetWorthTabNew, RetirementTab as RetirementTabNew, RespTab as RespTabNew, DebtTab as DebtTabNew, InsuranceTab as InsuranceTabNew } from "./MultiEntryTabs";         
 import { InsuranceTab as FnaTabNew } from "./FinancialPlanning";
-import { AdminPanel } from "./AdminPanel";
+import { AdminPanel } from "./AdminPanel"
 import { fmt$, fmtPct, initials, avatarBg, cn } from "../lib/utils";
 import {
   Plus, Pencil, Trash2, X, Check, ChevronRight, Search,
@@ -1442,9 +1442,6 @@ export default function App() {
               <FinancialPlanningContent initialClientId={client.id} />
             </QueryClientProvider>
           )}
-          import { NetWorthTab as NetWorthTabNew, RetirementTab as RetirementTabNew, RespTab as RespTabNew, DebtTab as DebtTabNew, InsuranceTab as InsuranceTabNew } from "./MultiEntryTabs";         
-          import { InsuranceTab as FnaTabNew } from "./FinancialPlanning";
-          import { AdminPanel } from "./AdminPanel";          
           {tab === "networth"   && client && <NetWorthTabNew   clientId={client.id} client={client} />}
           {tab === "retirement" && client && <RetirementTabNew clientId={client.id} />}
           {tab === "insurance"  && client && <InsuranceTabNew  clientId={client.id} />}

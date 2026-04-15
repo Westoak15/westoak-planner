@@ -79,7 +79,12 @@ function ExtraFields({ draft, onChange, spouseName }: { draft: NWDraft; onChange
         {draft.isSpousal && (
           <div className="flex items-center gap-1.5">
             <span className="text-xs text-gray-500">Contributor:</span>
-            <InlineInput value={draft.rrspContributor} onChange={v => onChange("rrspContributor", v)} placeholder="Contributor name" className="w-36" />
+            <select value={draft.rrspContributor} onChange={e => onChange("rrspContributor", e.target.value)}
+              className="border border-gray-200 rounded px-2 py-1 text-xs w-full">
+              <option value="">Select contributor</option>
+              <option value="client">Client</option>
+              <option value="spouse">Spouse</option>
+            </select>
           </div>
         )}
       </div>
@@ -270,7 +275,12 @@ export function NetWorthTab({ clientId, client }: { clientId: number; client?: {
                             Spousal RRSP
                           </label>
                           {editForm.isSpousal && (
-                            <InlineInput value={editForm.rrspContributor ?? ""} onChange={v => setEditForm(f => ({...f, rrspContributor: v}))} placeholder="Contributor name" className="w-36" />
+                            <select value={draft.rrspContributor} onChange={e => onChange("rrspContributor", e.target.value)}
+                              className="border border-gray-200 rounded px-2 py-1 text-xs w-full">
+                              <option value="">Select contributor</option>
+                              <option value="client">Client</option>
+                              <option value="spouse">Spouse</option>
+                            </select>>
                           )}
                         </div>
                       )}

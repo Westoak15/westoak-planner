@@ -280,7 +280,7 @@ export function NetWorthTab({ clientId, client }: { clientId: number; client?: {
                               <option value="">Select contributor</option>
                               <option value="client">Client</option>
                               <option value="spouse">Spouse</option>
-                            </select>>
+                            </select>
                           )}
                         </div>
                       )}

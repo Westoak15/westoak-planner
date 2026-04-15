@@ -132,15 +132,25 @@ r.post("/clients/:clientId/insurance-worksheet", async (req: AuthRequest, res: R
   const cid = +req.params.clientId;
   if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
   try {
-    const { analyzeInsurance } = await import("../engine/insurance/index.js") as any;
-    const result = analyzeInsurance ? analyzeInsurance(req.body.calc ?? req.body) : null;
-    const formData = req.body.data ?? req.body;
-    const [row] = await (db.insert(insuranceAnalyses) as any).values({ clientId: cid, ...safe(formData), worksheetData: formData, analysisResults: result }).returning();
-    res.status(201).json(row);
-  } catch {
-    const [row] = await (db.insert(insuranceAnalyses) as any).values({ clientId: cid, ...safe(req.body.data ?? req.body) }).returning();
-    res.status(201).json(row);
-  }
+  const { analyzeInsurance } = await import("../engine/insurance/index.js") as any;
+  const result = analyzeInsurance ? analyzeInsurance(req.body.calc ?? req.body) : null;
+  const formData = req.body.data ?? req.body;
+  const [row] = await (db.insert(insuranceAnalyses) as any).values({
+    clientId: cid,
+    primaryName: formData.primaryName ?? null,
+    primaryAge: formData.primaryAge ? parseInt(formData.primaryAge) : null,
+    spouseName: formData.spouseName ?? null,
+    spouseAge: formData.spouseAge ? parseInt(formData.spouseAge) : null,
+    spouseAnnualIncome: formData.spouseAnnualIncome ?? "0",
+    annualIncome: formData.primaryAnnualIncome ?? "0",
+    worksheetData: formData,
+    analysisResults: result ?? null,
+  }).returning();
+  res.status(201).json(row);
+} catch (err) {
+  console.error("[insurance-worksheet]", err);
+  res.status(500).json({ message: "Failed to save" });
+}
 });
 r.delete("/insurance-analyses/:id", async (req: AuthRequest, res: Response) => {
   const [ex] = await db.select({ id: insuranceAnalyses.id, clientId: insuranceAnalyses.clientId }).from(insuranceAnalyses).where(eq(insuranceAnalyses.id, +req.params.id));

@@ -448,7 +448,7 @@ function AssetRowImpl({ label, value, onValueChange, useIt, onToggle, testId }: 
   );
 }
 
-export function InsuranceTab({ clientId, planId }: { clientId: number; planId: number | null }) {
+export function InsuranceTab({ clientId, planId, client }: { clientId: number; planId: number | null; client?: any }) {
   const { data: analyses = [] } = useInsuranceAnalyses(clientId);
   const { data: nwEntries = [] } = useNetWorthEntries(clientId);
   const deleteAnalysis = useDeleteInsuranceAnalysis(clientId);
@@ -545,7 +545,7 @@ function buildDefaultFromNW() {
     <div className="space-y-6 animate-in fade-in duration-300">
       <div className="flex justify-between items-center">
         <h2 className="text-xl font-display font-bold">Insurance Needs Analysis</h2>
-        <button onClick={() => { setForm({ ...defaultWs, ...buildDefaultFromNW() }); setViewingId(null); setShowWorksheet(true); }}
+        <button onClick={() => { setForm({ ...defaultWs, ...buildDefaultFromNW(), primaryName: client ? `${client.firstName} ${client.lastName}` : "", primaryAnnualIncome: client?.annualIncome ? String(client.annualIncome) : "", spouseName: client?.spouseFirstName ? `${client.spouseFirstName} ${client.spouseLastName ?? ""}`.trim() : "", spouseAnnualIncome: client?.spouseAnnualIncome ? String(client.spouseAnnualIncome) : "" }); setViewingId(null); setShowWorksheet(true); }}
           data-testid="button-fp-add-insurance"
           className="flex items-center space-x-2 px-4 py-2 bg-secondary text-secondary-foreground font-semibold rounded-xl hover:bg-secondary/90 transition-colors shadow-sm">
           <Plus className="w-4 h-4" /><span>New Analysis</span>
@@ -1743,6 +1743,8 @@ export function FinancialPlanningContent({ initialClientId }: { initialClientId?
 export default function FinancialPlanning() {
   return <FinancialPlanningContent />;
 }
+
+
 
 
 

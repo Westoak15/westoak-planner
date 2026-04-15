@@ -1447,7 +1447,7 @@ export default function App() {
           {tab === "insurance"  && client && <InsuranceTabNew  clientId={client.id} />}
           {tab === "fna"        && client && (
             <QueryClientProvider client={queryClient}>
-            <FnaTabNew clientId={client.id} planId={null} />
+            <FnaTabNew clientId={client.id} planId={null} client={client} />
             </QueryClientProvider>
           )}
           {tab === "admin" && <AdminPanel />}
@@ -1459,6 +1459,7 @@ export default function App() {
     </div>
   );
 }
+
 
 
 

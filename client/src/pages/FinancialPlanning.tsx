@@ -29,7 +29,7 @@ import {
   Target, DollarSign, PiggyBank, Shield, GraduationCap, CreditCard,
   Receipt, ScrollText, Brain, Plus, Trash2, Sparkles, TrendingUp, TrendingDown,
   AlertTriangle, CheckCircle, Clock, FileText, Printer, Loader2, BarChart3,
-  Users, Calculator, ChevronDown, ChevronUp, Info, Download, Eye,
+  Users, Calculator, ChevronDown, ChevronUp, Info, Download, Eye, Gift, FileSignature,
 } from "lucide-react";
 
 // ── Tab definitions ───────────────────────────────────────────────────────────
@@ -614,6 +614,60 @@ export function InsuranceTab({ clientId, planId }: { clientId: number; planId: n
                   <WorksheetFieldImpl label="Emergency Fund" value={form.liabilities.emergencyFund} onChange={v => updateLiabilities("emergencyFund", v)} testId="input-ws-emergency" />
                 </div>
               </section>
+              <section>
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2"><Gift className="w-5 h-5 text-amber-500" /><h3 className="font-display font-bold text-lg">Legacy Needs &amp; Wants</h3></div>
+                  <div className="text-right"><span className="text-xs text-muted-foreground">Subtotal (B)</span><p className="font-bold text-amber-600">{fmt$(calc.subtotalB)}</p></div>
+                </div>
+                <div className="grid grid-cols-4 gap-4">
+                  <WorksheetFieldImpl label="Education Fund" value={form.legacy.educationFund} onChange={v => updateLegacy("educationFund", v)} testId="input-ws-edu" />
+                  <WorksheetFieldImpl label="Legacy Fund for Children" value={form.legacy.legacyFundForChildren} onChange={v => updateLegacy("legacyFundForChildren", v)} testId="input-ws-legacy" />
+                  <WorksheetFieldImpl label="Charitable Bequest" value={form.legacy.charitableBequest} onChange={v => updateLegacy("charitableBequest", v)} testId="input-ws-charity" />
+                  <WorksheetFieldImpl label="Other" value={form.legacy.other} onChange={v => updateLegacy("other", v)} testId="input-ws-legacy-other" />
+                </div>
+              </section>
+
+              <section>
+                <div className="flex items-center gap-2 mb-4"><TrendingUp className="w-5 h-5 text-blue-500" /><h3 className="font-display font-bold text-lg">Family Income Replacement Need</h3></div>
+                <div className="grid grid-cols-2 gap-6">
+                  <div className="space-y-3 p-4 border border-border rounded-xl">
+                    <div className="flex justify-between"><p className="text-sm font-semibold text-primary">Primary (C)</p><p className="font-bold text-blue-600">{fmt$(calc.subtotalC)}</p></div>
+                    <WorksheetFieldImpl label="Income Replacement %" value={form.primaryIncome.replacementPct} onChange={v => setForm(f => ({ ...f, primaryIncome: { ...f.primaryIncome, replacementPct: v } }))} testId="input-ws-primary-rep-pct" prefix="%" />
+                    <WorksheetFieldImpl label="CPP/QPP Survivor Benefit ($/mo)" value={form.primaryIncome.cppSurvivorBenefit} onChange={v => setForm(f => ({ ...f, primaryIncome: { ...f.primaryIncome, cppSurvivorBenefit: v } }))} testId="input-ws-primary-cpp" />
+                    <WorksheetFieldImpl label="Target Age (Income Needed To)" value={form.primaryIncome.targetAge} onChange={v => setForm(f => ({ ...f, primaryIncome: { ...f.primaryIncome, targetAge: v } }))} testId="input-ws-primary-target-age" prefix="" />
+                    <p className="text-xs text-muted-foreground">Years of income: {calc.primaryYears}</p>
+                  </div>
+                  <div className="space-y-3 p-4 border border-border rounded-xl">
+                    <div className="flex justify-between"><p className="text-sm font-semibold text-purple-600">Spouse (D)</p><p className="font-bold text-blue-600">{fmt$(calc.subtotalD)}</p></div>
+                    <WorksheetFieldImpl label="Income Replacement %" value={form.spouseIncome.replacementPct} onChange={v => setForm(f => ({ ...f, spouseIncome: { ...f.spouseIncome, replacementPct: v } }))} testId="input-ws-spouse-rep-pct" prefix="%" />
+                    <WorksheetFieldImpl label="CPP/QPP Survivor Benefit ($/mo)" value={form.spouseIncome.cppSurvivorBenefit} onChange={v => setForm(f => ({ ...f, spouseIncome: { ...f.spouseIncome, cppSurvivorBenefit: v } }))} testId="input-ws-spouse-cpp" />
+                    <WorksheetFieldImpl label="Target Age (Income Needed To)" value={form.spouseIncome.targetAge} onChange={v => setForm(f => ({ ...f, spouseIncome: { ...f.spouseIncome, targetAge: v } }))} testId="input-ws-spouse-target-age" prefix="" />
+                    <p className="text-xs text-muted-foreground">Years of income: {calc.spouseYears}</p>
+                  </div>
+                </div>
+              </section>
+
+              <section>
+                <div className="flex items-center gap-2 mb-4"><PiggyBank className="w-5 h-5 text-green-500" /><h3 className="font-display font-bold text-lg">Financial Assets Available</h3></div>
+                <div className="grid grid-cols-2 gap-6">
+                  <div className="space-y-3 p-4 border border-border rounded-xl">
+                    <div className="flex justify-between"><p className="text-sm font-semibold text-primary">Primary (E)</p><p className="font-bold text-green-600">{fmt$(calc.subtotalE)}</p></div>
+                    <WorksheetFieldImpl label="Liquid Savings" value={form.primaryAssets.liquidSavings} onChange={v => setForm(f => ({ ...f, primaryAssets: { ...f.primaryAssets, liquidSavings: v } }))} testId="input-ws-primary-liquid" />
+                    <AssetRowImpl label="RRSPs" value={form.primaryAssets.rrsps} onValueChange={v => setForm(f => ({ ...f, primaryAssets: { ...f.primaryAssets, rrsps: v } }))} useIt={form.primaryAssets.rrspsUse} onToggle={() => setForm(f => ({ ...f, primaryAssets: { ...f.primaryAssets, rrspsUse: !f.primaryAssets.rrspsUse } }))} testId="primary-rrsp" />
+                    <AssetRowImpl label="Non-Registered" value={form.primaryAssets.nonRegistered} onValueChange={v => setForm(f => ({ ...f, primaryAssets: { ...f.primaryAssets, nonRegistered: v } }))} useIt={form.primaryAssets.nonRegisteredUse} onToggle={() => setForm(f => ({ ...f, primaryAssets: { ...f.primaryAssets, nonRegisteredUse: !f.primaryAssets.nonRegisteredUse } }))} testId="primary-nonreg" />
+                    <AssetRowImpl label="TFSA" value={form.primaryAssets.tfsa} onValueChange={v => setForm(f => ({ ...f, primaryAssets: { ...f.primaryAssets, tfsa: v } }))} useIt={form.primaryAssets.tfsaUse} onToggle={() => setForm(f => ({ ...f, primaryAssets: { ...f.primaryAssets, tfsaUse: !f.primaryAssets.tfsaUse } }))} testId="primary-tfsa" />
+                    <WorksheetFieldImpl label="Other" value={form.primaryAssets.other} onChange={v => setForm(f => ({ ...f, primaryAssets: { ...f.primaryAssets, other: v } }))} testId="input-ws-primary-other-asset" />
+                  </div>
+                  <div className="space-y-3 p-4 border border-border rounded-xl">
+                    <div className="flex justify-between"><p className="text-sm font-semibold text-purple-600">Spouse (F)</p><p className="font-bold text-green-600">{fmt$(calc.subtotalF)}</p></div>
+                    <WorksheetFieldImpl label="Liquid Savings" value={form.spouseAssets.liquidSavings} onChange={v => setForm(f => ({ ...f, spouseAssets: { ...f.spouseAssets, liquidSavings: v } }))} testId="input-ws-spouse-liquid" />
+                    <AssetRowImpl label="RRSPs" value={form.spouseAssets.rrsps} onValueChange={v => setForm(f => ({ ...f, spouseAssets: { ...f.spouseAssets, rrsps: v } }))} useIt={form.spouseAssets.rrspsUse} onToggle={() => setForm(f => ({ ...f, spouseAssets: { ...f.spouseAssets, rrspsUse: !f.spouseAssets.rrspsUse } }))} testId="spouse-rrsp" />
+                    <AssetRowImpl label="Non-Registered" value={form.spouseAssets.nonRegistered} onValueChange={v => setForm(f => ({ ...f, spouseAssets: { ...f.spouseAssets, nonRegistered: v } }))} useIt={form.spouseAssets.nonRegisteredUse} onToggle={() => setForm(f => ({ ...f, spouseAssets: { ...f.spouseAssets, nonRegisteredUse: !f.spouseAssets.nonRegisteredUse } }))} testId="spouse-nonreg" />
+                    <AssetRowImpl label="TFSA" value={form.spouseAssets.tfsa} onValueChange={v => setForm(f => ({ ...f, spouseAssets: { ...f.spouseAssets, tfsaUse: !f.spouseAssets.tfsaUse } }))} useIt={form.spouseAssets.tfsaUse} onToggle={() => setForm(f => ({ ...f, spouseAssets: { ...f.spouseAssets, tfsaUse: !f.spouseAssets.tfsaUse } }))} testId="spouse-tfsa" />
+                    <WorksheetFieldImpl label="Other" value={form.spouseAssets.other} onChange={v => setForm(f => ({ ...f, spouseAssets: { ...f.spouseAssets, other: v } }))} testId="input-ws-spouse-other-asset" />
+                  </div>
+                </div>
+              </section>
 
               <section className="border-2 border-primary/20 rounded-2xl p-6 bg-primary/5">
                 <div className="flex items-center gap-2 mb-4"><Shield className="w-5 h-5 text-primary" /><h3 className="font-display font-bold text-lg">Total Life Insurance Need</h3></div>
@@ -635,6 +689,27 @@ export function InsuranceTab({ clientId, planId }: { clientId: number; planId: n
                     </div>
                   </div>
                 </div>
+              </section>
+              <section>
+                <div className="flex items-center gap-2 mb-4"><FileSignature className="w-5 h-5 text-gray-500" /><h3 className="font-display font-bold text-lg">Decision &amp; Acknowledgement</h3></div>
+                <div className="grid grid-cols-2 gap-6">
+                  <div className="space-y-3 p-4 border border-border rounded-xl">
+                    <p className="text-sm font-semibold text-primary">Primary</p>
+                    <WorksheetFieldImpl label="Coverage Amount Purchased" value={form.primaryCoveragePurchased} onChange={v => setForm(f => ({ ...f, primaryCoveragePurchased: v }))} testId="input-ws-primary-purchased" />
+                    <WorksheetFieldImpl label="Acknowledged Shortfall" value={form.primaryShortfallAcknowledged} onChange={v => setForm(f => ({ ...f, primaryShortfallAcknowledged: v }))} testId="input-ws-primary-shortfall" />
+                    <div><label className="text-xs font-medium text-muted-foreground">Signature (Printed Name)</label><input type="text" value={form.primarySignature} onChange={e => setForm(f => ({ ...f, primarySignature: e.target.value }))} className="w-full px-3 py-2 rounded-lg border text-sm mt-1 bg-background" /></div>
+                  </div>
+                  <div className="space-y-3 p-4 border border-border rounded-xl">
+                    <p className="text-sm font-semibold text-purple-600">Spouse</p>
+                    <WorksheetFieldImpl label="Coverage Amount Purchased" value={form.spouseCoveragePurchased} onChange={v => setForm(f => ({ ...f, spouseCoveragePurchased: v }))} testId="input-ws-spouse-purchased" />
+                    <WorksheetFieldImpl label="Acknowledged Shortfall" value={form.spouseShortfallAcknowledged} onChange={v => setForm(f => ({ ...f, spouseShortfallAcknowledged: v }))} testId="input-ws-spouse-shortfall" />
+                    <div><label className="text-xs font-medium text-muted-foreground">Signature (Printed Name)</label><input type="text" value={form.spouseSignature} onChange={e => setForm(f => ({ ...f, spouseSignature: e.target.value }))} className="w-full px-3 py-2 rounded-lg border text-sm mt-1 bg-background" /></div>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-6 mt-4">
+                  <div><label className="text-xs font-medium text-muted-foreground">Date</label><input type="date" value={form.signatureDate} onChange={e => setForm(f => ({ ...f, signatureDate: e.target.value }))} className="w-full px-3 py-2 rounded-lg border text-sm mt-1 bg-background" /></div>
+                </div>
+                <div className="mt-4"><label className="text-xs font-medium text-muted-foreground">Meeting Notes</label><textarea value={form.meetingNotes} onChange={e => setForm(f => ({ ...f, meetingNotes: e.target.value }))} rows={3} className="w-full px-3 py-2 rounded-lg border text-sm mt-1 bg-background" /></div>
               </section>
 
               <div className="sticky bottom-0 bg-background pt-4 pb-2 border-t border-border flex justify-end space-x-3">
@@ -1631,6 +1706,8 @@ export function FinancialPlanningContent({ initialClientId }: { initialClientId?
 export default function FinancialPlanning() {
   return <FinancialPlanningContent />;
 }
+
+
 
 
 

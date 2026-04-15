@@ -360,63 +360,7 @@ function ClientDetail({ client, onBack, onPlanSelect, onUpdate, level }: { clien
           )}
         </Card>
       </div>
-
-      {/* Plans */}
-      <Card>
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <Briefcase className="w-4 h-4 text-[#0c1e3a]" />
-            <h2 className="font-bold text-gray-900">Financial Plans</h2>
-          </div>
-        </div>
-
-        {plans.length === 0 ? (
-          <div className="text-center py-8">
-            <p className="text-gray-400 text-sm mb-4">No plans yet — create one to start planning</p>
-            {level === "standard" ? (
-              <button onClick={createPlan}
-                 className="bg-[#0c1e3a] hover:bg-[#0e2a4a] text-white text-sm font-semibold px-4 py-2 rounded-lg">
-                 Create FNA
-              </button>
-            ) : (
-              <div className="flex items-center gap-2 justify-center">
-                 <input value={newPlanName} onChange={e => setNewPlanName(e.target.value)}
-                   className="border border-gray-200 rounded-lg px-3 py-2 text-sm w-48 focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500" />
-                 <button onClick={createPlan} className="bg-[#0c1e3a] hover:bg-[#0e2a4a] text-white text-sm font-semibold px-4 py-2 rounded-lg">
-                   Create Plan
-                 </button>
-              </div>
-             )}
-            </div>
-        ) : (
-          <>
-            <div className="divide-y divide-gray-100">
-              {plans.map(p => (
-                <div key={p.id} className="flex items-center justify-between py-3 hover:bg-gray-50 -mx-5 px-5 cursor-pointer rounded-lg transition-colors" onClick={() => onPlanSelect(p)}>
-                  <div>
-                    <p className="font-semibold text-gray-900 text-sm">{p.name}</p>
-                    <p className="text-xs text-gray-400">{new Date(p.createdAt).toLocaleDateString()}</p>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className={`text-xs px-2 py-0.5 rounded-full ${p.status === "active" ? "bg-emerald-100 text-emerald-700" : "bg-gray-100 text-gray-500"}`}>{p.status}</span>
-                    <button onClick={e => { e.stopPropagation(); deletePlan(p.id); }} className="text-gray-300 hover:text-red-500 transition-colors p-1"><Trash2 className="w-3.5 h-3.5" /></button>
-                    <ChevronRight className="w-4 h-4 text-gray-300" />
-                  </div>
-                </div>
-              ))}
-            </div>
-              {level !== "standard" && (
-                <div className="flex items-center gap-2 mt-4 pt-4 border-t border-gray-100">
-                  <input value={newPlanName} onChange={e => setNewPlanName(e.target.value)}
-                    className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm w-40 focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500" />
-                 <button onClick={createPlan} className="flex items-center gap-1 text-sm text-[#0c1e3a] border border-[#0c1e3a] hover:bg-[#0c1e3a] hover:text-white px-3 py-1.5 rounded-lg transition-colors font-semibold">
-                   <Plus className="w-3.5 h-3.5" /> New Plan
-                 </button>
-                </div>
-              )}
-          </>
-        )}
-      </Card>
+  
     </div>
   );
 }

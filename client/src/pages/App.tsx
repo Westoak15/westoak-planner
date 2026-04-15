@@ -249,11 +249,16 @@ function ClientDetail({ client, onBack, onPlanSelect, onUpdate, level }: { clien
     await api.delete(`/api/plans/${planId}`);
     setPlans(prev => prev.filter(p => p.id !== planId));
   }
-  async function createPlan() {
-    const p = await api.post<Plan>(`/api/clients/${client.id}/plans`, { name: newPlanName });
-    setPlans(prev => [p, ...prev]);
-    onPlanSelect(p);
-  }
+   async function createPlan() {
+     const p = await api.post<Plan>(`/api/clients/${client.id}/plans`, { name: level === "standard" ? "FNA" : newPlanName });
+     setPlans(prev => [p, ...prev]);
+     if (level === "standard") {
+       onPlanSelect(p);
+       // navigate to FNA tab after selecting plan
+     } else {
+       onPlanSelect(p);
+     }
+   }
 
   return (
     <div className="p-6 max-w-4xl mx-auto">
@@ -367,14 +372,21 @@ function ClientDetail({ client, onBack, onPlanSelect, onUpdate, level }: { clien
         {plans.length === 0 ? (
           <div className="text-center py-8">
             <p className="text-gray-400 text-sm mb-4">No plans yet — create one to start planning</p>
-            <div className="flex items-center gap-2 justify-center">
-              <input value={newPlanName} onChange={e => setNewPlanName(e.target.value)}
-                className="border border-gray-200 rounded-lg px-3 py-2 text-sm w-48 focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500" />
-              <button onClick={createPlan} className="bg-[#0c1e3a] hover:bg-[#0e2a4a] text-white text-sm font-semibold px-4 py-2 rounded-lg">
-                Create Plan
+            {level === "standard" ? (
+              <button onClick={createPlan}
+                 className="bg-[#0c1e3a] hover:bg-[#0e2a4a] text-white text-sm font-semibold px-4 py-2 rounded-lg">
+                 Create FNA
               </button>
+            ) : (
+              <div className="flex items-center gap-2 justify-center">
+                 <input value={newPlanName} onChange={e => setNewPlanName(e.target.value)}
+                   className="border border-gray-200 rounded-lg px-3 py-2 text-sm w-48 focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500" />
+                 <button onClick={createPlan} className="bg-[#0c1e3a] hover:bg-[#0e2a4a] text-white text-sm font-semibold px-4 py-2 rounded-lg">
+                   Create Plan
+                 </button>
+              </div>
+             )}
             </div>
-          </div>
         ) : (
           <>
             <div className="divide-y divide-gray-100">
@@ -1463,6 +1475,7 @@ export default function App() {
     </div>
   );
 }
+
 
 
 

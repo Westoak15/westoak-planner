@@ -1362,7 +1362,7 @@ export default function App() {
   const role = user?.role ?? "fa";
   const level = user?.level ?? "standard";
   const [showChangePw, setShowChangePw] = useState(false);
-  const [tab, setTab]             = useState<Tab>("agents");
+  const [tab, setTab] = useState<Tab>(user?.role === "ga" ? "agents" : "clients");
   const [client, setClient]       = useState<Client | null>(null);
   const [plan, setPlan]           = useState<Plan | null>(null);
   const [showClientDetail, setShowClientDetail] = useState(false);

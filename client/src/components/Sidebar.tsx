@@ -22,6 +22,7 @@ interface Props {
 const ALL_TABS: { key: Tab; label: string; icon: any; dividerBefore?: boolean; gaOnly?: boolean }[] = [
   { key: "admin",      label: "Admin",        icon: Settings, gaOnly: true }, 
   { key: "agents",     label: "Agents",       icon: UserCheck, dividerBefore: true, gaOnly: true }, 
+  { key: "clients", label: "Clients", icon: Users },
   { key: "dashboard",  label: "Dashboard",    icon: LayoutDashboard, dividerBefore: true },
   { key: "networth",   label: "Net Worth",    icon: Scale },
   { key: "debt",       label: "Debt",         icon: CreditCard },  
@@ -36,9 +37,9 @@ const ALL_TABS: { key: Tab; label: string; icon: any; dividerBefore?: boolean; g
    
 ];
 
-const STANDARD_TABS: Tab[] = ["clients", "insurance", "fna"];
+const STANDARD_TABS: Tab[] = ["clients", "networth", "insurance", "fna"];
 const PLAN_TABS: Tab[] = ["dashboard","networth","retirement","insurance","fna","resp","debt","tax","estate","ai","planning"];
-const NO_CLIENT_TABS: Tab[] = ["admin", "agents"];
+const NO_CLIENT_TABS: Tab[] = ["clients", "admin", "agents"];
 
 export function Sidebar({ activeTab, onTab, clientName, role, level }: Props) {
   const isGA = role === "ga";

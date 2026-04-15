@@ -1451,6 +1451,7 @@ export default function App() {
             </QueryClientProvider>
           )}
           {tab === "admin" && <AdminPanel />}
+          {tab === "agents" && <AgentsTab />}
           {tab === "resp"       && client && <RespTabNew       clientId={client.id} />}
           {tab === "debt"       && client && <DebtTabNew       clientId={client.id} />}
           {tab === "dashboard"  && client && <DashboardTab     clientId={client.id} />}
@@ -1459,6 +1460,8 @@ export default function App() {
     </div>
   );
 }
+
+
 
 
 

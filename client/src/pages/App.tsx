@@ -1411,7 +1411,7 @@ export default function App() {
             <button onClick={() => setShowChangePw(true)} title="Change password" className="text-gray-300 hover:text-gray-600 transition-colors">
               <KeyRound className="w-4 h-4" />
             </button>
-            <button onClick={logout} title="Sign out" className="text-gray-300 hover:text-gray-600 transition-colors">
+            <button onClick={() => { setTab("agents"); logout(); }} title="Sign out" className="text-gray-300 hover:text-gray-600 transition-colors">
               <LogOut className="w-4 h-4" />
             </button>
           </div>
@@ -1461,6 +1461,7 @@ export default function App() {
     </div>
   );
 }
+
 
 
 

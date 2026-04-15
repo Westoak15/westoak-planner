@@ -559,11 +559,23 @@ function buildDefaultFromNW() {
               <h3 className="text-lg font-bold">{a.primaryName || "Family Needs Analysis"}</h3>
               <p className="text-sm text-muted-foreground">Created {a.createdAt ? new Date(a.createdAt).toLocaleDateString() : "—"}</p>
             </div>
-            <button onClick={() => { if (confirm("Delete this analysis?")) deleteAnalysis.mutate(a.id); }}
-              data-testid={`button-fp-del-insurance-${a.id}`}
-              className="p-2 hover:bg-red-50 rounded-lg">
-              <Trash2 className="w-4 h-4 text-red-400" />
-            </button>
+            <button onClick={() => {
+              if (a.worksheetData) {
+                setForm({ ...defaultWs, ...a.worksheetData });
+             } else {
+                setForm({ ...defaultWs,
+                  primaryName: a.primaryName ?? "",
+                  primaryAge: a.primaryAge ? String(a.primaryAge) : "",
+                  spouseName: a.spouseName ?? "",
+                  spouseAge: a.spouseAge ? String(a.spouseAge) : "",
+                });
+              }
+              setViewingId(a.id);
+              setShowWorksheet(true);
+            }}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold text-primary border border-primary/30 hover:bg-primary/5 rounded-lg transition-colors">
+              <Eye className="w-4 h-4" /> Open
+           </button>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             {[

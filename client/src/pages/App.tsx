@@ -225,7 +225,7 @@ function ClientsTab({ onSelect }: { onSelect: (c: Client) => void }) {
 // ─────────────────────────────────────────────────────────────────────────────
 // Client Detail — shown when a client is selected (name, family, plans)
 // ─────────────────────────────────────────────────────────────────────────────
-function ClientDetail({ client, onBack, onPlanSelect, onUpdate }: { client: Client; onBack: () => void; onPlanSelect: (p: Plan) => void; onUpdate: (c: Client) => void }) {
+function ClientDetail({ client, onBack, onPlanSelect, onUpdate, level }: { client: Client; onBack: () => void; onPlanSelect: (p: Plan) => void; onUpdate: (c: Client) => void; level?: string }) {
   const [plans, setPlans]       = useState<Plan[]>([]);
   const [editing, setEditing]   = useState(false);
   const [form, setForm]         = useState<Partial<Client>>({ ...client });
@@ -392,13 +392,15 @@ function ClientDetail({ client, onBack, onPlanSelect, onUpdate }: { client: Clie
                 </div>
               ))}
             </div>
-            <div className="flex items-center gap-2 mt-4 pt-4 border-t border-gray-100">
-              <input value={newPlanName} onChange={e => setNewPlanName(e.target.value)}
-                className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm w-40 focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500" />
-              <button onClick={createPlan} className="flex items-center gap-1 text-sm text-[#0c1e3a] border border-[#0c1e3a] hover:bg-[#0c1e3a] hover:text-white px-3 py-1.5 rounded-lg transition-colors font-semibold">
-                <Plus className="w-3.5 h-3.5" /> New Plan
-              </button>
-            </div>
+              {level !== "standard" && (
+                <div className="flex items-center gap-2 mt-4 pt-4 border-t border-gray-100">
+                  <input value={newPlanName} onChange={e => setNewPlanName(e.target.value)}
+                    className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm w-40 focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500" />
+                 <button onClick={createPlan} className="flex items-center gap-1 text-sm text-[#0c1e3a] border border-[#0c1e3a] hover:bg-[#0c1e3a] hover:text-white px-3 py-1.5 rounded-lg transition-colors font-semibold">
+                   <Plus className="w-3.5 h-3.5" /> New Plan
+                 </button>
+                </div>
+              )}
           </>
         )}
       </Card>
@@ -1424,7 +1426,7 @@ export default function App() {
             <ClientsTab onSelect={selectClient} />
           )}
           {tab === "clients" && showClientDetail && client && (
-            <ClientDetail client={client} onBack={backToClients} onPlanSelect={selectPlan} onUpdate={setClient} />
+            <ClientDetail client={client} onBack={backToClients} onPlanSelect={selectPlan} onUpdate={setClient} level={level} />
           )}
           {tab !== "admin" && tab !== "agents" && !client && (
             <div className="flex flex-col items-center justify-center h-full text-center p-8">
@@ -1461,6 +1463,8 @@ export default function App() {
     </div>
   );
 }
+
+
 
 
 

@@ -223,6 +223,8 @@ function ClientsTab({ onSelect }: { onSelect: (c: Client) => void }) {
 // ─────────────────────────────────────────────────────────────────────────────
 function ClientDetail({ client, onBack, onPlanSelect, onUpdate }: { client: Client; onBack: () => void; onPlanSelect: (p: Plan) => void; onUpdate: (c: Client) => void }) {
   const [plans, setPlans]       = useState<Plan[]>([]);
+  const [editing, setEditing]   = useState(false);
+  const [form, setForm]         = useState<Partial<Client>>({ ...client });
   const [busy, setBusy]         = useState(false);
   const [newPlanName, setNewPlanName] = useState("Financial Plan");
   const u = (k: keyof Client, v: any) => setForm(f => ({ ...f, [k]: v }));
@@ -1440,3 +1442,4 @@ export default function App() {
     </div>
   );
 }
+

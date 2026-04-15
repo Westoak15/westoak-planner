@@ -35,16 +35,21 @@ r.get("/", async (req: AuthRequest, res: Response) => {
   const ids = await accessibleUserIds(req.userId!);
   const rows = await db.select().from(clients)
     .where(s
-      ? and(inArray(clients.userId, ids), or(ilike(clients.firstName, `%${s}%`), ilike(clients.lastName, `%${s}%`)))
+      ? and(inArray(clients.userId, effectiveIds), or(ilike(clients.firstName, `%${s}%`), ilike(clients.lastName, `%${s}%`)))
       : inArray(clients.userId, ids));
   res.json(rows);
 });
 
-r.get("/:id", async (req: AuthRequest, res: Response) => {
-  const ok = await canAccessClient(req.userId!, +req.params.id);
-  if (!ok) return res.status(404).json({ message: "Not found" });
-  const [c] = await db.select().from(clients).where(eq(clients.id, +req.params.id));
-  res.json(c);
+r.get("/", async (req: AuthRequest, res: Response) => {
+  const s = req.query.search as string | undefined;
+  const agentId = req.query.agentId ? +req.query.agentId : null;
+  const ids = await accessibleUserIds(req.userId!);
+  const effectiveIds = agentId && ids.includes(agentId) ? [agentId] : ids;
+  const rows = await db.select().from(clients)
+    .where(s
+      ? and(inArray(clients.userId, effectiveIds), or(ilike(clients.firstName, `%${s}%`), ilike(clients.lastName, `%${s}%`)))
+      : inArray(clients.userId, effectiveIds));
+  res.json(rows);
 });
 
 r.post("/", async (req: AuthRequest, res: Response) => {
@@ -91,3 +96,5 @@ r.post("/:id/plans", async (req: AuthRequest, res: Response) => {
 });
 
 export { r as clientsRouter };
+
+

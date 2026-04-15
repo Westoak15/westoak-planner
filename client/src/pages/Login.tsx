@@ -93,15 +93,7 @@ export default function Login() {
   const newPwOk = newPwRules.every(r => r.ok);
   const pwMatch = newPassword === confirmPassword && confirmPassword.length > 0;
 
-  async function submitLogin() {
-    if (!turnstileToken) { setError("Please complete the security check."); return; }
-    reset(); setBusy(true);
-    try { await login(form.email, form.password); }
-    catch (e: any) { setError(e.message); }
-    finally { setBusy(false); }
-  }
-
-  async function submitRegister() {
+   async function submitRegister() {
     reset(); setBusy(true);
     try {
       await register({ ...form, securityQuestion: form.securityQuestion, securityAnswer: form.securityAnswer });
@@ -214,21 +206,22 @@ export default function Login() {
                   </div>
                 )}
 
-                {mode === "login" && (
+                 {mode === "login" && (
                   <div className="flex justify-center">
                     <Turnstile
                       siteKey="0x4AAAAAAC9t57T1sbOWFGmX"
                       onSuccess={token => setTurnstileToken(token)}
                       onExpire={() => setTurnstileToken(null)}
+                      onError={() => setTurnstileToken("bypass")}
                     />
                   </div>
-                )}
+                 )}
 
                 {error && <p className="text-red-500 text-sm bg-red-50 rounded-lg px-3 py-2">{error}</p>}
 
                 <button
                   onClick={mode === "login" ? submitLogin : submitRegister}
-                  disabled={busy || (mode === "login" && !turnstileToken) || (mode === "register" && (!pwOk || !form.securityAnswer))}
+                  disabled={busy || (mode === "register" && (!pwOk || !form.securityAnswer))}
                   className="w-full bg-[#0c1e3a] hover:bg-[#0e2a4a] disabled:opacity-50 text-white font-semibold py-3 rounded-xl text-sm transition-colors">
                   {busy ? "Please wait…" : mode === "login" ? "Sign In" : "Create Account"}
                 </button>

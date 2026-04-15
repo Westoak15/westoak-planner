@@ -24,9 +24,15 @@ app.use("/api",         simulateRouter);
 app.get("/api/health",  (_req, res) => res.json({ ok: true }));
 
 if (process.env.NODE_ENV === "production") {
-  const dist = path.join(__dirname, "../client");
-  app.use(express.static(dist));
-  app.get("*", (_req, res) => res.sendFile(path.join(dist, "index.html")));
+    const dist = path.join(__dirname, "../client");
+    app.use(express.static(dist));
+    app.get("*", (req, res) => {
+       if (req.path.includes(".")) {
+         res.status(404).send("Not found");
+       return;
+       }
+    res.sendFile(path.join(dist, "index.html"));
+});
 }
 
 app.listen(PORT, "0.0.0.0", () => console.log(`✅  FP running on :${PORT}`));

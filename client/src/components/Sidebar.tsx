@@ -1,38 +1,55 @@
 import {
   Users, LayoutDashboard, Scale, PiggyBank,
-  Shield, GraduationCap, CreditCard, Receipt, ScrollText, Brain, ClipboardList
+  Shield, GraduationCap, CreditCard, Receipt, ScrollText, Brain, ClipboardList,
+  FileHeart, Settings
 } from "lucide-react";
 import { cn } from "../lib/utils";
 
 export type Tab =
   | "clients" | "dashboard"
-  | "networth" | "retirement" | "insurance"
+  | "networth" | "retirement" | "insurance" | "fna"
   | "resp" | "debt" | "tax" | "estate" | "ai"
-  | "planning";
+  | "planning" | "admin";
 
 interface Props {
   activeTab: Tab;
   onTab: (t: Tab) => void;
   clientName?: string;
+  role?: string;
+  level?: string;
 }
 
-const TABS: { key: Tab; label: string; icon: any; dividerBefore?: boolean }[] = [
+const ALL_TABS: { key: Tab; label: string; icon: any; dividerBefore?: boolean; gaOnly?: boolean }[] = [
   { key: "clients",    label: "Clients",          icon: Users },
   { key: "dashboard",  label: "Dashboard",         icon: LayoutDashboard, dividerBefore: true },
   { key: "networth",   label: "Net Worth",         icon: Scale },
   { key: "retirement", label: "Retirement",        icon: PiggyBank },
-  { key: "insurance",  label: "Insurance",         icon: Shield },
+  { key: "insurance",  label: "Policies",          icon: Shield },
+  { key: "fna",        label: "FNA",               icon: FileHeart },
   { key: "resp",       label: "RESP",              icon: GraduationCap },
   { key: "debt",       label: "Debt",              icon: CreditCard },
   { key: "tax",        label: "Tax",               icon: Receipt },
   { key: "estate",     label: "Estate",            icon: ScrollText },
   { key: "ai",         label: "AI Insights",       icon: Brain },
   { key: "planning",   label: "Full FP View",      icon: ClipboardList, dividerBefore: true },
+  { key: "admin",      label: "Admin",             icon: Settings, dividerBefore: true, gaOnly: true },
 ];
 
-const PLAN_TABS: Tab[] = ["dashboard","networth","retirement","insurance","resp","debt","tax","estate","ai","planning"];
+// Standard FA only sees these tabs
+const STANDARD_TABS: Tab[] = ["clients", "insurance", "fna"];
 
-export function Sidebar({ activeTab, onTab, clientName }: Props) {
+const PLAN_TABS: Tab[] = ["dashboard","networth","retirement","insurance","fna","resp","debt","tax","estate","ai","planning"];
+
+export function Sidebar({ activeTab, onTab, clientName, role, level }: Props) {
+  const isGA = role === "ga";
+  const isStandard = !isGA && level === "standard";
+
+  const visibleTabs = ALL_TABS.filter(tab => {
+    if (tab.gaOnly && !isGA) return false;
+    if (isStandard && !STANDARD_TABS.includes(tab.key)) return false;
+    return true;
+  });
+
   return (
     <aside className="w-[180px] flex-shrink-0 flex flex-col select-none" style={{
       background: "linear-gradient(180deg, #0c1e3a 0%, #0e2a4a 60%, #0a3556 100%)"
@@ -45,9 +62,9 @@ export function Sidebar({ activeTab, onTab, clientName }: Props) {
 
       {/* Nav */}
       <nav className="flex-1 py-2 overflow-y-auto overflow-x-hidden">
-        {TABS.map(tab => {
+        {visibleTabs.map(tab => {
           const isActive = activeTab === tab.key;
-          const disabled = PLAN_TABS.includes(tab.key) && !clientName;
+          const disabled = PLAN_TABS.includes(tab.key) && !clientName && tab.key !== "admin";
           return (
             <div key={tab.key}>
               {tab.dividerBefore && <div className="mx-3 my-1.5 border-t border-white/10" />}
@@ -72,12 +89,13 @@ export function Sidebar({ activeTab, onTab, clientName }: Props) {
         })}
       </nav>
 
-      {/* Client indicator */}
-      {clientName && (
-        <div className="px-3 py-2 border-t border-white/10">
-          <div className="text-[9px] text-white/30 text-center truncate">{clientName}</div>
+      {/* Role indicator */}
+      <div className="px-3 py-2 border-t border-white/10">
+        {clientName && <div className="text-[9px] text-white/30 text-center truncate mb-1">{clientName}</div>}
+        <div className="text-[9px] text-white/20 text-center uppercase tracking-wider">
+          {isGA ? "General Agent" : `Field Agent${isStandard ? " · Standard" : " · Enhanced"}`}
         </div>
-      )}
+      </div>
     </aside>
   );
 }

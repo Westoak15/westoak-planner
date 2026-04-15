@@ -7,7 +7,8 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "../lib/queryClient";
 import { MonteCarloResults } from "../components/MonteCarloResults";
 import { NetWorthTab as NetWorthTabNew, RetirementTab as RetirementTabNew, RespTab as RespTabNew, DebtTab as DebtTabNew } from "./MultiEntryTabs";
-import { InsuranceTab as InsuranceTabNew } from "./FinancialPlanning";
+import { InsuranceTab as FnaTabNew } from "./FinancialPlanning";
+import { AdminPanel } from "./AdminPanel";
 import { fmt$, fmtPct, initials, avatarBg, cn } from "../lib/utils";
 import {
   Plus, Pencil, Trash2, X, Check, ChevronRight, Search,
@@ -1357,6 +1358,8 @@ function ChangePasswordModal({ onClose }: { onClose: () => void }) {
 // ─────────────────────────────────────────────────────────────────────────────
 export default function App() {
   const { user, logout } = useAuth();
+  const role = user?.role ?? "fa";
+  const level = user?.level ?? "standard";
   const [showChangePw, setShowChangePw] = useState(false);
   const [tab, setTab]             = useState<Tab>("clients");
   const [client, setClient]       = useState<Client | null>(null);
@@ -1384,7 +1387,7 @@ export default function App() {
 
   return (
     <div className="flex h-screen overflow-hidden bg-gray-50">
-      <Sidebar activeTab={tab} onTab={t => { if (t === "clients") { setShowClientDetail(false); } setTab(t); }} clientName={clientName} />
+      <Sidebar activeTab={tab} onTab={t => { if (t === "clients") { setShowClientDetail(false); } setTab(t as any); }} clientName={clientName} role={role} level={level} />
 
       {/* Main content */}
       <div className="flex-1 flex flex-col overflow-hidden">
@@ -1439,13 +1442,18 @@ export default function App() {
               <FinancialPlanningContent initialClientId={client.id} />
             </QueryClientProvider>
           )}
+          import { NetWorthTab as NetWorthTabNew, RetirementTab as RetirementTabNew, RespTab as RespTabNew, DebtTab as DebtTabNew, InsuranceTab as InsuranceTabNew } from "./MultiEntryTabs";         
+          import { InsuranceTab as FnaTabNew } from "./FinancialPlanning";
+          import { AdminPanel } from "./AdminPanel";          
           {tab === "networth"   && client && <NetWorthTabNew   clientId={client.id} client={client} />}
           {tab === "retirement" && client && <RetirementTabNew clientId={client.id} />}
-          {tab === "insurance"  && client && (
+          {tab === "insurance"  && client && <InsuranceTabNew  clientId={client.id} />}
+          {tab === "fna"        && client && (
             <QueryClientProvider client={queryClient}>
-              <InsuranceTabNew clientId={client.id} planId={null} />
+            <FnaTabNew clientId={client.id} planId={null} />
             </QueryClientProvider>
           )}
+          {tab === "admin" && <AdminPanel />}
           {tab === "resp"       && client && <RespTabNew       clientId={client.id} />}
           {tab === "debt"       && client && <DebtTabNew       clientId={client.id} />}
           {tab === "dashboard"  && client && <DashboardTab     clientId={client.id} />}

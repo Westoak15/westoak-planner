@@ -17,6 +17,14 @@ export const users = pgTable("users", {
   securityAnswerHash: text("security_answer_hash"),
   createdAt:          timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
   updatedAt:          timestamp("updated_at", { mode: "date" }).defaultNow().notNull(),
+  role:               text("role").default("fa").notNull(),
+  agentId:            text("agent_id"),
+  agency:             text("agency"),
+  phone:              text("phone"),
+  level:              text("level").default("standard").notNull(),
+  gaId:               integer("ga_id"),
+  mustResetPassword:  boolean("must_reset_password").default(false).notNull(),
+
 });
 export const insertUserSchema = z.object({
   email:     z.string().email(),

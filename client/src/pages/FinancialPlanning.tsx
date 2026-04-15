@@ -580,9 +580,15 @@ function buildDefaultFromNW() {
               className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold text-primary border border-primary/30 hover:bg-primary/5 rounded-lg transition-colors">
               <Eye className="w-4 h-4" /> Open
            </button>
-           <button onClick={() => window.open(`/api/reports/${clientId}/fna/${a.id}?token=${localStorage.getItem('fp_token')}`, '_blank')}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold text-gray-600 border border-gray-200 hover:bg-gray-50 rounded-lg transition-colors">
-              <Printer className="w-4 h-4" /> Report
+           <button onClick={async () => {
+  const token = localStorage.getItem('fp_token');
+  const res = await fetch(`/api/reports/${clientId}/fna/${a.id}`, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  const html = await res.text();
+  const blob = new Blob([html], { type: 'text/html' });
+  window.open(URL.createObjectURL(blob), '_blank');
+}}
            </button>
            <button onClick={() => { if (confirm("Delete this analysis?")) deleteAnalysis.mutate(a.id); }}
              className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold text-red-500 border border-red-200 hover:bg-red-50 rounded-lg transition-colors">

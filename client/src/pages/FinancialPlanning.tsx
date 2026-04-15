@@ -29,7 +29,7 @@ import {
   Target, DollarSign, PiggyBank, Shield, GraduationCap, CreditCard,
   Receipt, ScrollText, Brain, Plus, Trash2, Sparkles, TrendingUp, TrendingDown,
   AlertTriangle, CheckCircle, Clock, FileText, Printer, Loader2, BarChart3,
-  Users, Calculator, ChevronDown, ChevronUp, Info, Download, Eye, Gift, FileSignature,
+  Users, Calculator, ChevronDown, ChevronUp, Info, Download, Eye, Gift, FileSignature, Printer,
 } from "lucide-react";
 
 // ── Tab definitions ───────────────────────────────────────────────────────────
@@ -575,6 +575,10 @@ function buildDefaultFromNW() {
             }}
               className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold text-primary border border-primary/30 hover:bg-primary/5 rounded-lg transition-colors">
               <Eye className="w-4 h-4" /> Open
+           </button>
+           <button onClick={() => window.open(`/api/reports/${clientId}/fna/${a.id}`, '_blank')}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold text-gray-600 border border-gray-200 hover:bg-gray-50 rounded-lg transition-colors">
+              <Printer className="w-4 h-4" /> Report
            </button>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">

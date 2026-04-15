@@ -8,6 +8,7 @@ import { clientsRouter } from "./routes/clients.js";
 import { fpRouter }      from "./routes/fp.js";
 import { fpFullRouter }  from "./routes/fp-full.js";
 import { simulateRouter } from "./routes/simulate.js";
+import { reportsRouter } from "./routes/reports.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = parseInt(process.env.PORT ?? "5000", 10);
@@ -21,6 +22,7 @@ app.use("/api/clients", clientsRouter);
 app.use("/api",         fpRouter);
 app.use("/api",         fpFullRouter);
 app.use("/api",         simulateRouter);
+app.use("/api/reports",  reportsRouter);
 app.get("/api/health",  (_req, res) => res.json({ ok: true }));
 
 if (process.env.NODE_ENV === "production") {
@@ -42,3 +44,4 @@ if (process.env.NODE_ENV === "production") {
 
 app.listen(PORT, "0.0.0.0", () => console.log(`✅  FP running on :${PORT}`));
 export default app;
+

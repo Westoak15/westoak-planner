@@ -1428,7 +1428,7 @@ export default function App() {
           {tab === "clients" && showClientDetail && client && (
             <ClientDetail client={client} onBack={backToClients} onPlanSelect={selectPlan} onUpdate={setClient} level={level} />
           )}
-          {tab !== "admin" && tab !== "agents" && !client && (
+          {tab !== "admin" && tab !== "agents" && tab !== "clients" && !client && (
             <div className="flex flex-col items-center justify-center h-full text-center p-8">
               <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mb-4">
                 <Users className="w-8 h-8 text-gray-400" />

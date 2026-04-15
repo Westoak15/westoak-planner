@@ -580,6 +580,10 @@ function buildDefaultFromNW() {
               className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold text-gray-600 border border-gray-200 hover:bg-gray-50 rounded-lg transition-colors">
               <Printer className="w-4 h-4" /> Report
            </button>
+           <button onClick={() => { if (confirm("Delete this analysis?")) deleteAnalysis.mutate(a.id); }}
+             className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold text-red-500 border border-red-200 hover:bg-red-50 rounded-lg transition-colors">
+             <Trash2 className="w-4 h-4" /> Delete
+           </button>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             {[
@@ -606,9 +610,7 @@ function buildDefaultFromNW() {
           No insurance analyses yet. Create a Family Needs Analysis worksheet.
         </div>
       )}
-      <ModuleScenarioPreview planId={planId} module="insurance" />
-      <InsuranceMethodComparison analyses={analyses as any[]} />
-
+      
       {showWorksheet && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-background rounded-3xl w-full max-w-4xl shadow-2xl max-h-[95vh] overflow-y-auto">

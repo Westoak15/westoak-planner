@@ -1,3 +1,4 @@
+import { Turnstile } from '@marsidev/react-turnstile'
 import { useState } from "react";
 import { useAuth } from "../lib/auth";
 import { Eye, EyeOff, Check, X } from "lucide-react";
@@ -57,14 +58,13 @@ export default function Login() {
   const [showNewPw, setShowNewPw] = useState(false);
   const [error, setError] = useState("");
   const [busy, setBusy]   = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
 
-  // Login / Register form
   const [form, setForm] = useState({
     email: "", password: "", firstName: "", lastName: "", firmName: "",
     securityQuestion: SECURITY_QUESTIONS[0], securityAnswer: "",
   });
 
-  // Forgot password multi-step
   const [forgotEmail, setForgotEmail]       = useState("");
   const [forgotQuestion, setForgotQuestion] = useState("");
   const [forgotAnswer, setForgotAnswer]     = useState("");
@@ -74,7 +74,6 @@ export default function Login() {
   const u = (k: string, v: string) => setForm(f => ({ ...f, [k]: v }));
   const reset = () => { setError(""); };
 
-  // ── Password rules ──────────────────────────────────────────────────────────
   const pwRules = [
     { ok: form.password.length >= 8 },
     { ok: /[A-Z]/.test(form.password) },
@@ -94,8 +93,8 @@ export default function Login() {
   const newPwOk = newPwRules.every(r => r.ok);
   const pwMatch = newPassword === confirmPassword && confirmPassword.length > 0;
 
-  // ── Submit handlers ─────────────────────────────────────────────────────────
   async function submitLogin() {
+    if (!turnstileToken) { setError("Please complete the security check."); return; }
     reset(); setBusy(true);
     try { await login(form.email, form.password); }
     catch (e: any) { setError(e.message); }
@@ -128,7 +127,6 @@ export default function Login() {
   async function submitForgotAnswer() {
     reset(); setBusy(true);
     try {
-      // Just validate answer exists, move to reset step
       if (!forgotAnswer.trim()) { setError("Please enter your security answer."); setBusy(false); return; }
       setMode("forgot-reset");
     } catch (e: any) { setError(e.message); }
@@ -148,11 +146,9 @@ export default function Login() {
     finally { setBusy(false); }
   }
 
-  // ── Render ──────────────────────────────────────────────────────────────────
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#0c1e3a] p-4">
       <div className="w-full max-w-md">
-        {/* Logo */}
         <div className="text-center mb-8">
           <img src="/koc-logo.png" alt="Knights of Columbus" className="w-24 h-24 object-contain mx-auto mb-3" />
           <div className="text-white/60 text-sm">Financial Planning Suite</div>
@@ -160,7 +156,6 @@ export default function Login() {
 
         <div className="bg-white rounded-2xl shadow-2xl p-8"><form autoComplete="off" onSubmit={e => e.preventDefault()}>
 
-          {/* ── Sign In / Register tabs ── */}
           {(mode === "login" || mode === "register") && (
             <>
               <div className="flex bg-gray-100 rounded-xl p-1 mb-6">
@@ -198,7 +193,6 @@ export default function Login() {
 
                 {mode === "register" && <PasswordStrength password={form.password} />}
 
-                {/* Security question — register only */}
                 {mode === "register" && (
                   <div className="pt-2 border-t border-gray-100">
                     <p className="text-xs font-semibold text-gray-500 mb-2">Security Question (used for password recovery)</p>
@@ -220,11 +214,21 @@ export default function Login() {
                   </div>
                 )}
 
+                {mode === "login" && (
+                  <div className="flex justify-center">
+                    <Turnstile
+                      siteKey="0x4AAAAAAC9t57T1sbOWFGmX"
+                      onSuccess={token => setTurnstileToken(token)}
+                      onExpire={() => setTurnstileToken(null)}
+                    />
+                  </div>
+                )}
+
                 {error && <p className="text-red-500 text-sm bg-red-50 rounded-lg px-3 py-2">{error}</p>}
 
                 <button
                   onClick={mode === "login" ? submitLogin : submitRegister}
-                  disabled={busy || (mode === "register" && (!pwOk || !form.securityAnswer))}
+                  disabled={busy || (mode === "login" && !turnstileToken) || (mode === "register" && (!pwOk || !form.securityAnswer))}
                   className="w-full bg-[#0c1e3a] hover:bg-[#0e2a4a] disabled:opacity-50 text-white font-semibold py-3 rounded-xl text-sm transition-colors">
                   {busy ? "Please wait…" : mode === "login" ? "Sign In" : "Create Account"}
                 </button>
@@ -232,7 +236,6 @@ export default function Login() {
             </>
           )}
 
-          {/* ── Forgot: Step 1 — Enter email ── */}
           {mode === "forgot-email" && (
             <div className="space-y-4">
               <div>
@@ -249,7 +252,6 @@ export default function Login() {
             </div>
           )}
 
-          {/* ── Forgot: Step 2 — Answer security question ── */}
           {mode === "forgot-question" && (
             <div className="space-y-4">
               <div>
@@ -270,7 +272,6 @@ export default function Login() {
             </div>
           )}
 
-          {/* ── Forgot: Step 3 — Set new password ── */}
           {mode === "forgot-reset" && (
             <div className="space-y-4">
               <div>
@@ -302,7 +303,6 @@ export default function Login() {
             </div>
           )}
 
-          {/* ── Forgot: Done ── */}
           {mode === "forgot-done" && (
             <div className="text-center py-6 space-y-4">
               <div className="w-14 h-14 bg-emerald-100 rounded-full flex items-center justify-center mx-auto">

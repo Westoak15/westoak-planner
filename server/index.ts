@@ -25,7 +25,12 @@ app.get("/api/health",  (_req, res) => res.json({ ok: true }));
 
 if (process.env.NODE_ENV === "production") {
     const dist = path.join(__dirname, "../client");
-    app.use(express.static(dist));
+    app.use(express.static(dist, {
+       setHeaders: (res, filePath) => {
+         if (filePath.endsWith('.js')) res.setHeader('Content-Type', 'application/javascript');
+         if (filePath.endsWith('.css')) res.setHeader('Content-Type', 'text/css');
+    }
+  }));
     app.get("*", (req, res) => {
        if (req.path.includes(".")) {
          res.status(404).send("Not found");

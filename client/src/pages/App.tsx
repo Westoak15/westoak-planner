@@ -12,7 +12,7 @@ import { fmt$, fmtPct, initials, avatarBg, cn } from "../lib/utils";
 import {
   Plus, Pencil, Trash2, X, Check, ChevronRight, Search,
   User, Users, Home, Calendar, Briefcase, LogOut, Save, KeyRound, Eye, EyeOff
-} from "lucide-react";
+ } from "lucide-react";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -209,7 +209,8 @@ function ClientsTab({ onSelect }: { onSelect: (c: Client) => void }) {
                 <td className="px-5 py-3 text-gray-500">{c.phone ?? "—"}</td>
                 <td className="px-5 py-3 text-blue-600">{c.email ?? "—"}</td>
                 <td className="px-5 py-3 text-gray-500">{c.province ?? "—"}</td>
-                <td className="px-3 py-3"><ChevronRight className="w-4 h-4 text-gray-300" /></td>
+                <td className="px-3 py-3"><button onClick={e => { e.stopPropagation(); deletePlan(p.id); }} className="text-gray-300 hover:text-red-500 transition-colors p-1"><Trash2 className="w-3.5 h-3.5" /></button>
+                    <ChevronRight className="w-4 h-4 text-gray-300" /></td>
               </tr>
             ))}
           </tbody>
@@ -241,6 +242,11 @@ function ClientDetail({ client, onBack, onPlanSelect, onUpdate }: { client: Clie
   finally { setBusy(false); }
   }
 
+  async function deletePlan(planId: number) {
+    if (!confirm("Delete this plan? This cannot be undone.")) return;
+    await api.delete(`/api/plans/${planId}`);
+    setPlans(prev => prev.filter(p => p.id !== planId));
+  }
   async function createPlan() {
     const p = await api.post<Plan>(`/api/clients/${client.id}/plans`, { name: newPlanName });
     setPlans(prev => [p, ...prev]);
@@ -378,6 +384,7 @@ function ClientDetail({ client, onBack, onPlanSelect, onUpdate }: { client: Clie
                   </div>
                   <div className="flex items-center gap-3">
                     <span className={`text-xs px-2 py-0.5 rounded-full ${p.status === "active" ? "bg-emerald-100 text-emerald-700" : "bg-gray-100 text-gray-500"}`}>{p.status}</span>
+                    <button onClick={e => { e.stopPropagation(); deletePlan(p.id); }} className="text-gray-300 hover:text-red-500 transition-colors p-1"><Trash2 className="w-3.5 h-3.5" /></button>
                     <ChevronRight className="w-4 h-4 text-gray-300" />
                   </div>
                 </div>
@@ -1434,7 +1441,11 @@ export default function App() {
           )}
           {tab === "networth"   && client && <NetWorthTabNew   clientId={client.id} client={client} />}
           {tab === "retirement" && client && <RetirementTabNew clientId={client.id} />}
-          {tab === "insurance"  && client && <InsuranceTabNew  clientId={client.id} planId={null} />}
+          {tab === "insurance"  && client && (
+            <QueryClientProvider client={queryClient}>
+              <InsuranceTabNew clientId={client.id} planId={null} />
+            </QueryClientProvider>
+          )}
           {tab === "resp"       && client && <RespTabNew       clientId={client.id} />}
           {tab === "debt"       && client && <DebtTabNew       clientId={client.id} />}
           {tab === "dashboard"  && client && <DashboardTab     clientId={client.id} />}
@@ -1443,6 +1454,12 @@ export default function App() {
     </div>
   );
 }
+
+
+
+
+
+
 
 
 

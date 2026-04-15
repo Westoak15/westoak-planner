@@ -12,6 +12,7 @@
     "db:push": "drizzle-kit push"
   },
   "dependencies": {
+    "@marsidev/react-turnstile": "^1.5.0",
     "@radix-ui/react-accordion": "latest",
     "@radix-ui/react-alert-dialog": "latest",
     "@radix-ui/react-aspect-ratio": "latest",

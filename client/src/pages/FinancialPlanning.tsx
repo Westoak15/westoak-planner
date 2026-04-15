@@ -448,7 +448,7 @@ function AssetRowImpl({ label, value, onValueChange, useIt, onToggle, testId }: 
   );
 }
 
-function InsuranceTab({ clientId, planId }: { clientId: number; planId: number | null }) {
+export function InsuranceTab({ clientId, planId }: { clientId: number; planId: number | null }) {
   const { data: analyses = [] } = useInsuranceAnalyses(clientId);
   const deleteAnalysis = useDeleteInsuranceAnalysis(clientId);
   const createWorksheet = useCreateInsuranceWorksheet();
@@ -1631,3 +1631,6 @@ export function FinancialPlanningContent({ initialClientId }: { initialClientId?
 export default function FinancialPlanning() {
   return <FinancialPlanningContent />;
 }
+
+
+

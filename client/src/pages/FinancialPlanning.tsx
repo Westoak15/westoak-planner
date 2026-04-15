@@ -450,6 +450,7 @@ function AssetRowImpl({ label, value, onValueChange, useIt, onToggle, testId }: 
 
 export function InsuranceTab({ clientId, planId }: { clientId: number; planId: number | null }) {
   const { data: analyses = [] } = useInsuranceAnalyses(clientId);
+  const { data: nwEntries = [] } = useNetWorthEntries(clientId);
   const deleteAnalysis = useDeleteInsuranceAnalysis(clientId);
   const createWorksheet = useCreateInsuranceWorksheet();
   const [showWorksheet, setShowWorksheet] = useState(false);
@@ -471,6 +472,42 @@ export function InsuranceTab({ clientId, planId }: { clientId: number; planId: n
     meetingNotes: "",
   };
   const [form, setForm] = useState<WorksheetForm>(defaultWs);
+
+function buildDefaultFromNW() {
+  const sum = (type: string, category: string, owner?: string) =>
+    nwEntries.filter((e: any) => e.type === type && e.category === category && (!owner || e.owner === owner))
+             .reduce((s: number, e: any) => s + parseFloat(e.value || "0"), 0);
+  return {
+    liabilities: {
+      mortgageBalance: String(sum("liability", "Mortgage")),
+      carLoans: String(sum("liability", "Car Loan")),
+      linesOfCredit: String(sum("liability", "Line of Credit")),
+      creditCards: String(sum("liability", "Credit Card")),
+      finalExpenses: "15000",
+      emergencyFund: "0",
+    },
+    primaryAssets: {
+      liquidSavings: String(sum("asset", "Savings", "primary")),
+      rrsps: String(sum("asset", "RRSP", "primary")),
+      rrspsUse: true,
+      nonRegistered: String(sum("asset", "Non-Registered", "primary")),
+      nonRegisteredUse: true,
+      tfsa: String(sum("asset", "TFSA", "primary")),
+      tfsaUse: true,
+      other: "0",
+    },
+    spouseAssets: {
+      liquidSavings: String(sum("asset", "Savings", "spouse")),
+      rrsps: String(sum("asset", "RRSP", "spouse")),
+      rrspsUse: true,
+      nonRegistered: String(sum("asset", "Non-Registered", "spouse")),
+      nonRegisteredUse: true,
+      tfsa: String(sum("asset", "TFSA", "spouse")),
+      tfsaUse: true,
+      other: "0",
+    },
+  };
+}
 
   const v = (s: string) => parseFloat(s) || 0;
   const subtotalA = Object.values(form.liabilities).reduce((s, val) => s + v(val), 0);

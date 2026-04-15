@@ -93,11 +93,9 @@ export default function Login() {
   const newPwOk = newPwRules.every(r => r.ok);
   const pwMatch = newPassword === confirmPassword && confirmPassword.length > 0;
 
-   async function submitRegister() {
+  async function submitLogin() {
     reset(); setBusy(true);
-    try {
-      await register({ ...form, securityQuestion: form.securityQuestion, securityAnswer: form.securityAnswer });
-    }
+    try { await login(form.email, form.password); }
     catch (e: any) { setError(e.message); }
     finally { setBusy(false); }
   }

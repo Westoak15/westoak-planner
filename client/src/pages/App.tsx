@@ -1361,7 +1361,7 @@ export default function App() {
   const role = user?.role ?? "fa";
   const level = user?.level ?? "standard";
   const [showChangePw, setShowChangePw] = useState(false);
-  const [tab, setTab]             = useState<Tab>("clients");
+  const [tab, setTab]             = useState<Tab>("agents");
   const [client, setClient]       = useState<Client | null>(null);
   const [plan, setPlan]           = useState<Plan | null>(null);
   const [showClientDetail, setShowClientDetail] = useState(false);
@@ -1380,7 +1380,7 @@ export default function App() {
 
   function backToClients() {
     setShowClientDetail(false);
-    setTab("clients");
+    setTab("agents");
   }
 
   const clientName = client ? `${client.firstName} ${client.lastName}` : undefined;
@@ -1432,7 +1432,7 @@ export default function App() {
               </div>
               <h2 className="text-lg font-bold text-gray-700 mb-1">Select a Client</h2>
               <p className="text-sm text-gray-400 mb-4">Choose a client from the Clients tab to view their financial plan</p>
-              <button onClick={() => setTab("clients")} className="text-sm font-semibold text-white bg-[#0c1e3a] hover:bg-[#0e2a4a] px-4 py-2 rounded-lg">
+              <button onClick={() => setTab("agents")} className="text-sm font-semibold text-white bg-[#0c1e3a] hover:bg-[#0e2a4a] px-4 py-2 rounded-lg">
                 Go to Clients
               </button>
             </div>
@@ -1460,6 +1460,8 @@ export default function App() {
     </div>
   );
 }
+
+
 
 
 

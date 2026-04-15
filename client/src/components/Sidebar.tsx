@@ -73,15 +73,15 @@ export function Sidebar({ activeTab, onTab, clientName, role, level }: Props) {
                 title={tab.label}
                 disabled={disabled}
                 className={cn(
-                  "w-full flex flex-col items-center justify-center py-3 px-2 rounded-lg mx-auto transition-all relative group focus:outline-none",
-                  isActive   ? "bg-white/15 text-white"
+                  "w-full flex items-center gap-2.5 py-2 px-3 rounded-lg mx-auto transition-all relative group focus:outline-none",
+                   isActive   ? "bg-white/15 text-white"
                   : disabled ? "text-white/20 cursor-not-allowed"
                   : "text-white/45 hover:text-white/80 hover:bg-white/8 cursor-pointer"
                 )}
                 style={{ width: "calc(100% - 12px)", marginLeft: "6px" }}
               >
-                <tab.icon className={cn("w-5 h-5 mb-1.5 flex-shrink-0", isActive && "text-cyan-400")} />
-                <span className="text-[12px] font-medium leading-tight text-center">{tab.label}</span>
+                <tab.icon className={cn("w-4 h-4 flex-shrink-0", isActive && "text-cyan-400")} />
+                <span className="text-[11px] font-medium leading-tight">{tab.label}</span>
                 {isActive && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-6 bg-cyan-400 rounded-r" />}
               </button>
             </div>

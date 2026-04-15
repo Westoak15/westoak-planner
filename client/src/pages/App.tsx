@@ -9,6 +9,7 @@ import { MonteCarloResults } from "../components/MonteCarloResults";
 import { NetWorthTab as NetWorthTabNew, RetirementTab as RetirementTabNew, RespTab as RespTabNew, DebtTab as DebtTabNew, InsuranceTab as InsuranceTabNew } from "./MultiEntryTabs";         
 import { InsuranceTab as FnaTabNew } from "./FinancialPlanning";
 import { AdminPanel } from "./AdminPanel"
+import { AgentsTab } from "./AgentsTab";
 import { fmt$, fmtPct, initials, avatarBg, cn } from "../lib/utils";
 import {
   Plus, Pencil, Trash2, X, Check, ChevronRight, Search,

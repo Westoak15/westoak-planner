@@ -6,7 +6,13 @@ import { isAuthenticated, type AuthRequest } from "../auth/index.js";
 import { generateFnaReport, generateNetWorthReport, generateComprehensiveReport } from "../services/reportGenerator.js";
 
 const r = Router();
-r.use(isAuthenticated);
+r.use((req: any, res: any, next: any) => {
+  // Allow token via query param for report downloads
+  if (req.query.token && !req.headers.authorization) {
+    req.headers.authorization = `Bearer ${req.query.token}`;
+  }
+  return isAuthenticated(req, res, next);
+});
 
 async function accessibleUserIds(userId: number): Promise<number[]> {
   const [me] = await db.select({ role: users.role }).from(users).where(eq(users.id, userId)).limit(1);
@@ -86,3 +92,4 @@ r.get("/:clientId/comprehensive", async (req: AuthRequest, res: Response) => {
 });
 
 export { r as reportsRouter };
+

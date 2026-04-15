@@ -32,14 +32,15 @@ async function canAccessClient(userId: number, clientId: number): Promise<boolea
 
 r.get("/", async (req: AuthRequest, res: Response) => {
   const s = req.query.search as string | undefined;
+  const agentId = req.query.agentId ? +req.query.agentId : null;
   const ids = await accessibleUserIds(req.userId!);
+  const effectiveIds = agentId && ids.includes(agentId) ? [agentId] : ids;
   const rows = await db.select().from(clients)
     .where(s
       ? and(inArray(clients.userId, effectiveIds), or(ilike(clients.firstName, `%${s}%`), ilike(clients.lastName, `%${s}%`)))
-      : inArray(clients.userId, ids));
+      : inArray(clients.userId, effectiveIds));
   res.json(rows);
 });
-
 r.get("/", async (req: AuthRequest, res: Response) => {
   const s = req.query.search as string | undefined;
   const agentId = req.query.agentId ? +req.query.agentId : null;

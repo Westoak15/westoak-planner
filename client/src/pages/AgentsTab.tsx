@@ -47,15 +47,13 @@ export function AgentsTab({ onSelectClient }: { onSelectClient?: (clientId: numb
   }, []);
 
   function selectAgent(agent: FaUser) {
-    setSelectedAgent(agent);
-    setLoading(true);
-    // GA fetches all clients — filter by agent on client side since API returns all accessible
-    api.get<Client[]>("/api/clients").then(all => {
-      // We need clients belonging to this agent — pass agentId as filter
-      api.get<Client[]>(`/api/clients?agentId=${agent.id}`).then(setClients).finally(() => setLoading(false));
-    }).catch(() => setLoading(false));
-    setView("clients");
-  }
+  setSelectedAgent(agent);
+  setLoading(true);
+  api.get<Client[]>(`/api/clients?agentId=${agent.id}`)
+    .then(setClients)
+    .finally(() => setLoading(false));
+  setView("clients");
+}
 
   function selectClient(client: Client) {
     setSelectedClient(client);

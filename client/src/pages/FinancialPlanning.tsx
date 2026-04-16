@@ -455,6 +455,8 @@ function AssetRowImpl({ label, value, onValueChange, useIt, onToggle, testId }: 
 export function InsuranceTab({ clientId, planId, client }: { clientId: number; planId: number | null; client?: any }) {
   const { data: analyses = [] } = useInsuranceAnalyses(clientId);
   const { data: nwEntries = [] } = useNetWorthEntries(clientId);
+  const [policies, setPolicies] = useState<any[]>([]);
+  useEffect(() => { api.get<any[]>(`/api/clients/${clientId}/policies`).then(setPolicies).catch(() => {}); }, [clientId]);
   const deleteAnalysis = useDeleteInsuranceAnalysis(clientId);
   const createWorksheet = useCreateInsuranceWorksheet();
   const queryClient = useQueryClient();
@@ -482,6 +484,9 @@ function buildDefaultFromNW() {
   const sum = (type: string, category: string, owner?: string) =>
     nwEntries.filter((e: any) => e.type === type && e.category === category && (!owner || e.owner === owner))
              .reduce((s: number, e: any) => s + parseFloat(e.value || "0"), 0);
+  const policySum = (insured: string) =>
+    policies.filter((p: any) => p.insured === insured && ["Term Life","Whole Life","Universal Life"].includes(p.type))
+            .reduce((s: number, p: any) => s + parseFloat(p.coverageAmount || "0"), 0);
   return {
     liabilities: {
       mortgageBalance: String(sum("liability", "Mortgage")),
@@ -1799,6 +1804,10 @@ export function FinancialPlanningContent({ initialClientId }: { initialClientId?
 export default function FinancialPlanning() {
   return <FinancialPlanningContent />;
 }
+
+
+
+
 
 
 

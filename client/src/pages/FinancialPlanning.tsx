@@ -601,8 +601,8 @@ function buildDefaultFromNW() {
                 const pNet = Math.max(0, parseFloat(calc.primaryNet ?? ws.primaryNeed ?? "0"));
                 const sNet = Math.max(0, parseFloat(calc.spouseNet ?? ws.spouseNeed ?? "0"));
                 const items = [
-                  { label: a.primaryName || "Primary — Life Need", val: pNet },
-                  ...(a.spouseName ? [{ label: `${a.spouseName} — Life Need`, val: sNet }] : []),
+                  { label: `${a.primaryName || "Primary"} - Life Need`, val: pNet },
+                  ...(a.spouseName ? [{ label: `${a.spouseName} - Life Need`, val: sNet }] : []),
                   { label: "DI Need", val: parseFloat(a.recommendedDisabilityCoverage || "0") },
                   { label: "LTC Need", val: parseFloat(a.criticalIllnessLumpSum || "0") },
                 ];
@@ -1785,6 +1785,7 @@ export function FinancialPlanningContent({ initialClientId }: { initialClientId?
 export default function FinancialPlanning() {
   return <FinancialPlanningContent />;
 }
+
 
 
 

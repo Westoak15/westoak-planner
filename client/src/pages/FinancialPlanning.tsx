@@ -457,6 +457,7 @@ export function InsuranceTab({ clientId, planId, client }: { clientId: number; p
   const { data: nwEntries = [] } = useNetWorthEntries(clientId);
   const deleteAnalysis = useDeleteInsuranceAnalysis(clientId);
   const createWorksheet = useCreateInsuranceWorksheet();
+  const queryClient = useQueryClient();
   const [showWorksheet, setShowWorksheet] = useState(false);
   const [viewingId, setViewingId] = useState<number | null>(null);
 
@@ -540,9 +541,26 @@ function buildDefaultFromNW() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    createWorksheet.mutate({ clientId, data: { ...form, calc } }, {
-      onSuccess: () => { setShowWorksheet(false); setForm(defaultWs); setViewingId(null); },
-    });
+    if (viewingId) {
+      api.patch(`/api/insurance/${viewingId}`, {
+        worksheetData: { ...form, calc },
+        primaryName: form.primaryName,
+        primaryAge: form.primaryAge ? parseInt(form.primaryAge) : null,
+        spouseName: form.spouseName,
+        spouseAge: form.spouseAge ? parseInt(form.spouseAge) : null,
+        annualIncome: form.primaryAnnualIncome,
+        spouseAnnualIncome: form.spouseAnnualIncome,
+      }).then(() => {
+        setShowWorksheet(false);
+        setForm(defaultWs);
+        setViewingId(null);
+        queryClient.invalidateQueries({ queryKey: ["/api/clients/:clientId/insurance-analyses", clientId] });
+      });
+    } else {
+      createWorksheet.mutate({ clientId, data: { ...form, calc } }, {
+        onSuccess: () => { setShowWorksheet(false); setForm(defaultWs); setViewingId(null); },
+      });
+    }
   };
 
   return (
@@ -778,13 +796,22 @@ function buildDefaultFromNW() {
                 <div className="mt-4"><label className="text-xs font-medium text-muted-foreground">Meeting Notes</label><textarea value={form.meetingNotes} onChange={e => setForm(f => ({ ...f, meetingNotes: e.target.value }))} rows={3} className="w-full px-3 py-2 rounded-lg border text-sm mt-1 bg-background" /></div>
               </section>
 
-              <div className="sticky bottom-0 bg-background pt-4 pb-2 border-t border-border flex justify-end space-x-3">
-                <button type="button" onClick={() => setShowWorksheet(false)} data-testid="button-ws-cancel" className="px-6 py-3 rounded-xl font-semibold text-muted-foreground hover:bg-muted">Cancel</button>
-                {!viewingId && (
+              <div className="sticky bottom-0 bg-background pt-4 pb-2 border-t border-border flex justify-between items-center">
+                <div className="flex items-center gap-2">
+                  {viewingId && (
+                    <button type="button"
+                      onClick={async () => { const token = localStorage.getItem("fp_token"); const res = await fetch(`/api/reports/${clientId}/fna/${viewingId}`, { headers: { Authorization: `Bearer ${token}` } }); const html = await res.text(); const blob = new Blob([html], { type: "text/html" }); window.open(URL.createObjectURL(blob), "_blank"); }}
+                      className="flex items-center gap-1.5 px-4 py-2 rounded-xl font-semibold border border-border hover:bg-muted text-sm">
+                      <Printer className="w-4 h-4" /> Report
+                    </button>
+                  )}
+                </div>
+                <div className="flex gap-3">
+                  <button type="button" onClick={() => setShowWorksheet(false)} data-testid="button-ws-cancel" className="px-6 py-3 rounded-xl font-semibold text-muted-foreground hover:bg-muted">Cancel</button>
                   <button type="submit" disabled={createWorksheet.isPending} data-testid="button-ws-save" className="px-8 py-3 rounded-xl font-semibold bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">
-                    {createWorksheet.isPending ? <><Loader2 className="w-4 h-4 animate-spin inline mr-2" />Saving...</> : "Save Analysis"}
+                    {createWorksheet.isPending ? <><Loader2 className="w-4 h-4 animate-spin inline mr-2" />Saving...</> : viewingId ? "Update Analysis" : "Save Analysis"}
                   </button>
-                )}
+                </div>
               </div>
             </form>
           </div>
@@ -1772,6 +1799,8 @@ export function FinancialPlanningContent({ initialClientId }: { initialClientId?
 export default function FinancialPlanning() {
   return <FinancialPlanningContent />;
 }
+
+
 
 
 

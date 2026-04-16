@@ -12,20 +12,24 @@ interface Policy {
   premium: string;
   premiumFrequency: string;
   beneficiary: string;
+  inforceDate: string;
+  renewalDate: string;
   notes: string;
   createdAt: string;
 }
 
 type PolicyDraft = Omit<Policy, "id" | "createdAt">;
 
-const POLICY_TYPES = ["Life", "Term Life", "Whole Life", "Universal Life", "Disability (DI)", "Long-Term Care (LTC)", "Critical Illness", "Other"];
+// "Life" removed from top — first item is now "Term Life"
+const POLICY_TYPES = ["Term Life", "Whole Life", "Universal Life", "Disability (DI)", "Long-Term Care (LTC)", "Critical Illness", "Other"];
+const TERM_TYPES = ["Term Life", "Critical Illness"]; // show renewal date
 const FREQUENCIES = ["Monthly", "Quarterly", "Semi-Annual", "Annual"];
 const INPUT = "w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500";
 
 const emptyDraft = (): PolicyDraft => ({
-  type: "Life", insured: "primary", provider: "", policyNumber: "",
+  type: "Term Life", insured: "primary", provider: "", policyNumber: "",
   coverageAmount: "", premium: "", premiumFrequency: "Monthly",
-  beneficiary: "", notes: "",
+  beneficiary: "", inforceDate: "", renewalDate: "", notes: "",
 });
 
 function fmt$(val: string | null): string {
@@ -49,8 +53,7 @@ export function PoliciesTab({ clientId, client }: { clientId: number; client?: a
   const load = () => {
     setLoading(true);
     api.get<Policy[]>(`/api/clients/${clientId}/policies`)
-      .then(setPolicies)
-      .catch(() => setPolicies([]))
+      .then(setPolicies).catch(() => setPolicies([]))
       .finally(() => setLoading(false));
   };
 
@@ -58,18 +61,15 @@ export function PoliciesTab({ clientId, client }: { clientId: number; client?: a
 
   const u = (k: keyof PolicyDraft, v: string) => setDraft(d => ({ ...d, [k]: v }));
 
-  function openCreate() {
-    setDraft(emptyDraft());
-    setEditId(null);
-    setShowForm(true);
-  }
+  function openCreate() { setDraft(emptyDraft()); setEditId(null); setShowForm(true); }
 
   function openEdit(p: Policy) {
     setDraft({
       type: p.type, insured: p.insured, provider: p.provider,
       policyNumber: p.policyNumber, coverageAmount: p.coverageAmount,
       premium: p.premium, premiumFrequency: p.premiumFrequency,
-      beneficiary: p.beneficiary, notes: p.notes,
+      beneficiary: p.beneficiary, inforceDate: p.inforceDate ?? "",
+      renewalDate: p.renewalDate ?? "", notes: p.notes,
     });
     setEditId(p.id);
     setShowForm(true);
@@ -85,9 +85,7 @@ export function PoliciesTab({ clientId, client }: { clientId: number; client?: a
       }
       setShowForm(false);
       load();
-    } finally {
-      setSaving(false);
-    }
+    } finally { setSaving(false); }
   }
 
   async function del(id: number) {
@@ -98,26 +96,22 @@ export function PoliciesTab({ clientId, client }: { clientId: number; client?: a
 
   const primaryPolicies = policies.filter(p => p.insured === "primary");
   const spousePolicies  = policies.filter(p => p.insured === "spouse");
+  const isTermType = TERM_TYPES.includes(draft.type);
 
   const PolicyCard = ({ p }: { p: Policy }) => (
-    <div className="border border-gray-200 rounded-xl p-4 hover:bg-gray-50 transition-colors">
-      <div className="flex justify-between items-start mb-2">
-        <div>
-          <span className="text-xs font-semibold bg-[#0c1e3a]/10 text-[#0c1e3a] px-2 py-0.5 rounded-full">{p.type}</span>
-          {p.provider && <span className="text-sm font-semibold text-gray-800 ml-2">{p.provider}</span>}
-        </div>
-        <div className="flex gap-1">
-          <button onClick={() => openEdit(p)} className="p-1.5 text-gray-400 hover:text-[#0c1e3a] transition-colors"><Pencil className="w-3.5 h-3.5" /></button>
-          <button onClick={() => del(p.id)} className="p-1.5 text-gray-400 hover:text-red-500 transition-colors"><Trash2 className="w-3.5 h-3.5" /></button>
-        </div>
+    <div className="flex items-center justify-between border border-gray-200 rounded-xl px-4 py-2.5 hover:bg-gray-50 transition-colors">
+      <div className="flex items-center gap-3 min-w-0">
+        <span className="text-xs font-semibold bg-[#0c1e3a]/10 text-[#0c1e3a] px-2 py-0.5 rounded-full whitespace-nowrap">{p.type}</span>
+        <span className="text-sm font-semibold text-gray-800 truncate">{p.provider || "—"}</span>
+        <span className="text-sm font-bold text-gray-900">{fmt$(p.coverageAmount)}</span>
+        {p.premium && <span className="text-xs text-gray-500">{fmt$(p.premium)}/{p.premiumFrequency?.slice(0,2)}</span>}
+        {p.inforceDate && <span className="text-xs text-gray-400">In force: {p.inforceDate}</span>}
+        {TERM_TYPES.includes(p.type) && p.renewalDate && <span className="text-xs text-amber-600">Renews: {p.renewalDate}</span>}
       </div>
-      <div className="grid grid-cols-3 gap-2 mt-2">
-        <div><p className="text-xs text-gray-400">Coverage</p><p className="text-sm font-bold text-gray-900">{fmt$(p.coverageAmount)}</p></div>
-        <div><p className="text-xs text-gray-400">Premium</p><p className="text-sm font-semibold text-gray-700">{fmt$(p.premium)}/{p.premiumFrequency?.slice(0,2)}</p></div>
-        <div><p className="text-xs text-gray-400">Policy #</p><p className="text-sm text-gray-600">{p.policyNumber || "—"}</p></div>
+      <div className="flex gap-1 flex-shrink-0">
+        <button onClick={() => openEdit(p)} className="p-1.5 text-gray-400 hover:text-[#0c1e3a]"><Pencil className="w-3.5 h-3.5" /></button>
+        <button onClick={() => del(p.id)} className="p-1.5 text-gray-400 hover:text-red-500"><Trash2 className="w-3.5 h-3.5" /></button>
       </div>
-      {p.beneficiary && <p className="text-xs text-gray-400 mt-2">Beneficiary: <span className="text-gray-600">{p.beneficiary}</span></p>}
-      {p.notes && <p className="text-xs text-gray-400 mt-1">{p.notes}</p>}
     </div>
   );
 
@@ -143,23 +137,23 @@ export function PoliciesTab({ clientId, client }: { clientId: number; client?: a
           <p className="text-sm text-gray-400 mt-1">Add existing life, disability, or LTC coverage</p>
         </div>
       ) : (
-        <div className="space-y-6">
+        <div className="space-y-5">
           {primaryPolicies.length > 0 && (
             <div>
-              <h2 className="text-sm font-bold text-[#0c1e3a] uppercase tracking-wider mb-3">
+              <h2 className="text-sm font-bold text-[#0c1e3a] uppercase tracking-wider mb-2">
                 {client ? `${client.firstName} ${client.lastName}` : "Primary"}
               </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="space-y-1.5">
                 {primaryPolicies.map(p => <PolicyCard key={p.id} p={p} />)}
               </div>
             </div>
           )}
           {spousePolicies.length > 0 && (
             <div>
-              <h2 className="text-sm font-bold text-purple-600 uppercase tracking-wider mb-3">
+              <h2 className="text-sm font-bold text-purple-600 uppercase tracking-wider mb-2">
                 {spouseName || "Spouse"}
               </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="space-y-1.5">
                 {spousePolicies.map(p => <PolicyCard key={p.id} p={p} />)}
               </div>
             </div>
@@ -167,7 +161,6 @@ export function PoliciesTab({ clientId, client }: { clientId: number; client?: a
         </div>
       )}
 
-      {/* Form modal */}
       {showForm && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg">
@@ -215,6 +208,18 @@ export function PoliciesTab({ clientId, client }: { clientId: number; client?: a
                     </select>
                   </div>
                 </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-semibold text-gray-500 mb-1 block">Inforce Date</label>
+                  <input type="date" value={draft.inforceDate} onChange={e => u("inforceDate", e.target.value)} className={INPUT} />
+                </div>
+                {isTermType && (
+                  <div>
+                    <label className="text-xs font-semibold text-gray-500 mb-1 block">Renewal Date</label>
+                    <input type="date" value={draft.renewalDate} onChange={e => u("renewalDate", e.target.value)} className={INPUT} />
+                  </div>
+                )}
               </div>
               <div>
                 <label className="text-xs font-semibold text-gray-500 mb-1 block">Beneficiary</label>

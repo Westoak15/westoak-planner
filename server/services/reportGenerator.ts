@@ -388,6 +388,12 @@ export function generateFnaReport(data: {
         <hr style="border:none;border-top:1px solid var(--mgray);margin:8px 0"/>
         <p style="font-size:9pt;color:#64748B">Existing Coverage: ${fmtCad(primaryExisting)}</p>
         <p style="font-size:14pt;font-weight:700;color:${primaryNet > 0 ? "var(--red)" : "var(--green)"}">Net Need: ${fmtCad(primaryNet)}</p>
+        ${v(ws.primaryCoveragePurchased) > 0 ? `<hr style="border:none;border-top:1px solid var(--mgray);margin:8px 0"/>
+        <p style="font-size:9pt;color:#64748B">Coverage Purchased: ${fmtCad(v(ws.primaryCoveragePurchased))}</p>
+        <p style="font-size:11pt;font-weight:700;color:${Math.max(0, primaryNet - v(ws.primaryCoveragePurchased)) > 0 ? "var(--red)" : "var(--green)"}">Remaining Shortfall: ${fmtCad(Math.max(0, primaryNet - v(ws.primaryCoveragePurchased)))}</p>` : ""}
+        ${v(ws.primaryCoveragePurchased) > 0 ? `<hr style="border:none;border-top:1px solid var(--mgray);margin:8px 0"/>
+        <p style="font-size:9pt;color:#64748B">Coverage Purchased: ${fmtCad(v(ws.primaryCoveragePurchased))}</p>
+        <p style="font-size:11pt;font-weight:700;color:${Math.max(0, primaryNet - v(ws.primaryCoveragePurchased)) > 0 ? "var(--red)" : "var(--green)"}">Remaining Shortfall: ${fmtCad(Math.max(0, primaryNet - v(ws.primaryCoveragePurchased)))}</p>` : ""}
       </div>
       <div style="margin-top:12px">${svgNeedBreakdown(primarySections, "Primary Breakdown", primaryNeed, primaryExisting, 260, 200)}</div>
     </div>
@@ -400,13 +406,19 @@ export function generateFnaReport(data: {
         <hr style="border:none;border-top:1px solid var(--mgray);margin:8px 0"/>
         <p style="font-size:9pt;color:#64748B">Existing Coverage: ${fmtCad(spouseExisting)}</p>
         <p style="font-size:14pt;font-weight:700;color:${spouseNet > 0 ? "var(--red)" : "var(--green)"}">Net Need: ${fmtCad(spouseNet)}</p>
+        ${v(ws.spouseCoveragePurchased) > 0 ? `<hr style="border:none;border-top:1px solid var(--mgray);margin:8px 0"/>
+        <p style="font-size:9pt;color:#64748B">Coverage Purchased: ${fmtCad(v(ws.spouseCoveragePurchased))}</p>
+        <p style="font-size:11pt;font-weight:700;color:${Math.max(0, spouseNet - v(ws.spouseCoveragePurchased)) > 0 ? "var(--red)" : "var(--green)"}">Remaining Shortfall: ${fmtCad(Math.max(0, spouseNet - v(ws.spouseCoveragePurchased)))}</p>` : ""}
+        ${v(ws.spouseCoveragePurchased) > 0 ? `<hr style="border:none;border-top:1px solid var(--mgray);margin:8px 0"/>
+        <p style="font-size:9pt;color:#64748B">Coverage Purchased: ${fmtCad(v(ws.spouseCoveragePurchased))}</p>
+        <p style="font-size:11pt;font-weight:700;color:${Math.max(0, spouseNet - v(ws.spouseCoveragePurchased)) > 0 ? "var(--red)" : "var(--green)"}">Remaining Shortfall: ${fmtCad(Math.max(0, spouseNet - v(ws.spouseCoveragePurchased)))}</p>` : ""}
       </div>
       <div style="margin-top:12px">${svgNeedBreakdown(spouseSections, "Spouse Breakdown", spouseNeed, spouseExisting, 260, 200)}</div>
     </div>` : "<div></div>"}
   </div>
 </div>`;
 
-  const decisionSection = (ws.primarySignature || ws.meetingNotes) ? `
+  const decisionSection = `
 <div class="section">
   <h2 class="section-title">Decision & Acknowledgement</h2>
   <div class="two-col">
@@ -436,7 +448,7 @@ export function generateFnaReport(data: {
   ${ws.meetingNotes ? `
   <h3>Meeting Notes</h3>
   <div class="callout"><p>${esc(ws.meetingNotes)}</p></div>` : ""}
-</div>` : "";
+</div>`;
 
   const body = [
     cover, summarySection, clientSection, needSection, totalSection, decisionSection,
@@ -594,3 +606,6 @@ ${data.education.length > 0 ? `
 
   return htmlShell(`Financial Plan — ${name}`, body);
 }
+
+
+

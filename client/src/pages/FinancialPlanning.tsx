@@ -1,4 +1,5 @@
 import { useQueryClient } from "@tanstack/react-query";
+import { EstateScorecard } from "../components/ModuleViews";
 import { api } from "../lib/api";
 import { useState, useMemo, useEffect, Component, type ReactNode } from "react";
 
@@ -1493,7 +1494,7 @@ function IncomeSplittingPanel({ clientId }: { clientId: number }) {
 }
 
 function TaxTab({ clientId }: { clientId: number }) {
-  const [activeSubTab, setActiveSubTab] = useState<TaxSubTab>("notes");
+  const [activeSubTab, setActiveSubTab] = useState<TaxSubTab>("projection");
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
@@ -1785,6 +1786,10 @@ export function FinancialPlanningContent({ initialClientId }: { initialClientId?
 export default function FinancialPlanning() {
   return <FinancialPlanningContent />;
 }
+
+
+
+
 
 
 

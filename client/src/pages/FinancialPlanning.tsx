@@ -582,50 +582,24 @@ function buildDefaultFromNW() {
 
       {(analyses as any[]).map((a) => (
         <div key={a.id} className="border border-border rounded-2xl p-6" data-testid={`card-fp-insurance-${a.id}`}>
-          <div className="flex justify-between items-start mb-4">
+          <div className="flex justify-between items-center mb-3">
             <div>
-              <h3 className="text-lg font-bold">{a.primaryName || "Family Needs Analysis"}</h3>
-              <p className="text-sm text-muted-foreground">Created {a.createdAt ? new Date(a.createdAt).toLocaleDateString() : "â€”"}</p>
+              <h3 className="text-base font-bold">{a.primaryName || "Family Needs Analysis"}</h3>
+              <p className="text-xs text-muted-foreground">Created {a.createdAt ? new Date(a.createdAt).toLocaleDateString() : "-"}</p>
             </div>
-            <button onClick={() => {
-              if (a.worksheetData) {
-                setForm({ ...defaultWs, ...a.worksheetData });
-             } else {
-                setForm({ ...defaultWs,
-                  primaryName: a.primaryName ?? "",
-                  primaryAge: a.primaryAge ? String(a.primaryAge) : "",
-                  spouseName: a.spouseName ?? "",
-                  spouseAge: a.spouseAge ? String(a.spouseAge) : "",
-                });
-              }
-              setViewingId(a.id);
-              setShowWorksheet(true);
-            }}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold text-primary border border-primary/30 hover:bg-primary/5 rounded-lg transition-colors">
-              <Eye className="w-4 h-4" /> Open
-           </button>
-           <button onClick={async () => {
-            const token = localStorage.getItem('fp_token');
-            const res = await fetch(`/api/reports/${clientId}/fna/${a.id}`, {
-            headers: { Authorization: `Bearer ${token}` }
-            });
-            const html = await res.text();
-            const blob = new Blob([html], { type: 'text/html' });
-            window.open(URL.createObjectURL(blob), '_blank');
-            }} className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold text-gray-600 border border-gray-200 hover:bg-gray-50 rounded-lg transition-colors">
-            <Printer className="w-4 h-4" /> Report
-            </button>
-           <button onClick={() => { if (confirm("Delete this analysis?")) deleteAnalysis.mutate(a.id); }}
-             className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold text-red-500 border border-red-200 hover:bg-red-50 rounded-lg transition-colors">
-             <Trash2 className="w-4 h-4" /> Delete
-           </button>
+            <div className="flex items-center gap-1">
+              <button onClick={() => { if (a.worksheetData) { setForm({ ...defaultWs, ...a.worksheetData }); } else { setForm({ ...defaultWs, primaryName: a.primaryName ?? "", primaryAge: a.primaryAge ? String(a.primaryAge) : "", spouseName: a.spouseName ?? "", spouseAge: a.spouseAge ? String(a.spouseAge) : "" }); } setViewingId(a.id); setShowWorksheet(true); }} className="p-1.5 text-primary hover:bg-primary/10 rounded-lg" title="Open"><Eye className="w-4 h-4" /></button>
+              <button onClick={async () => { const token = localStorage.getItem("fp_token"); const res = await fetch(`/api/reports/${clientId}/fna/${a.id}`, { headers: { Authorization: `Bearer ${token}` } }); const html = await res.text(); const blob = new Blob([html], { type: "text/html" }); window.open(URL.createObjectURL(blob), "_blank"); }} className="p-1.5 text-gray-500 hover:bg-gray-100 rounded-lg" title="Report"><Printer className="w-4 h-4" /></button>
+              <button onClick={() => { if (confirm("Delete this analysis?")) deleteAnalysis.mutate(a.id); }} className="p-1.5 text-red-400 hover:bg-red-50 rounded-lg" title="Delete"><Trash2 className="w-4 h-4" /></button>
+            </div>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
               {(() => {
                 const ws = (a.worksheetData ?? {}) as any;
-                const pNet = Math.max(0, parseFloat(ws.primaryNeed ?? "0") - parseFloat(ws.primaryExistingCoverage ?? "0"));
-                const sNet = Math.max(0, parseFloat(ws.spouseNeed ?? "0") - parseFloat(ws.spouseExistingCoverage ?? "0"));
+                const calc = ws.calc ?? {};
+                const pNet = Math.max(0, parseFloat(calc.primaryNet ?? ws.primaryNeed ?? "0"));
+                const sNet = Math.max(0, parseFloat(calc.spouseNet ?? ws.spouseNeed ?? "0"));
                 const items = [
                   { label: a.primaryName || "Primary — Life Need", val: pNet },
                   ...(a.spouseName ? [{ label: `${a.spouseName} — Life Need`, val: sNet }] : []),
@@ -1811,6 +1785,8 @@ export function FinancialPlanningContent({ initialClientId }: { initialClientId?
 export default function FinancialPlanning() {
   return <FinancialPlanningContent />;
 }
+
+
 
 
 

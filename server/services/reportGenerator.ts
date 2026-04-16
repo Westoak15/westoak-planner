@@ -237,14 +237,14 @@ export function generateFnaReport(data: {
   <h2 class="section-title">Coverage Summary</h2>
   <div class="summary-grid">
     <div class="summary-card" style="border-left-color:var(--teal)">
-      <div class="label">${esc(ws.primaryName || primaryName)} — Life Insurance Need</div>
+      <div class="label">${esc(ws.primaryName || name)} — Life Insurance Need</div>
       <div class="value">${fmtCad(primaryNeed)}</div>
       <div class="label" style="margin-top:4px">Net Need</div>
       <div class="value ${primaryNet > 0 ? "negative" : "positive"}" style="font-size:12pt">${fmtCad(primaryNet)}</div>
     </div>
     ${hasSpouse ? `
     <div class="summary-card" style="border-left-color:#7C3AED">
-      <div class="label">${esc(ws.spouseName || spouseName)} — Life Insurance Need</div>
+      <div class="label">${esc(ws.spouseName || (client.spouseFirstName ? client.spouseFirstName + " " + (client.spouseLastName ?? "") : "Spouse"))} — Life Insurance Need</div>
       <div class="value">${fmtCad(spouseNeed)}</div>
       <div class="label" style="margin-top:4px">Net Need</div>
       <div class="value ${spouseNet > 0 ? "negative" : "positive"}" style="font-size:12pt">${fmtCad(spouseNet)}</div>
@@ -410,9 +410,6 @@ export function generateFnaReport(data: {
         <hr style="border:none;border-top:1px solid var(--mgray);margin:8px 0"/>
         <p style="font-size:9pt;color:#64748B">Existing Coverage: ${fmtCad(spouseExisting)}</p>
         <p style="font-size:14pt;font-weight:700;color:${spouseNet > 0 ? "var(--red)" : "var(--green)"}">Net Need: ${fmtCad(spouseNet)}</p>
-        ${v(ws.spouseCoveragePurchased) > 0 ? `<hr style="border:none;border-top:1px solid var(--mgray);margin:8px 0"/>
-        <p style="font-size:9pt;color:#64748B">Coverage Purchased: ${fmtCad(v(ws.spouseCoveragePurchased))}</p>
-        <p style="font-size:11pt;font-weight:700;color:${Math.max(0, spouseNet - v(ws.spouseCoveragePurchased)) > 0 ? "var(--red)" : "var(--green)"}">Remaining Shortfall: ${fmtCad(Math.max(0, spouseNet - v(ws.spouseCoveragePurchased)))}</p>` : ""}
         ${v(ws.spouseCoveragePurchased) > 0 ? `<hr style="border:none;border-top:1px solid var(--mgray);margin:8px 0"/>
         <p style="font-size:9pt;color:#64748B">Coverage Purchased: ${fmtCad(v(ws.spouseCoveragePurchased))}</p>
         <p style="font-size:11pt;font-weight:700;color:${Math.max(0, spouseNet - v(ws.spouseCoveragePurchased)) > 0 ? "var(--red)" : "var(--green)"}">Remaining Shortfall: ${fmtCad(Math.max(0, spouseNet - v(ws.spouseCoveragePurchased)))}</p>` : ""}
@@ -633,6 +630,8 @@ ${data.education.length > 0 ? `
 
   return htmlShell(`Financial Plan â€” ${name}`, body);
 }
+
+
 
 
 

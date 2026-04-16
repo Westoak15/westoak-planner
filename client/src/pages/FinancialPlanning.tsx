@@ -594,7 +594,7 @@ function buildDefaultFromNW() {
             </div>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+            <div className="grid grid-cols-2 gap-4 mt-2">
               {(() => {
                 const ws = (a.worksheetData ?? {}) as any;
                 const calc = ws.calc ?? {};
@@ -1785,6 +1785,7 @@ export function FinancialPlanningContent({ initialClientId }: { initialClientId?
 export default function FinancialPlanning() {
   return <FinancialPlanningContent />;
 }
+
 
 
 

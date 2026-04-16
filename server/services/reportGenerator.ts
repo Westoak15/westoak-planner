@@ -234,7 +234,7 @@ export function generateFnaReport(data: { client: any; analysis: any; advisor?: 
 </div>`;
 
   const clientSection = `
-<div class="section">
+<div class="section" style="page-break-before:always">
   <h2 class="section-title">Client Information</h2>
   <div class="two-col">
     <div class="person-card primary">
@@ -310,7 +310,7 @@ export function generateFnaReport(data: { client: any; analysis: any; advisor?: 
 </div>`;
 
   const totalSection = `
-<div class="section">
+<div class="section" style="page-break-before:always">
   <h2 class="section-title">Total Life Insurance Need</h2>
   <div class="two-col">
     <div>
@@ -501,6 +501,7 @@ ${data.education.length>0?`<div class="section"><h2 class="section-title">Educat
 </div>`;
   return htmlShell(`Financial Plan - ${name}`, body);
 }
+
 
 
 

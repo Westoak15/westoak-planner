@@ -454,7 +454,7 @@ export function InsuranceTab({ clientId, planId, client }: { clientId: number; p
   const { data: analyses = [] } = useInsuranceAnalyses(clientId);
   const { data: nwEntries = [] } = useNetWorthEntries(clientId);
   const [policies, setPolicies] = useState<any[]>([]);
-  useEffect(() => { api.get<any[]>(`/api/clients/${clientId}/policies`).then(setPolicies).catch(() => {}); }, [clientId]);
+  useEffect(() => { api.get<any[]>(`/api/clients/${clientId}/policies`).then(data => { console.log("Policies loaded:", data); setPolicies(data); }).catch(err => console.error("Policies error:", err)); }, [clientId]);
   const deleteAnalysis = useDeleteInsuranceAnalysis(clientId);
   const createWorksheet = useCreateInsuranceWorksheet();
   const queryClient = useQueryClient();
@@ -1802,6 +1802,7 @@ export function FinancialPlanningContent({ initialClientId }: { initialClientId?
 export default function FinancialPlanning() {
   return <FinancialPlanningContent />;
 }
+
 
 
 

@@ -513,3 +513,1007 @@ ${data.education.length>0?`<div class="section"><h2 class="section-title">Educat
 
 
 
+
+// -- BrokersEdge Report Types -------------------------------------------------
+interface ReportClient { id: number; firstName: string; lastName: string; email?: string; phone?: string; dateOfBirth?: string; province?: string; spouseFirstName?: string; spouseLastName?: string; spouseDateOfBirth?: string; annualIncome?: string | number; spouseAnnualIncome?: string | number; [key: string]: any; }
+interface ReportSimulation { successRate: number; p10: number; p25: number; p50: number; p75: number; p90: number; simulationCount?: number; yearsProjected?: number; percentileBands: PercentileBands; medianPath?: number[]; finalBalancePercentiles?: { p10: number; p25: number; p50: number; p75: number; p90: number }; }
+interface ReportNetWorthEntry { id: number; type: string; category: string; name?: string; value: string | number; owner?: string; }
+interface ReportProduct { id: number; type?: string; carrier?: string; coverageAmount?: string | number; premium?: string | number; status?: string; [key: string]: any; }
+function pct(n: number, decimals = 1): string { return `${(n * 100).toFixed(decimals)}%`; }
+
+// -- Monte Carlo Chart (from BrokersEdge) -------------------------------------
+interface PercentileBands { p10: number[]; p25: number[]; p50: number[]; p75: number[]; p90: number[]; }
+function svgMonteCarloChart(
+  bands:        PercentileBands,
+  successRate:  number,
+  width  = 680,
+  height = 260,
+): string {
+  const pad = { top: 20, right: 20, bottom: 40, left: 70 };
+  const W   = width  - pad.left - pad.right;
+  const H   = height - pad.top  - pad.bottom;
+  const N   = bands.p50.length;
+
+  const allValues = [...bands.p10, ...bands.p90].filter(v => v >= 0);
+  const maxVal    = Math.max(...allValues) * 1.05;
+  const minVal    = Math.min(0, ...bands.p10);
+
+  const xScale = (i: number) => (i / Math.max(1, N - 1)) * W;
+  const yScale = (v: number) => H - ((v - minVal) / (maxVal - minVal)) * H;
+
+  const pointsStr = (arr: number[]) =>
+    arr.map((v, i) => `${xScale(i).toFixed(1)},${yScale(v).toFixed(1)}`).join(" ");
+
+  const p10pts  = pointsStr(bands.p10);
+  const p90pts  = pointsStr(bands.p90);
+  const p25pts  = pointsStr(bands.p25);
+  const p75pts  = pointsStr(bands.p75);
+  const p50pts  = pointsStr(bands.p50);
+
+  // Shaded band p10-p90 (closed polygon)
+  const p90rev  = [...bands.p90].reverse();
+  const band90  = [...bands.p10.map((v, i) => [xScale(i), yScale(v)]),
+                    ...p90rev.map((v, i) => [xScale(N - 1 - i), yScale(v)])];
+  const band90d = band90.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(" ");
+
+  const p75rev  = [...bands.p75].reverse();
+  const band50  = [...bands.p25.map((v, i) => [xScale(i), yScale(v)]),
+                    ...p75rev.map((v, i) => [xScale(N - 1 - i), yScale(v)])];
+  const band50d = band50.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(" ");
+
+  // Y-axis labels
+  const yTicks = 5;
+  const yLabels = Array.from({ length: yTicks + 1 }, (_, i) => {
+    const val = minVal + (maxVal - minVal) * (i / yTicks);
+    return { y: yScale(val), label: val >= 1_000_000 ? `$${(val / 1_000_000).toFixed(1)}M` : `$${(val / 1_000).toFixed(0)}k` };
+  });
+
+  // X-axis labels (every 5 years)
+  const xLabels: { x: number; label: string }[] = [];
+  for (let i = 0; i < N; i += 5) {
+    xLabels.push({ x: xScale(i), label: `Yr ${i}` });
+  }
+
+  const color = successRate >= 0.80 ? "#16A34A" : successRate >= 0.60 ? "#D97706" : "#DC2626";
+
+  return `
+<svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg" style="font-family:Arial,sans-serif">
+  <defs>
+    <clipPath id="chart-clip">
+      <rect x="0" y="0" width="${W}" height="${H}" />
+    </clipPath>
+  </defs>
+  <g transform="translate(${pad.left},${pad.top})">
+    <!-- Y gridlines -->
+    ${yLabels.map(({ y, label }) => `
+      <line x1="0" y1="${y.toFixed(1)}" x2="${W}" y2="${y.toFixed(1)}" stroke="#E2E8F0" stroke-width="1"/>
+      <text x="-6" y="${(y + 4).toFixed(1)}" text-anchor="end" font-size="9" fill="#64748B">${esc(label)}</text>
+    `).join("")}
+
+    <!-- X labels -->
+    ${xLabels.map(({ x, label }) => `
+      <line x1="${x.toFixed(1)}" y1="0" x2="${x.toFixed(1)}" y2="${H}" stroke="#F1F5F9" stroke-width="1"/>
+      <text x="${x.toFixed(1)}" y="${H + 14}" text-anchor="middle" font-size="9" fill="#64748B">${esc(label)}</text>
+    `).join("")}
+
+    <!-- Clip group -->
+    <g clip-path="url(#chart-clip)">
+      <!-- p10-p90 band -->
+      <polygon points="${band90d}" fill="#DBEAFE" fill-opacity="0.6"/>
+      <!-- p25-p75 band -->
+      <polygon points="${band50d}" fill="#93C5FD" fill-opacity="0.5"/>
+      <!-- p10 / p90 lines -->
+      <polyline points="${p10pts}" fill="none" stroke="#93C5FD" stroke-width="1" stroke-dasharray="4,2"/>
+      <polyline points="${p90pts}" fill="none" stroke="#93C5FD" stroke-width="1" stroke-dasharray="4,2"/>
+      <!-- p25 / p75 lines -->
+      <polyline points="${p25pts}" fill="none" stroke="#3B82F6" stroke-width="1.2"/>
+      <polyline points="${p75pts}" fill="none" stroke="#3B82F6" stroke-width="1.2"/>
+      <!-- Median (p50) -->
+      <polyline points="${p50pts}" fill="none" stroke="#1D4ED8" stroke-width="2.5"/>
+    </g>
+
+    <!-- Axes -->
+    <line x1="0" y1="0" x2="0" y2="${H}" stroke="#94A3B8" stroke-width="1.5"/>
+    <line x1="0" y1="${H}" x2="${W}" y2="${H}" stroke="#94A3B8" stroke-width="1.5"/>
+
+    <!-- Success rate badge -->
+    <rect x="${W - 120}" y="4" width="116" height="28" rx="4" fill="${color}" fill-opacity="0.12"/>
+    <text x="${W - 62}" y="17" text-anchor="middle" font-size="9" font-weight="600" fill="${color}">SUCCESS RATE</text>
+    <text x="${W - 62}" y="27" text-anchor="middle" font-size="11" font-weight="700" fill="${color}">${(successRate * 100).toFixed(0)}%</text>
+  </g>
+
+  <!-- Legend -->
+  <g transform="translate(${pad.left}, ${height - 10})">
+    <rect x="0"   y="-6" width="10" height="4" fill="#DBEAFE"/>
+    <text x="14"  y="-2" font-size="8" fill="#64748B">p10GÇôp90 range</text>
+    <rect x="100" y="-6" width="10" height="4" fill="#93C5FD"/>
+    <text x="114" y="-2" font-size="8" fill="#64748B">p25GÇôp75 range</text>
+    <line x1="210" y1="-4" x2="220" y2="-4" stroke="#1D4ED8" stroke-width="2.5"/>
+    <text x="224" y="-2" font-size="8" fill="#64748B">Median path</text>
+  </g>
+</svg>`;
+}
+
+// GöÇGöÇ Comprehensive Report GöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇ
+
+
+// -- Additional Reports (from BrokersEdge) ------------------------------------
+export function generateRetirementReport(data: {
+  client:     ReportClient;
+  retirement: Record<string, unknown> | null;
+  taxYears?:  Record<string, unknown>[];
+  sim?:       ReportSimulation;
+}): string {
+  const client = data.client as any; const retirement = data.retirement as any; const sim = data.sim as any;
+  const name    = `${client.firstName} ${client.lastName}`;
+  const dateStr = new Date().toLocaleDateString("en-CA", { year: "numeric", month: "long", day: "numeric" });
+
+  const mcChart = sim ? svgMonteCarloChart(sim.percentileBands, sim.successRate) : "";
+
+  // Year-by-year income table (first 20 years of retirement if available)
+  const taxRows = (data.taxYears as any[])?.slice(0, 25).map((y: any) => `
+  <tr>
+    <td>${y.year}</td><td>${y.age}</td>
+    <td style="text-align:right">${fmtCad(Number(y.employmentIncome) + Number(y.pensionIncome))}</td>
+    <td style="text-align:right">${fmtCad(Number(y.cppBenefit) + Number(y.oasBenefit))}</td>
+    <td style="text-align:right">${fmtCad(Number(y.rrifWithdrawal))}</td>
+    <td style="text-align:right">${fmtCad(Number(y.totalTaxableIncome))}</td>
+    <td style="text-align:right">${fmtCad(Number(y.totalTax))}</td>
+    <td style="text-align:right">${pct(Number(y.effectiveRate))}</td>
+    <td style="text-align:right">${fmtCad(Number(y.totalWealth))}</td>
+  </tr>`).join("") ?? "";
+
+  const body = `
+<div class="cover">
+  <div style="font-size:10pt;letter-spacing:0.1em;text-transform:uppercase;opacity:0.7;margin-bottom:12px;">Brokers Edge</div>
+  <h1>Retirement Income Projection</h1>
+  <h2>${esc(name)} - ${dateStr}</h2>
+</div>
+
+<div class="section">
+  <h2 class="section-title">Retirement Overview</h2>
+  ${retirement ? `
+  <div class="summary-grid">
+    <div class="summary-card"><div class="label">Retirement Age</div><div class="value">${esc(retirement.retirementAge)}</div></div>
+    <div class="summary-card"><div class="label">Projected Balance</div><div class="value positive">${fmtCad(parseFloat(retirement.projectedBalance || "0"))}</div></div>
+    <div class="summary-card"><div class="label">Success Rate</div>
+      <div class="value ${sim ? (sim.successRate >= 0.80 ? "positive" : sim.successRate >= 0.60 ? "warn" : "negative") : ""}">${sim ? `${(sim.successRate * 100).toFixed(0)}%` : "GÇö"}</div>
+    </div>
+  </div>` : ""}
+
+  ${sim ? `
+  <h3>Monte Carlo Projection (${sim.yearsProjected} Years - ${sim.simulationCount?.toLocaleString() ?? ""} Simulations)</h3>
+  <div class="chart-container">${mcChart}</div>
+  <table>
+    <thead><tr><th>Scenario</th><th style="text-align:right">Portfolio at End of Plan</th></tr></thead>
+    <tbody>
+      <tr><td>90th percentile (best case)</td><td style="text-align:right">${fmtCad(sim.finalBalancePercentiles.p90)}</td></tr>
+      <tr><td>75th percentile</td><td style="text-align:right">${fmtCad(sim.finalBalancePercentiles.p75)}</td></tr>
+      <tr><td>Median</td><td style="text-align:right">${fmtCad(sim.finalBalancePercentiles.p50)}</td></tr>
+      <tr><td>25th percentile</td><td style="text-align:right">${fmtCad(sim.finalBalancePercentiles.p25)}</td></tr>
+      <tr><td>10th percentile (worst case)</td><td style="text-align:right">${fmtCad(sim.finalBalancePercentiles.p10)}</td></tr>
+    </tbody>
+  </table>` : ""}
+
+  ${taxRows ? `
+  <h3>Year-by-Year Income & Tax Projection</h3>
+  <table>
+    <thead><tr>
+      <th>Year</th><th>Age</th><th style="text-align:right">Employment / Pension</th>
+      <th style="text-align:right">CPP / OAS</th><th style="text-align:right">RRIF</th>
+      <th style="text-align:right">Taxable Income</th><th style="text-align:right">Total Tax</th>
+      <th style="text-align:right">Eff. Rate</th><th style="text-align:right">Total Wealth</th>
+    </tr></thead>
+    <tbody>${taxRows}</tbody>
+  </table>` : ""}
+</div>`;
+
+  return htmlShell(`Retirement Report GÇö ${name}`, body);
+}
+
+// GöÇGöÇ Insurance report GöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇ
+
+export function generateInsuranceReport(data: {
+  client:     ReportClient;
+  insurance:  Record<string, unknown> | null;
+  products:   ReportProduct[];
+}): string {
+  const client = data.client as any; const insurance = data.insurance as any; const products = (data.products ?? []) as any[];
+  const name    = `${client.firstName} ${client.lastName}`;
+  const dateStr = new Date().toLocaleDateString("en-CA", { year: "numeric", month: "long", day: "numeric" });
+
+  const insProducts = products.filter(p =>
+    p.type === "insurance" || p.type === "segregated_fund"
+  );
+
+  const body = `
+<div class="cover">
+  <div style="font-size:10pt;letter-spacing:0.1em;text-transform:uppercase;opacity:0.7;margin-bottom:12px;">Brokers Edge</div>
+  <h1>Insurance Needs Analysis</h1>
+  <h2>${esc(name)} - ${dateStr}</h2>
+</div>
+
+<div class="section">
+  <h2 class="section-title">Coverage Summary</h2>
+  ${insurance ? `
+  <div class="summary-grid">
+    <div class="summary-card"><div class="label">Recommended Life Coverage</div><div class="value">${fmtCad(parseFloat(insurance.recommendedLifeCoverage || "0"))}</div></div>
+    <div class="summary-card"><div class="label">Life Coverage Gap</div>
+      <div class="value ${parseFloat(insurance.lifeCoverageGap || "0") > 0 ? "negative" : "positive"}">
+        ${parseFloat(insurance.lifeCoverageGap || "0") > 0 ? "-" : ""}${fmtCad(Math.abs(parseFloat(insurance.lifeCoverageGap || "0")))}
+      </div>
+    </div>
+    <div class="summary-card"><div class="label">Disability Gap</div>
+      <div class="value ${parseFloat(insurance.disabilityCoverageGap || "0") > 0 ? "negative" : "positive"}">
+        ${parseFloat(insurance.disabilityCoverageGap || "0") > 0 ? "-" : ""}${fmtCad(Math.abs(parseFloat(insurance.disabilityCoverageGap || "0")))}
+      </div>
+    </div>
+  </div>
+
+  <h3>Needs Analysis GÇö Life Insurance</h3>
+  <table>
+    <thead><tr><th>Method</th><th style="text-align:right">Required Coverage</th><th style="text-align:right">Current Coverage</th><th style="text-align:right">Gap</th><th>Status</th></tr></thead>
+    <tbody>
+      ${[
+        ["DIME Method",          insurance.dimeCoverage],
+        ["Human Life Value",     insurance.hlvCoverage],
+        ["Capital Retention",    insurance.capitalRetentionCoverage],
+      ].map(([method, coverage]) => {
+        const rec  = parseFloat(String(coverage) || "0");
+        const curr = parseFloat(insurance.existingLifeCoverage || "0");
+        const gap  = Math.max(0, rec - curr);
+        return `<tr>
+          <td>${esc(method)}</td>
+          <td style="text-align:right">${fmtCad(rec)}</td>
+          <td style="text-align:right">${fmtCad(curr)}</td>
+          <td style="text-align:right;color:${gap > 0 ? "var(--red)" : "var(--green)"}">${gap > 0 ? `-${fmtCad(gap)}` : "G£ô Covered"}</td>
+          <td><span class="badge ${gap > 0 ? "badge-red" : "badge-green"}">${gap > 0 ? "Gap" : "Adequate"}</span></td>
+        </tr>`;
+      }).join("")}
+    </tbody>
+  </table>` : `<p style="color:#64748B">No insurance analysis on file.</p>`}
+
+  ${insProducts.length > 0 ? `
+  <h3>Current Policies on File</h3>
+  <table>
+    <thead><tr><th>Provider</th><th>Policy #</th><th>Type</th><th style="text-align:right">Coverage / Value</th><th>Status</th></tr></thead>
+    <tbody>
+      ${insProducts.map(p => `
+      <tr>
+        <td>${esc(p.provider)}</td>
+        <td>${esc(p.policyNumber)}</td>
+        <td>${esc(p.type)}</td>
+        <td style="text-align:right">${fmtCad(parseFloat(p.value || "0"))}</td>
+        <td><span class="badge ${p.status === "active" ? "badge-green" : "badge-amber"}">${esc(p.status)}</span></td>
+      </tr>`).join("")}
+    </tbody>
+  </table>` : ""}
+</div>`;
+
+  return htmlShell(`Insurance Report GÇö ${name}`, body);
+}
+
+// GöÇGöÇ Net Worth Statement GöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇ
+
+export function generateCashFlowReport(data: {
+  client: ReportClient;
+  generatedAt: string;
+  advisor?: { firstName?: string; lastName?: string } | null;
+  expenses: Array<{ category: string; description?: string | null; monthlyAmount: string; isEssential: boolean; includeInRetirement: boolean; retirementAdjustmentPct?: number | null }>;
+  retirement: Record<string, unknown> | null;
+}): string {
+  const name = `${data.client.firstName} ${data.client.lastName}`;
+  const dateStr = new Date(data.generatedAt).toLocaleDateString("en-CA", { year: "numeric", month: "long", day: "numeric" });
+  const advisorName = data.advisor ? `${data.advisor.firstName} ${data.advisor.lastName}` : "Your Financial Advisor";
+
+  const totalMonthly = data.expenses.reduce((s, e) => s + parseFloat(e.monthlyAmount || "0"), 0);
+  const totalAnnual = totalMonthly * 12;
+  const essentialMonthly = data.expenses.filter(e => e.isEssential).reduce((s, e) => s + parseFloat(e.monthlyAmount || "0"), 0);
+  const discretionaryMonthly = totalMonthly - essentialMonthly;
+  const retirementMonthly = data.expenses.filter(e => e.includeInRetirement)
+    .reduce((s, e) => s + parseFloat(e.monthlyAmount || "0") * (e.retirementAdjustmentPct || 100) / 100, 0);
+
+  // Group by category
+  const byCat: Record<string, typeof data.expenses> = {};
+  for (const e of data.expenses) {
+    if (!byCat[e.category]) byCat[e.category] = [];
+    byCat[e.category].push(e);
+  }
+
+  const catRows = Object.entries(byCat).map(([cat, items]) => {
+    const catTotal = items.reduce((s, e) => s + parseFloat(e.monthlyAmount || "0"), 0);
+    const itemRows = items.map(e => `
+      <tr>
+        <td style="padding-left:24px">${esc(e.description || e.category)}</td>
+        <td><span class="badge ${e.isEssential ? "badge-blue" : "badge-amber"}">${e.isEssential ? "Essential" : "Discretionary"}</span></td>
+        <td style="text-align:right">${fmtCad(parseFloat(e.monthlyAmount || "0"))}</td>
+        <td style="text-align:right">${fmtCad(parseFloat(e.monthlyAmount || "0") * 12)}</td>
+        <td style="text-align:right">${e.includeInRetirement ? fmtCad(parseFloat(e.monthlyAmount || "0") * (e.retirementAdjustmentPct || 100) / 100) : "<em style='color:#94a3b8'>excluded</em>"}</td>
+      </tr>`).join("");
+    return `
+      <tr style="background:#EFF6FF">
+        <td><strong>${esc(cat)}</strong></td>
+        <td></td>
+        <td style="text-align:right"><strong>${fmtCad(catTotal)}/mo</strong></td>
+        <td style="text-align:right"><strong>${fmtCad(catTotal * 12)}/yr</strong></td>
+        <td></td>
+      </tr>${itemRows}`;
+  }).join("");
+
+  const retDesiredIncome = data.retirement ? parseFloat(String((data.retirement as any).desiredRetirementIncome || "0")) : 0;
+  const retirementGap = retDesiredIncome - retirementMonthly * 12;
+
+  const body = `
+<div class="cover">
+  <div style="font-size:10pt;letter-spacing:0.1em;text-transform:uppercase;opacity:0.7;margin-bottom:12px">Brokers Edge</div>
+  <h1>Cash Flow Statement</h1>
+  <h2>Detailed Household Budget GÇö ${dateStr}</h2>
+  <div style="height:2px;background:rgba(255,255,255,0.3);margin:24px 0"></div>
+  <div class="cover-meta">
+    <div class="label">Prepared for</div><div class="value">${esc(name)}</div>
+    <div class="label">Advisor</div><div class="value">${esc(advisorName)}</div>
+    <div class="label">Date</div><div class="value">${esc(dateStr)}</div>
+    <div class="label">Currency</div><div class="value">CAD</div>
+  </div>
+</div>
+<div class="section">
+  <h2 class="section-title">Summary</h2>
+  <div class="summary-grid" style="grid-template-columns:repeat(4,1fr)">
+    <div class="summary-card"><div class="label">Total Monthly</div><div class="value">${fmtCad(totalMonthly)}</div></div>
+    <div class="summary-card"><div class="label">Total Annual</div><div class="value">${fmtCad(totalAnnual)}</div></div>
+    <div class="summary-card"><div class="label">Essential</div><div class="value">${fmtCad(essentialMonthly)}/mo</div></div>
+    <div class="summary-card"><div class="label">Discretionary</div><div class="value warn">${fmtCad(discretionaryMonthly)}/mo</div></div>
+  </div>
+  ${retDesiredIncome > 0 ? `<div class="callout ${retirementGap >= 0 ? "good" : "warn"}">
+    <strong>Retirement Income Check:</strong> Projected retirement expenses ${fmtCad(retirementMonthly * 12)}/yr vs. desired retirement income ${fmtCad(retDesiredIncome)}/yr.
+    ${retirementGap >= 0 ? `Surplus of ${fmtCad(retirementGap)}.` : `<strong>Shortfall of ${fmtCad(Math.abs(retirementGap))}</strong> GÇö review savings rate.`}
+    Based on the 4% rule, sustaining these expenses requires a portfolio of <strong>${fmtCad(retirementMonthly * 12 / 0.04)}</strong>.
+  </div>` : ""}
+</div>
+<div class="section">
+  <h2 class="section-title">Expense Detail</h2>
+  ${data.expenses.length === 0 ? "<p>No expenses recorded. Add expenses in the Expenses tab.</p>" : `
+  <table>
+    <thead><tr><th>Description</th><th>Type</th><th style="text-align:right">Monthly</th><th style="text-align:right">Annual</th><th style="text-align:right">In Retirement</th></tr></thead>
+    <tbody>
+      ${catRows}
+      <tr class="total"><td>Total</td><td></td><td style="text-align:right">${fmtCad(totalMonthly)}/mo</td><td style="text-align:right">${fmtCad(totalAnnual)}/yr</td><td style="text-align:right">${fmtCad(retirementMonthly)}/mo</td></tr>
+    </tbody>
+  </table>`}
+</div>
+<div class="footer"><span>Brokers Edge GÇö Confidential</span><span>${esc(name)} GÇö Cash Flow Statement GÇö ${esc(dateStr)}</span></div>`;
+
+  return htmlShell(`Cash Flow Statement GÇö ${name}`, body);
+}
+
+// GöÇGöÇ Asset Allocation & Mix Report GöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇ
+export function generateAssetAllocationReport(data: {
+  client: ReportClient;
+  generatedAt: string;
+  advisor?: { firstName?: string; lastName?: string } | null;
+  netWorth: ReportNetWorthEntry[];
+}): string {
+  const name = `${data.client.firstName} ${data.client.lastName}`;
+  const dateStr = new Date(data.generatedAt).toLocaleDateString("en-CA", { year: "numeric", month: "long", day: "numeric" });
+  const advisorName = data.advisor ? `${data.advisor.firstName} ${data.advisor.lastName}` : "Your Financial Advisor";
+
+  const investments = data.netWorth.filter(e => e.type === "asset" && e.category === "Investments");
+  const totalInvested = investments.reduce((s, e) => s + parseFloat(String(e.value) || "0"), 0);
+
+  // By account type
+  const byAccount: Record<string, number> = {};
+  for (const e of investments) {
+    const key = (e as any).accountType || "Other";
+    byAccount[key] = (byAccount[key] || 0) + parseFloat(String(e.value) || "0");
+  }
+
+  // By investment type
+  const byType: Record<string, number> = {};
+  for (const e of investments) {
+    const key = (e as any).investmentType || "Unclassified";
+    byType[key] = (byType[key] || 0) + parseFloat(String(e.value) || "0");
+  }
+
+  const accountRows = Object.entries(byAccount).map(([k, v]) => `
+    <tr><td>${esc(k)}</td><td style="text-align:right">${fmtCad(v)}</td>
+    <td style="text-align:right">${totalInvested > 0 ? pct(v / totalInvested * 100) : "0.0%"}</td>
+    <td><div style="background:#e2e8f0;border-radius:4px;height:8px;width:100%;max-width:200px"><div style="background:var(--teal);border-radius:4px;height:8px;width:${totalInvested > 0 ? Math.round(v / totalInvested * 100) : 0}%"></div></div></td>
+    </tr>`).join("");
+
+  const typeRows = Object.entries(byType).map(([k, v]) => `
+    <tr><td>${esc(k)}</td><td style="text-align:right">${fmtCad(v)}</td>
+    <td style="text-align:right">${totalInvested > 0 ? pct(v / totalInvested * 100) : "0.0%"}</td></tr>`).join("");
+
+  const holdingRows = investments.map(e => `
+    <tr><td>${esc(e.name || e.category)}</td>
+    <td>${esc((e as any).accountType || "GÇö")}</td>
+    <td>${esc((e as any).investmentType || "GÇö")}</td>
+    <td style="text-align:right">${fmtCad(parseFloat(String(e.value) || "0"))}</td>
+    <td style="text-align:right">${totalInvested > 0 ? pct(parseFloat(String(e.value) || "0") / totalInvested * 100) : "0.0%"}</td></tr>`).join("");
+
+  // Concentration warnings
+  const warnings = Object.entries(byAccount)
+    .filter(([, v]) => totalInvested > 0 && v / totalInvested > 0.5)
+    .map(([k]) => `<div class="callout warn"><strong>Concentration Risk:</strong> Over 50% of investments are in ${esc(k)} accounts. Consider diversifying across account types.</div>`).join("");
+
+  const body = `
+<div class="cover">
+  <div style="font-size:10pt;letter-spacing:0.1em;text-transform:uppercase;opacity:0.7;margin-bottom:12px">Brokers Edge</div>
+  <h1>Asset Allocation & Mix</h1>
+  <h2>Investment Portfolio Review GÇö ${dateStr}</h2>
+  <div style="height:2px;background:rgba(255,255,255,0.3);margin:24px 0"></div>
+  <div class="cover-meta">
+    <div class="label">Prepared for</div><div class="value">${esc(name)}</div>
+    <div class="label">Advisor</div><div class="value">${esc(advisorName)}</div>
+    <div class="label">Total Invested</div><div class="value">${fmtCad(totalInvested)}</div>
+    <div class="label">Holdings</div><div class="value">${investments.length}</div>
+  </div>
+</div>
+<div class="section">
+  <h2 class="section-title">Allocation by Account Type</h2>
+  ${warnings}
+  ${investments.length === 0 ? "<p>No investment holdings recorded. Add investments in the Net Worth tab.</p>" : `
+  <table>
+    <thead><tr><th>Account Type</th><th style="text-align:right">Value</th><th style="text-align:right">Weight</th><th>Distribution</th></tr></thead>
+    <tbody>${accountRows}<tr class="total"><td>Total</td><td style="text-align:right">${fmtCad(totalInvested)}</td><td style="text-align:right">100.0%</td><td></td></tr></tbody>
+  </table>`}
+</div>
+<div class="section">
+  <h2 class="section-title">Allocation by Investment Type</h2>
+  <table>
+    <thead><tr><th>Investment Type</th><th style="text-align:right">Value</th><th style="text-align:right">Weight</th></tr></thead>
+    <tbody>${typeRows}<tr class="total"><td>Total</td><td style="text-align:right">${fmtCad(totalInvested)}</td><td style="text-align:right">100.0%</td></tr></tbody>
+  </table>
+</div>
+<div class="section">
+  <h2 class="section-title">Holdings Detail</h2>
+  <table>
+    <thead><tr><th>Holding</th><th>Account</th><th>Type</th><th style="text-align:right">Value</th><th style="text-align:right">Weight</th></tr></thead>
+    <tbody>${holdingRows}</tbody>
+  </table>
+</div>
+<div class="footer"><span>Brokers Edge GÇö Confidential</span><span>${esc(name)} GÇö Asset Allocation GÇö ${esc(dateStr)}</span></div>`;
+
+  return htmlShell(`Asset Allocation GÇö ${name}`, body);
+}
+
+// GöÇGöÇ Retirement Readiness / Decumulation GöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇ
+export function generateRetirementReadinessReport(data: {
+  client: ReportClient;
+  generatedAt: string;
+  advisor?: { firstName?: string; lastName?: string } | null;
+  retirement: Record<string, unknown> | null;
+  expenses: Array<{ monthlyAmount: string; includeInRetirement: boolean; retirementAdjustmentPct?: number | null }>;
+  simulationResult?: ReportSimulation;
+  netWorth: ReportNetWorthEntry[];
+}): string {
+  const name = `${data.client.firstName} ${data.client.lastName}`;
+  const dateStr = new Date(data.generatedAt).toLocaleDateString("en-CA", { year: "numeric", month: "long", day: "numeric" });
+  const advisorName = data.advisor ? `${data.advisor.firstName} ${data.advisor.lastName}` : "Your Financial Advisor";
+  const r = data.retirement as any;
+
+  const retirementExpenses = data.expenses
+    .filter(e => e.includeInRetirement)
+    .reduce((s, e) => s + parseFloat(e.monthlyAmount || "0") * (e.retirementAdjustmentPct || 100) / 100, 0) * 12;
+
+  const projBalance = r ? parseFloat(String(r.projectedBalance || "0")) : 0;
+  const desiredIncome = r ? parseFloat(String(r.desiredRetirementIncome || "0")) : 0;
+  const actualIncome = retirementExpenses > 0 ? retirementExpenses : desiredIncome;
+  const incomeGap = desiredIncome - actualIncome;
+  const fourPctNeeded = actualIncome / 0.04;
+  const readinessScore = projBalance > 0 && fourPctNeeded > 0 ? Math.min(100, Math.round(projBalance / fourPctNeeded * 100)) : 0;
+
+  // CPP/OAS rough estimates (Canadian)
+  const currentAge = r ? parseInt(String(r.currentAge || "45")) : 45;
+  const retirementAge = r ? parseInt(String(r.retirementAge || "65")) : 65;
+  const yearsToRetirement = Math.max(0, retirementAge - currentAge);
+  const cppEstimate = 8500; // Avg CPP annual (simplified)
+  const oasEstimate = retirementAge >= 65 ? 8700 : 0;
+  const govBenefits = cppEstimate + oasEstimate;
+
+  const scoreColor = readinessScore >= 80 ? "var(--green)" : readinessScore >= 50 ? "var(--amber)" : "var(--red)";
+  const scoreLabel = readinessScore >= 80 ? "On Track" : readinessScore >= 50 ? "Needs Attention" : "At Risk";
+
+  const simSection = data.simulationResult ? `
+<div class="section">
+  <h2 class="section-title">Monte Carlo Probability of Success</h2>
+  <div class="summary-grid" style="grid-template-columns:repeat(3,1fr)">
+    <div class="summary-card"><div class="label">Success Rate</div><div class="value ${data.simulationResult.successRate >= 80 ? "positive" : "negative"}">${pct(data.simulationResult.successRate)}</div></div>
+    <div class="summary-card"><div class="label">Median Outcome (p50)</div><div class="value">${fmtCad(data.simulationResult.p50)}</div></div>
+    <div class="summary-card"><div class="label">Worst 10% (p10)</div><div class="value ${data.simulationResult.p10 > 0 ? "positive" : "negative"}">${fmtCad(data.simulationResult.p10)}</div></div>
+  </div>
+  ${svgMonteCarloChart(data.simulationResult.percentileBands, data.simulationResult.successRate)}
+</div>` : "";
+
+  const body = `
+<div class="cover">
+  <div style="font-size:10pt;letter-spacing:0.1em;text-transform:uppercase;opacity:0.7;margin-bottom:12px">Brokers Edge</div>
+  <h1>Retirement Readiness</h1>
+  <h2>Decumulation Projection GÇö ${dateStr}</h2>
+  <div style="height:2px;background:rgba(255,255,255,0.3);margin:24px 0"></div>
+  <div class="cover-meta">
+    <div class="label">Prepared for</div><div class="value">${esc(name)}</div>
+    <div class="label">Advisor</div><div class="value">${esc(advisorName)}</div>
+    <div class="label">Current Age</div><div class="value">${r ? esc(String(r.currentAge)) : "GÇö"}</div>
+    <div class="label">Target Retirement</div><div class="value">Age ${r ? esc(String(r.retirementAge)) : "GÇö"} (${yearsToRetirement} years)</div>
+  </div>
+</div>
+<div class="section">
+  <h2 class="section-title">Readiness Score</h2>
+  <div style="display:flex;align-items:center;gap:32px;margin-bottom:20px">
+    <div style="text-align:center">
+      <div style="width:100px;height:100px;border-radius:50%;border:8px solid ${scoreColor};display:flex;align-items:center;justify-content:center;font-size:22pt;font-weight:700;color:${scoreColor}">${readinessScore}%</div>
+      <div style="font-size:9pt;font-weight:600;color:${scoreColor};margin-top:6px">${scoreLabel}</div>
+    </div>
+    <div style="flex:1">
+      <div class="summary-grid" style="grid-template-columns:repeat(3,1fr)">
+        <div class="summary-card"><div class="label">Projected Balance at Retirement</div><div class="value ${projBalance > 0 ? "positive" : "negative"}">${fmtCad(projBalance)}</div></div>
+        <div class="summary-card"><div class="label">Portfolio Needed (4% Rule)</div><div class="value">${fmtCad(fourPctNeeded)}</div></div>
+        <div class="summary-card"><div class="label">Shortfall / Surplus</div><div class="value ${projBalance >= fourPctNeeded ? "positive" : "negative"}">${fmtCad(projBalance - fourPctNeeded)}</div></div>
+      </div>
+    </div>
+  </div>
+  ${readinessScore < 80 ? `<div class="callout warn"><strong>Action Required:</strong> Current savings trajectory will fund ${readinessScore}% of the required retirement portfolio. Consider increasing contributions or adjusting retirement age.</div>` : `<div class="callout good"><strong>On Track:</strong> Based on current projections, this plan is expected to fully fund retirement income needs.</div>`}
+</div>
+<div class="section">
+  <h2 class="section-title">Income in Retirement</h2>
+  <div class="summary-grid" style="grid-template-columns:repeat(4,1fr)">
+    <div class="summary-card"><div class="label">Portfolio Income (4%)</div><div class="value">${fmtCad(projBalance * 0.04)}/yr</div></div>
+    <div class="summary-card"><div class="label">Estimated CPP</div><div class="value">${fmtCad(cppEstimate)}/yr</div></div>
+    <div class="summary-card"><div class="label">Estimated OAS</div><div class="value">${fmtCad(oasEstimate)}/yr</div></div>
+    <div class="summary-card"><div class="label">Total Est. Income</div><div class="value positive">${fmtCad(projBalance * 0.04 + govBenefits)}/yr</div></div>
+  </div>
+  <div class="callout"><strong>Note:</strong> CPP and OAS estimates are simplified averages for planning purposes. Actual amounts depend on contribution history and election age. Consult Service Canada for personalized estimates.</div>
+</div>
+${simSection}
+<div class="footer"><span>Brokers Edge GÇö Confidential</span><span>${esc(name)} GÇö Retirement Readiness GÇö ${esc(dateStr)}</span></div>`;
+
+  return htmlShell(`Retirement Readiness GÇö ${name}`, body);
+}
+
+// GöÇGöÇ Goal Status Report GöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇ
+export function generateGoalStatusReport(data: {
+  client: ReportClient;
+  generatedAt: string;
+  advisor?: { firstName?: string; lastName?: string } | null;
+  plans: Array<{ id: number; name?: string | null; status?: string | null; goalAmount?: string | null; targetDate?: string | null; riskTolerance?: string | null; createdAt?: string | Date | null }>;
+  education: Array<{ childName?: string | null; targetAmount?: string | null; currentBalance?: string | null; targetAge?: number | null; childAge?: number | null }>;
+  retirement: Record<string, unknown> | null;
+  netWorth: ReportNetWorthEntry[];
+}): string {
+  const name = `${data.client.firstName} ${data.client.lastName}`;
+  const dateStr = new Date(data.generatedAt).toLocaleDateString("en-CA", { year: "numeric", month: "long", day: "numeric" });
+  const advisorName = data.advisor ? `${data.advisor.firstName} ${data.advisor.lastName}` : "Your Financial Advisor";
+
+  const totalAssets = data.netWorth.filter(e => e.type === "asset").reduce((s, e) => s + parseFloat(String(e.value) || "0"), 0);
+  const totalLiabilities = data.netWorth.filter(e => e.type === "liability").reduce((s, e) => s + parseFloat(String(e.value) || "0"), 0);
+  const netWorthVal = totalAssets - totalLiabilities;
+
+  const planRows = data.plans.map(p => {
+    const goal = parseFloat(String(p.goalAmount || "0"));
+    const progress = goal > 0 ? Math.min(100, Math.round(netWorthVal / goal * 100)) : 0;
+    const statusBadge = p.status === "completed" ? "badge-green" : p.status === "active" ? "badge-blue" : "badge-amber";
+    return `<tr>
+      <td>${esc(p.name || "Financial Plan")}</td>
+      <td><span class="badge ${statusBadge}">${esc(p.status || "active")}</span></td>
+      <td style="text-align:right">${goal > 0 ? fmtCad(goal) : "GÇö"}</td>
+      <td style="text-align:right">${p.targetDate ? new Date(p.targetDate).toLocaleDateString("en-CA") : "GÇö"}</td>
+      <td style="text-align:right">${goal > 0 ? `${progress}%` : "GÇö"}</td>
+      <td><div style="background:#e2e8f0;border-radius:4px;height:8px"><div style="background:${progress >= 80 ? "var(--green)" : progress >= 50 ? "var(--amber)" : "var(--red)"};border-radius:4px;height:8px;width:${progress}%"></div></div></td>
+    </tr>`;
+  }).join("");
+
+  const respRows = data.education.map(e => {
+    const target = parseFloat(String(e.targetAmount || "0"));
+    const current = parseFloat(String(e.currentBalance || "0"));
+    const progress = target > 0 ? Math.min(100, Math.round(current / target * 100)) : 0;
+    return `<tr>
+      <td>${esc(e.childName || "Child")}</td>
+      <td style="text-align:right">${e.childAge ? `Age ${e.childAge}` : "GÇö"}</td>
+      <td style="text-align:right">${e.targetAge ? `Age ${e.targetAge}` : "GÇö"}</td>
+      <td style="text-align:right">${fmtCad(current)}</td>
+      <td style="text-align:right">${fmtCad(target)}</td>
+      <td style="text-align:right">${progress}%</td>
+      <td><div style="background:#e2e8f0;border-radius:4px;height:8px"><div style="background:${progress >= 80 ? "var(--green)" : progress >= 50 ? "var(--amber)" : "var(--red)"};border-radius:4px;height:8px;width:${progress}%"></div></div></td>
+    </tr>`;
+  }).join("");
+
+  const r = data.retirement as any;
+  const projBalance = r ? parseFloat(String(r.projectedBalance || "0")) : 0;
+  const needed = r ? parseFloat(String(r.desiredRetirementIncome || "0")) / 0.04 : 0;
+  const retirementProgress = needed > 0 ? Math.min(100, Math.round(projBalance / needed * 100)) : 0;
+
+  const body = `
+<div class="cover">
+  <div style="font-size:10pt;letter-spacing:0.1em;text-transform:uppercase;opacity:0.7;margin-bottom:12px">Brokers Edge</div>
+  <h1>Goal Status Report</h1>
+  <h2>Progress Dashboard GÇö ${dateStr}</h2>
+  <div style="height:2px;background:rgba(255,255,255,0.3);margin:24px 0"></div>
+  <div class="cover-meta">
+    <div class="label">Prepared for</div><div class="value">${esc(name)}</div>
+    <div class="label">Advisor</div><div class="value">${esc(advisorName)}</div>
+    <div class="label">Active Goals</div><div class="value">${data.plans.length + data.education.length + (r ? 1 : 0)}</div>
+    <div class="label">Date</div><div class="value">${esc(dateStr)}</div>
+  </div>
+</div>
+<div class="section">
+  <h2 class="section-title">Retirement Goal</h2>
+  ${r ? `<div class="summary-grid" style="grid-template-columns:repeat(3,1fr)">
+    <div class="summary-card"><div class="label">Target Retirement Age</div><div class="value">${esc(String(r.retirementAge || "GÇö"))}</div></div>
+    <div class="summary-card"><div class="label">Projected Balance</div><div class="value ${projBalance >= needed ? "positive" : "negative"}">${fmtCad(projBalance)}</div></div>
+    <div class="summary-card"><div class="label">Readiness</div><div class="value ${retirementProgress >= 80 ? "positive" : "negative"}">${retirementProgress}%</div></div>
+  </div>
+  <div style="background:#e2e8f0;border-radius:6px;height:12px;margin:8px 0"><div style="background:${retirementProgress >= 80 ? "var(--green)" : retirementProgress >= 50 ? "var(--amber)" : "var(--red)"};border-radius:6px;height:12px;width:${retirementProgress}%"></div></div>` : "<p>No retirement projection entered.</p>"}
+</div>
+${data.education.length > 0 ? `<div class="section">
+  <h2 class="section-title">Education (RESP) Goals</h2>
+  <table>
+    <thead><tr><th>Child</th><th style="text-align:right">Current Age</th><th style="text-align:right">Target Age</th><th style="text-align:right">Current Balance</th><th style="text-align:right">Target</th><th style="text-align:right">Progress</th><th>Track</th></tr></thead>
+    <tbody>${respRows}</tbody>
+  </table>
+</div>` : ""}
+${data.plans.length > 0 ? `<div class="section">
+  <h2 class="section-title">Financial Plans</h2>
+  <table>
+    <thead><tr><th>Plan Name</th><th>Status</th><th style="text-align:right">Goal</th><th style="text-align:right">Target Date</th><th style="text-align:right">Progress</th><th>Track</th></tr></thead>
+    <tbody>${planRows}</tbody>
+  </table>
+</div>` : ""}
+<div class="footer"><span>Brokers Edge GÇö Confidential</span><span>${esc(name)} GÇö Goal Status GÇö ${esc(dateStr)}</span></div>`;
+
+  return htmlShell(`Goal Status GÇö ${name}`, body);
+}
+
+// GöÇGöÇ Risk Management & Insurance Audit GöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇ
+export function generateInsuranceAuditReport(data: {
+  client: ReportClient;
+  generatedAt: string;
+  advisor?: { firstName?: string; lastName?: string } | null;
+  insurance: Record<string, unknown> | null;
+  products: Array<{ productType?: string | null; productName?: string | null; coverageAmount?: string | null; premium?: string | null; status?: string | null }>;
+  netWorth: ReportNetWorthEntry[];
+}): string {
+  const name = `${data.client.firstName} ${data.client.lastName}`;
+  const dateStr = new Date(data.generatedAt).toLocaleDateString("en-CA", { year: "numeric", month: "long", day: "numeric" });
+  const advisorName = data.advisor ? `${data.advisor.firstName} ${data.advisor.lastName}` : "Your Financial Advisor";
+
+  const ins = data.insurance as any;
+  const totalCoverage = ins ? parseFloat(String(ins.primaryCoveragePurchased || "0")) + parseFloat(String(ins.spouseCoveragePurchased || "0")) : 0;
+  const totalPremiums = data.products.filter(p => p.productType?.toLowerCase().includes("insurance")).reduce((s, p) => s + parseFloat(String(p.premium || "0")), 0);
+
+  const lifeProducts = data.products.filter(p => p.productType?.toLowerCase().includes("life"));
+  const disabilityProducts = data.products.filter(p => p.productType?.toLowerCase().includes("disability") || p.productType?.toLowerCase().includes("dis"));
+  const criticalProducts = data.products.filter(p => p.productType?.toLowerCase().includes("critical") || p.productType?.toLowerCase().includes("ci"));
+
+  const productRows = data.products.map(p => `
+    <tr>
+      <td>${esc(p.productName || "GÇö")}</td>
+      <td>${esc(p.productType || "GÇö")}</td>
+      <td style="text-align:right">${p.coverageAmount ? fmtCad(parseFloat(String(p.coverageAmount))) : "GÇö"}</td>
+      <td style="text-align:right">${p.premium ? fmtCad(parseFloat(String(p.premium))) + "/mo" : "GÇö"}</td>
+      <td><span class="badge ${p.status === "active" ? "badge-green" : "badge-amber"}">${esc(p.status || "unknown")}</span></td>
+    </tr>`).join("");
+
+  const body = `
+<div class="cover">
+  <div style="font-size:10pt;letter-spacing:0.1em;text-transform:uppercase;opacity:0.7;margin-bottom:12px">Brokers Edge</div>
+  <h1>Risk Management & Insurance Audit</h1>
+  <h2>Coverage Review GÇö ${dateStr}</h2>
+  <div style="height:2px;background:rgba(255,255,255,0.3);margin:24px 0"></div>
+  <div class="cover-meta">
+    <div class="label">Prepared for</div><div class="value">${esc(name)}</div>
+    <div class="label">Advisor</div><div class="value">${esc(advisorName)}</div>
+    <div class="label">Total Coverage</div><div class="value">${fmtCad(totalCoverage)}</div>
+    <div class="label">Monthly Premiums</div><div class="value">${fmtCad(totalPremiums)}/mo</div>
+  </div>
+</div>
+<div class="section">
+  <h2 class="section-title">Coverage Summary</h2>
+  <div class="summary-grid" style="grid-template-columns:repeat(4,1fr)">
+    <div class="summary-card"><div class="label">Life Insurance Policies</div><div class="value">${lifeProducts.length}</div></div>
+    <div class="summary-card"><div class="label">Disability Policies</div><div class="value ${disabilityProducts.length === 0 ? "negative" : ""}">${disabilityProducts.length}</div></div>
+    <div class="summary-card"><div class="label">Critical Illness</div><div class="value ${criticalProducts.length === 0 ? "warn" : ""}">${criticalProducts.length}</div></div>
+    <div class="summary-card"><div class="label">Total Monthly Premium</div><div class="value">${fmtCad(totalPremiums)}/mo</div></div>
+  </div>
+  ${disabilityProducts.length === 0 ? '<div class="callout warn"><strong>Gap Identified:</strong> No disability insurance recorded. Disability is the leading cause of mortgage default in Canada. Review income replacement coverage.</div>' : ""}
+  ${criticalProducts.length === 0 ? '<div class="callout warn"><strong>Gap Identified:</strong> No critical illness coverage recorded. Consider coverage for the 3 most common conditions: cancer, heart attack, and stroke.</div>' : ""}
+</div>
+${ins ? `<div class="section">
+  <h2 class="section-title">Family Needs Analysis</h2>
+  <div class="summary-grid" style="grid-template-columns:repeat(3,1fr)">
+    <div class="summary-card"><div class="label">Primary Coverage Needed</div><div class="value">${fmtCad(parseFloat(String(ins.primaryInsuranceNeed || "0")))}</div></div>
+    <div class="summary-card"><div class="label">Primary Coverage Purchased</div><div class="value">${fmtCad(parseFloat(String(ins.primaryCoveragePurchased || "0")))}</div></div>
+    <div class="summary-card"><div class="label">Primary Shortfall</div><div class="value ${parseFloat(String(ins.primaryShortfallAcknowledged || "0")) > 0 ? "negative" : "positive"}">${fmtCad(parseFloat(String(ins.primaryShortfallAcknowledged || "0")))}</div></div>
+  </div>
+</div>` : ""}
+${data.products.length > 0 ? `<div class="section">
+  <h2 class="section-title">Active Policies</h2>
+  <table>
+    <thead><tr><th>Product</th><th>Type</th><th style="text-align:right">Coverage</th><th style="text-align:right">Premium</th><th>Status</th></tr></thead>
+    <tbody>${productRows}</tbody>
+  </table>
+</div>` : ""}
+<div class="footer"><span>Brokers Edge GÇö Confidential</span><span>${esc(name)} GÇö Insurance Audit GÇö ${esc(dateStr)}</span></div>`;
+
+  return htmlShell(`Insurance Audit GÇö ${name}`, body);
+}
+
+// GöÇGöÇ Estate & Beneficiary Summary GöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇ
+export function generateEstateSummaryReport(data: {
+  client: ReportClient;
+  generatedAt: string;
+  advisor?: { firstName?: string; lastName?: string } | null;
+  estateNotes: Array<{ category?: string | null; title?: string | null; content?: string | null }>;
+  netWorth: ReportNetWorthEntry[];
+  products: Array<{ productType?: string | null; productName?: string | null; coverageAmount?: string | null; beneficiary?: string | null }>;
+}): string {
+  const name = `${data.client.firstName} ${data.client.lastName}`;
+  const dateStr = new Date(data.generatedAt).toLocaleDateString("en-CA", { year: "numeric", month: "long", day: "numeric" });
+  const advisorName = data.advisor ? `${data.advisor.firstName} ${data.advisor.lastName}` : "Your Financial Advisor";
+
+  const totalAssets = data.netWorth.filter(e => e.type === "asset").reduce((s, e) => s + parseFloat(String(e.value) || "0"), 0);
+  const totalLiabilities = data.netWorth.filter(e => e.type === "liability").reduce((s, e) => s + parseFloat(String(e.value) || "0"), 0);
+  const estateValue = totalAssets - totalLiabilities;
+
+  // Estate by category
+  const estateCategories = ["Wills & Powers of Attorney", "Beneficiary Designations", "Tax Planning", "Charitable Giving", "Business Succession", "Other"];
+
+  const notesByCategory: Record<string, typeof data.estateNotes> = {};
+  for (const note of data.estateNotes) {
+    const cat = note.category || "Other";
+    if (!notesByCategory[cat]) notesByCategory[cat] = [];
+    notesByCategory[cat].push(note);
+  }
+
+  const checklist = estateCategories.map(cat => {
+    const hasNotes = (notesByCategory[cat] || []).length > 0;
+    return `<tr>
+      <td>${esc(cat)}</td>
+      <td><span class="badge ${hasNotes ? "badge-green" : "badge-amber"}">${hasNotes ? "Documented" : "Needs Review"}</span></td>
+      <td>${(notesByCategory[cat] || []).map(n => esc(n.title || n.content?.substring(0, 60) || "")).join("; ") || "GÇö"}</td>
+    </tr>`;
+  }).join("");
+
+  const assetDistributionRows = data.netWorth.filter(e => e.type === "asset").map(e => `
+    <tr>
+      <td>${esc(e.name || e.category)}</td>
+      <td>${esc(e.category)}</td>
+      <td style="text-align:right">${fmtCad(parseFloat(String(e.value) || "0"))}</td>
+      <td>${(e as any).accountType || "GÇö"}</td>
+    </tr>`).join("");
+
+  const body = `
+<div class="cover">
+  <div style="font-size:10pt;letter-spacing:0.1em;text-transform:uppercase;opacity:0.7;margin-bottom:12px">Brokers Edge</div>
+  <h1>Estate & Beneficiary Summary</h1>
+  <h2>Estate Distribution Review GÇö ${dateStr}</h2>
+  <div style="height:2px;background:rgba(255,255,255,0.3);margin:24px 0"></div>
+  <div class="cover-meta">
+    <div class="label">Prepared for</div><div class="value">${esc(name)}</div>
+    <div class="label">Advisor</div><div class="value">${esc(advisorName)}</div>
+    <div class="label">Estimated Estate Value</div><div class="value">${fmtCad(estateValue)}</div>
+    <div class="label">Total Assets</div><div class="value">${fmtCad(totalAssets)}</div>
+  </div>
+</div>
+<div class="section">
+  <h2 class="section-title">Estate Checklist</h2>
+  <table>
+    <thead><tr><th>Area</th><th>Status</th><th>Notes</th></tr></thead>
+    <tbody>${checklist}</tbody>
+  </table>
+</div>
+<div class="section">
+  <h2 class="section-title">Assets for Distribution</h2>
+  <div class="summary-grid">
+    <div class="summary-card"><div class="label">Total Assets</div><div class="value positive">${fmtCad(totalAssets)}</div></div>
+    <div class="summary-card"><div class="label">Total Liabilities</div><div class="value negative">${fmtCad(totalLiabilities)}</div></div>
+    <div class="summary-card"><div class="label">Net Estate Value</div><div class="value ${estateValue >= 0 ? "positive" : "negative"}">${fmtCad(estateValue)}</div></div>
+  </div>
+  <table>
+    <thead><tr><th>Asset</th><th>Category</th><th style="text-align:right">Value</th><th>Account Type</th></tr></thead>
+    <tbody>${assetDistributionRows}</tbody>
+  </table>
+</div>
+<div class="footer"><span>Brokers Edge GÇö Confidential</span><span>${esc(name)} GÇö Estate Summary GÇö ${esc(dateStr)}</span></div>`;
+
+  return htmlShell(`Estate Summary GÇö ${name}`, body);
+}
+
+// GöÇGöÇ Tax Efficiency Strategy GöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇ
+export function generateTaxStrategyReport(data: {
+  client: ReportClient;
+  generatedAt: string;
+  advisor?: { firstName?: string; lastName?: string } | null;
+  taxNotes: Array<{ category?: string | null; title?: string | null; content?: string | null; taxYear?: number | string | null }>;
+  netWorth: ReportNetWorthEntry[];
+  retirement: Record<string, unknown> | null;
+}): string {
+  const name = `${data.client.firstName} ${data.client.lastName}`;
+  const dateStr = new Date(data.generatedAt).toLocaleDateString("en-CA", { year: "numeric", month: "long", day: "numeric" });
+  const advisorName = data.advisor ? `${data.advisor.firstName} ${data.advisor.lastName}` : "Your Financial Advisor";
+
+  const rrspTotal = data.netWorth.filter(e => e.type === "asset" && ((e as any).accountType === "RRSP" || e.name?.toUpperCase().includes("RRSP"))).reduce((s, e) => s + parseFloat(String(e.value) || "0"), 0);
+  const tfsaTotal = data.netWorth.filter(e => e.type === "asset" && ((e as any).accountType === "TFSA" || e.name?.toUpperCase().includes("TFSA"))).reduce((s, e) => s + parseFloat(String(e.value) || "0"), 0);
+  const nonRegTotal = data.netWorth.filter(e => e.type === "asset" && ((e as any).accountType === "Non-Registered" || (e as any).accountType === "Non-Registered Account")).reduce((s, e) => s + parseFloat(String(e.value) || "0"), 0);
+
+  const noteRows = data.taxNotes.map(n => `
+    <tr>
+      <td>${esc(n.taxYear ? String(n.taxYear) : "GÇö")}</td>
+      <td>${esc(n.category || "GÇö")}</td>
+      <td>${esc(n.title || "GÇö")}</td>
+      <td style="font-size:9pt">${esc((n.content || "").substring(0, 120))}${(n.content || "").length > 120 ? "GÇª" : ""}</td>
+    </tr>`).join("");
+
+  const body = `
+<div class="cover">
+  <div style="font-size:10pt;letter-spacing:0.1em;text-transform:uppercase;opacity:0.7;margin-bottom:12px">Brokers Edge</div>
+  <h1>Tax Efficiency Strategy</h1>
+  <h2>Annual Tax Review GÇö ${dateStr}</h2>
+  <div style="height:2px;background:rgba(255,255,255,0.3);margin:24px 0"></div>
+  <div class="cover-meta">
+    <div class="label">Prepared for</div><div class="value">${esc(name)}</div>
+    <div class="label">Advisor</div><div class="value">${esc(advisorName)}</div>
+    <div class="label">RRSP Balance</div><div class="value">${fmtCad(rrspTotal)}</div>
+    <div class="label">TFSA Balance</div><div class="value">${fmtCad(tfsaTotal)}</div>
+  </div>
+</div>
+<div class="section">
+  <h2 class="section-title">Account Structure Overview</h2>
+  <div class="summary-grid">
+    <div class="summary-card"><div class="label">RRSP (Tax-Deferred)</div><div class="value">${fmtCad(rrspTotal)}</div></div>
+    <div class="summary-card"><div class="label">TFSA (Tax-Free)</div><div class="value">${fmtCad(tfsaTotal)}</div></div>
+    <div class="summary-card"><div class="label">Non-Registered</div><div class="value">${fmtCad(nonRegTotal)}</div></div>
+  </div>
+  <div class="callout"><strong>Optimal Withdrawal Order (Canadian):</strong> Generally: Non-Registered GåÆ RRSP/RRIF GåÆ TFSA last. However, crystallizing gains to fill lower tax brackets before OAS/CPP may favour early RRSP meltdown. Review annually.</div>
+  ${tfsaTotal === 0 ? '<div class="callout warn"><strong>Opportunity:</strong> No TFSA balance recorded. Maximize TFSA contributions for tax-free growth GÇö 2025 room is $7,000 ($95,000 lifetime for those 18+ since 2009).</div>' : ""}
+  ${nonRegTotal > 0 ? '<div class="callout"><strong>Non-Registered Account:</strong> Consider tax-loss harvesting opportunities, preferred dividend income over interest, and systematic RRSP contributions to reduce current taxable income.</div>' : ""}
+</div>
+${data.taxNotes.length > 0 ? `<div class="section">
+  <h2 class="section-title">Tax Planning Notes</h2>
+  <table>
+    <thead><tr><th>Year</th><th>Category</th><th>Title</th><th>Summary</th></tr></thead>
+    <tbody>${noteRows}</tbody>
+  </table>
+</div>` : ""}
+<div class="section">
+  <h2 class="section-title">Key Tax Strategies for Canadian Investors</h2>
+  <h3>RRSP Optimization</h3>
+  <p>Contribute to RRSP in high-income years to maximize the deduction. Consider spousal RRSP contributions to split income in retirement.</p>
+  <h3>TFSA Maximization</h3>
+  <p>Prioritize TFSA for investments with highest growth potential GÇö all gains and withdrawals are completely tax-free.</p>
+  <h3>Capital Gains Management</h3>
+  <p>The 2024 federal budget increased the capital gains inclusion rate to 2/3 for annual gains above $250,000. Consider timing large dispositions carefully.</p>
+  <h3>Income Splitting</h3>
+  <p>Spousal RRSP, T1032 pension income splitting, and prescribed rate loans can significantly reduce household tax burden.</p>
+</div>
+<div class="footer"><span>Brokers Edge GÇö Confidential</span><span>${esc(name)} GÇö Tax Strategy GÇö ${esc(dateStr)}</span></div>`;
+
+  return htmlShell(`Tax Strategy GÇö ${name}`, body);
+}
+
+// GöÇGöÇ One-Page Financial Plan GöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇ
+export function generateOnePagePlan(data: {
+  client: ReportClient;
+  generatedAt: string;
+  advisor?: { firstName?: string; lastName?: string; email?: string } | null;
+  netWorth: ReportNetWorthEntry[];
+  retirement: Record<string, unknown> | null;
+  insurance: Record<string, unknown> | null;
+  plans: Array<{ name?: string | null; status?: string | null; goalAmount?: string | null; targetDate?: string | null }>;
+  education: Array<{ childName?: string | null; currentBalance?: string | null; targetAmount?: string | null }>;
+  aiRecs: Array<{ title?: string | null; priority?: string | null; status?: string | null }>;
+  expenses: Array<{ monthlyAmount: string; includeInRetirement: boolean; retirementAdjustmentPct?: number | null }>;
+  simulationResult?: ReportSimulation;
+}): string {
+  const name = `${data.client.firstName} ${data.client.lastName}`;
+  const dateStr = new Date(data.generatedAt).toLocaleDateString("en-CA", { year: "numeric", month: "long", day: "numeric" });
+  const advisorName = data.advisor ? `${data.advisor.firstName} ${data.advisor.lastName}` : "Your Financial Advisor";
+
+  const totalAssets = data.netWorth.filter(e => e.type === "asset").reduce((s, e) => s + parseFloat(String(e.value) || "0"), 0);
+  const totalLiabilities = data.netWorth.filter(e => e.type === "liability").reduce((s, e) => s + parseFloat(String(e.value) || "0"), 0);
+  const netWorthVal = totalAssets - totalLiabilities;
+
+  const r = data.retirement as any;
+  const projBalance = r ? parseFloat(String(r.projectedBalance || "0")) : 0;
+  const retDesiredIncome = r ? parseFloat(String(r.desiredRetirementIncome || "0")) : 0;
+  const retirementExpenses = data.expenses.filter(e => e.includeInRetirement)
+    .reduce((s, e) => s + parseFloat(e.monthlyAmount || "0") * (e.retirementAdjustmentPct || 100) / 100, 0) * 12;
+  const incomeNeed = retirementExpenses > 0 ? retirementExpenses : retDesiredIncome;
+  const fourPctNeeded = incomeNeed / 0.04;
+  const retirementReadiness = fourPctNeeded > 0 ? Math.min(100, Math.round(projBalance / fourPctNeeded * 100)) : 0;
+
+  const successRate = data.simulationResult?.successRate || null;
+  const topActions = data.aiRecs.filter(r => r.status !== "dismissed").slice(0, 3);
+
+  const statusDot = (score: number) => score >= 80 ? "var(--green)" : score >= 50 ? "var(--amber)" : "var(--red)";
+
+  const body = `
+<style>
+  .one-page { padding: 32px 40px; max-width: 900px; margin: 0 auto; }
+  .op-header { display:flex; justify-content:space-between; align-items:flex-start; border-bottom:3px solid var(--navy); padding-bottom:16px; margin-bottom:24px; }
+  .op-logo { font-size:8pt; font-weight:700; color:var(--navy); letter-spacing:0.12em; text-transform:uppercase; }
+  .op-title { font-size:20pt; font-weight:700; color:var(--navy); }
+  .op-subtitle { font-size:10pt; color:var(--gray); }
+  .op-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px; margin-bottom:20px; }
+  .op-card { border:1px solid var(--mgray); border-radius:8px; padding:12px 14px; }
+  .op-card-title { font-size:7.5pt; text-transform:uppercase; letter-spacing:0.08em; color:var(--gray); margin-bottom:6px; }
+  .op-card-value { font-size:17pt; font-weight:700; color:var(--navy); }
+  .op-card-sub { font-size:8pt; color:var(--gray); margin-top:2px; }
+  .op-section-title { font-size:10pt; font-weight:700; color:var(--navy); border-left:4px solid var(--teal); padding-left:8px; margin:16px 0 8px; }
+  .op-goal { display:flex; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid var(--mgray); }
+  .op-goal-dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+  .op-goal-name { font-size:9.5pt; font-weight:600; flex:1; }
+  .op-goal-value { font-size:9.5pt; color:var(--gray); }
+  .op-action { padding:8px 12px; border-left:3px solid var(--teal); margin-bottom:6px; background:var(--lgray); border-radius:0 4px 4px 0; font-size:9pt; }
+  .op-action.high { border-color:var(--red); }
+  .op-action.medium { border-color:var(--amber); }
+  .op-footer { margin-top:24px; padding-top:12px; border-top:1px solid var(--mgray); display:flex; justify-content:space-between; font-size:7.5pt; color:var(--gray); }
+  .gauge { position:relative; display:inline-block; width:60px; height:60px; }
+</style>
+<div class="one-page">
+  <div class="op-header">
+    <div>
+      <div class="op-logo">Brokers Edge</div>
+      <div class="op-title">${esc(name)}</div>
+      <div class="op-subtitle">One-Page Financial Plan - ${esc(dateStr)} - ${esc(advisorName)}</div>
+    </div>
+    <div style="text-align:right">
+      <div style="font-size:8pt;color:var(--gray)">Retirement Readiness</div>
+      <div style="font-size:28pt;font-weight:700;color:${statusDot(retirementReadiness)}">${retirementReadiness}%</div>
+      ${successRate !== null ? `<div style="font-size:8pt;color:var(--gray)">Monte Carlo: ${pct(successRate)} success</div>` : ""}
+    </div>
+  </div>
+
+  <div class="op-grid">
+    <div class="op-card" style="border-top:3px solid ${netWorthVal >= 0 ? "var(--green)" : "var(--red)"}">
+      <div class="op-card-title">Net Worth</div>
+      <div class="op-card-value" style="color:${netWorthVal >= 0 ? "var(--green)" : "var(--red)"}">${fmtCad(netWorthVal)}</div>
+      <div class="op-card-sub">${fmtCad(totalAssets)} assets - ${fmtCad(totalLiabilities)} liabilities</div>
+    </div>
+    <div class="op-card" style="border-top:3px solid var(--blue)">
+      <div class="op-card-title">Retirement at Age ${r ? esc(String(r.retirementAge)) : "GÇö"}</div>
+      <div class="op-card-value">${fmtCad(projBalance)}</div>
+      <div class="op-card-sub">Projected - Need ${fmtCad(fourPctNeeded)} (4% rule)</div>
+    </div>
+    <div class="op-card" style="border-top:3px solid var(--teal)">
+      <div class="op-card-title">Monthly Expenses</div>
+      <div class="op-card-value">${fmtCad(data.expenses.reduce((s, e) => s + parseFloat(e.monthlyAmount || "0"), 0))}</div>
+      <div class="op-card-sub">${fmtCad(retirementExpenses / 12)}/mo estimated in retirement</div>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+    <div>
+      <div class="op-section-title">Top Goals</div>
+      ${r ? `<div class="op-goal"><div class="op-goal-dot" style="background:${statusDot(retirementReadiness)}"></div><div class="op-goal-name">Retirement at ${r.retirementAge || "GÇö"}</div><div class="op-goal-value">${retirementReadiness}% ready</div></div>` : ""}
+      ${data.education.map(e => {
+        const prog = parseFloat(String(e.targetAmount || "0")) > 0 ? Math.min(100, Math.round(parseFloat(String(e.currentBalance || "0")) / parseFloat(String(e.targetAmount || "1")) * 100)) : 0;
+        return `<div class="op-goal"><div class="op-goal-dot" style="background:${statusDot(prog)}"></div><div class="op-goal-name">RESP GÇô ${esc(e.childName || "Child")}</div><div class="op-goal-value">${prog}% of ${fmtCad(parseFloat(String(e.targetAmount || "0")))}</div></div>`;
+      }).join("")}
+      ${data.plans.slice(0, 3).map(p => `<div class="op-goal"><div class="op-goal-dot" style="background:var(--blue)"></div><div class="op-goal-name">${esc(p.name || "Plan")}</div><div class="op-goal-value">${esc(p.status || "active")}</div></div>`).join("")}
+      ${!r && data.education.length === 0 && data.plans.length === 0 ? "<p style='font-size:9pt;color:var(--gray)'>No goals entered yet.</p>" : ""}
+    </div>
+    <div>
+      <div class="op-section-title">Immediate Next Steps</div>
+      ${topActions.length > 0 ? topActions.map(a => `<div class="op-action ${a.priority || "medium"}"><strong>${esc(a.title || "Action item")}</strong></div>`).join("") : "<p style='font-size:9pt;color:var(--gray)'>Run AI Insights to generate personalized recommendations.</p>"}
+    </div>
+  </div>
+
+  <div class="op-footer">
+    <span>This document is for discussion purposes only and does not constitute financial, tax, or legal advice.</span>
+    <span>Brokers Edge - ${esc(advisorName)} - ${esc(dateStr)}</span>
+  </div>
+</div>`;
+
+  return htmlShell(`One-Page Plan GÇö ${name}`, body);
+}
+
+
+
+
+
+
+
+
+
+

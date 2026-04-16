@@ -361,6 +361,8 @@ export const clientPolicies = pgTable("client_policies", {
   coverageAmount:   numeric("coverage_amount", { precision: 14, scale: 2 }),
   premium:          numeric("premium", { precision: 10, scale: 2 }),
   premiumFrequency: text("premium_frequency").default("Monthly"),
+  inforceDate:      text("inforce_date"),
+  renewalDate:      text("renewal_date"),
   beneficiary:      text("beneficiary"),
   notes:            text("notes"),
   createdAt:        timestamp("created_at", { mode: "date" }).defaultNow().notNull(),

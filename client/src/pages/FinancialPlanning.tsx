@@ -614,13 +614,13 @@ function buildDefaultFromNW() {
              <Trash2 className="w-4 h-4" /> Delete
            </button>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
             {[
               { label: "Life Coverage Need",       val: a.recommendedLifeCoverage,             gap: a.lifeCoverageGap },
               { label: "Disability Coverage Need", val: a.recommendedDisabilityCoverage,       gap: a.disabilityCoverageGap },
               { label: "Critical Illness Need",    val: a.recommendedCriticalIllnessCoverage,  gap: a.criticalIllnessCoverageGap },
             ].map(item => (
-              <div key={item.label} className="p-3 bg-muted/30 rounded-xl">
+              <div key={item.label} className="p-2 bg-muted/30 rounded-lg flex items-center justify-between gap-2">
                 <p className="text-xs text-muted-foreground uppercase">{item.label}</p>
                 <p className="font-bold">{fmt$(parseFloat(item.val || "0"))}</p>
                 {item.gap !== null && (
@@ -1097,7 +1097,7 @@ function RrspRoomPanel({ clientId }: { clientId: number }) {
       <div className="p-4 bg-blue-50 border border-blue-200 rounded-xl text-sm text-blue-800">
         <strong>RRSP Room Calculator</strong> — Based on CRA's 18% of prior year earned income, subject to the annual dollar limit.
       </div>
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
         {[
           { label: "Carry-Forward Room ($)", key: "currentCarryForwardRoom" },
           { label: "Prior Year Earned Income ($)", key: "priorYearEarnedIncome" },
@@ -1458,7 +1458,7 @@ function IncomeSplittingPanel({ clientId }: { clientId: number }) {
       <div className="p-4 bg-indigo-50 border border-indigo-200 rounded-xl text-sm text-indigo-800">
         <strong>Income Splitting Analysis</strong> — Evaluates pension income splitting (T1032), spousal RRSP contributions, and TFSA shifting to minimize combined family tax.
       </div>
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
         <div><label className="text-sm font-semibold">Primary Income ($)</label><input type="number" value={form.selfIncome} onChange={e => setForm(f => ({ ...f, selfIncome: e.target.value }))} className="w-full px-3 py-2 rounded-xl border mt-1 text-sm" /></div>
         <div><label className="text-sm font-semibold">Spouse Income ($)</label><input type="number" value={form.spouseIncome} onChange={e => setForm(f => ({ ...f, spouseIncome: e.target.value }))} className="w-full px-3 py-2 rounded-xl border mt-1 text-sm" /></div>
         <div><label className="text-sm font-semibold">Eligible Pension Income ($)</label><input type="number" value={form.eligiblePensionIncome} onChange={e => setForm(f => ({ ...f, eligiblePensionIncome: e.target.value }))} className="w-full px-3 py-2 rounded-xl border mt-1 text-sm" /></div>
@@ -1799,6 +1799,7 @@ export function FinancialPlanningContent({ initialClientId }: { initialClientId?
 export default function FinancialPlanning() {
   return <FinancialPlanningContent />;
 }
+
 
 
 

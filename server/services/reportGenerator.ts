@@ -221,7 +221,7 @@ export function generateFnaReport(data: {
   <h2>Life Insurance Needs Worksheet — ${dateStr}</h2>
   <div style="height:2px;background:rgba(255,255,255,0.3);margin:24px 0;"></div>
   <div class="cover-meta">
-    <div class="label">Prepared for</div><div class="value">${esc(name)}${analysis.spouseName ? ` &amp; ${esc(String(analysis.spouseName))}` : ""}</div>
+    <div class="label">Prepared for</div><div class="value">${esc(name)}${client.spouseFirstName ? ` &amp; ${esc(client.spouseFirstName + " " + (client.spouseLastName ?? ""))}` : ""}</div>
     <div class="label">Advisor</div><div class="value">${esc(advisorName)}</div>
     <div class="label">Date</div><div class="value">${esc(dateStr)}</div>
     <div class="label">Province</div><div class="value">${esc(client.province ?? "Canada")}</div>
@@ -566,7 +566,7 @@ export function generateComprehensiveReport(data: {
   <h2>Comprehensive Review — ${dateStr}</h2>
   <div style="height:2px;background:rgba(255,255,255,0.3);margin:24px 0;"></div>
   <div class="cover-meta">
-    <div class="label">Prepared for</div><div class="value">${esc(name)}${analysis.spouseName ? ` &amp; ${esc(String(analysis.spouseName))}` : ""}</div>
+    <div class="label">Prepared for</div><div class="value">${esc(name)}${client.spouseFirstName ? ` &amp; ${esc(client.spouseFirstName + " " + (client.spouseLastName ?? ""))}` : ""}</div>
     <div class="label">Advisor</div><div class="value">${esc(advisorName)}</div>
     <div class="label">Date</div><div class="value">${esc(dateStr)}</div>
     <div class="label">Province</div><div class="value">${esc(client.province ?? "Canada")}</div>
@@ -633,6 +633,7 @@ ${data.education.length > 0 ? `
 
   return htmlShell(`Financial Plan — ${name}`, body);
 }
+
 
 
 

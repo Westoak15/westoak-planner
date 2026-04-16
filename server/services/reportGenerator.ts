@@ -397,7 +397,7 @@ export function generateFnaReport(data: { client: any; analysis: any; advisor?: 
 </div>`;
 
   const body = [cover, summarySection, clientSection, needSection, totalSection, decisionSection,
-    `<div style="padding:32px 48px;color:#94A3B8;font-size:8.5pt;border-top:1px solid #E2E8F0;margin-top:40px">
+    `<div style="padding:16px 48px;color:#94A3B8;font-size:8.5pt;border-top:1px solid #E2E8F0;margin-top:16px;page-break-before:avoid">
       Report generated ${dateStr} - Knights of Columbus Financial Planning Suite - Confidential - prepared solely for ${esc(name)}.
     </div>`].join("\n");
 
@@ -501,6 +501,7 @@ ${data.education.length>0?`<div class="section"><h2 class="section-title">Educat
 </div>`;
   return htmlShell(`Financial Plan - ${name}`, body);
 }
+
 
 
 

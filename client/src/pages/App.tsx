@@ -1415,13 +1415,18 @@ export default function App() {
           {tab === "admin" && <AdminPanel />}
           {tab === "agents" && <AgentsTab />}
           {tab === "resp"       && client && <RespTabNew       clientId={client.id} />}
-          {tab === "expenses"   && client && <ExpensesTab      clientId={client.id} />}
+          {tab === "expenses" && client && (
+            <QueryClientProvider client={queryClient}>
+              <ExpensesTab clientId={client.id} />
+            </QueryClientProvider>
+          )}
           {tab === "dashboard"  && client && <DashboardTab     clientId={client.id} />}
         </div>
       </div>
     </div>
   );
 }
+
 
 
 

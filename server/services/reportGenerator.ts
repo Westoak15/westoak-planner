@@ -85,7 +85,7 @@ function svgGapChart(items: { label: string; need: number; have: number; color: 
   }).join("");
   return `<svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg" style="font-family:Arial,sans-serif">
   <g transform="translate(${pad.left},${pad.top})">${yLabels}<line x1="0" y1="0" x2="0" y2="${H}" stroke="#94A3B8" stroke-width="1.5"/><line x1="0" y1="${H}" x2="${W}" y2="${H}" stroke="#94A3B8" stroke-width="1.5"/>${bars}
-    <g transform="translate(0,${H+40})"><rect x="0" y="-6" width="10" height="8" fill="#64748B" opacity="0.25" rx="1"/><text x="14" y="2" font-size="8" fill="#64748B">Need</text><rect x="60" y="-6" width="10" height="8" fill="#16A34A" opacity="0.85" rx="1"/><text x="74" y="2" font-size="8" fill="#64748B">Have (gap = red)</text></g>
+    <g transform="translate(0,${H+40})"><rect x="0" y="-6" width="10" height="8" fill="#64748B" opacity="0.25" rx="1"/><text x="14" y="2" font-size="8" fill="#64748B">Life Insurance Need</text><rect x="130" y="-6" width="10" height="8" fill="#DC2626" opacity="0.85" rx="1"/><text x="144" y="2" font-size="8" fill="#64748B">Existing Coverage (red = gap)</text><rect x="310" y="-6" width="10" height="8" fill="#16A34A" opacity="0.85" rx="1"/><text x="324" y="2" font-size="8" fill="#64748B">Existing Coverage (adequate)</text></g>
   </g></svg>`;
 }
 
@@ -488,3 +488,4 @@ ${data.education.length>0?`<div class="section"><h2 class="section-title">Educat
 </div>`;
   return htmlShell(`Financial Plan - ${name}`, body);
 }
+

@@ -51,7 +51,20 @@ function htmlShell(title: string, body: string): string {
   .person-label { font-size:9pt; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:12px; }
   .primary .person-label { color:var(--teal); } .spouse .person-label { color:#7C3AED; }
   .sig-line { border-bottom:1px solid #94A3B8; height:28px; margin-bottom:4px; }
-  @media print { .section { page-break-inside:avoid; } body { padding-bottom:0; } }
+  @media print {
+    .section { page-break-inside:avoid; }
+    body { padding-bottom:0; }
+    .cover { page-break-after:always; }
+    h2.section-title { margin-top:16px; }
+    .section { padding:16px 48px 0; }
+    .two-col { gap:16px; }
+    .summary-grid { gap:8px; margin-bottom:12px; }
+    table { font-size:8.5pt; }
+    td, th { padding:3px 8px; }
+    .summary-card { padding:8px 12px; }
+    .summary-card .value { font-size:12pt; }
+    p { margin-bottom:4px; }
+  }
 </style>
 </head>
 <body>${body}</body>
@@ -488,4 +501,5 @@ ${data.education.length>0?`<div class="section"><h2 class="section-title">Educat
 </div>`;
   return htmlShell(`Financial Plan - ${name}`, body);
 }
+
 

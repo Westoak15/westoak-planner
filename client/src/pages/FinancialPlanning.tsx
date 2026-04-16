@@ -621,21 +621,25 @@ function buildDefaultFromNW() {
            </button>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-            {[
-              { label: "Life Coverage Need",       val: a.recommendedLifeCoverage,             gap: a.lifeCoverageGap },
-              { label: "Disability Coverage Need", val: a.recommendedDisabilityCoverage,       gap: a.disabilityCoverageGap },
-              { label: "Critical Illness Need",    val: a.recommendedCriticalIllnessCoverage,  gap: a.criticalIllnessCoverageGap },
-            ].map(item => (
-              <div key={item.label} className="p-2 bg-muted/30 rounded-lg flex items-center justify-between gap-2">
-                <p className="text-xs text-muted-foreground uppercase">{item.label}</p>
-                <p className="font-bold">{fmt$(parseFloat(item.val || "0"))}</p>
-                {item.gap !== null && (
-                  <p className={`text-sm mt-1 ${parseFloat(item.gap || "0") > 0 ? "text-red-600" : "text-green-600"}`}>
-                    Gap: {fmt$(parseFloat(item.gap || "0"))}
-                  </p>
-                )}
-              </div>
-            ))}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+              {(() => {
+                const ws = (a.worksheetData ?? {}) as any;
+                const pNet = Math.max(0, parseFloat(ws.primaryNeed ?? "0") - parseFloat(ws.primaryExistingCoverage ?? "0"));
+                const sNet = Math.max(0, parseFloat(ws.spouseNeed ?? "0") - parseFloat(ws.spouseExistingCoverage ?? "0"));
+                const items = [
+                  { label: a.primaryName || "Primary — Life Need", val: pNet },
+                  ...(a.spouseName ? [{ label: `${a.spouseName} — Life Need`, val: sNet }] : []),
+                  { label: "DI Need", val: parseFloat(a.recommendedDisabilityCoverage || "0") },
+                  { label: "LTC Need", val: parseFloat(a.criticalIllnessLumpSum || "0") },
+                ];
+                return items.map(item => (
+                  <div key={item.label} className="p-1.5 bg-muted/30 rounded-lg flex items-center justify-between gap-2">
+                    <p className="text-xs text-muted-foreground">{item.label}</p>
+                    <p className={`text-sm font-bold ${item.val > 0 ? "text-red-600" : "text-green-600"}`}>{fmt$(item.val)}</p>
+                  </div>
+                ));
+              })()}
+            </div>
           </div>
         </div>
       ))}
@@ -1807,6 +1811,7 @@ export function FinancialPlanningContent({ initialClientId }: { initialClientId?
 export default function FinancialPlanning() {
   return <FinancialPlanningContent />;
 }
+
 
 
 

@@ -288,7 +288,7 @@ export function generateFnaReport(data: { client: any; analysis: any; advisor?: 
       </tbody></table>
       <p style="font-size:9pt;font-weight:600;color:var(--teal);margin:12px 0 8px">Primary (E) - Financial Assets Available</p>
       <table style="margin:0"><tbody>
-        ${[["Liquid Savings",pAssets.liquidSavings],["RRSP",pAssets.rrsps],["Non-Registered",pAssets.nonRegistered],["TFSA",pAssets.tfsa],["Other",pAssets.other]].filter(([,val])=>v(val)>0).map(([label,val])=>`<tr><td style="font-size:9pt;color:#64748B">${esc(label)}</td><td style="text-align:right">${fmtCad(v(val))}</td></tr>`).join("")}
+        ${[["Liquid Savings",pAssets.liquidSavings,true],["RRSP",pAssets.rrsps,pAssets.rrspsUse],["Non-Registered",pAssets.nonRegistered,pAssets.nonRegisteredUse],["TFSA",pAssets.tfsa,pAssets.tfsaUse],["Other",pAssets.other,true]].filter(([,val,use])=>v(val)>0&&use!==false).map(([label,val])=>`<tr><td style="font-size:9pt;color:#64748B">${esc(label)}</td><td style="text-align:right">${fmtCad(v(val))}</td></tr>`).join("")}
         <tr class="total"><td>Subtotal E</td><td style="text-align:right">${fmtCad(subtotalE)}</td></tr>
       </tbody></table>
     </div>
@@ -302,7 +302,7 @@ export function generateFnaReport(data: { client: any; analysis: any; advisor?: 
       </tbody></table>
       <p style="font-size:9pt;font-weight:600;color:#7C3AED;margin:12px 0 8px">Spouse (F) - Financial Assets Available</p>
       <table style="margin:0"><tbody>
-        ${[["Liquid Savings",sAssets.liquidSavings],["RRSP",sAssets.rrsps],["Non-Registered",sAssets.nonRegistered],["TFSA",sAssets.tfsa],["Other",sAssets.other]].filter(([,val])=>v(val)>0).map(([label,val])=>`<tr><td style="font-size:9pt;color:#64748B">${esc(label)}</td><td style="text-align:right">${fmtCad(v(val))}</td></tr>`).join("")}
+        ${[["Liquid Savings",sAssets.liquidSavings,true],["RRSP",sAssets.rrsps,sAssets.rrspsUse],["Non-Registered",sAssets.nonRegistered,sAssets.nonRegisteredUse],["TFSA",sAssets.tfsa,sAssets.tfsaUse],["Other",sAssets.other,true]].filter(([,val,use])=>v(val)>0&&use!==false).map(([label,val])=>`<tr><td style="font-size:9pt;color:#64748B">${esc(label)}</td><td style="text-align:right">${fmtCad(v(val))}</td></tr>`).join("")}
         <tr class="total"><td>Subtotal F</td><td style="text-align:right">${fmtCad(subtotalF)}</td></tr>
       </tbody></table>
     </div>` : "<div></div>"}
@@ -501,5 +501,8 @@ ${data.education.length>0?`<div class="section"><h2 class="section-title">Educat
 </div>`;
   return htmlShell(`Financial Plan - ${name}`, body);
 }
+
+
+
 
 

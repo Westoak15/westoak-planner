@@ -483,7 +483,7 @@ function buildDefaultFromNW() {
     nwEntries.filter((e: any) => e.type === type && e.category === category && (!owner || e.owner === owner))
              .reduce((s: number, e: any) => s + parseFloat(e.value || "0"), 0);
   const policySum = (insured: string) =>
-    policies.filter((p: any) => p.insured === insured && ["Term Life","Whole Life","Universal Life"].includes(p.type))
+    policies.filter((p: any) => p.insured === insured && ["Life","Term Life","Whole Life","Universal Life"].includes(p.type))
             .reduce((s: number, p: any) => s + parseFloat(p.coverageAmount || "0"), 0);
   return {
     liabilities: {
@@ -1802,6 +1802,7 @@ export function FinancialPlanningContent({ initialClientId }: { initialClientId?
 export default function FinancialPlanning() {
   return <FinancialPlanningContent />;
 }
+
 
 
 

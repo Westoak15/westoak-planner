@@ -1,8 +1,6 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { api } from "../lib/api";
-import { useQueryClient } from "@tanstack/react-query";
-import { api } from "../lib/api";
-import { useState, useMemo, Component, type ReactNode } from "react";
+import { useState, useMemo, useEffect, Component, type ReactNode } from "react";
 
 class ErrorBoundary extends Component<{children:ReactNode;fallback?:ReactNode},{error:boolean}> {
   state = { error: false };
@@ -1804,6 +1802,8 @@ export function FinancialPlanningContent({ initialClientId }: { initialClientId?
 export default function FinancialPlanning() {
   return <FinancialPlanningContent />;
 }
+
+
 
 
 

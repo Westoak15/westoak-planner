@@ -24,11 +24,11 @@ function htmlShell(title: string, body: string): string {
   :root { --navy:#1B3A5C; --teal:#0F766E; --blue:#2563EB; --amber:#D97706; --red:#DC2626; --green:#16A34A; --gray:#475569; --lgray:#F1F5F9; --mgray:#CBD5E1; }
   * { box-sizing:border-box; margin:0; padding:0; }
   body { font-family:"Segoe UI",Arial,sans-serif; font-size:11pt; color:#0F172A; background:white; padding:0 0 40px; }
-  .cover { background:var(--navy); color:white; padding:40px 48px 32px; }
-  .cover h1 { font-size:26pt; font-weight:700; margin-bottom:6px; }
-  .cover h2 { font-size:13pt; font-weight:300; opacity:0.85; margin-bottom:24px; }
-  .cover-meta { display:grid; grid-template-columns:1fr 1fr; gap:8px 24px; margin-top:32px; font-size:10pt; }
-  .cover-meta .label { opacity:0.7; } .cover-meta .value { font-weight:600; }
+  .cover { background:white; color:var(--navy); padding:32px 48px 24px; border-bottom:4px solid var(--teal); }
+  .cover h1 { font-size:26pt; font-weight:700; margin-bottom:6px; color:var(--navy); }
+  .cover h2 { font-size:13pt; font-weight:400; color:var(--gray); margin-bottom:16px; }
+  .cover-meta { display:grid; grid-template-columns:1fr 1fr; gap:6px 24px; margin-top:16px; font-size:10pt; color:white; }
+  .cover-meta .label { color:var(--gray); font-size:9pt; } .cover-meta .value { font-weight:600; color:var(--navy); }
   .section { padding:32px 48px 0; page-break-inside:avoid; }
   h2.section-title { font-size:15pt; font-weight:700; color:var(--navy); border-bottom:3px solid var(--teal); padding-bottom:8px; margin-bottom:20px; margin-top:32px; }
   h3 { font-size:11pt; font-weight:600; color:var(--navy); margin:16px 0 8px; }
@@ -192,7 +192,7 @@ export function generateFnaReport(data: { client: any; analysis: any; advisor?: 
   <div style="font-size:10pt;letter-spacing:0.1em;text-transform:uppercase;opacity:0.7;margin-bottom:12px;">Knights of Columbus - Financial Planning Suite</div>
   <h1>Family Needs Analysis</h1>
   <h2>Life Insurance Needs Worksheet - ${dateStr}</h2>
-  <div style="height:2px;background:rgba(255,255,255,0.3);margin:24px 0;"></div>
+  <div style="height:2px;background:var(--teal);margin:12px 0;"></div>
   <div class="cover-meta">
     <div class="label">Prepared for</div>
     <div class="value">${esc(name)}${spouseName ? ` &amp; ${esc(spouseName)}` : ""}</div>
@@ -200,7 +200,7 @@ export function generateFnaReport(data: { client: any; analysis: any; advisor?: 
     <div class="label">Date</div><div class="value">${esc(dateStr)}</div>
     <div class="label">Province</div><div class="value">${esc(client.province ?? "Canada")}</div>
   </div>
-  <div style="margin-top:40px;font-size:8.5pt;opacity:0.6;">
+  <div style="margin-top:12px;font-size:8pt;color:var(--gray)">
     This analysis is prepared for discussion purposes only. Life insurance needs are estimates based on information provided. This does not constitute financial, legal, or tax advice.
   </div>
 </div>`;
@@ -460,7 +460,7 @@ export function generateComprehensiveReport(data: { client: any; advisor?: any; 
   <div style="font-size:10pt;letter-spacing:0.1em;text-transform:uppercase;opacity:0.7;margin-bottom:12px;">Knights of Columbus - Financial Planning Suite</div>
   <h1>Financial Plan</h1>
   <h2>Comprehensive Review - ${dateStr}</h2>
-  <div style="height:2px;background:rgba(255,255,255,0.3);margin:24px 0;"></div>
+  <div style="height:2px;background:var(--teal);margin:12px 0;"></div>
   <div class="cover-meta">
     <div class="label">Prepared for</div><div class="value">${esc(name)}${client.spouseFirstName?` &amp; ${esc(client.spouseFirstName+" "+(client.spouseLastName??""))}`:""}</div>
     <div class="label">Advisor</div><div class="value">${esc(advisorName)}</div>
@@ -501,6 +501,7 @@ ${data.education.length>0?`<div class="section"><h2 class="section-title">Educat
 </div>`;
   return htmlShell(`Financial Plan - ${name}`, body);
 }
+
 
 
 

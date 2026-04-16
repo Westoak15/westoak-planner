@@ -24,9 +24,9 @@ function htmlShell(title: string, body: string): string {
   :root { --navy:#1B3A5C; --teal:#0F766E; --blue:#2563EB; --amber:#D97706; --red:#DC2626; --green:#16A34A; --gray:#475569; --lgray:#F1F5F9; --mgray:#CBD5E1; }
   * { box-sizing:border-box; margin:0; padding:0; }
   body { font-family:"Segoe UI",Arial,sans-serif; font-size:11pt; color:#0F172A; background:white; padding:0 0 40px; }
-  .cover { background:var(--navy); color:white; padding:60px 48px 48px; page-break-after:always; }
-  .cover h1 { font-size:32pt; font-weight:700; margin-bottom:8px; }
-  .cover h2 { font-size:16pt; font-weight:300; opacity:0.85; margin-bottom:40px; }
+  .cover { background:var(--navy); color:white; padding:40px 48px 32px; }
+  .cover h1 { font-size:26pt; font-weight:700; margin-bottom:6px; }
+  .cover h2 { font-size:13pt; font-weight:300; opacity:0.85; margin-bottom:24px; }
   .cover-meta { display:grid; grid-template-columns:1fr 1fr; gap:8px 24px; margin-top:32px; font-size:10pt; }
   .cover-meta .label { opacity:0.7; } .cover-meta .value { font-weight:600; }
   .section { padding:32px 48px 0; page-break-inside:avoid; }
@@ -501,6 +501,7 @@ ${data.education.length>0?`<div class="section"><h2 class="section-title">Educat
 </div>`;
   return htmlShell(`Financial Plan - ${name}`, body);
 }
+
 
 
 

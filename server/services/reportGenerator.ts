@@ -456,7 +456,7 @@ export function generateFnaReport(data: {
     </div>
     ${hasSpouse ? `
     <div>
-      <p style="font-size:9pt;font-weight:600;color:#7C3AED;margin-bottom:16px">${esc(ws.spouseName || spouseName)}</p>
+      <p style="font-size:9pt;font-weight:600;color:#7C3AED;margin-bottom:16px">${esc(ws.spouseName || "Spouse")}</p>
       <div style="border-bottom:1px solid #94A3B8;margin-bottom:4px;height:24px"></div>
       <p style="font-size:8pt;color:#64748B">Spouse Signature</p>
     </div>` : "<div></div>"}
@@ -633,6 +633,7 @@ ${data.education.length > 0 ? `
 
   return htmlShell(`Financial Plan — ${name}`, body);
 }
+
 
 
 

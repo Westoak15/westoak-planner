@@ -11,6 +11,7 @@ import { NetWorthTab as NetWorthTabNew, RetirementTab as RetirementTabNew, RespT
 import { InsuranceTab as FnaTabNew } from "./FinancialPlanning";
 import { AdminPanel } from "./AdminPanel"
 import { AgentsTab } from "./AgentsTab";
+import { ExpensesTab } from "./ExpensesTab";
 import { PoliciesTab } from "./PoliciesTab";
 import { fmt$, fmtPct, initials, avatarBg, cn } from "../lib/utils";
 import {
@@ -1421,6 +1422,7 @@ export default function App() {
     </div>
   );
 }
+
 
 
 

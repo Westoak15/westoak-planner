@@ -221,7 +221,7 @@ export function generateFnaReport(data: {
   <h2>Life Insurance Needs Worksheet â€” ${dateStr}</h2>
   <div style="height:2px;background:rgba(255,255,255,0.3);margin:24px 0;"></div>
   <div class="cover-meta">
-    <div class="label">Prepared for</div><div class="value">${esc(name)}</div>
+    <div class="label">Prepared for</div><div class="value">${esc(name)}${spouseName ? ` &amp; ${esc(spouseName)}` : ""}</div>
     <div class="label">Advisor</div><div class="value">${esc(advisorName)}</div>
     <div class="label">Date</div><div class="value">${esc(dateStr)}</div>
     <div class="label">Province</div><div class="value">${esc(client.province ?? "Canada")}</div>
@@ -236,19 +236,23 @@ export function generateFnaReport(data: {
 <div class="section">
   <h2 class="section-title">Coverage Summary</h2>
   <div class="summary-grid">
-    <div class="summary-card">
-      <div class="label">Primary Life Insurance Need</div>
+    <div class="summary-card" style="border-left-color:var(--teal)">
+      <div class="label">${esc(ws.primaryName || primaryName)} — Life Insurance Need</div>
       <div class="value">${fmtCad(primaryNeed)}</div>
-    </div>
-    <div class="summary-card">
-      <div class="label">Primary Net Need (After Existing)</div>
-      <div class="value ${primaryNet > 0 ? "negative" : "positive"}">${fmtCad(primaryNet)}</div>
+      <div class="label" style="margin-top:4px">Net Need</div>
+      <div class="value ${primaryNet > 0 ? "negative" : "positive"}" style="font-size:12pt">${fmtCad(primaryNet)}</div>
     </div>
     ${hasSpouse ? `
+    <div class="summary-card" style="border-left-color:#7C3AED">
+      <div class="label">${esc(ws.spouseName || spouseName)} — Life Insurance Need</div>
+      <div class="value">${fmtCad(spouseNeed)}</div>
+      <div class="label" style="margin-top:4px">Net Need</div>
+      <div class="value ${spouseNet > 0 ? "negative" : "positive"}" style="font-size:12pt">${fmtCad(spouseNet)}</div>
+    </div>` : `<div></div>`}
     <div class="summary-card">
-      <div class="label">Spouse Net Need</div>
-      <div class="value ${spouseNet > 0 ? "negative" : "positive"}">${fmtCad(spouseNet)}</div>
-    </div>` : `<div class="summary-card"><div class="label">Analysis Method</div><div class="value" style="font-size:11pt">Family Needs</div></div>`}
+      <div class="label">Analysis Date</div>
+      <div class="value" style="font-size:11pt">${dateStr}</div>
+    </div>
   </div>
 
   <h3>Coverage Gap Analysis</h3>
@@ -444,7 +448,30 @@ export function generateFnaReport(data: {
       </table>
     </div>` : "<div></div>"}
   </div>
-  ${ws.signatureDate ? `<p style="font-size:9pt;color:#64748B;margin-top:8px">Date: ${esc(ws.signatureDate)}</p>` : ""}
+  <div style="margin-top:24px;padding:16px;border:1px solid var(--mgray);border-radius:8px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:24px">
+    <div>
+      <p style="font-size:9pt;font-weight:600;color:var(--navy);margin-bottom:16px">${esc(ws.primaryName || primaryName)}</p>
+      <div style="border-bottom:1px solid #94A3B8;margin-bottom:4px;height:24px"></div>
+      <p style="font-size:8pt;color:#64748B">Client Signature</p>
+    </div>
+    ${hasSpouse ? `
+    <div>
+      <p style="font-size:9pt;font-weight:600;color:#7C3AED;margin-bottom:16px">${esc(ws.spouseName || spouseName)}</p>
+      <div style="border-bottom:1px solid #94A3B8;margin-bottom:4px;height:24px"></div>
+      <p style="font-size:8pt;color:#64748B">Spouse Signature</p>
+    </div>` : "<div></div>"}
+    <div>
+      <p style="font-size:9pt;font-weight:600;color:var(--navy);margin-bottom:16px">Advisor</p>
+      <div style="border-bottom:1px solid #94A3B8;margin-bottom:4px;height:24px"></div>
+      <p style="font-size:8pt;color:#64748B">Advisor Signature</p>
+    </div>
+  </div>
+  <div style="margin-top:12px;display:grid;grid-template-columns:1fr 1fr;gap:24px">
+    <div>
+      <div style="border-bottom:1px solid #94A3B8;margin-bottom:4px;height:24px">${esc(ws.signatureDate) || ""}</div>
+      <p style="font-size:8pt;color:#64748B">Date</p>
+    </div>
+  </div>
   ${ws.meetingNotes ? `
   <h3>Meeting Notes</h3>
   <div class="callout"><p>${esc(ws.meetingNotes)}</p></div>` : ""}
@@ -539,7 +566,7 @@ export function generateComprehensiveReport(data: {
   <h2>Comprehensive Review â€” ${dateStr}</h2>
   <div style="height:2px;background:rgba(255,255,255,0.3);margin:24px 0;"></div>
   <div class="cover-meta">
-    <div class="label">Prepared for</div><div class="value">${esc(name)}</div>
+    <div class="label">Prepared for</div><div class="value">${esc(name)}${spouseName ? ` &amp; ${esc(spouseName)}` : ""}</div>
     <div class="label">Advisor</div><div class="value">${esc(advisorName)}</div>
     <div class="label">Date</div><div class="value">${esc(dateStr)}</div>
     <div class="label">Province</div><div class="value">${esc(client.province ?? "Canada")}</div>
@@ -606,6 +633,8 @@ ${data.education.length > 0 ? `
 
   return htmlShell(`Financial Plan â€” ${name}`, body);
 }
+
+
 
 
 

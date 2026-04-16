@@ -2,7 +2,7 @@ import { Router, Response } from "express";
 import { db } from "../db/index.js";
 import {
   clients, financialPlans as plans, netWorthEntries, retirementProjections,
-  insuranceAnalyses, educationSavings as educationPlans, debtEntries, clientPolicies, clientPolicies,
+  insuranceAnalyses, educationSavings as educationPlans, debtEntries, clientPolicies,
   taxPlanningNotes as taxNotes, estatePlanningNotes as estateNotes, aiRecommendations,
 } from "../../shared/schema.js";
 import { isAuthenticated, type AuthRequest } from "../auth/index.js";
@@ -329,6 +329,7 @@ r.delete("/clients/:id/policies/:pid", async (req: AuthRequest, res: Response) =
   res.json({ ok: true });
 });
 export { r as fpRouter };
+
 
 
 

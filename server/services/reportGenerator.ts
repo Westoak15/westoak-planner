@@ -54,7 +54,7 @@ function htmlShell(title: string, body: string): string {
   @media print {
     .section { page-break-inside:avoid; }
     body { padding-bottom:0; }
-    .cover { page-break-after:always; }
+    .cover { }
     h2.section-title { margin-top:16px; }
     .section { padding:16px 48px 0; }
     .two-col { gap:16px; }
@@ -501,6 +501,7 @@ ${data.education.length>0?`<div class="section"><h2 class="section-title">Educat
 </div>`;
   return htmlShell(`Financial Plan - ${name}`, body);
 }
+
 
 
 

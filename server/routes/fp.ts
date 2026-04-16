@@ -2,7 +2,7 @@ import { Router, Response } from "express";
 import { db } from "../db/index.js";
 import {
   clients, financialPlans as plans, netWorthEntries, retirementProjections,
-  insuranceAnalyses, educationSavings as educationPlans, debtEntries,
+  insuranceAnalyses, educationSavings as educationPlans, debtEntries, clientPolicies, clientPolicies,
   taxPlanningNotes as taxNotes, estatePlanningNotes as estateNotes, aiRecommendations,
 } from "../../shared/schema.js";
 import { isAuthenticated, type AuthRequest } from "../auth/index.js";
@@ -303,4 +303,32 @@ r.delete("/ai/:id", async (req: AuthRequest, res: Response) => {
   res.json({ ok: true });
 });
 
+// -- Client Policies -----------------------------------------------------------
+r.get("/clients/:id/policies", async (req: AuthRequest, res: Response) => {
+  const cid = +req.params.id;
+  if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
+  const rows = await db.select().from(clientPolicies).where(eq(clientPolicies.clientId, cid));
+  res.json(rows);
+});
+r.post("/clients/:id/policies", async (req: AuthRequest, res: Response) => {
+  const cid = +req.params.id;
+  if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
+  const [row] = await db.insert(clientPolicies).values({ clientId: cid, ...safe(req.body) }).returning();
+  res.status(201).json(row);
+});
+r.patch("/clients/:id/policies/:pid", async (req: AuthRequest, res: Response) => {
+  const cid = +req.params.id;
+  if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
+  const [row] = await db.update(clientPolicies).set(safe(req.body)).where(and(eq(clientPolicies.id, +req.params.pid), eq(clientPolicies.clientId, cid))).returning();
+  res.json(row);
+});
+r.delete("/clients/:id/policies/:pid", async (req: AuthRequest, res: Response) => {
+  const cid = +req.params.id;
+  if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
+  await db.delete(clientPolicies).where(and(eq(clientPolicies.id, +req.params.pid), eq(clientPolicies.clientId, cid)));
+  res.json({ ok: true });
+});
 export { r as fpRouter };
+
+
+

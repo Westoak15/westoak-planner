@@ -11,6 +11,7 @@ import { NetWorthTab as NetWorthTabNew, RetirementTab as RetirementTabNew, RespT
 import { InsuranceTab as FnaTabNew } from "./FinancialPlanning";
 import { AdminPanel } from "./AdminPanel"
 import { AgentsTab } from "./AgentsTab";
+import { PoliciesTab } from "./PoliciesTab";
 import { fmt$, fmtPct, initials, avatarBg, cn } from "../lib/utils";
 import {
   Plus, Pencil, Trash2, X, Check, ChevronRight, Search,
@@ -1404,7 +1405,7 @@ export default function App() {
           )}
           {tab === "networth"   && client && <NetWorthTabNew   clientId={client.id} client={client} />}
           {tab === "retirement" && client && <RetirementTabNew clientId={client.id} />}
-          {tab === "insurance"  && client && <InsuranceTabNew  clientId={client.id} />}
+          {tab === "insurance" && client && <PoliciesTab clientId={client.id} client={client} />}
           {tab === "fna"        && client && (
             <QueryClientProvider client={queryClient}>
             <FnaTabNew clientId={client.id} planId={null} client={client} />
@@ -1420,6 +1421,7 @@ export default function App() {
     </div>
   );
 }
+
 
 
 

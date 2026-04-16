@@ -351,6 +351,22 @@ export const planActionItems = pgTable("plan_action_items", {
 });
 export type PlanActionItem = typeof planActionItems.$inferSelect;
 
+export const clientPolicies = pgTable("client_policies", {
+  id:               serial("id").primaryKey(),
+  clientId:         integer("client_id").notNull().references(() => clients.id, { onDelete: "cascade" }),
+  type:             text("type").notNull(),
+  insured:          text("insured").default("primary"),
+  provider:         text("provider"),
+  policyNumber:     text("policy_number"),
+  coverageAmount:   numeric("coverage_amount", { precision: 14, scale: 2 }),
+  premium:          numeric("premium", { precision: 10, scale: 2 }),
+  premiumFrequency: text("premium_frequency").default("Monthly"),
+  beneficiary:      text("beneficiary"),
+  notes:            text("notes"),
+  createdAt:        timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+});
+export type ClientPolicy = typeof clientPolicies.$inferSelect;
+
 // ── Legacy aliases (backward compat) ─────────────────────────────────────────
 export const plans = financialPlans;
 export type Plan = FinancialPlan;

@@ -8,7 +8,7 @@ import { cn } from "../lib/utils";
 export type Tab =
   | "clients" | "dashboard"
   | "networth" | "retirement" | "insurance" | "fna"
-  | "resp" | "debt" | "tax" | "estate" | "ai"
+  | "resp" | "expenses" | "tax" | "estate" | "ai"
   | "planning" | "admin" | "agents";
 
 interface Props {
@@ -24,12 +24,12 @@ const ALL_TABS: { key: Tab; label: string; icon: any; dividerBefore?: boolean; g
   { key: "agents",     label: "Agents",       icon: UserCheck, dividerBefore: true, gaOnly: true }, 
   { key: "clients", label: "Clients", icon: Users },
   { key: "dashboard",  label: "Dashboard",    icon: LayoutDashboard, dividerBefore: true },
-  { key: "networth",   label: "Net Worth",    icon: Scale },
-  { key: "debt",       label: "Debt",         icon: CreditCard },  
+  { key: "networth",   label: "Net Worth",    icon: Scale },  
   { key: "retirement", label: "Retirement",   icon: PiggyBank },
   { key: "insurance",  label: "Policies",     icon: Shield },
   { key: "fna",        label: "FNA",          icon: FileHeart },
   { key: "resp",       label: "RESP",         icon: GraduationCap },
+  { key: "expenses",   label: "Expenses",     icon: Receipt },
   { key: "tax",        label: "Tax",          icon: Receipt },
   { key: "estate",     label: "Estate",       icon: ScrollText },
   { key: "ai",         label: "AI Insights",  icon: Brain },
@@ -38,7 +38,7 @@ const ALL_TABS: { key: Tab; label: string; icon: any; dividerBefore?: boolean; g
 ];
 
 const STANDARD_TABS: Tab[] = ["clients", "networth", "insurance", "fna"];
-const PLAN_TABS: Tab[] = ["dashboard","networth","retirement","insurance","fna","resp","debt","tax","estate","ai","planning"];
+const PLAN_TABS: Tab[] = ["dashboard","networth","retirement","insurance", "expenses","fna","resp","tax","estate","ai","planning"];
 const NO_CLIENT_TABS: Tab[] = ["clients", "admin", "agents"];
 
 export function Sidebar({ activeTab, onTab, clientName, role, level }: Props) {
@@ -100,3 +100,4 @@ export function Sidebar({ activeTab, onTab, clientName, role, level }: Props) {
     </aside>
   );
 }
+

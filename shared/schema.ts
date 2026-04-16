@@ -369,6 +369,20 @@ export const clientPolicies = pgTable("client_policies", {
 });
 export type ClientPolicy = typeof clientPolicies.$inferSelect;
 
+export const householdExpenses = pgTable("household_expenses", {
+  id:                      serial("id").primaryKey(),
+  clientId:                integer("client_id").notNull().references(() => clients.id, { onDelete: "cascade" }),
+  category:                text("category").notNull(),
+  description:             text("description"),
+  monthlyAmount:           numeric("monthly_amount", { precision: 10, scale: 2 }).notNull().default("0"),
+  isEssential:             boolean("is_essential").default(true),
+  includeInRetirement:     boolean("include_in_retirement").default(true),
+  retirementAdjustmentPct: integer("retirement_adjustment_pct").default(100),
+  notes:                   text("notes"),
+  createdAt:               timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+});
+export type HouseholdExpense = typeof householdExpenses.$inferSelect;
+
 // ── Legacy aliases (backward compat) ─────────────────────────────────────────
 export const plans = financialPlans;
 export type Plan = FinancialPlan;

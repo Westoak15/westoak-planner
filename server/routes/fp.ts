@@ -2,7 +2,7 @@ import { Router, Response } from "express";
 import { db } from "../db/index.js";
 import {
   clients, financialPlans as plans, netWorthEntries, retirementProjections,
-  insuranceAnalyses, educationSavings as educationPlans, debtEntries, clientPolicies,
+  insuranceAnalyses, educationSavings as educationPlans, debtEntries, clientPolicies, householdExpenses,
   taxPlanningNotes as taxNotes, estatePlanningNotes as estateNotes, aiRecommendations,
 } from "../../shared/schema.js";
 import { isAuthenticated, type AuthRequest } from "../auth/index.js";
@@ -328,7 +328,60 @@ r.delete("/clients/:id/policies/:pid", async (req: AuthRequest, res: Response) =
   await db.delete(clientPolicies).where(and(eq(clientPolicies.id, +req.params.pid), eq(clientPolicies.clientId, cid)));
   res.json({ ok: true });
 });
+// -- Household Expenses --------------------------------------------------------
+r.get("/clients/:id/expenses", async (req: AuthRequest, res: Response) => {
+  const cid = +req.params.id;
+  if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
+  const rows = await db.select().from(householdExpenses).where(eq(householdExpenses.clientId, cid));
+  res.json(rows);
+});
+r.post("/clients/:id/expenses", async (req: AuthRequest, res: Response) => {
+  const cid = +req.params.id;
+  if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
+  const [row] = await db.insert(householdExpenses).values({ clientId: cid, ...safe(req.body) }).returning();
+  res.status(201).json(row);
+});
+r.patch("/clients/:id/expenses/:eid", async (req: AuthRequest, res: Response) => {
+  const cid = +req.params.id;
+  if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
+  const [row] = await db.update(householdExpenses).set(safe(req.body)).where(and(eq(householdExpenses.id, +req.params.eid), eq(householdExpenses.clientId, cid))).returning();
+  res.json(row);
+});
+r.delete("/clients/:id/expenses/:eid", async (req: AuthRequest, res: Response) => {
+  const cid = +req.params.id;
+  if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
+  await db.delete(householdExpenses).where(and(eq(householdExpenses.id, +req.params.eid), eq(householdExpenses.clientId, cid)));
+  res.json({ ok: true });
+});
+// -- Household Expenses --------------------------------------------------------
+r.get("/clients/:id/expenses", async (req: AuthRequest, res: Response) => {
+  const cid = +req.params.id;
+  if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
+  const rows = await db.select().from(householdExpenses).where(eq(householdExpenses.clientId, cid));
+  res.json(rows);
+});
+r.post("/clients/:id/expenses", async (req: AuthRequest, res: Response) => {
+  const cid = +req.params.id;
+  if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
+  const [row] = await db.insert(householdExpenses).values({ clientId: cid, ...safe(req.body) }).returning();
+  res.status(201).json(row);
+});
+r.patch("/clients/:id/expenses/:eid", async (req: AuthRequest, res: Response) => {
+  const cid = +req.params.id;
+  if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
+  const [row] = await db.update(householdExpenses).set(safe(req.body)).where(and(eq(householdExpenses.id, +req.params.eid), eq(householdExpenses.clientId, cid))).returning();
+  res.json(row);
+});
+r.delete("/clients/:id/expenses/:eid", async (req: AuthRequest, res: Response) => {
+  const cid = +req.params.id;
+  if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
+  await db.delete(householdExpenses).where(and(eq(householdExpenses.id, +req.params.eid), eq(householdExpenses.clientId, cid)));
+  res.json({ ok: true });
+});
 export { r as fpRouter };
+
+
+
 
 
 

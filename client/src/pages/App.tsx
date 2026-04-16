@@ -7,7 +7,7 @@ import { FinancialPlanningContent } from "./FinancialPlanning";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "../lib/queryClient";
 import { MonteCarloResults } from "../components/MonteCarloResults";
-import { NetWorthTab as NetWorthTabNew, RetirementTab as RetirementTabNew, RespTab as RespTabNew, DebtTab as DebtTabNew, InsuranceTab as InsuranceTabNew } from "./MultiEntryTabs";         
+import { NetWorthTab as NetWorthTabNew, RetirementTab as RetirementTabNew, RespTab as RespTabNew, InsuranceTab as InsuranceTabNew } from "./MultiEntryTabs";         
 import { InsuranceTab as FnaTabNew } from "./FinancialPlanning";
 import { AdminPanel } from "./AdminPanel"
 import { AgentsTab } from "./AgentsTab";
@@ -1414,7 +1414,7 @@ export default function App() {
           {tab === "admin" && <AdminPanel />}
           {tab === "agents" && <AgentsTab />}
           {tab === "resp"       && client && <RespTabNew       clientId={client.id} />}
-          {tab === "debt"       && client && <DebtTabNew       clientId={client.id} />}
+          {tab === "expenses"   && client && <ExpensesTab      clientId={client.id} />}
           {tab === "dashboard"  && client && <DashboardTab     clientId={client.id} />}
         </div>
       </div>

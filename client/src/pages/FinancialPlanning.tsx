@@ -573,7 +573,7 @@ function buildDefaultFromNW() {
         <h2 className="text-xl font-display font-bold">Insurance Needs Analysis</h2>
         <button onClick={() => { 
            console.log("policies at click:", policies.length, "sum:", policies.filter((p:any) => ["Life","Term Life","Whole Life","Universal Life"].includes(p.type) && p.insured==="primary").reduce((s:number,p:any)=>s+parseFloat(p.coverageAmount||"0"),0));
-           setForm({ ...defaultWs, ...buildDefaultFromNW(), primaryAnnualIncome: client?.annualIncome ? String(client.annualIncome) : "", spouseName: client?.spouseFirstName ? `${client.spouseFirstName} ${client.spouseLastName ?? ""}`.trim() : "", spouseAge: client?.spouseDateOfBirth ?    String(new Date().getFullYear() - new Date(client.spouseDateOfBirth).getFullYear()) : "", spouseAnnualIncome: client?.spouseFirstName && client?.spouseAnnualIncome ? String(client.spouseAnnualIncome) : "" }); setViewingId(null); setShowWorksheet(true); }}
+           setForm({ ...defaultWs, ...buildDefaultFromNW(), primaryName: client ? `${client.firstName} ${client.lastName}` : "", primaryAge: client?.dateOfBirth ? String(new Date().getFullYear() - new Date(client.dateOfBirth).getFullYear()) : "", primaryAnnualIncome: client?.annualIncome ? String(client.annualIncome) : "", spouseName: client?.spouseFirstName ? `${client.spouseFirstName} ${client.spouseLastName ?? ""}`.trim() : "", spouseAge: client?.spouseDateOfBirth ? String(new Date().getFullYear() - new Date(client.spouseDateOfBirth).getFullYear()) : "", spouseAnnualIncome: client?.spouseFirstName && client?.spouseAnnualIncome ? String(client.spouseAnnualIncome) : "" }); setViewingId(null); setShowWorksheet(true); }}
           data-testid="button-fp-add-insurance"
           className="flex items-center space-x-2 px-4 py-2 bg-secondary text-secondary-foreground font-semibold rounded-xl hover:bg-secondary/90 transition-colors shadow-sm">
           <Plus className="w-4 h-4" /><span>New Analysis</span>
@@ -786,13 +786,15 @@ function buildDefaultFromNW() {
                   <div className="space-y-3 p-4 border border-border rounded-xl">
                     <p className="text-sm font-semibold text-primary">Primary</p>
                     <WorksheetFieldImpl label="Coverage Amount Purchased" value={form.primaryCoveragePurchased} onChange={v => setForm(f => ({ ...f, primaryCoveragePurchased: v }))} testId="input-ws-primary-purchased" />
-                    <WorksheetFieldImpl label="Acknowledged Shortfall" value={form.primaryShortfallAcknowledged} onChange={v => setForm(f => ({ ...f, primaryShortfallAcknowledged: v }))} testId="input-ws-primary-shortfall" />
+                    <div><label className="text-xs font-medium text-muted-foreground">Acknowledged Shortfall</label>
+                    <p className="text-sm font-bold text-red-600 mt-1">{fmt$(Math.max(0, calc.primaryNet - v(form.primaryCoveragePurchased)))}</p></div>
                     <div><label className="text-xs font-medium text-muted-foreground">Signature (Printed Name)</label><input type="text" value={form.primarySignature} onChange={e => setForm(f => ({ ...f, primarySignature: e.target.value }))} className="w-full px-3 py-2 rounded-lg border text-sm mt-1 bg-background" /></div>
                   </div>
                   <div className="space-y-3 p-4 border border-border rounded-xl">
                     <p className="text-sm font-semibold text-purple-600">Spouse</p>
                     <WorksheetFieldImpl label="Coverage Amount Purchased" value={form.spouseCoveragePurchased} onChange={v => setForm(f => ({ ...f, spouseCoveragePurchased: v }))} testId="input-ws-spouse-purchased" />
-                    <WorksheetFieldImpl label="Acknowledged Shortfall" value={form.spouseShortfallAcknowledged} onChange={v => setForm(f => ({ ...f, spouseShortfallAcknowledged: v }))} testId="input-ws-spouse-shortfall" />
+                    <div><label className="text-xs font-medium text-muted-foreground">Acknowledged Shortfall</label>
+                    <p className="text-sm font-bold text-red-600 mt-1">{fmt$(Math.max(0, calc.spouseNet - v(form.spouseCoveragePurchased)))}</p></div>
                     <div><label className="text-xs font-medium text-muted-foreground">Signature (Printed Name)</label><input type="text" value={form.spouseSignature} onChange={e => setForm(f => ({ ...f, spouseSignature: e.target.value }))} className="w-full px-3 py-2 rounded-lg border text-sm mt-1 bg-background" /></div>
                   </div>
                 </div>
@@ -1805,6 +1807,7 @@ export function FinancialPlanningContent({ initialClientId }: { initialClientId?
 export default function FinancialPlanning() {
   return <FinancialPlanningContent />;
 }
+
 
 
 

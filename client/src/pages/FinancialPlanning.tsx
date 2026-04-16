@@ -514,9 +514,10 @@ function buildDefaultFromNW() {
       tfsaUse:            true,
       other:              "0",
     },
+      primaryExistingCoverage: String(policySum("primary")),
+      spouseExistingCoverage:  String(policySum("spouse")),
   };
 }
-
   const v = (s: string) => parseFloat(s) || 0;
   const subtotalA = Object.values(form.liabilities).reduce((s, val) => s + v(val), 0);
   const subtotalB = Object.values(form.legacy).reduce((s, val) => s + v(val), 0);

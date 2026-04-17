@@ -242,6 +242,7 @@ export function NetWorthTab({ clientId, client }: { clientId: number; client?: {
                             className="border border-amber-300 rounded-lg px-2 py-1.5 text-sm w-full bg-white focus:outline-none focus:ring-2 focus:ring-amber-400/30">
                             <option value="primary">{primaryName}</option>
                             {spouseName && <option value="spouse">{spouseName}</option>}
+                            {spouseName && <option value="joint">Joint</option>}
                           </select>
                         </div>
                         <div>
@@ -330,6 +331,7 @@ export function NetWorthTab({ clientId, client }: { clientId: number; client?: {
                               className="border border-gray-200 rounded-lg px-2 py-1.5 text-sm w-full focus:outline-none focus:ring-2 focus:ring-cyan-500/20 bg-white">
                               <option value="primary">{primaryName}</option>
                               {spouseName && <option value="spouse">{spouseName}</option>}
+                              {spouseName && <option value="joint">Joint</option>}
                             </select>
                           </div>
                           {/* Category */}

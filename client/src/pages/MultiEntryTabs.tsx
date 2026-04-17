@@ -118,7 +118,7 @@ export function NetWorthTab({ clientId, client }: { clientId: number; client?: {
 
   const spouseName = client?.spouseFirstName ? `${client.spouseFirstName} ${client.spouseLastName ?? ""}`.trim() : "";
   const primaryName = client ? `${client.firstName} ${client.lastName}` : "Primary";
-  const ownerOptions = spouseName ? [primaryName, spouseName] : [primaryName];
+  const ownerOptions = spouseName ? [primaryName, spouseName, "Joint"] : [primaryName];
 
   const load = () => api.get<NWEntry[]>(`/api/clients/${clientId}/net-worth`).then(setEntries);
   useEffect(() => { load(); }, [clientId]);
@@ -408,7 +408,7 @@ export function RetirementTab({ clientId }: { clientId: number }) {
   }, [clientId]);
 
   function addDraft() {
-    const primary = netWorth.filter(e => e.type === "asset" && e.owner !== "spouse");
+    const primary = netWorth.filter(e => e.type === "asset" && e.owner !== "spouse"); // includes joint
     const spouse  = netWorth.filter(e => e.type === "asset" && e.owner === "spouse");
     const hasSpouse = spouse.length > 0;
 
@@ -1065,3 +1065,5 @@ export function DebtTab({ clientId }: { clientId: number }) {
     </div>
   );
 }
+
+

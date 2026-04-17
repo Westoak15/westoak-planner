@@ -93,7 +93,7 @@ export const netWorthEntries = pgTable("net_worth_entries", {
   type:      text("type").notNull(),
   category:  text("category").notNull(),
   name:      text("name").notNull(),
-  owner:     text("owner").default("primary"),   // "primary" | "spouse"
+  owner:     text("owner").default("primary"),   // "primary" | "spouse" | "joint"
   value:     numeric("value", { precision: 14, scale: 2 }).notNull(),
   notes:     text("notes"),
   metadata:  jsonb("metadata"),   // category-specific extra fields
@@ -389,3 +389,4 @@ export type Plan = FinancialPlan;
 export const educationPlans = educationSavings;
 export const taxNotes = taxPlanningNotes;
 export const estateNotes = estatePlanningNotes;
+

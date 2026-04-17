@@ -110,8 +110,15 @@ r.get("/clients/:id/retirement", async (req: AuthRequest, res: Response) => {
 r.post("/clients/:id/retirement", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.id;
   if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
-  const [row] = await db.insert(retirementProjections).values({ clientId: cid, ...safe(req.body) }).returning();
-  res.status(201).json(row);
+  try {
+    const data = safe(req.body);
+    console.error("[retirement POST] data:", JSON.stringify(data));
+    const [row] = await db.insert(retirementProjections).values({ clientId: cid, ...data }).returning();
+    res.status(201).json(row);
+  } catch (err: any) {
+    console.error("[retirement POST ERROR]", err.message);
+    res.status(500).json({ message: err.message });
+  }
 });
 
 r.patch("/retirement/:id", async (req: AuthRequest, res: Response) => {

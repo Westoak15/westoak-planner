@@ -395,6 +395,7 @@ export function RetirementTab({ clientId, client }: { clientId: number; client?:
   const clientAge = calcAge(client?.dateOfBirth);
   const retirementAge = client?.retirementAge ?? 65;
   const desiredIncome = client?.desiredRetirementIncome ?? "";
+  const emptyRet = (): RetDraft => ({ label:"Base Case", currentAge: clientAge ? String(clientAge) : "", retirementAge: String(retirementAge), currentRrsp:"", currentTfsa:"", currentNonReg:"", annualContribution:"", expectedReturn:"6.5", inflationRate:"2.5", desiredIncome: desiredIncome ? String(desiredIncome) : "", cppStartAge:"65", oasStartAge:"65", cppMonthly:"900", oasMonthly:"700", notes:"" });
   const [netWorth, setNetWorth] = useState<any[]>([]);
   const [rows, setRows]       = useState<RetirementProj[]>([]);
   const [drafts, setDrafts]   = useState<RetDraft[]>([]);

@@ -161,23 +161,19 @@ export function NetWorthTab({ clientId, client }: { clientId: number; client?: {
     } finally { setSaving(false); }
   }
 
-  async function saveAll() {
-    const valid = drafts.filter(d => d.value);
+async function saveAll() {
+    const valid = drafts.filter(d => d.currentAge && d.retirementAge);
     if (!valid.length) return;
     setSaving(true);
     try {
-      await Promise.all(valid.map(d => {
-        // Build metadata from extra fields
-        const metadata: any = {};
-        if (d.category === "RRSP" && d.isSpousal) { metadata.spousal = true; metadata.contributor = d.rrspContributor; }
-        if (d.category === "Pension") { metadata.pensionType = d.pensionType; if (d.matchPct) metadata.matchPct = d.matchPct; }
-        return api.post(`/api/clients/${clientId}/net-worth`, {
-          type: d.type, category: d.category, name: d.name || d.category,
-          owner: d.owner,  // already "primary" or "spouse"
-          value: d.value, notes: d.notes || null, metadata: Object.keys(metadata).length ? metadata : null,
-        });
-      }));
-      setDrafts([]); await load();
+      if (editingId) {
+        await api.patch(`/api/retirement/${editingId}`, valid[0]);
+        setEditingId(null);
+      } else {
+        await Promise.all(valid.map(d => api.post(`/api/clients/${clientId}/retirement`, d)));
+      }
+      setDrafts([]);
+      await load();
     } finally { setSaving(false); }
   }
 
@@ -430,7 +426,7 @@ export function RetirementTab({ clientId, client }: { clientId: number; client?:
     // 1. Combined household projection
     newDrafts.push({
       ...emptyRet(),
-      label: "Household Combined",
+      label: client ? `${client.firstName} & ${client.spouseFirstName ?? "Spouse"} Combined` : "Household Combined",
       currentRrsp:   String(pRrsp + sRrsp)   || "",
       currentTfsa:   String(pTfsa + sTfsa)   || "",
       currentNonReg: String(pNonReg + sNonReg) || "",
@@ -439,7 +435,7 @@ export function RetirementTab({ clientId, client }: { clientId: number; client?:
     // 2. Primary individual
     newDrafts.push({
       ...emptyRet(),
-      label: "Primary",
+      label: client ? client.firstName : "Primary",
       currentRrsp:   pRrsp   > 0 ? String(pRrsp)   : "",
       currentTfsa:   pTfsa   > 0 ? String(pTfsa)   : "",
       currentNonReg: pNonReg > 0 ? String(pNonReg) : "",
@@ -449,7 +445,7 @@ export function RetirementTab({ clientId, client }: { clientId: number; client?:
     if (hasSpouse) {
       newDrafts.push({
         ...emptyRet(),
-        label: "Spouse",
+        label: client?.spouseFirstName ?? "Spouse",
         currentRrsp:   sRrsp   > 0 ? String(sRrsp)   : "",
         currentTfsa:   sTfsa   > 0 ? String(sTfsa)   : "",
         currentNonReg: sNonReg > 0 ? String(sNonReg) : "",
@@ -1089,6 +1085,8 @@ export function DebtTab({ clientId }: { clientId: number }) {
     </div>
   );
 }
+
+
 
 
 

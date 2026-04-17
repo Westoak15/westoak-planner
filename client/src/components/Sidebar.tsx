@@ -39,7 +39,7 @@ const ALL_TABS: { key: Tab; label: string; icon: any; dividerBefore?: boolean; g
 ];
 
 const STANDARD_TABS: Tab[] = ["clients", "networth", "insurance", "fna"];
-const PLAN_TABS: Tab[] = ["dashboard","networth","retirement","insurance", "expenses","fna","resp","tax","estate","ai","planning"];
+const PLAN_TABS: Tab[] = ["dashboard","networth","retirement","insurance", "expenses","fna","resp","tax","estate", "reports", "ai","planning"];
 const NO_CLIENT_TABS: Tab[] = ["clients", "admin", "agents"];
 
 export function Sidebar({ activeTab, onTab, clientName, role, level }: Props) {

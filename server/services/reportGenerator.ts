@@ -677,7 +677,7 @@ export function generateRetirementReport(data: {
     <div class="summary-card"><div class="label">Retirement Age</div><div class="value">${esc(retirement.retirementAge)}</div></div>
     <div class="summary-card"><div class="label">Projected Balance</div><div class="value positive">${fmtCad(parseFloat(retirement.projectedBalance || "0"))}</div></div>
     <div class="summary-card"><div class="label">Success Rate</div>
-      <div class="value ${sim ? (sim.successRate >= 0.80 ? "positive" : sim.successRate >= 0.60 ? "warn" : "negative") : ""}">${sim ? `${(sim.successRate * 100).toFixed(0)}%` : "GÇö"}</div>
+      <div class="value ${sim ? (sim.successRate >= 0.80 ? "positive" : sim.successRate >= 0.60 ? "warn" : "negative") : ""}">${sim ? `${(sim.successRate * 100).toFixed(0)}%` : " - "}</div>
     </div>
   </div>` : ""}
 
@@ -708,7 +708,7 @@ export function generateRetirementReport(data: {
   </table>` : ""}
 </div>`;
 
-  return htmlShell(`Retirement Report GÇö ${name}`, body);
+  return htmlShell(`Retirement Report  -  ${name}`, body);
 }
 
 // GöÇGöÇ Insurance report GöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇ
@@ -750,7 +750,7 @@ export function generateInsuranceReport(data: {
     </div>
   </div>
 
-  <h3>Needs Analysis GÇö Life Insurance</h3>
+  <h3>Needs Analysis  -  Life Insurance</h3>
   <table>
     <thead><tr><th>Method</th><th style="text-align:right">Required Coverage</th><th style="text-align:right">Current Coverage</th><th style="text-align:right">Gap</th><th>Status</th></tr></thead>
     <tbody>
@@ -790,7 +790,7 @@ export function generateInsuranceReport(data: {
   </table>` : ""}
 </div>`;
 
-  return htmlShell(`Insurance Report GÇö ${name}`, body);
+  return htmlShell(`Insurance Report  -  ${name}`, body);
 }
 
 // GöÇGöÇ Net Worth Statement GöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇ
@@ -847,7 +847,7 @@ export function generateCashFlowReport(data: {
 <div class="cover">
   <div style="font-size:10pt;letter-spacing:0.1em;text-transform:uppercase;opacity:0.7;margin-bottom:12px">Knights of Columbus</div>
   <h1>Cash Flow Statement</h1>
-  <h2>Detailed Household Budget GÇö ${dateStr}</h2>
+  <h2>Detailed Household Budget  -  ${dateStr}</h2>
   <div style="height:2px;background:rgba(255,255,255,0.3);margin:24px 0"></div>
   <div class="cover-meta">
     <div class="label">Prepared for</div><div class="value">${esc(name)}</div>
@@ -866,7 +866,7 @@ export function generateCashFlowReport(data: {
   </div>
   ${retDesiredIncome > 0 ? `<div class="callout ${retirementGap >= 0 ? "good" : "warn"}">
     <strong>Retirement Income Check:</strong> Projected retirement expenses ${fmtCad(retirementMonthly * 12)}/yr vs. desired retirement income ${fmtCad(retDesiredIncome)}/yr.
-    ${retirementGap >= 0 ? `Surplus of ${fmtCad(retirementGap)}.` : `<strong>Shortfall of ${fmtCad(Math.abs(retirementGap))}</strong> GÇö review savings rate.`}
+    ${retirementGap >= 0 ? `Surplus of ${fmtCad(retirementGap)}.` : `<strong>Shortfall of ${fmtCad(Math.abs(retirementGap))}</strong>  -  review savings rate.`}
     Based on the 4% rule, sustaining these expenses requires a portfolio of <strong>${fmtCad(retirementMonthly * 12 / 0.04)}</strong>.
   </div>` : ""}
 </div>
@@ -881,9 +881,9 @@ export function generateCashFlowReport(data: {
     </tbody>
   </table>`}
 </div>
-<div class="footer"><span>Knights of Columbus GÇö Confidential</span><span>${esc(name)} GÇö Cash Flow Statement GÇö ${esc(dateStr)}</span></div>`;
+<div class="footer"><span>Knights of Columbus  -  Confidential</span><span>${esc(name)}  -  Cash Flow Statement  -  ${esc(dateStr)}</span></div>`;
 
-  return htmlShell(`Cash Flow Statement GÇö ${name}`, body);
+  return htmlShell(`Cash Flow Statement  -  ${name}`, body);
 }
 
 // GöÇGöÇ Asset Allocation & Mix Report GöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇ
@@ -926,8 +926,8 @@ export function generateAssetAllocationReport(data: {
 
   const holdingRows = investments.map(e => `
     <tr><td>${esc(e.name || e.category)}</td>
-    <td>${esc((e as any).accountType || "GÇö")}</td>
-    <td>${esc((e as any).investmentType || "GÇö")}</td>
+    <td>${esc((e as any).accountType || " - ")}</td>
+    <td>${esc((e as any).investmentType || " - ")}</td>
     <td style="text-align:right">${fmtCad(parseFloat(String(e.value) || "0"))}</td>
     <td style="text-align:right">${totalInvested > 0 ? pct(parseFloat(String(e.value) || "0") / totalInvested * 100) : "0.0%"}</td></tr>`).join("");
 
@@ -940,7 +940,7 @@ export function generateAssetAllocationReport(data: {
 <div class="cover">
   <div style="font-size:10pt;letter-spacing:0.1em;text-transform:uppercase;opacity:0.7;margin-bottom:12px">Knights of Columbus</div>
   <h1>Asset Allocation & Mix</h1>
-  <h2>Investment Portfolio Review GÇö ${dateStr}</h2>
+  <h2>Investment Portfolio Review  -  ${dateStr}</h2>
   <div style="height:2px;background:rgba(255,255,255,0.3);margin:24px 0"></div>
   <div class="cover-meta">
     <div class="label">Prepared for</div><div class="value">${esc(name)}</div>
@@ -972,9 +972,9 @@ export function generateAssetAllocationReport(data: {
     <tbody>${holdingRows}</tbody>
   </table>
 </div>
-<div class="footer"><span>Knights of Columbus GÇö Confidential</span><span>${esc(name)} GÇö Asset Allocation GÇö ${esc(dateStr)}</span></div>`;
+<div class="footer"><span>Knights of Columbus  -  Confidential</span><span>${esc(name)}  -  Asset Allocation  -  ${esc(dateStr)}</span></div>`;
 
-  return htmlShell(`Asset Allocation GÇö ${name}`, body);
+  return htmlShell(`Asset Allocation  -  ${name}`, body);
 }
 
 // GöÇGöÇ Retirement Readiness / Decumulation GöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇ
@@ -1029,13 +1029,13 @@ export function generateRetirementReadinessReport(data: {
 <div class="cover">
   <div style="font-size:10pt;letter-spacing:0.1em;text-transform:uppercase;opacity:0.7;margin-bottom:12px">Knights of Columbus</div>
   <h1>Retirement Readiness</h1>
-  <h2>Decumulation Projection GÇö ${dateStr}</h2>
+  <h2>Decumulation Projection  -  ${dateStr}</h2>
   <div style="height:2px;background:rgba(255,255,255,0.3);margin:24px 0"></div>
   <div class="cover-meta">
     <div class="label">Prepared for</div><div class="value">${esc(name)}</div>
     <div class="label">Advisor</div><div class="value">${esc(advisorName)}</div>
-    <div class="label">Current Age</div><div class="value">${r ? esc(String(r.currentAge)) : "GÇö"}</div>
-    <div class="label">Target Retirement</div><div class="value">Age ${r ? esc(String(r.retirementAge)) : "GÇö"} (${yearsToRetirement} years)</div>
+    <div class="label">Current Age</div><div class="value">${r ? esc(String(r.currentAge)) : " - "}</div>
+    <div class="label">Target Retirement</div><div class="value">Age ${r ? esc(String(r.retirementAge)) : " - "} (${yearsToRetirement} years)</div>
   </div>
 </div>
 <div class="section">
@@ -1066,9 +1066,9 @@ export function generateRetirementReadinessReport(data: {
   <div class="callout"><strong>Note:</strong> CPP and OAS estimates are simplified averages for planning purposes. Actual amounts depend on contribution history and election age. Consult Service Canada for personalized estimates.</div>
 </div>
 ${simSection}
-<div class="footer"><span>Knights of Columbus GÇö Confidential</span><span>${esc(name)} GÇö Retirement Readiness GÇö ${esc(dateStr)}</span></div>`;
+<div class="footer"><span>Knights of Columbus  -  Confidential</span><span>${esc(name)}  -  Retirement Readiness  -  ${esc(dateStr)}</span></div>`;
 
-  return htmlShell(`Retirement Readiness GÇö ${name}`, body);
+  return htmlShell(`Retirement Readiness  -  ${name}`, body);
 }
 
 // GöÇGöÇ Goal Status Report GöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇ
@@ -1096,9 +1096,9 @@ export function generateGoalStatusReport(data: {
     return `<tr>
       <td>${esc(p.name || "Financial Plan")}</td>
       <td><span class="badge ${statusBadge}">${esc(p.status || "active")}</span></td>
-      <td style="text-align:right">${goal > 0 ? fmtCad(goal) : "GÇö"}</td>
-      <td style="text-align:right">${p.targetDate ? new Date(p.targetDate).toLocaleDateString("en-CA") : "GÇö"}</td>
-      <td style="text-align:right">${goal > 0 ? `${progress}%` : "GÇö"}</td>
+      <td style="text-align:right">${goal > 0 ? fmtCad(goal) : " - "}</td>
+      <td style="text-align:right">${p.targetDate ? new Date(p.targetDate).toLocaleDateString("en-CA") : " - "}</td>
+      <td style="text-align:right">${goal > 0 ? `${progress}%` : " - "}</td>
       <td><div style="background:#e2e8f0;border-radius:4px;height:8px"><div style="background:${progress >= 80 ? "var(--green)" : progress >= 50 ? "var(--amber)" : "var(--red)"};border-radius:4px;height:8px;width:${progress}%"></div></div></td>
     </tr>`;
   }).join("");
@@ -1109,8 +1109,8 @@ export function generateGoalStatusReport(data: {
     const progress = target > 0 ? Math.min(100, Math.round(current / target * 100)) : 0;
     return `<tr>
       <td>${esc(e.childName || "Child")}</td>
-      <td style="text-align:right">${e.childAge ? `Age ${e.childAge}` : "GÇö"}</td>
-      <td style="text-align:right">${e.targetAge ? `Age ${e.targetAge}` : "GÇö"}</td>
+      <td style="text-align:right">${e.childAge ? `Age ${e.childAge}` : " - "}</td>
+      <td style="text-align:right">${e.targetAge ? `Age ${e.targetAge}` : " - "}</td>
       <td style="text-align:right">${fmtCad(current)}</td>
       <td style="text-align:right">${fmtCad(target)}</td>
       <td style="text-align:right">${progress}%</td>
@@ -1127,7 +1127,7 @@ export function generateGoalStatusReport(data: {
 <div class="cover">
   <div style="font-size:10pt;letter-spacing:0.1em;text-transform:uppercase;opacity:0.7;margin-bottom:12px">Knights of Columbus</div>
   <h1>Goal Status Report</h1>
-  <h2>Progress Dashboard GÇö ${dateStr}</h2>
+  <h2>Progress Dashboard  -  ${dateStr}</h2>
   <div style="height:2px;background:rgba(255,255,255,0.3);margin:24px 0"></div>
   <div class="cover-meta">
     <div class="label">Prepared for</div><div class="value">${esc(name)}</div>
@@ -1139,7 +1139,7 @@ export function generateGoalStatusReport(data: {
 <div class="section">
   <h2 class="section-title">Retirement Goal</h2>
   ${r ? `<div class="summary-grid" style="grid-template-columns:repeat(3,1fr)">
-    <div class="summary-card"><div class="label">Target Retirement Age</div><div class="value">${esc(String(r.retirementAge || "GÇö"))}</div></div>
+    <div class="summary-card"><div class="label">Target Retirement Age</div><div class="value">${esc(String(r.retirementAge || " - "))}</div></div>
     <div class="summary-card"><div class="label">Projected Balance</div><div class="value ${projBalance >= needed ? "positive" : "negative"}">${fmtCad(projBalance)}</div></div>
     <div class="summary-card"><div class="label">Readiness</div><div class="value ${retirementProgress >= 80 ? "positive" : "negative"}">${retirementProgress}%</div></div>
   </div>
@@ -1159,9 +1159,9 @@ ${data.plans.length > 0 ? `<div class="section">
     <tbody>${planRows}</tbody>
   </table>
 </div>` : ""}
-<div class="footer"><span>Knights of Columbus GÇö Confidential</span><span>${esc(name)} GÇö Goal Status GÇö ${esc(dateStr)}</span></div>`;
+<div class="footer"><span>Knights of Columbus  -  Confidential</span><span>${esc(name)}  -  Goal Status  -  ${esc(dateStr)}</span></div>`;
 
-  return htmlShell(`Goal Status GÇö ${name}`, body);
+  return htmlShell(`Goal Status  -  ${name}`, body);
 }
 
 // GöÇGöÇ Risk Management & Insurance Audit GöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇ
@@ -1187,10 +1187,10 @@ export function generateInsuranceAuditReport(data: {
 
   const productRows = data.products.map(p => `
     <tr>
-      <td>${esc(p.productName || "GÇö")}</td>
-      <td>${esc(p.productType || "GÇö")}</td>
-      <td style="text-align:right">${p.coverageAmount ? fmtCad(parseFloat(String(p.coverageAmount))) : "GÇö"}</td>
-      <td style="text-align:right">${p.premium ? fmtCad(parseFloat(String(p.premium))) + "/mo" : "GÇö"}</td>
+      <td>${esc(p.productName || " - ")}</td>
+      <td>${esc(p.productType || " - ")}</td>
+      <td style="text-align:right">${p.coverageAmount ? fmtCad(parseFloat(String(p.coverageAmount))) : " - "}</td>
+      <td style="text-align:right">${p.premium ? fmtCad(parseFloat(String(p.premium))) + "/mo" : " - "}</td>
       <td><span class="badge ${p.status === "active" ? "badge-green" : "badge-amber"}">${esc(p.status || "unknown")}</span></td>
     </tr>`).join("");
 
@@ -1198,7 +1198,7 @@ export function generateInsuranceAuditReport(data: {
 <div class="cover">
   <div style="font-size:10pt;letter-spacing:0.1em;text-transform:uppercase;opacity:0.7;margin-bottom:12px">Knights of Columbus</div>
   <h1>Risk Management & Insurance Audit</h1>
-  <h2>Coverage Review GÇö ${dateStr}</h2>
+  <h2>Coverage Review  -  ${dateStr}</h2>
   <div style="height:2px;background:rgba(255,255,255,0.3);margin:24px 0"></div>
   <div class="cover-meta">
     <div class="label">Prepared for</div><div class="value">${esc(name)}</div>
@@ -1233,9 +1233,9 @@ ${data.products.length > 0 ? `<div class="section">
     <tbody>${productRows}</tbody>
   </table>
 </div>` : ""}
-<div class="footer"><span>Knights of Columbus GÇö Confidential</span><span>${esc(name)} GÇö Insurance Audit GÇö ${esc(dateStr)}</span></div>`;
+<div class="footer"><span>Knights of Columbus  -  Confidential</span><span>${esc(name)}  -  Insurance Audit  -  ${esc(dateStr)}</span></div>`;
 
-  return htmlShell(`Insurance Audit GÇö ${name}`, body);
+  return htmlShell(`Insurance Audit  -  ${name}`, body);
 }
 
 // GöÇGöÇ Estate & Beneficiary Summary GöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇ
@@ -1270,7 +1270,7 @@ export function generateEstateSummaryReport(data: {
     return `<tr>
       <td>${esc(cat)}</td>
       <td><span class="badge ${hasNotes ? "badge-green" : "badge-amber"}">${hasNotes ? "Documented" : "Needs Review"}</span></td>
-      <td>${(notesByCategory[cat] || []).map(n => esc(n.title || n.content?.substring(0, 60) || "")).join("; ") || "GÇö"}</td>
+      <td>${(notesByCategory[cat] || []).map(n => esc(n.title || n.content?.substring(0, 60) || "")).join("; ") || " - "}</td>
     </tr>`;
   }).join("");
 
@@ -1279,14 +1279,14 @@ export function generateEstateSummaryReport(data: {
       <td>${esc(e.name || e.category)}</td>
       <td>${esc(e.category)}</td>
       <td style="text-align:right">${fmtCad(parseFloat(String(e.value) || "0"))}</td>
-      <td>${(e as any).accountType || "GÇö"}</td>
+      <td>${(e as any).accountType || " - "}</td>
     </tr>`).join("");
 
   const body = `
 <div class="cover">
   <div style="font-size:10pt;letter-spacing:0.1em;text-transform:uppercase;opacity:0.7;margin-bottom:12px">Knights of Columbus</div>
   <h1>Estate & Beneficiary Summary</h1>
-  <h2>Estate Distribution Review GÇö ${dateStr}</h2>
+  <h2>Estate Distribution Review  -  ${dateStr}</h2>
   <div style="height:2px;background:rgba(255,255,255,0.3);margin:24px 0"></div>
   <div class="cover-meta">
     <div class="label">Prepared for</div><div class="value">${esc(name)}</div>
@@ -1314,9 +1314,9 @@ export function generateEstateSummaryReport(data: {
     <tbody>${assetDistributionRows}</tbody>
   </table>
 </div>
-<div class="footer"><span>Knights of Columbus GÇö Confidential</span><span>${esc(name)} GÇö Estate Summary GÇö ${esc(dateStr)}</span></div>`;
+<div class="footer"><span>Knights of Columbus  -  Confidential</span><span>${esc(name)}  -  Estate Summary  -  ${esc(dateStr)}</span></div>`;
 
-  return htmlShell(`Estate Summary GÇö ${name}`, body);
+  return htmlShell(`Estate Summary  -  ${name}`, body);
 }
 
 // GöÇGöÇ Tax Efficiency Strategy GöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇ
@@ -1338,9 +1338,9 @@ export function generateTaxStrategyReport(data: {
 
   const noteRows = data.taxNotes.map(n => `
     <tr>
-      <td>${esc(n.taxYear ? String(n.taxYear) : "GÇö")}</td>
-      <td>${esc(n.category || "GÇö")}</td>
-      <td>${esc(n.title || "GÇö")}</td>
+      <td>${esc(n.taxYear ? String(n.taxYear) : " - ")}</td>
+      <td>${esc(n.category || " - ")}</td>
+      <td>${esc(n.title || " - ")}</td>
       <td style="font-size:9pt">${esc((n.content || "").substring(0, 120))}${(n.content || "").length > 120 ? "GÇª" : ""}</td>
     </tr>`).join("");
 
@@ -1348,7 +1348,7 @@ export function generateTaxStrategyReport(data: {
 <div class="cover">
   <div style="font-size:10pt;letter-spacing:0.1em;text-transform:uppercase;opacity:0.7;margin-bottom:12px">Knights of Columbus</div>
   <h1>Tax Efficiency Strategy</h1>
-  <h2>Annual Tax Review GÇö ${dateStr}</h2>
+  <h2>Annual Tax Review  -  ${dateStr}</h2>
   <div style="height:2px;background:rgba(255,255,255,0.3);margin:24px 0"></div>
   <div class="cover-meta">
     <div class="label">Prepared for</div><div class="value">${esc(name)}</div>
@@ -1365,7 +1365,7 @@ export function generateTaxStrategyReport(data: {
     <div class="summary-card"><div class="label">Non-Registered</div><div class="value">${fmtCad(nonRegTotal)}</div></div>
   </div>
   <div class="callout"><strong>Optimal Withdrawal Order (Canadian):</strong> Generally: Non-Registered GåÆ RRSP/RRIF GåÆ TFSA last. However, crystallizing gains to fill lower tax brackets before OAS/CPP may favour early RRSP meltdown. Review annually.</div>
-  ${tfsaTotal === 0 ? '<div class="callout warn"><strong>Opportunity:</strong> No TFSA balance recorded. Maximize TFSA contributions for tax-free growth GÇö 2025 room is $7,000 ($95,000 lifetime for those 18+ since 2009).</div>' : ""}
+  ${tfsaTotal === 0 ? '<div class="callout warn"><strong>Opportunity:</strong> No TFSA balance recorded. Maximize TFSA contributions for tax-free growth  -  2025 room is $7,000 ($95,000 lifetime for those 18+ since 2009).</div>' : ""}
   ${nonRegTotal > 0 ? '<div class="callout"><strong>Non-Registered Account:</strong> Consider tax-loss harvesting opportunities, preferred dividend income over interest, and systematic RRSP contributions to reduce current taxable income.</div>' : ""}
 </div>
 ${data.taxNotes.length > 0 ? `<div class="section">
@@ -1380,15 +1380,15 @@ ${data.taxNotes.length > 0 ? `<div class="section">
   <h3>RRSP Optimization</h3>
   <p>Contribute to RRSP in high-income years to maximize the deduction. Consider spousal RRSP contributions to split income in retirement.</p>
   <h3>TFSA Maximization</h3>
-  <p>Prioritize TFSA for investments with highest growth potential GÇö all gains and withdrawals are completely tax-free.</p>
+  <p>Prioritize TFSA for investments with highest growth potential  -  all gains and withdrawals are completely tax-free.</p>
   <h3>Capital Gains Management</h3>
   <p>The 2024 federal budget increased the capital gains inclusion rate to 2/3 for annual gains above $250,000. Consider timing large dispositions carefully.</p>
   <h3>Income Splitting</h3>
   <p>Spousal RRSP, T1032 pension income splitting, and prescribed rate loans can significantly reduce household tax burden.</p>
 </div>
-<div class="footer"><span>Knights of Columbus GÇö Confidential</span><span>${esc(name)} GÇö Tax Strategy GÇö ${esc(dateStr)}</span></div>`;
+<div class="footer"><span>Knights of Columbus  -  Confidential</span><span>${esc(name)}  -  Tax Strategy  -  ${esc(dateStr)}</span></div>`;
 
-  return htmlShell(`Tax Strategy GÇö ${name}`, body);
+  return htmlShell(`Tax Strategy  -  ${name}`, body);
 }
 
 // GöÇGöÇ One-Page Financial Plan GöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇ
@@ -1471,7 +1471,7 @@ export function generateOnePagePlan(data: {
       <div class="op-card-sub">${fmtCad(totalAssets)} assets - ${fmtCad(totalLiabilities)} liabilities</div>
     </div>
     <div class="op-card" style="border-top:3px solid var(--blue)">
-      <div class="op-card-title">Retirement at Age ${r ? esc(String(r.retirementAge)) : "GÇö"}</div>
+      <div class="op-card-title">Retirement at Age ${r ? esc(String(r.retirementAge)) : " - "}</div>
       <div class="op-card-value">${fmtCad(projBalance)}</div>
       <div class="op-card-sub">Projected - Need ${fmtCad(fourPctNeeded)} (4% rule)</div>
     </div>
@@ -1485,7 +1485,7 @@ export function generateOnePagePlan(data: {
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
     <div>
       <div class="op-section-title">Top Goals</div>
-      ${r ? `<div class="op-goal"><div class="op-goal-dot" style="background:${statusDot(retirementReadiness)}"></div><div class="op-goal-name">Retirement at ${r.retirementAge || "GÇö"}</div><div class="op-goal-value">${retirementReadiness}% ready</div></div>` : ""}
+      ${r ? `<div class="op-goal"><div class="op-goal-dot" style="background:${statusDot(retirementReadiness)}"></div><div class="op-goal-name">Retirement at ${r.retirementAge || " - "}</div><div class="op-goal-value">${retirementReadiness}% ready</div></div>` : ""}
       ${data.education.map(e => {
         const prog = parseFloat(String(e.targetAmount || "0")) > 0 ? Math.min(100, Math.round(parseFloat(String(e.currentBalance || "0")) / parseFloat(String(e.targetAmount || "1")) * 100)) : 0;
         return `<div class="op-goal"><div class="op-goal-dot" style="background:${statusDot(prog)}"></div><div class="op-goal-name">RESP GÇô ${esc(e.childName || "Child")}</div><div class="op-goal-value">${prog}% of ${fmtCad(parseFloat(String(e.targetAmount || "0")))}</div></div>`;
@@ -1505,8 +1505,9 @@ export function generateOnePagePlan(data: {
   </div>
 </div>`;
 
-  return htmlShell(`One-Page Plan GÇö ${name}`, body);
+  return htmlShell(`One-Page Plan  -  ${name}`, body);
 }
+
 
 
 

@@ -513,7 +513,10 @@ export function RetirementTab({ clientId, client }: { clientId: number; client?:
     if (!confirm("Delete projection?")) return;
     await api.delete(`/api/retirement/${id}`); await load();
   }
-
+  function startEditRetirement(p: RetirementProj) {
+    setEditingId(p.id);
+    setDrafts([{ label: p.label ?? "Base Case", currentAge: p.currentAge ? String(p.currentAge) : "", retirementAge: p.retirementAge ? String(p.retirementAge) : "65", currentRrsp: p.currentRrsp ?? "", currentTfsa: p.currentTfsa ?? "", currentNonReg: p.currentNonReg ?? "", annualContribution: p.annualContribution ?? "", expectedReturn: p.expectedReturn ?? "6.5", inflationRate: p.inflationRate ?? "2.5", desiredIncome: p.desiredIncome ?? "", cppStartAge: p.cppStartAge ? String(p.cppStartAge) : "65", oasStartAge: p.oasStartAge ? String(p.oasStartAge) : "65", cppMonthly: p.cppMonthly ?? "900", oasMonthly: p.oasMonthly ?? "700", notes: p.notes ?? "" }]);
+  } 
   const F = ({ label, val }: { label: string; val: any }) => (
     <div><p className="text-[10px] text-gray-400 uppercase font-semibold">{label}</p><p className="text-sm font-semibold text-gray-800">{val ?? "—"}</p></div>
   );
@@ -652,7 +655,7 @@ export function RetirementTab({ clientId, client }: { clientId: number; client?:
                   {p.successRate && <span className={`text-xs font-bold ${Number(p.successRate) >= 85 ? "text-emerald-600" : Number(p.successRate) >= 70 ? "text-amber-600" : "text-red-600"}`}>{p.successRate}%</span>}
                 </div>
                 <div className="flex gap-1 flex-shrink-0">
-                  <button onClick={() => startEdit(p)} className="p-1 text-gray-300 hover:text-[#0c1e3a]"><Pencil className="w-3.5 h-3.5" /></button>
+                  <button onClick={() => startEditRetirement(p)} className="p-1 text-gray-300 hover:text-[#0c1e3a]"><Pencil className="w-3.5 h-3.5" /></button>
                   <button onClick={() => { if(confirm("Delete?")) del(p.id); }} className="p-1 text-gray-300 hover:text-red-500"><Trash2 className="w-3.5 h-3.5" /></button>
                 </div>
               </div>

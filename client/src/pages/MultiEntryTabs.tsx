@@ -622,41 +622,47 @@ export function RetirementTab({ clientId, client }: { clientId: number; client?:
         <Card className="p-8 text-center text-gray-400">No projections yet. Click Add Projection to create one.</Card>
       )}
       <div className="space-y-4">
-        {rows.map(p => (
-          <Card key={p.id} className="p-5">
-            <div className="flex items-start justify-between mb-3">
-              <div className="flex items-center gap-3">
-                <h3 className="font-bold text-gray-900">{p.label}</h3>
-                {p.label === "Household Combined" && <span className="text-xs bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full">Combined</span>}
-                {p.label === "Spouse" && <span className="text-xs bg-pink-100 text-pink-700 px-2 py-0.5 rounded-full">Spouse</span>}
-                {p.label === "Primary" && <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">Primary</span>}
-                {p.successRate && (
-                  <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${Number(p.successRate) >= 85 ? "bg-emerald-100 text-emerald-700" : Number(p.successRate) >= 70 ? "bg-amber-100 text-amber-700" : "bg-red-100 text-red-700"}`}>
-                    {p.successRate}% success
-                  </span>
-                )}
+  {(() => {
+    const groups: RetirementProj[][] = [];
+    const used = new Set<number>();
+    for (const p of rows) {
+      if (used.has(p.id)) continue;
+      const siblings = rows.filter(r => !used.has(r.id) && r.retirementAge === p.retirementAge && r.desiredIncome === p.desiredIncome && r.id !== p.id);
+      const group = [p, ...siblings];
+      group.forEach(r => used.add(r.id));
+      groups.push(group);
+    }
+    return groups.map((group, gi) => {
+      const main = group.find(p => p.label === "Household Combined") ?? group[0];
+      return (
+        <Card key={gi} className="p-5">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="font-bold text-gray-900">Retirement Plan - Age {main.retirementAge}</h3>
+            <span className="text-xs text-gray-400">{new Date(main.createdAt ?? "").toLocaleDateString()}</span>
+          </div>
+          <div>
+            {group.map(p => (
+              <div key={p.id} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
+                <div className="flex items-center gap-4 flex-1 min-w-0">
+                  <span className={`text-xs font-bold w-24 flex-shrink-0 ${p.label === "Household Combined" ? "text-indigo-600" : p.label === "Spouse" ? "text-pink-600" : "text-blue-600"}`}>{p.label}</span>
+                  <span className="text-xs text-gray-500">Age {p.currentAge} - {p.retirementAge}</span>
+                  <span className="text-xs text-gray-500">RRSP {fmt$(p.currentRrsp)}</span>
+                  <span className="text-xs text-gray-500">TFSA {fmt$(p.currentTfsa)}</span>
+                  <span className="text-xs text-gray-500">Income {fmt$(p.desiredIncome)}</span>
+                  {p.successRate && <span className={`text-xs font-bold ${Number(p.successRate) >= 85 ? "text-emerald-600" : Number(p.successRate) >= 70 ? "text-amber-600" : "text-red-600"}`}>{p.successRate}%</span>}
+                </div>
+                <div className="flex gap-1 flex-shrink-0">
+                  <button onClick={() => startEdit(p)} className="p-1 text-gray-300 hover:text-[#0c1e3a]"><Pencil className="w-3.5 h-3.5" /></button>
+                  <button onClick={() => { if(confirm("Delete?")) del(p.id); }} className="p-1 text-gray-300 hover:text-red-500"><Trash2 className="w-3.5 h-3.5" /></button>
+                </div>
               </div>
-              <div className="flex gap-2">
-                <button onClick={() => startEdit(p)} className="text-gray-300 hover:text-[#0c1e3a]"><Pencil className="w-4 h-4" /></button>
-                <button onClick={() => del(p.id)} className="text-gray-300 hover:text-red-500"><Trash2 className="w-4 h-4" /></button>
-              </div>
-            </div>
-            <div className="grid grid-cols-5 gap-4">
-              <F label="Age → Retire"  val={p.currentAge && p.retirementAge ? `${p.currentAge} → ${p.retirementAge}` : null} />
-              <F label="RRSP"          val={fmt$(p.currentRrsp)} />
-              <F label="TFSA"          val={fmt$(p.currentTfsa)} />
-              <F label="Non-Reg"       val={fmt$(p.currentNonReg)} />
-              <F label="Annual Contrib" val={fmt$(p.annualContribution)} />
-              <F label="Return"        val={fmtPct(p.expectedReturn)} />
-              <F label="Desired Income" val={fmt$(p.desiredIncome)} />
-              <F label="Median Balance" val={fmt$(p.projectedBalance)} />
-              <F label="CPP"           val={p.cppStartAge ? `${fmt$(p.cppMonthly)}/mo @${p.cppStartAge}` : null} />
-              <F label="OAS"           val={p.oasStartAge ? `${fmt$(p.oasMonthly)}/mo @${p.oasStartAge}` : null} />
-            </div>
-          </Card>
-        ))}
-      </div>
-    </div>
+            ))}
+          </div>
+        </Card>
+      );
+    });
+  })()}
+</div>
   );
 }
 

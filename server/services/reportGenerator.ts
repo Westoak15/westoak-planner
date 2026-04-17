@@ -1,6 +1,6 @@
-/**
+ï»¿/**
  * server/services/reportGenerator.ts
- * fp-standalone â€” HTML reports with inline SVG charts
+ * fp-standalone -â€ HTML reports with inline SVG charts
  */
 
 function esc(s: unknown): string {
@@ -514,14 +514,14 @@ ${data.education.length>0?`<div class="section"><h2 class="section-title">Educat
 
 
 
-// -- BrokersEdge Report Types -------------------------------------------------
+// -- Knights of Columbus Report Types -------------------------------------------------
 interface ReportClient { id: number; firstName: string; lastName: string; email?: string; phone?: string; dateOfBirth?: string; province?: string; spouseFirstName?: string; spouseLastName?: string; spouseDateOfBirth?: string; annualIncome?: string | number; spouseAnnualIncome?: string | number; [key: string]: any; }
 interface ReportSimulation { successRate: number; p10: number; p25: number; p50: number; p75: number; p90: number; simulationCount?: number; yearsProjected?: number; percentileBands: PercentileBands; medianPath?: number[]; finalBalancePercentiles?: { p10: number; p25: number; p50: number; p75: number; p90: number }; }
 interface ReportNetWorthEntry { id: number; type: string; category: string; name?: string; value: string | number; owner?: string; }
 interface ReportProduct { id: number; type?: string; carrier?: string; coverageAmount?: string | number; premium?: string | number; status?: string; [key: string]: any; }
 function pct(n: number, decimals = 1): string { return `${(n * 100).toFixed(decimals)}%`; }
 
-// -- Monte Carlo Chart (from BrokersEdge) -------------------------------------
+// -- Monte Carlo Chart (from Knights of Columbus) -------------------------------------
 interface PercentileBands { p10: number[]; p25: number[]; p50: number[]; p75: number[]; p90: number[]; }
 function svgMonteCarloChart(
   bands:        PercentileBands,
@@ -625,19 +625,19 @@ function svgMonteCarloChart(
   <!-- Legend -->
   <g transform="translate(${pad.left}, ${height - 10})">
     <rect x="0"   y="-6" width="10" height="4" fill="#DBEAFE"/>
-    <text x="14"  y="-2" font-size="8" fill="#64748B">p10GÇôp90 range</text>
+    <text x="14"  y="-2" font-size="8" fill="#64748B">p10GÃ‡Ã´p90 range</text>
     <rect x="100" y="-6" width="10" height="4" fill="#93C5FD"/>
-    <text x="114" y="-2" font-size="8" fill="#64748B">p25GÇôp75 range</text>
+    <text x="114" y="-2" font-size="8" fill="#64748B">p25GÃ‡Ã´p75 range</text>
     <line x1="210" y1="-4" x2="220" y2="-4" stroke="#1D4ED8" stroke-width="2.5"/>
     <text x="224" y="-2" font-size="8" fill="#64748B">Median path</text>
   </g>
 </svg>`;
 }
 
-// GöÇGöÇ Comprehensive Report GöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇ
+// GÃ¶Ã‡GÃ¶Ã‡ Comprehensive Report GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡
 
 
-// -- Additional Reports (from BrokersEdge) ------------------------------------
+// -- Additional Reports (from Knights of Columbus) ------------------------------------
 export function generateRetirementReport(data: {
   client:     ReportClient;
   retirement: Record<string, unknown> | null;
@@ -665,7 +665,7 @@ export function generateRetirementReport(data: {
 
   const body = `
 <div class="cover">
-  <div style="font-size:10pt;letter-spacing:0.1em;text-transform:uppercase;opacity:0.7;margin-bottom:12px;">Brokers Edge</div>
+  <div style="font-size:10pt;letter-spacing:0.1em;text-transform:uppercase;opacity:0.7;margin-bottom:12px;">Knights of Columbus</div>
   <h1>Retirement Income Projection</h1>
   <h2>${esc(name)} - ${dateStr}</h2>
 </div>
@@ -677,7 +677,7 @@ export function generateRetirementReport(data: {
     <div class="summary-card"><div class="label">Retirement Age</div><div class="value">${esc(retirement.retirementAge)}</div></div>
     <div class="summary-card"><div class="label">Projected Balance</div><div class="value positive">${fmtCad(parseFloat(retirement.projectedBalance || "0"))}</div></div>
     <div class="summary-card"><div class="label">Success Rate</div>
-      <div class="value ${sim ? (sim.successRate >= 0.80 ? "positive" : sim.successRate >= 0.60 ? "warn" : "negative") : ""}">${sim ? `${(sim.successRate * 100).toFixed(0)}%` : "GÇö"}</div>
+      <div class="value ${sim ? (sim.successRate >= 0.80 ? "positive" : sim.successRate >= 0.60 ? "warn" : "negative") : ""}">${sim ? `${(sim.successRate * 100).toFixed(0)}%` : "GÃ‡Ã¶"}</div>
     </div>
   </div>` : ""}
 
@@ -708,10 +708,10 @@ export function generateRetirementReport(data: {
   </table>` : ""}
 </div>`;
 
-  return htmlShell(`Retirement Report GÇö ${name}`, body);
+  return htmlShell(`Retirement Report GÃ‡Ã¶ ${name}`, body);
 }
 
-// GöÇGöÇ Insurance report GöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇ
+// GÃ¶Ã‡GÃ¶Ã‡ Insurance report GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡
 
 export function generateInsuranceReport(data: {
   client:     ReportClient;
@@ -728,7 +728,7 @@ export function generateInsuranceReport(data: {
 
   const body = `
 <div class="cover">
-  <div style="font-size:10pt;letter-spacing:0.1em;text-transform:uppercase;opacity:0.7;margin-bottom:12px;">Brokers Edge</div>
+  <div style="font-size:10pt;letter-spacing:0.1em;text-transform:uppercase;opacity:0.7;margin-bottom:12px;">Knights of Columbus</div>
   <h1>Insurance Needs Analysis</h1>
   <h2>${esc(name)} - ${dateStr}</h2>
 </div>
@@ -750,7 +750,7 @@ export function generateInsuranceReport(data: {
     </div>
   </div>
 
-  <h3>Needs Analysis GÇö Life Insurance</h3>
+  <h3>Needs Analysis GÃ‡Ã¶ Life Insurance</h3>
   <table>
     <thead><tr><th>Method</th><th style="text-align:right">Required Coverage</th><th style="text-align:right">Current Coverage</th><th style="text-align:right">Gap</th><th>Status</th></tr></thead>
     <tbody>
@@ -766,7 +766,7 @@ export function generateInsuranceReport(data: {
           <td>${esc(method)}</td>
           <td style="text-align:right">${fmtCad(rec)}</td>
           <td style="text-align:right">${fmtCad(curr)}</td>
-          <td style="text-align:right;color:${gap > 0 ? "var(--red)" : "var(--green)"}">${gap > 0 ? `-${fmtCad(gap)}` : "G£ô Covered"}</td>
+          <td style="text-align:right;color:${gap > 0 ? "var(--red)" : "var(--green)"}">${gap > 0 ? `-${fmtCad(gap)}` : "GÂ£Ã´ Covered"}</td>
           <td><span class="badge ${gap > 0 ? "badge-red" : "badge-green"}">${gap > 0 ? "Gap" : "Adequate"}</span></td>
         </tr>`;
       }).join("")}
@@ -790,10 +790,10 @@ export function generateInsuranceReport(data: {
   </table>` : ""}
 </div>`;
 
-  return htmlShell(`Insurance Report GÇö ${name}`, body);
+  return htmlShell(`Insurance Report GÃ‡Ã¶ ${name}`, body);
 }
 
-// GöÇGöÇ Net Worth Statement GöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇ
+// GÃ¶Ã‡GÃ¶Ã‡ Net Worth Statement GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡
 
 export function generateCashFlowReport(data: {
   client: ReportClient;
@@ -845,9 +845,9 @@ export function generateCashFlowReport(data: {
 
   const body = `
 <div class="cover">
-  <div style="font-size:10pt;letter-spacing:0.1em;text-transform:uppercase;opacity:0.7;margin-bottom:12px">Brokers Edge</div>
+  <div style="font-size:10pt;letter-spacing:0.1em;text-transform:uppercase;opacity:0.7;margin-bottom:12px">Knights of Columbus</div>
   <h1>Cash Flow Statement</h1>
-  <h2>Detailed Household Budget GÇö ${dateStr}</h2>
+  <h2>Detailed Household Budget GÃ‡Ã¶ ${dateStr}</h2>
   <div style="height:2px;background:rgba(255,255,255,0.3);margin:24px 0"></div>
   <div class="cover-meta">
     <div class="label">Prepared for</div><div class="value">${esc(name)}</div>
@@ -866,7 +866,7 @@ export function generateCashFlowReport(data: {
   </div>
   ${retDesiredIncome > 0 ? `<div class="callout ${retirementGap >= 0 ? "good" : "warn"}">
     <strong>Retirement Income Check:</strong> Projected retirement expenses ${fmtCad(retirementMonthly * 12)}/yr vs. desired retirement income ${fmtCad(retDesiredIncome)}/yr.
-    ${retirementGap >= 0 ? `Surplus of ${fmtCad(retirementGap)}.` : `<strong>Shortfall of ${fmtCad(Math.abs(retirementGap))}</strong> GÇö review savings rate.`}
+    ${retirementGap >= 0 ? `Surplus of ${fmtCad(retirementGap)}.` : `<strong>Shortfall of ${fmtCad(Math.abs(retirementGap))}</strong> GÃ‡Ã¶ review savings rate.`}
     Based on the 4% rule, sustaining these expenses requires a portfolio of <strong>${fmtCad(retirementMonthly * 12 / 0.04)}</strong>.
   </div>` : ""}
 </div>
@@ -881,12 +881,12 @@ export function generateCashFlowReport(data: {
     </tbody>
   </table>`}
 </div>
-<div class="footer"><span>Brokers Edge GÇö Confidential</span><span>${esc(name)} GÇö Cash Flow Statement GÇö ${esc(dateStr)}</span></div>`;
+<div class="footer"><span>Knights of Columbus GÃ‡Ã¶ Confidential</span><span>${esc(name)} GÃ‡Ã¶ Cash Flow Statement GÃ‡Ã¶ ${esc(dateStr)}</span></div>`;
 
-  return htmlShell(`Cash Flow Statement GÇö ${name}`, body);
+  return htmlShell(`Cash Flow Statement GÃ‡Ã¶ ${name}`, body);
 }
 
-// GöÇGöÇ Asset Allocation & Mix Report GöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇ
+// GÃ¶Ã‡GÃ¶Ã‡ Asset Allocation & Mix Report GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡
 export function generateAssetAllocationReport(data: {
   client: ReportClient;
   generatedAt: string;
@@ -926,8 +926,8 @@ export function generateAssetAllocationReport(data: {
 
   const holdingRows = investments.map(e => `
     <tr><td>${esc(e.name || e.category)}</td>
-    <td>${esc((e as any).accountType || "GÇö")}</td>
-    <td>${esc((e as any).investmentType || "GÇö")}</td>
+    <td>${esc((e as any).accountType || "GÃ‡Ã¶")}</td>
+    <td>${esc((e as any).investmentType || "GÃ‡Ã¶")}</td>
     <td style="text-align:right">${fmtCad(parseFloat(String(e.value) || "0"))}</td>
     <td style="text-align:right">${totalInvested > 0 ? pct(parseFloat(String(e.value) || "0") / totalInvested * 100) : "0.0%"}</td></tr>`).join("");
 
@@ -938,9 +938,9 @@ export function generateAssetAllocationReport(data: {
 
   const body = `
 <div class="cover">
-  <div style="font-size:10pt;letter-spacing:0.1em;text-transform:uppercase;opacity:0.7;margin-bottom:12px">Brokers Edge</div>
+  <div style="font-size:10pt;letter-spacing:0.1em;text-transform:uppercase;opacity:0.7;margin-bottom:12px">Knights of Columbus</div>
   <h1>Asset Allocation & Mix</h1>
-  <h2>Investment Portfolio Review GÇö ${dateStr}</h2>
+  <h2>Investment Portfolio Review GÃ‡Ã¶ ${dateStr}</h2>
   <div style="height:2px;background:rgba(255,255,255,0.3);margin:24px 0"></div>
   <div class="cover-meta">
     <div class="label">Prepared for</div><div class="value">${esc(name)}</div>
@@ -972,12 +972,12 @@ export function generateAssetAllocationReport(data: {
     <tbody>${holdingRows}</tbody>
   </table>
 </div>
-<div class="footer"><span>Brokers Edge GÇö Confidential</span><span>${esc(name)} GÇö Asset Allocation GÇö ${esc(dateStr)}</span></div>`;
+<div class="footer"><span>Knights of Columbus GÃ‡Ã¶ Confidential</span><span>${esc(name)} GÃ‡Ã¶ Asset Allocation GÃ‡Ã¶ ${esc(dateStr)}</span></div>`;
 
-  return htmlShell(`Asset Allocation GÇö ${name}`, body);
+  return htmlShell(`Asset Allocation GÃ‡Ã¶ ${name}`, body);
 }
 
-// GöÇGöÇ Retirement Readiness / Decumulation GöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇ
+// GÃ¶Ã‡GÃ¶Ã‡ Retirement Readiness / Decumulation GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡
 export function generateRetirementReadinessReport(data: {
   client: ReportClient;
   generatedAt: string;
@@ -1027,15 +1027,15 @@ export function generateRetirementReadinessReport(data: {
 
   const body = `
 <div class="cover">
-  <div style="font-size:10pt;letter-spacing:0.1em;text-transform:uppercase;opacity:0.7;margin-bottom:12px">Brokers Edge</div>
+  <div style="font-size:10pt;letter-spacing:0.1em;text-transform:uppercase;opacity:0.7;margin-bottom:12px">Knights of Columbus</div>
   <h1>Retirement Readiness</h1>
-  <h2>Decumulation Projection GÇö ${dateStr}</h2>
+  <h2>Decumulation Projection GÃ‡Ã¶ ${dateStr}</h2>
   <div style="height:2px;background:rgba(255,255,255,0.3);margin:24px 0"></div>
   <div class="cover-meta">
     <div class="label">Prepared for</div><div class="value">${esc(name)}</div>
     <div class="label">Advisor</div><div class="value">${esc(advisorName)}</div>
-    <div class="label">Current Age</div><div class="value">${r ? esc(String(r.currentAge)) : "GÇö"}</div>
-    <div class="label">Target Retirement</div><div class="value">Age ${r ? esc(String(r.retirementAge)) : "GÇö"} (${yearsToRetirement} years)</div>
+    <div class="label">Current Age</div><div class="value">${r ? esc(String(r.currentAge)) : "GÃ‡Ã¶"}</div>
+    <div class="label">Target Retirement</div><div class="value">Age ${r ? esc(String(r.retirementAge)) : "GÃ‡Ã¶"} (${yearsToRetirement} years)</div>
   </div>
 </div>
 <div class="section">
@@ -1066,12 +1066,12 @@ export function generateRetirementReadinessReport(data: {
   <div class="callout"><strong>Note:</strong> CPP and OAS estimates are simplified averages for planning purposes. Actual amounts depend on contribution history and election age. Consult Service Canada for personalized estimates.</div>
 </div>
 ${simSection}
-<div class="footer"><span>Brokers Edge GÇö Confidential</span><span>${esc(name)} GÇö Retirement Readiness GÇö ${esc(dateStr)}</span></div>`;
+<div class="footer"><span>Knights of Columbus GÃ‡Ã¶ Confidential</span><span>${esc(name)} GÃ‡Ã¶ Retirement Readiness GÃ‡Ã¶ ${esc(dateStr)}</span></div>`;
 
-  return htmlShell(`Retirement Readiness GÇö ${name}`, body);
+  return htmlShell(`Retirement Readiness GÃ‡Ã¶ ${name}`, body);
 }
 
-// GöÇGöÇ Goal Status Report GöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇ
+// GÃ¶Ã‡GÃ¶Ã‡ Goal Status Report GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡
 export function generateGoalStatusReport(data: {
   client: ReportClient;
   generatedAt: string;
@@ -1096,9 +1096,9 @@ export function generateGoalStatusReport(data: {
     return `<tr>
       <td>${esc(p.name || "Financial Plan")}</td>
       <td><span class="badge ${statusBadge}">${esc(p.status || "active")}</span></td>
-      <td style="text-align:right">${goal > 0 ? fmtCad(goal) : "GÇö"}</td>
-      <td style="text-align:right">${p.targetDate ? new Date(p.targetDate).toLocaleDateString("en-CA") : "GÇö"}</td>
-      <td style="text-align:right">${goal > 0 ? `${progress}%` : "GÇö"}</td>
+      <td style="text-align:right">${goal > 0 ? fmtCad(goal) : "GÃ‡Ã¶"}</td>
+      <td style="text-align:right">${p.targetDate ? new Date(p.targetDate).toLocaleDateString("en-CA") : "GÃ‡Ã¶"}</td>
+      <td style="text-align:right">${goal > 0 ? `${progress}%` : "GÃ‡Ã¶"}</td>
       <td><div style="background:#e2e8f0;border-radius:4px;height:8px"><div style="background:${progress >= 80 ? "var(--green)" : progress >= 50 ? "var(--amber)" : "var(--red)"};border-radius:4px;height:8px;width:${progress}%"></div></div></td>
     </tr>`;
   }).join("");
@@ -1109,8 +1109,8 @@ export function generateGoalStatusReport(data: {
     const progress = target > 0 ? Math.min(100, Math.round(current / target * 100)) : 0;
     return `<tr>
       <td>${esc(e.childName || "Child")}</td>
-      <td style="text-align:right">${e.childAge ? `Age ${e.childAge}` : "GÇö"}</td>
-      <td style="text-align:right">${e.targetAge ? `Age ${e.targetAge}` : "GÇö"}</td>
+      <td style="text-align:right">${e.childAge ? `Age ${e.childAge}` : "GÃ‡Ã¶"}</td>
+      <td style="text-align:right">${e.targetAge ? `Age ${e.targetAge}` : "GÃ‡Ã¶"}</td>
       <td style="text-align:right">${fmtCad(current)}</td>
       <td style="text-align:right">${fmtCad(target)}</td>
       <td style="text-align:right">${progress}%</td>
@@ -1125,9 +1125,9 @@ export function generateGoalStatusReport(data: {
 
   const body = `
 <div class="cover">
-  <div style="font-size:10pt;letter-spacing:0.1em;text-transform:uppercase;opacity:0.7;margin-bottom:12px">Brokers Edge</div>
+  <div style="font-size:10pt;letter-spacing:0.1em;text-transform:uppercase;opacity:0.7;margin-bottom:12px">Knights of Columbus</div>
   <h1>Goal Status Report</h1>
-  <h2>Progress Dashboard GÇö ${dateStr}</h2>
+  <h2>Progress Dashboard GÃ‡Ã¶ ${dateStr}</h2>
   <div style="height:2px;background:rgba(255,255,255,0.3);margin:24px 0"></div>
   <div class="cover-meta">
     <div class="label">Prepared for</div><div class="value">${esc(name)}</div>
@@ -1139,7 +1139,7 @@ export function generateGoalStatusReport(data: {
 <div class="section">
   <h2 class="section-title">Retirement Goal</h2>
   ${r ? `<div class="summary-grid" style="grid-template-columns:repeat(3,1fr)">
-    <div class="summary-card"><div class="label">Target Retirement Age</div><div class="value">${esc(String(r.retirementAge || "GÇö"))}</div></div>
+    <div class="summary-card"><div class="label">Target Retirement Age</div><div class="value">${esc(String(r.retirementAge || "GÃ‡Ã¶"))}</div></div>
     <div class="summary-card"><div class="label">Projected Balance</div><div class="value ${projBalance >= needed ? "positive" : "negative"}">${fmtCad(projBalance)}</div></div>
     <div class="summary-card"><div class="label">Readiness</div><div class="value ${retirementProgress >= 80 ? "positive" : "negative"}">${retirementProgress}%</div></div>
   </div>
@@ -1159,12 +1159,12 @@ ${data.plans.length > 0 ? `<div class="section">
     <tbody>${planRows}</tbody>
   </table>
 </div>` : ""}
-<div class="footer"><span>Brokers Edge GÇö Confidential</span><span>${esc(name)} GÇö Goal Status GÇö ${esc(dateStr)}</span></div>`;
+<div class="footer"><span>Knights of Columbus GÃ‡Ã¶ Confidential</span><span>${esc(name)} GÃ‡Ã¶ Goal Status GÃ‡Ã¶ ${esc(dateStr)}</span></div>`;
 
-  return htmlShell(`Goal Status GÇö ${name}`, body);
+  return htmlShell(`Goal Status GÃ‡Ã¶ ${name}`, body);
 }
 
-// GöÇGöÇ Risk Management & Insurance Audit GöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇ
+// GÃ¶Ã‡GÃ¶Ã‡ Risk Management & Insurance Audit GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡
 export function generateInsuranceAuditReport(data: {
   client: ReportClient;
   generatedAt: string;
@@ -1187,18 +1187,18 @@ export function generateInsuranceAuditReport(data: {
 
   const productRows = data.products.map(p => `
     <tr>
-      <td>${esc(p.productName || "GÇö")}</td>
-      <td>${esc(p.productType || "GÇö")}</td>
-      <td style="text-align:right">${p.coverageAmount ? fmtCad(parseFloat(String(p.coverageAmount))) : "GÇö"}</td>
-      <td style="text-align:right">${p.premium ? fmtCad(parseFloat(String(p.premium))) + "/mo" : "GÇö"}</td>
+      <td>${esc(p.productName || "GÃ‡Ã¶")}</td>
+      <td>${esc(p.productType || "GÃ‡Ã¶")}</td>
+      <td style="text-align:right">${p.coverageAmount ? fmtCad(parseFloat(String(p.coverageAmount))) : "GÃ‡Ã¶"}</td>
+      <td style="text-align:right">${p.premium ? fmtCad(parseFloat(String(p.premium))) + "/mo" : "GÃ‡Ã¶"}</td>
       <td><span class="badge ${p.status === "active" ? "badge-green" : "badge-amber"}">${esc(p.status || "unknown")}</span></td>
     </tr>`).join("");
 
   const body = `
 <div class="cover">
-  <div style="font-size:10pt;letter-spacing:0.1em;text-transform:uppercase;opacity:0.7;margin-bottom:12px">Brokers Edge</div>
+  <div style="font-size:10pt;letter-spacing:0.1em;text-transform:uppercase;opacity:0.7;margin-bottom:12px">Knights of Columbus</div>
   <h1>Risk Management & Insurance Audit</h1>
-  <h2>Coverage Review GÇö ${dateStr}</h2>
+  <h2>Coverage Review GÃ‡Ã¶ ${dateStr}</h2>
   <div style="height:2px;background:rgba(255,255,255,0.3);margin:24px 0"></div>
   <div class="cover-meta">
     <div class="label">Prepared for</div><div class="value">${esc(name)}</div>
@@ -1233,12 +1233,12 @@ ${data.products.length > 0 ? `<div class="section">
     <tbody>${productRows}</tbody>
   </table>
 </div>` : ""}
-<div class="footer"><span>Brokers Edge GÇö Confidential</span><span>${esc(name)} GÇö Insurance Audit GÇö ${esc(dateStr)}</span></div>`;
+<div class="footer"><span>Knights of Columbus GÃ‡Ã¶ Confidential</span><span>${esc(name)} GÃ‡Ã¶ Insurance Audit GÃ‡Ã¶ ${esc(dateStr)}</span></div>`;
 
-  return htmlShell(`Insurance Audit GÇö ${name}`, body);
+  return htmlShell(`Insurance Audit GÃ‡Ã¶ ${name}`, body);
 }
 
-// GöÇGöÇ Estate & Beneficiary Summary GöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇ
+// GÃ¶Ã‡GÃ¶Ã‡ Estate & Beneficiary Summary GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡
 export function generateEstateSummaryReport(data: {
   client: ReportClient;
   generatedAt: string;
@@ -1270,7 +1270,7 @@ export function generateEstateSummaryReport(data: {
     return `<tr>
       <td>${esc(cat)}</td>
       <td><span class="badge ${hasNotes ? "badge-green" : "badge-amber"}">${hasNotes ? "Documented" : "Needs Review"}</span></td>
-      <td>${(notesByCategory[cat] || []).map(n => esc(n.title || n.content?.substring(0, 60) || "")).join("; ") || "GÇö"}</td>
+      <td>${(notesByCategory[cat] || []).map(n => esc(n.title || n.content?.substring(0, 60) || "")).join("; ") || "GÃ‡Ã¶"}</td>
     </tr>`;
   }).join("");
 
@@ -1279,14 +1279,14 @@ export function generateEstateSummaryReport(data: {
       <td>${esc(e.name || e.category)}</td>
       <td>${esc(e.category)}</td>
       <td style="text-align:right">${fmtCad(parseFloat(String(e.value) || "0"))}</td>
-      <td>${(e as any).accountType || "GÇö"}</td>
+      <td>${(e as any).accountType || "GÃ‡Ã¶"}</td>
     </tr>`).join("");
 
   const body = `
 <div class="cover">
-  <div style="font-size:10pt;letter-spacing:0.1em;text-transform:uppercase;opacity:0.7;margin-bottom:12px">Brokers Edge</div>
+  <div style="font-size:10pt;letter-spacing:0.1em;text-transform:uppercase;opacity:0.7;margin-bottom:12px">Knights of Columbus</div>
   <h1>Estate & Beneficiary Summary</h1>
-  <h2>Estate Distribution Review GÇö ${dateStr}</h2>
+  <h2>Estate Distribution Review GÃ‡Ã¶ ${dateStr}</h2>
   <div style="height:2px;background:rgba(255,255,255,0.3);margin:24px 0"></div>
   <div class="cover-meta">
     <div class="label">Prepared for</div><div class="value">${esc(name)}</div>
@@ -1314,12 +1314,12 @@ export function generateEstateSummaryReport(data: {
     <tbody>${assetDistributionRows}</tbody>
   </table>
 </div>
-<div class="footer"><span>Brokers Edge GÇö Confidential</span><span>${esc(name)} GÇö Estate Summary GÇö ${esc(dateStr)}</span></div>`;
+<div class="footer"><span>Knights of Columbus GÃ‡Ã¶ Confidential</span><span>${esc(name)} GÃ‡Ã¶ Estate Summary GÃ‡Ã¶ ${esc(dateStr)}</span></div>`;
 
-  return htmlShell(`Estate Summary GÇö ${name}`, body);
+  return htmlShell(`Estate Summary GÃ‡Ã¶ ${name}`, body);
 }
 
-// GöÇGöÇ Tax Efficiency Strategy GöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇ
+// GÃ¶Ã‡GÃ¶Ã‡ Tax Efficiency Strategy GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡
 export function generateTaxStrategyReport(data: {
   client: ReportClient;
   generatedAt: string;
@@ -1338,17 +1338,17 @@ export function generateTaxStrategyReport(data: {
 
   const noteRows = data.taxNotes.map(n => `
     <tr>
-      <td>${esc(n.taxYear ? String(n.taxYear) : "GÇö")}</td>
-      <td>${esc(n.category || "GÇö")}</td>
-      <td>${esc(n.title || "GÇö")}</td>
-      <td style="font-size:9pt">${esc((n.content || "").substring(0, 120))}${(n.content || "").length > 120 ? "GÇª" : ""}</td>
+      <td>${esc(n.taxYear ? String(n.taxYear) : "GÃ‡Ã¶")}</td>
+      <td>${esc(n.category || "GÃ‡Ã¶")}</td>
+      <td>${esc(n.title || "GÃ‡Ã¶")}</td>
+      <td style="font-size:9pt">${esc((n.content || "").substring(0, 120))}${(n.content || "").length > 120 ? "GÃ‡Âª" : ""}</td>
     </tr>`).join("");
 
   const body = `
 <div class="cover">
-  <div style="font-size:10pt;letter-spacing:0.1em;text-transform:uppercase;opacity:0.7;margin-bottom:12px">Brokers Edge</div>
+  <div style="font-size:10pt;letter-spacing:0.1em;text-transform:uppercase;opacity:0.7;margin-bottom:12px">Knights of Columbus</div>
   <h1>Tax Efficiency Strategy</h1>
-  <h2>Annual Tax Review GÇö ${dateStr}</h2>
+  <h2>Annual Tax Review GÃ‡Ã¶ ${dateStr}</h2>
   <div style="height:2px;background:rgba(255,255,255,0.3);margin:24px 0"></div>
   <div class="cover-meta">
     <div class="label">Prepared for</div><div class="value">${esc(name)}</div>
@@ -1364,8 +1364,8 @@ export function generateTaxStrategyReport(data: {
     <div class="summary-card"><div class="label">TFSA (Tax-Free)</div><div class="value">${fmtCad(tfsaTotal)}</div></div>
     <div class="summary-card"><div class="label">Non-Registered</div><div class="value">${fmtCad(nonRegTotal)}</div></div>
   </div>
-  <div class="callout"><strong>Optimal Withdrawal Order (Canadian):</strong> Generally: Non-Registered GåÆ RRSP/RRIF GåÆ TFSA last. However, crystallizing gains to fill lower tax brackets before OAS/CPP may favour early RRSP meltdown. Review annually.</div>
-  ${tfsaTotal === 0 ? '<div class="callout warn"><strong>Opportunity:</strong> No TFSA balance recorded. Maximize TFSA contributions for tax-free growth GÇö 2025 room is $7,000 ($95,000 lifetime for those 18+ since 2009).</div>' : ""}
+  <div class="callout"><strong>Optimal Withdrawal Order (Canadian):</strong> Generally: Non-Registered GÃ¥Ã† RRSP/RRIF GÃ¥Ã† TFSA last. However, crystallizing gains to fill lower tax brackets before OAS/CPP may favour early RRSP meltdown. Review annually.</div>
+  ${tfsaTotal === 0 ? '<div class="callout warn"><strong>Opportunity:</strong> No TFSA balance recorded. Maximize TFSA contributions for tax-free growth GÃ‡Ã¶ 2025 room is $7,000 ($95,000 lifetime for those 18+ since 2009).</div>' : ""}
   ${nonRegTotal > 0 ? '<div class="callout"><strong>Non-Registered Account:</strong> Consider tax-loss harvesting opportunities, preferred dividend income over interest, and systematic RRSP contributions to reduce current taxable income.</div>' : ""}
 </div>
 ${data.taxNotes.length > 0 ? `<div class="section">
@@ -1380,18 +1380,18 @@ ${data.taxNotes.length > 0 ? `<div class="section">
   <h3>RRSP Optimization</h3>
   <p>Contribute to RRSP in high-income years to maximize the deduction. Consider spousal RRSP contributions to split income in retirement.</p>
   <h3>TFSA Maximization</h3>
-  <p>Prioritize TFSA for investments with highest growth potential GÇö all gains and withdrawals are completely tax-free.</p>
+  <p>Prioritize TFSA for investments with highest growth potential GÃ‡Ã¶ all gains and withdrawals are completely tax-free.</p>
   <h3>Capital Gains Management</h3>
   <p>The 2024 federal budget increased the capital gains inclusion rate to 2/3 for annual gains above $250,000. Consider timing large dispositions carefully.</p>
   <h3>Income Splitting</h3>
   <p>Spousal RRSP, T1032 pension income splitting, and prescribed rate loans can significantly reduce household tax burden.</p>
 </div>
-<div class="footer"><span>Brokers Edge GÇö Confidential</span><span>${esc(name)} GÇö Tax Strategy GÇö ${esc(dateStr)}</span></div>`;
+<div class="footer"><span>Knights of Columbus GÃ‡Ã¶ Confidential</span><span>${esc(name)} GÃ‡Ã¶ Tax Strategy GÃ‡Ã¶ ${esc(dateStr)}</span></div>`;
 
-  return htmlShell(`Tax Strategy GÇö ${name}`, body);
+  return htmlShell(`Tax Strategy GÃ‡Ã¶ ${name}`, body);
 }
 
-// GöÇGöÇ One-Page Financial Plan GöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇ
+// GÃ¶Ã‡GÃ¶Ã‡ One-Page Financial Plan GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡GÃ¶Ã‡
 export function generateOnePagePlan(data: {
   client: ReportClient;
   generatedAt: string;
@@ -1453,7 +1453,7 @@ export function generateOnePagePlan(data: {
 <div class="one-page">
   <div class="op-header">
     <div>
-      <div class="op-logo">Brokers Edge</div>
+      <div class="op-logo">Knights of Columbus</div>
       <div class="op-title">${esc(name)}</div>
       <div class="op-subtitle">One-Page Financial Plan - ${esc(dateStr)} - ${esc(advisorName)}</div>
     </div>
@@ -1471,7 +1471,7 @@ export function generateOnePagePlan(data: {
       <div class="op-card-sub">${fmtCad(totalAssets)} assets - ${fmtCad(totalLiabilities)} liabilities</div>
     </div>
     <div class="op-card" style="border-top:3px solid var(--blue)">
-      <div class="op-card-title">Retirement at Age ${r ? esc(String(r.retirementAge)) : "GÇö"}</div>
+      <div class="op-card-title">Retirement at Age ${r ? esc(String(r.retirementAge)) : "GÃ‡Ã¶"}</div>
       <div class="op-card-value">${fmtCad(projBalance)}</div>
       <div class="op-card-sub">Projected - Need ${fmtCad(fourPctNeeded)} (4% rule)</div>
     </div>
@@ -1485,10 +1485,10 @@ export function generateOnePagePlan(data: {
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
     <div>
       <div class="op-section-title">Top Goals</div>
-      ${r ? `<div class="op-goal"><div class="op-goal-dot" style="background:${statusDot(retirementReadiness)}"></div><div class="op-goal-name">Retirement at ${r.retirementAge || "GÇö"}</div><div class="op-goal-value">${retirementReadiness}% ready</div></div>` : ""}
+      ${r ? `<div class="op-goal"><div class="op-goal-dot" style="background:${statusDot(retirementReadiness)}"></div><div class="op-goal-name">Retirement at ${r.retirementAge || "GÃ‡Ã¶"}</div><div class="op-goal-value">${retirementReadiness}% ready</div></div>` : ""}
       ${data.education.map(e => {
         const prog = parseFloat(String(e.targetAmount || "0")) > 0 ? Math.min(100, Math.round(parseFloat(String(e.currentBalance || "0")) / parseFloat(String(e.targetAmount || "1")) * 100)) : 0;
-        return `<div class="op-goal"><div class="op-goal-dot" style="background:${statusDot(prog)}"></div><div class="op-goal-name">RESP GÇô ${esc(e.childName || "Child")}</div><div class="op-goal-value">${prog}% of ${fmtCad(parseFloat(String(e.targetAmount || "0")))}</div></div>`;
+        return `<div class="op-goal"><div class="op-goal-dot" style="background:${statusDot(prog)}"></div><div class="op-goal-name">RESP GÃ‡Ã´ ${esc(e.childName || "Child")}</div><div class="op-goal-value">${prog}% of ${fmtCad(parseFloat(String(e.targetAmount || "0")))}</div></div>`;
       }).join("")}
       ${data.plans.slice(0, 3).map(p => `<div class="op-goal"><div class="op-goal-dot" style="background:var(--blue)"></div><div class="op-goal-name">${esc(p.name || "Plan")}</div><div class="op-goal-value">${esc(p.status || "active")}</div></div>`).join("")}
       ${!r && data.education.length === 0 && data.plans.length === 0 ? "<p style='font-size:9pt;color:var(--gray)'>No goals entered yet.</p>" : ""}
@@ -1501,12 +1501,13 @@ export function generateOnePagePlan(data: {
 
   <div class="op-footer">
     <span>This document is for discussion purposes only and does not constitute financial, tax, or legal advice.</span>
-    <span>Brokers Edge - ${esc(advisorName)} - ${esc(dateStr)}</span>
+    <span>Knights of Columbus - ${esc(advisorName)} - ${esc(dateStr)}</span>
   </div>
 </div>`;
 
-  return htmlShell(`One-Page Plan GÇö ${name}`, body);
+  return htmlShell(`One-Page Plan GÃ‡Ã¶ ${name}`, body);
 }
+
 
 
 

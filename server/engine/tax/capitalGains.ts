@@ -36,7 +36,7 @@ export function analyzeCapitalGains(
 
   const buildScenario = (label: string, amount: number): CapitalGainsScenario => {
     const netAmount      = Math.max(0, amount - totalUnrealizedLoss); // offset losses
-    const inclusionRate  = netAmount > INCLUSION_THRESHOLD ? INCLUSION_HIGH : INCLUSION_LOW;
+    const inclusionRate  = INCLUSION_LOW; // Flat 50% - 2/3 increase cancelled
     const taxableGain    = netAmount * inclusionRate;
     const incomeWithGain = currentIncome + taxableGain;
     const taxWithGain    = calculateCombinedTax(incomeWithGain, provinceCode, bpa).totalTax;
@@ -173,3 +173,5 @@ export function analyzeIncomeSplitting(
     details: "Incomes are similar enough that splitting strategies offer minimal benefit at current levels.",
   };
 }
+
+

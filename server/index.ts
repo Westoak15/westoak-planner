@@ -1,5 +1,8 @@
 import "dotenv/config";
 import express from "express";
+
+process.on("unhandledRejection", (reason) => { console.error("[unhandledRejection]", reason); });
+process.on("uncaughtException",  (err)    => { console.error("[uncaughtException]",  err);    });
 import cors from "cors";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -44,4 +47,5 @@ if (process.env.NODE_ENV === "production") {
 
 app.listen(PORT, "0.0.0.0", () => console.log(`✅  FP running on :${PORT}`));
 export default app;
+
 

@@ -1,7 +1,7 @@
 import {
   Users, LayoutDashboard, Scale, PiggyBank,
   Shield, GraduationCap, CreditCard, Receipt, ScrollText, Brain, ClipboardList,
-  FileHeart, Settings, UserCheck
+  FileHeart, Settings, UserCheck, FileText
 } from "lucide-react";
 import { cn } from "../lib/utils";
 
@@ -101,4 +101,5 @@ export function Sidebar({ activeTab, onTab, clientName, role, level }: Props) {
     </aside>
   );
 }
+
 

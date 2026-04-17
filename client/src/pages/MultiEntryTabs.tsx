@@ -114,6 +114,7 @@ export function NetWorthTab({ clientId, client }: { clientId: number; client?: {
   const [drafts, setDrafts]   = useState<NWDraft[]>([]);
   const [saving, setSaving]   = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [simResult, setSimResult] = useState<any>(null);
   const [editForm, setEditForm]   = useState<Partial<NWEntry & { isSpousal: boolean; rrspContributor: string; pensionType: string; matchPct: string }>>({});
 
   const spouseName = client?.spouseFirstName ? `${client.spouseFirstName} ${client.spouseLastName ?? ""}`.trim() : "";

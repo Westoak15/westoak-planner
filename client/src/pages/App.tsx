@@ -360,6 +360,38 @@ function ClientDetail({ client, onBack, onPlanSelect, onUpdate, level }: { clien
             <div className="mt-4">
               <Textarea label="Notes" value={form.notes ?? ""} onChange={v => u("notes", v)} />
             </div>
+            )}
+		{/* Dependants */}
+		<div className="mt-4 border-t border-gray-100 pt-4">
+  		<div className="flex items-center justify-between mb-2">
+    <h3 className="text-sm font-bold text-gray-700">Dependants</h3>
+    {editing && (
+      <button type="button" onClick={() => u("dependants", [...((form.dependants as any[]) ?? []), { name: "", dob: "", relationship: "Child" }])}
+        className="text-xs text-[#0c1e3a] font-semibold hover:underline">+ Add</button>
+    )}
+  </div>
+  {((editing ? form.dependants : client.dependants) as any[] ?? []).map((d: any, i: number) => (
+    editing ? (
+      <div key={i} className="grid grid-cols-3 gap-2 mb-2 items-end">
+        <Input label="Name" value={d.name} onChange={v => { const deps = [...((form.dependants as any[]) ?? [])]; deps[i] = { ...deps[i], name: v }; u("dependants", deps); }} />
+        <DobInput label="DOB" value={d.dob ?? ""} onChange={v => { const deps = [...((form.dependants as any[]) ?? [])]; deps[i] = { ...deps[i], dob: v }; u("dependants", deps); }} />
+        <div className="flex items-end gap-1">
+          <Select label="Relation" value={d.relationship ?? "Child"} onChange={v => { const deps = [...((form.dependants as any[]) ?? [])]; deps[i] = { ...deps[i], relationship: v }; u("dependants", deps); }} options={["Child", "Parent", "Sibling", "Other"]} />
+          <button type="button" onClick={() => u("dependants", (form.dependants as any[]).filter((_: any, idx: number) => idx !== i))} className="mb-1 text-red-400 hover:text-red-600"><Trash2 className="w-3.5 h-3.5" /></button>
+        </div>
+      </div>
+    ) : (
+      <div key={i} className="flex gap-4 text-sm text-gray-600 py-1">
+        <span className="font-semibold">{d.name}</span>
+        <span className="text-gray-400">{d.relationship}</span>
+        <span className="text-gray-400">{d.dob}</span>
+      </div>
+    )
+  ))}
+  {((editing ? form.dependants : client.dependants) as any[] ?? []).length === 0 && !editing && (
+    <p className="text-sm text-gray-400">No dependants on file</p>
+  )}
+</div>
           )}
         </Card>
       </div>

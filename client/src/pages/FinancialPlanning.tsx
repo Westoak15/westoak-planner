@@ -1221,25 +1221,19 @@ function TaxProjectionPanel({ clientId }: { clientId: number }) {
   const [showTable, setShowTable] = useState(false);
   const provinces = ["ON", "BC", "AB", "QC", "MB", "SK", "NS", "NB", "PE", "NL"];
 
+  const [projResult, setProjResult] = useState<any>(null);
+ 
   const handleCalc = () => {
     const input: Record<string, unknown> = {};
     for (const [k, v] of Object.entries(form)) {
       input[k] = isNaN(Number(v)) ? v : Number(v);
     }
-    taxProjection.mutate(undefined as any);
-    // We need to pass the input - use the mutation with the input
-    fetch(`/api/tax/${clientId}/projection`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify(input),
-    }).then(r => r.json()).then(data => {
-      (taxProjection as any).data = data;
-    });
-  };
+   taxProjection.mutate({ clientId, data: input } as any, {
+     onSuccess: (data: any) => setProjResult(data),
+});
+};
 
-  const result = (taxProjection as any).data;
-
+const result = projResult; 
   return (
     <div className="space-y-5">
       <div className="p-4 bg-purple-50 border border-purple-200 rounded-xl text-sm text-purple-800">

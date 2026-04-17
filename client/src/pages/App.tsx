@@ -8,7 +8,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "../lib/queryClient";
 import { MonteCarloResults } from "../components/MonteCarloResults";
 import { NetWorthTab as NetWorthTabNew, RetirementTab as RetirementTabNew, RespTab as RespTabNew, InsuranceTab as InsuranceTabNew } from "./MultiEntryTabs";         
-import { InsuranceTab as FnaTabNew } from "./FinancialPlanning";
+import { InsuranceTab as FnaTabNew, TaxTab as TaxTabNew, EstateNotesTab as EstateTabNew, AITab } from "./FinancialPlanning";
 import { AdminPanel } from "./AdminPanel"
 import { AgentsTab } from "./AgentsTab";
 import { ExpensesTab } from "./ExpensesTab";
@@ -1456,6 +1456,7 @@ export default function App() {
     </div>
   );
 }
+
 
 
 

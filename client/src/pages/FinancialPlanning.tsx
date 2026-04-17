@@ -1488,7 +1488,7 @@ function IncomeSplittingPanel({ clientId }: { clientId: number }) {
   );
 }
 
-function TaxTab({ clientId }: { clientId: number }) {
+export function TaxTab({ clientId }: { clientId: number }) {
   const [activeSubTab, setActiveSubTab] = useState<TaxSubTab>("projection");
 
   return (
@@ -1519,7 +1519,7 @@ function TaxTab({ clientId }: { clientId: number }) {
 
 // ── Estate Tab ────────────────────────────────────────────────────────────────
 
-function EstateNotesTab({ clientId, planId }: { clientId: number; planId: number | null }) {
+export function EstateNotesTab({ clientId, planId, client }: { clientId: number; planId: number | null; client?: any }) {
   const { data: notes = [] } = useEstatePlanningNotes(clientId);
   const { data: assumptions = [] } = usePlanAssumptions(planId);
   const createNote = useCreateEstatePlanningNote();
@@ -1781,6 +1781,10 @@ export function FinancialPlanningContent({ initialClientId }: { initialClientId?
 export default function FinancialPlanning() {
   return <FinancialPlanningContent />;
 }
+
+
+
+
 
 
 

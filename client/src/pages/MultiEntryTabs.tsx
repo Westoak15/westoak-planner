@@ -531,7 +531,7 @@ export function RetirementTab({ clientId, client }: { clientId: number; client?:
           </button>
           <button onClick={runSim} disabled={simulating}
             className="bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-sm font-semibold px-4 py-1.5 rounded-lg">
-            {simulating ? "Running…" : "▶ Monte Carlo"}
+            {simulating ? "Running..." : "Retirement Checkup"}
           </button>
           <button onClick={addDraft}
             className="flex items-center gap-1.5 text-sm font-semibold text-white bg-[#0c1e3a] hover:bg-[#0e2a4a] px-3 py-1.5 rounded-lg">
@@ -1085,6 +1085,8 @@ export function DebtTab({ clientId }: { clientId: number }) {
     </div>
   );
 }
+
+
 
 
 

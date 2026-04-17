@@ -390,9 +390,8 @@ function ClientDetail({ client, onBack, onPlanSelect, onUpdate, level }: { clien
   ))}
   {((editing ? form.dependants : client.dependants) as any[] ?? []).length === 0 && !editing && (
     <p className="text-sm text-gray-400">No dependants on file</p>
-  )}
+)}
 </div>
-          )}
         </Card>
       </div>
   

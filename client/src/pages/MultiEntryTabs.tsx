@@ -636,7 +636,10 @@ export function RetirementTab({ clientId, client }: { clientId: number; client?:
                   </span>
                 )}
               </div>
-              <button onClick={() => del(p.id)} className="text-gray-300 hover:text-red-500"><Trash2 className="w-4 h-4" /></button>
+              <div className="flex gap-2">
+                <button onClick={() => startEdit(p)} className="text-gray-300 hover:text-[#0c1e3a]"><Pencil className="w-4 h-4" /></button>
+                <button onClick={() => del(p.id)} className="text-gray-300 hover:text-red-500"><Trash2 className="w-4 h-4" /></button>
+              </div>
             </div>
             <div className="grid grid-cols-5 gap-4">
               <F label="Age → Retire"  val={p.currentAge && p.retirementAge ? `${p.currentAge} → ${p.retirementAge}` : null} />
@@ -1069,6 +1072,8 @@ export function DebtTab({ clientId }: { clientId: number }) {
     </div>
   );
 }
+
+
 
 
 

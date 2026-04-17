@@ -187,7 +187,7 @@ export function NetWorthTab({ clientId, client }: { clientId: number; client?: {
   }
 
   function ownerLabel(entry: NWEntry) {
-    return entry.owner === "spouse" ? (spouseName || "Spouse") : primaryName;
+    return entry.owner === "spouse" ? (spouseName || "Spouse") : entry.owner === "joint" ? "Joint" : primaryName;
   }
 
   function metaBadge(entry: NWEntry) {
@@ -1065,5 +1065,7 @@ export function DebtTab({ clientId }: { clientId: number }) {
     </div>
   );
 }
+
+
 
 

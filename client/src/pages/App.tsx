@@ -9,6 +9,7 @@ import { queryClient } from "../lib/queryClient";
 import { MonteCarloResults } from "../components/MonteCarloResults";
 import { NetWorthTab as NetWorthTabNew, RetirementTab as RetirementTabNew, RespTab as RespTabNew, InsuranceTab as InsuranceTabNew } from "./MultiEntryTabs";         
 import { InsuranceTab as FnaTabNew, TaxTab as TaxTabNew, EstateNotesTab as EstateTabNew, AITab } from "./FinancialPlanning";
+import { ReportsTab } from "./ReportsTab";
 import { AdminPanel } from "./AdminPanel"
 import { AgentsTab } from "./AgentsTab";
 import { ExpensesTab } from "./ExpensesTab";
@@ -1421,6 +1422,7 @@ export default function App() {
             </QueryClientProvider>
           )}
           {tab === "dashboard"  && client && <DashboardTab     clientId={client.id} />}
+          {tab === "reports" && client && <ReportsTab clientId={client.id} />}
           {tab === "tax" && client && (
             <QueryClientProvider client={queryClient}>
               <TaxTabNew clientId={client.id} />
@@ -1441,6 +1443,7 @@ export default function App() {
     </div>
   );
 }
+
 
 
 

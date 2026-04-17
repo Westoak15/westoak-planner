@@ -9,7 +9,7 @@ export type Tab =
   | "clients" | "dashboard"
   | "networth" | "retirement" | "insurance" | "fna"
   | "resp" | "expenses" | "tax" | "estate" | "ai"
-  | "planning" | "admin" | "agents";
+  | "planning" | "reports" | "admin" | "agents";
 
 interface Props {
   activeTab: Tab;
@@ -32,6 +32,7 @@ const ALL_TABS: { key: Tab; label: string; icon: any; dividerBefore?: boolean; g
   { key: "expenses",   label: "Expenses",     icon: Receipt },
   { key: "tax",        label: "Tax",          icon: Receipt },
   { key: "estate",     label: "Estate",       icon: ScrollText },
+  { key: "reports", label: "Reports", icon: FileText }, 
   { key: "ai",         label: "AI Insights",  icon: Brain },
   { key: "planning",   label: "Full FP View", icon: ClipboardList, dividerBefore: true },
    

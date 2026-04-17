@@ -663,6 +663,7 @@ export function RetirementTab({ clientId, client }: { clientId: number; client?:
     });
   })()}
 </div>
+</div>
   );
 }
 

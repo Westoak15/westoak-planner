@@ -1437,7 +1437,7 @@ export default function App() {
             </QueryClientProvider>
           )}
           {tab === "networth"   && client && <NetWorthTabNew   clientId={client.id} client={client} />}
-          {tab === "retirement" && client && <RetirementTabNew clientId={client.id} />}
+          {tab === "retirement" && client && <RetirementTabNew clientId={client.id} client={client} />}
           {tab === "insurance" && client && <PoliciesTab clientId={client.id} client={client} />}
           {tab === "fna"        && client && (
             <QueryClientProvider client={queryClient}>
@@ -1474,6 +1474,7 @@ export default function App() {
     </div>
   );
 }
+
 
 
 

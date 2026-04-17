@@ -390,7 +390,6 @@ export function NetWorthTab({ clientId, client }: { clientId: number; client?: {
 // ── RETIREMENT ────────────────────────────────────────────────────────────────
 interface RetirementProj { id: number; label: string; currentAge: number|null; retirementAge: number|null; currentRrsp: string|null; currentTfsa: string|null; currentNonReg: string|null; annualContribution: string|null; expectedReturn: string|null; inflationRate: string|null; desiredIncome: string|null; cppStartAge: number|null; oasStartAge: number|null; cppMonthly: string|null; oasMonthly: string|null; projectedBalance: string|null; successRate: string|null; notes: string|null; }
 type RetDraft = { label: string; currentAge: string; retirementAge: string; currentRrsp: string; currentTfsa: string; currentNonReg: string; annualContribution: string; expectedReturn: string; inflationRate: string; desiredIncome: string; cppStartAge: string; oasStartAge: string; cppMonthly: string; oasMonthly: string; notes: string; };
-
 const emptyRet = (): RetDraft => ({ label:"Base Case", currentAge: clientAge ? String(clientAge) : "", retirementAge: String(retirementAge), currentRrsp:"", currentTfsa:"", currentNonReg:"", annualContribution:"", expectedReturn:"6.5", inflationRate:"2.5", desiredIncome: desiredIncome ? String(desiredIncome) : "", cppStartAge:"65", oasStartAge:"65", cppMonthly:"900", oasMonthly:"700", notes:"" });
 
 export function RetirementTab({ clientId, client }: { clientId: number; client?: any }) {

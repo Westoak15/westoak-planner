@@ -13,7 +13,13 @@ import { eq, and, desc , sql} from "drizzle-orm";
 function safe(body: any) {
   const { id, createdAt, updatedAt, userId, clientId, planId, ...rest } = body;
   const textFields = new Set(["label","name","notes","description","type","category","status","owner","province","occupation","phone","email","method","frequency","premiumFrequency","accountType","beneficiary","policyNumber","provider","insured","inforceDate","renewalDate","relationship","title","content","priority"]);
-  for (const key of Object.keys(rest)) { if (rest[key] === "" && !textFields.has(key)) rest[key] = null; }
+  const zeroFields = new Set(["annualContribution","currentRrsp","currentTfsa","currentNonReg","currentNonRegAcb","expectedReturn","inflationRate","desiredIncome","cppMonthly","oasMonthly","coverageAmount","premium","monthlyAmount","retirementAdjustmentPct"]);
+  for (const key of Object.keys(rest)) {
+    if (rest[key] === "") {
+      if (zeroFields.has(key)) rest[key] = "0";
+      else if (!textFields.has(key)) rest[key] = null;
+    }
+  }
   return rest;
 }
 

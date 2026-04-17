@@ -12,6 +12,8 @@ import { eq, and, desc , sql} from "drizzle-orm";
 // Strip timestamp/id fields that should never be set from client payload
 function safe(body: any) {
   const { id, createdAt, updatedAt, userId, clientId, planId, ...rest } = body;
+  const textFields = new Set(["label","name","notes","description","type","category","status","owner","province","occupation","phone","email","method","frequency","premiumFrequency","accountType","beneficiary","policyNumber","provider","insured","inforceDate","renewalDate","relationship","title","content","priority"]);
+  for (const key of Object.keys(rest)) { if (rest[key] === "" && !textFields.has(key)) rest[key] = null; }
   return rest;
 }
 
@@ -365,6 +367,8 @@ r.delete("/clients/:id/expenses/:eid", async (req: AuthRequest, res: Response) =
   res.json({ ok: true });
 });
 export { r as fpRouter };
+
+
 
 
 

@@ -15,6 +15,8 @@ r.use(isAuthenticated);
 
 function safe(body: any) {
   const { id, createdAt, updatedAt, userId, clientId, planId, calculatedAt, ...rest } = body;
+  const textFields = new Set(["label","name","notes","description","type","category","status","owner","province","occupation","phone","email","method","frequency","premiumFrequency","accountType","beneficiary","policyNumber","provider","insured","inforceDate","renewalDate","relationship","title","content","priority"]);
+  for (const key of Object.keys(rest)) { if (rest[key] === "" && !textFields.has(key)) rest[key] = null; }
   return rest;
 }
 

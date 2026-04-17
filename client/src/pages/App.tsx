@@ -1421,11 +1421,44 @@ export default function App() {
             </QueryClientProvider>
           )}
           {tab === "dashboard"  && client && <DashboardTab     clientId={client.id} />}
+          {tab === "tax" && client && (
+            <QueryClientProvider client={queryClient}>
+              <TaxTabNew clientId={client.id} />
+            </QueryClientProvider>
+          )}
+          {tab === "estate" && client && (
+            <QueryClientProvider client={queryClient}>
+              <EstateTabNew clientId={client.id} planId={null} client={client} />
+            </QueryClientProvider>
+          )}
+          {tab === "ai" && client && (
+            <QueryClientProvider client={queryClient}>
+              <AITab clientId={client.id} />
+            </QueryClientProvider>
+          )}
+          {tab === "tax" && client && (
+            <QueryClientProvider client={queryClient}>
+              <TaxTabNew clientId={client.id} />
+            </QueryClientProvider>
+          )}
+          {tab === "estate" && client && (
+            <QueryClientProvider client={queryClient}>
+              <EstateTabNew clientId={client.id} planId={null} client={client} />
+            </QueryClientProvider>
+          )}
+          {tab === "ai" && client && (
+            <QueryClientProvider client={queryClient}>
+              <AITab clientId={client.id} />
+            </QueryClientProvider>
+          )}
         </div>
       </div>
     </div>
   );
 }
+
+
+
 
 
 

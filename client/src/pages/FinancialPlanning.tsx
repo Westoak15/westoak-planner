@@ -1582,7 +1582,7 @@ function EstateNotesTab({ clientId, planId }: { clientId: number; planId: number
 
 // ── AI Tab ────────────────────────────────────────────────────────────────────
 
-function AITab({ clientId }: { clientId: number }) {
+export function AITab({ clientId }: { clientId: number }) {
   const { data: recommendations = [] } = useAiRecommendations(clientId);
   const generateRecs = useGenerateAiRecommendations();
   const updateRec = useUpdateAiRecommendation(clientId);
@@ -1781,6 +1781,7 @@ export function FinancialPlanningContent({ initialClientId }: { initialClientId?
 export default function FinancialPlanning() {
   return <FinancialPlanningContent />;
 }
+
 
 
 

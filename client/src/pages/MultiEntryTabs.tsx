@@ -715,13 +715,20 @@ export function InsuranceTab({ clientId }: { clientId: number }) {
   }
 
   async function saveAll() {
-    setSaving(true);
-    try {
-      await Promise.all(drafts.map(d => api.post(`/api/clients/${clientId}/insurance`, d)));
-      setDrafts([]);
-      await load();
-    } finally { setSaving(false); }
-  }
+  const valid = drafts.filter(d => d.currentAge && d.retirementAge);
+  if (!valid.length) return;
+  setSaving(true);
+  try {
+    if (editingId) {
+      await api.patch(`/api/retirement/${editingId}`, valid[0]);
+      setEditingId(null);
+    } else {
+      await Promise.all(valid.map(d => api.post(`/api/clients/${clientId}/retirement`, d)));
+    }
+    setDrafts([]);
+    await load();
+  } finally { setSaving(false); }
+}
 
   async function del(id: number) {
     if (!confirm("Delete?")) return;

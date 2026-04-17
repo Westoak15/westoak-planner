@@ -313,8 +313,10 @@ r.get("/clients/:id/policies", async (req: AuthRequest, res: Response) => {
 r.post("/clients/:id/policies", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.id;
   if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
-  const [row] = await db.insert(clientPolicies).values({ clientId: cid, ...safe(req.body) }).returning();
-  res.status(201).json(row);
+  try {
+    const [row] = await db.insert(clientPolicies).values({ clientId: cid, ...safe(req.body) }).returning();
+    res.status(201).json(row);
+  } catch (err: any) { console.error("[policies POST]", err.message); res.status(500).json({ message: err.message }); }
 });
 r.patch("/clients/:id/policies/:pid", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.id;
@@ -338,8 +340,10 @@ r.get("/clients/:id/expenses", async (req: AuthRequest, res: Response) => {
 r.post("/clients/:id/expenses", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.id;
   if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
-  const [row] = await db.insert(householdExpenses).values({ clientId: cid, ...safe(req.body) }).returning();
-  res.status(201).json(row);
+  try {
+    const [row] = await db.insert(householdExpenses).values({ clientId: cid, ...safe(req.body) }).returning();
+    res.status(201).json(row);
+  } catch (err: any) { console.error("[expenses POST]", err.message); res.status(500).json({ message: err.message }); }
 });
 r.patch("/clients/:id/expenses/:eid", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.id;
@@ -354,6 +358,7 @@ r.delete("/clients/:id/expenses/:eid", async (req: AuthRequest, res: Response) =
   res.json({ ok: true });
 });
 export { r as fpRouter };
+
 
 
 

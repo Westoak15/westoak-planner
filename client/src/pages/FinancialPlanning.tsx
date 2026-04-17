@@ -1209,7 +1209,8 @@ function TfsaRoomPanel({ clientId }: { clientId: number }) {
 }
 
 function TaxProjectionPanel({ clientId }: { clientId: number }) {
-  const taxProjection = useTaxProjection(clientId, null);
+  const [taxInput, setTaxInput] = useState<Record<string, unknown> | null>(null);
+  const taxProjection = useTaxProjection(clientId, taxInput);
   const [form, setForm] = useState({
     currentAge: "40", retirementAge: "65", planToAge: "90", province: "ON",
     employmentIncome: "120000", selfEmploymentIncome: "0", otherIncome: "0", incomeGrowthRate: "0.03",
@@ -1780,6 +1781,7 @@ export function FinancialPlanningContent({ initialClientId }: { initialClientId?
 export default function FinancialPlanning() {
   return <FinancialPlanningContent />;
 }
+
 
 
 

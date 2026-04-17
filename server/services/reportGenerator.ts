@@ -1,6 +1,6 @@
 ﻿/**
  * server/services/reportGenerator.ts
- * fp-standalone -” HTML reports with inline SVG charts
+ * fp-standalone - -  HTML reports with inline SVG charts
  */
 
 function esc(s: unknown): string {
@@ -625,16 +625,16 @@ function svgMonteCarloChart(
   <!-- Legend -->
   <g transform="translate(${pad.left}, ${height - 10})">
     <rect x="0"   y="-6" width="10" height="4" fill="#DBEAFE"/>
-    <text x="14"  y="-2" font-size="8" fill="#64748B">p10GÇôp90 range</text>
+    <text x="14"  y="-2" font-size="8" fill="#64748B">p10G - p90 range</text>
     <rect x="100" y="-6" width="10" height="4" fill="#93C5FD"/>
-    <text x="114" y="-2" font-size="8" fill="#64748B">p25GÇôp75 range</text>
+    <text x="114" y="-2" font-size="8" fill="#64748B">p25G - p75 range</text>
     <line x1="210" y1="-4" x2="220" y2="-4" stroke="#1D4ED8" stroke-width="2.5"/>
     <text x="224" y="-2" font-size="8" fill="#64748B">Median path</text>
   </g>
 </svg>`;
 }
 
-// GöÇGöÇ Comprehensive Report GöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇ
+// G - G -  Comprehensive Report G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - 
 
 
 // -- Additional Reports (from Knights of Columbus) ------------------------------------
@@ -711,7 +711,7 @@ export function generateRetirementReport(data: {
   return htmlShell(`Retirement Report  -  ${name}`, body);
 }
 
-// GöÇGöÇ Insurance report GöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇ
+// G - G -  Insurance report G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - 
 
 export function generateInsuranceReport(data: {
   client:     ReportClient;
@@ -766,7 +766,7 @@ export function generateInsuranceReport(data: {
           <td>${esc(method)}</td>
           <td style="text-align:right">${fmtCad(rec)}</td>
           <td style="text-align:right">${fmtCad(curr)}</td>
-          <td style="text-align:right;color:${gap > 0 ? "var(--red)" : "var(--green)"}">${gap > 0 ? `-${fmtCad(gap)}` : "G£ô Covered"}</td>
+          <td style="text-align:right;color:${gap > 0 ? "var(--red)" : "var(--green)"}">${gap > 0 ? `-${fmtCad(gap)}` : "G -  Covered"}</td>
           <td><span class="badge ${gap > 0 ? "badge-red" : "badge-green"}">${gap > 0 ? "Gap" : "Adequate"}</span></td>
         </tr>`;
       }).join("")}
@@ -793,7 +793,7 @@ export function generateInsuranceReport(data: {
   return htmlShell(`Insurance Report  -  ${name}`, body);
 }
 
-// GöÇGöÇ Net Worth Statement GöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇ
+// G - G -  Net Worth Statement G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - 
 
 export function generateCashFlowReport(data: {
   client: ReportClient;
@@ -886,7 +886,7 @@ export function generateCashFlowReport(data: {
   return htmlShell(`Cash Flow Statement  -  ${name}`, body);
 }
 
-// GöÇGöÇ Asset Allocation & Mix Report GöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇ
+// G - G -  Asset Allocation & Mix Report G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - 
 export function generateAssetAllocationReport(data: {
   client: ReportClient;
   generatedAt: string;
@@ -977,7 +977,7 @@ export function generateAssetAllocationReport(data: {
   return htmlShell(`Asset Allocation  -  ${name}`, body);
 }
 
-// GöÇGöÇ Retirement Readiness / Decumulation GöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇ
+// G - G -  Retirement Readiness / Decumulation G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - 
 export function generateRetirementReadinessReport(data: {
   client: ReportClient;
   generatedAt: string;
@@ -1071,7 +1071,7 @@ ${simSection}
   return htmlShell(`Retirement Readiness  -  ${name}`, body);
 }
 
-// GöÇGöÇ Goal Status Report GöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇ
+// G - G -  Goal Status Report G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - 
 export function generateGoalStatusReport(data: {
   client: ReportClient;
   generatedAt: string;
@@ -1164,7 +1164,7 @@ ${data.plans.length > 0 ? `<div class="section">
   return htmlShell(`Goal Status  -  ${name}`, body);
 }
 
-// GöÇGöÇ Risk Management & Insurance Audit GöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇ
+// G - G -  Risk Management & Insurance Audit G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - 
 export function generateInsuranceAuditReport(data: {
   client: ReportClient;
   generatedAt: string;
@@ -1238,7 +1238,7 @@ ${data.products.length > 0 ? `<div class="section">
   return htmlShell(`Insurance Audit  -  ${name}`, body);
 }
 
-// GöÇGöÇ Estate & Beneficiary Summary GöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇ
+// G - G -  Estate & Beneficiary Summary G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - 
 export function generateEstateSummaryReport(data: {
   client: ReportClient;
   generatedAt: string;
@@ -1319,7 +1319,7 @@ export function generateEstateSummaryReport(data: {
   return htmlShell(`Estate Summary  -  ${name}`, body);
 }
 
-// GöÇGöÇ Tax Efficiency Strategy GöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇ
+// G - G -  Tax Efficiency Strategy G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - 
 export function generateTaxStrategyReport(data: {
   client: ReportClient;
   generatedAt: string;
@@ -1341,7 +1341,7 @@ export function generateTaxStrategyReport(data: {
       <td>${esc(n.taxYear ? String(n.taxYear) : " - ")}</td>
       <td>${esc(n.category || " - ")}</td>
       <td>${esc(n.title || " - ")}</td>
-      <td style="font-size:9pt">${esc((n.content || "").substring(0, 120))}${(n.content || "").length > 120 ? "GÇª" : ""}</td>
+      <td style="font-size:9pt">${esc((n.content || "").substring(0, 120))}${(n.content || "").length > 120 ? "G - " : ""}</td>
     </tr>`).join("");
 
   const body = `
@@ -1364,7 +1364,7 @@ export function generateTaxStrategyReport(data: {
     <div class="summary-card"><div class="label">TFSA (Tax-Free)</div><div class="value">${fmtCad(tfsaTotal)}</div></div>
     <div class="summary-card"><div class="label">Non-Registered</div><div class="value">${fmtCad(nonRegTotal)}</div></div>
   </div>
-  <div class="callout"><strong>Optimal Withdrawal Order (Canadian):</strong> Generally: Non-Registered GåÆ RRSP/RRIF GåÆ TFSA last. However, crystallizing gains to fill lower tax brackets before OAS/CPP may favour early RRSP meltdown. Review annually.</div>
+  <div class="callout"><strong>Optimal Withdrawal Order (Canadian):</strong> Generally: Non-Registered G -  RRSP/RRIF G -  TFSA last. However, crystallizing gains to fill lower tax brackets before OAS/CPP may favour early RRSP meltdown. Review annually.</div>
   ${tfsaTotal === 0 ? '<div class="callout warn"><strong>Opportunity:</strong> No TFSA balance recorded. Maximize TFSA contributions for tax-free growth  -  2025 room is $7,000 ($95,000 lifetime for those 18+ since 2009).</div>' : ""}
   ${nonRegTotal > 0 ? '<div class="callout"><strong>Non-Registered Account:</strong> Consider tax-loss harvesting opportunities, preferred dividend income over interest, and systematic RRSP contributions to reduce current taxable income.</div>' : ""}
 </div>
@@ -1391,7 +1391,7 @@ ${data.taxNotes.length > 0 ? `<div class="section">
   return htmlShell(`Tax Strategy  -  ${name}`, body);
 }
 
-// GöÇGöÇ One-Page Financial Plan GöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇ
+// G - G -  One-Page Financial Plan G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - 
 export function generateOnePagePlan(data: {
   client: ReportClient;
   generatedAt: string;
@@ -1488,7 +1488,7 @@ export function generateOnePagePlan(data: {
       ${r ? `<div class="op-goal"><div class="op-goal-dot" style="background:${statusDot(retirementReadiness)}"></div><div class="op-goal-name">Retirement at ${r.retirementAge || " - "}</div><div class="op-goal-value">${retirementReadiness}% ready</div></div>` : ""}
       ${data.education.map(e => {
         const prog = parseFloat(String(e.targetAmount || "0")) > 0 ? Math.min(100, Math.round(parseFloat(String(e.currentBalance || "0")) / parseFloat(String(e.targetAmount || "1")) * 100)) : 0;
-        return `<div class="op-goal"><div class="op-goal-dot" style="background:${statusDot(prog)}"></div><div class="op-goal-name">RESP GÇô ${esc(e.childName || "Child")}</div><div class="op-goal-value">${prog}% of ${fmtCad(parseFloat(String(e.targetAmount || "0")))}</div></div>`;
+        return `<div class="op-goal"><div class="op-goal-dot" style="background:${statusDot(prog)}"></div><div class="op-goal-name">RESP G -  ${esc(e.childName || "Child")}</div><div class="op-goal-value">${prog}% of ${fmtCad(parseFloat(String(e.targetAmount || "0")))}</div></div>`;
       }).join("")}
       ${data.plans.slice(0, 3).map(p => `<div class="op-goal"><div class="op-goal-dot" style="background:var(--blue)"></div><div class="op-goal-name">${esc(p.name || "Plan")}</div><div class="op-goal-value">${esc(p.status || "active")}</div></div>`).join("")}
       ${!r && data.education.length === 0 && data.plans.length === 0 ? "<p style='font-size:9pt;color:var(--gray)'>No goals entered yet.</p>" : ""}
@@ -1507,6 +1507,7 @@ export function generateOnePagePlan(data: {
 
   return htmlShell(`One-Page Plan  -  ${name}`, body);
 }
+
 
 
 

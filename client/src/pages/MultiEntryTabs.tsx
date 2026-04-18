@@ -384,33 +384,44 @@ async function saveAll() {
   );
 }
 
-// ── RETIREMENT TAB (clean rebuild) ────────────────────────────────────────────
-interface RetirementProj { id: number; label: string; currentAge: number|null; retirementAge: number|null; currentRrsp: string|null; currentTfsa: string|null; currentNonReg: string|null; annualContribution: string|null; expectedReturn: string|null; inflationRate: string|null; desiredIncome: string|null; cppStartAge: number|null; oasStartAge: number|null; cppMonthly: string|null; oasMonthly: string|null; projectedBalance: string|null; successRate: string|null; notes: string|null; createdAt?: string; }
-type RetDraft = { label: string; currentAge: string; retirementAge: string; currentRrsp: string; currentTfsa: string; currentNonReg: string; annualContribution: string; expectedReturn: string; inflationRate: string; desiredIncome: string; cppStartAge: string; oasStartAge: string; cppMonthly: string; oasMonthly: string; notes: string; };
+// ── RETIREMENT TAB ─────────────────────────────────────────────────────────────
+interface RetirementProj { 
+  id: number; label: string | null; currentAge: number|null; retirementAge: number|null; 
+  rrspBalance: string|null; tfsaBalance: string|null; nonRegBalance: string|null; 
+  annualContribution: string|null; expectedReturn: string|null; inflationRate: string|null; 
+  desiredRetirementIncome: string|null; cppStartAge: number|null; oasStartAge: number|null; 
+  cppMonthly: string|null; oasMonthly: string|null; projectedBalance: string|null; 
+  successRate: string|null; notes: string|null; createdAt?: string; 
+}
+type RetDraft = { 
+  label: string; currentAge: string; retirementAge: string; 
+  rrspBalance: string; tfsaBalance: string; nonRegBalance: string; 
+  annualContribution: string; expectedReturn: string; inflationRate: string; 
+  desiredRetirementIncome: string; cppStartAge: string; oasStartAge: string; 
+  cppMonthly: string; oasMonthly: string; notes: string; 
+};
 
 export function RetirementTab({ clientId, client }: { clientId: number; client?: any }) {
   const calcAge = (dob: string | null) => dob ? Math.floor((Date.now() - new Date(dob).getTime()) / (365.25 * 24 * 60 * 60 * 1000)) : null;
   const clientAge = calcAge(client?.dateOfBirth);
   const spouseAge = calcAge(client?.spouseDateOfBirth);
-  const retirementAge = client?.retirementAge ?? 65;
-  const desiredIncome = client?.desiredRetirementIncome ?? "";
   const clientName = client ? client.firstName : "Primary";
   const spouseName = client?.spouseFirstName ?? "Spouse";
 
   const emptyDraft = (label: string, age?: string): RetDraft => ({
     label,
     currentAge: age ?? (clientAge ? String(clientAge) : ""),
-    retirementAge: String(retirementAge),
-    currentRrsp: "", currentTfsa: "", currentNonReg: "",
+    retirementAge: String(client?.retirementAge ?? 65),
+    rrspBalance: "0", tfsaBalance: "0", nonRegBalance: "0",
     annualContribution: "0", expectedReturn: "6.5", inflationRate: "2.5",
-    desiredIncome: desiredIncome ? String(desiredIncome) : "",
+    desiredRetirementIncome: client?.desiredRetirementIncome ? String(client.desiredRetirementIncome) : "0",
     cppStartAge: "65", oasStartAge: "65", cppMonthly: "900", oasMonthly: "700",
     notes: "",
   });
 
-  const [rows, setRows]     = useState<RetirementProj[]>([]);
-  const [drafts, setDrafts] = useState<RetDraft[]>([]);
-  const [saving, setSaving] = useState(false);
+  const [rows, setRows]         = useState<RetirementProj[]>([]);
+  const [drafts, setDrafts]     = useState<RetDraft[]>([]);
+  const [saving, setSaving]     = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [netWorth, setNetWorth] = useState<any[]>([]);
   const [simResult, setSimResult] = useState<any>(null);
@@ -422,26 +433,42 @@ export function RetirementTab({ clientId, client }: { clientId: number; client?:
     api.get<any[]>(`/api/clients/${clientId}/net-worth`).then(setNetWorth);
   }, [clientId]);
 
-  function fmt$(v: any) { const n = parseFloat(v ?? "0"); if (!n) return "-"; return "$" + n.toLocaleString("en-CA", { maximumFractionDigits: 0 }); }
-  function fmtPct(v: any) { const n = parseFloat(v ?? "0"); if (!n) return "-"; return n + "%"; }
+  const fmt$ = (v: any) => { const n = parseFloat(v ?? "0"); if (!n) return "-"; return "$" + n.toLocaleString("en-CA", { maximumFractionDigits: 0 }); };
+  const fmtPct = (v: any) => { const n = parseFloat(v ?? "0"); if (!n) return "-"; return n + "%"; };
 
   function addDraft() {
-    const primary = netWorth.filter(e => e.type === "asset" && e.owner !== "spouse");
+    const primary = netWorth.filter(e => e.type === "asset" && e.owner !== "spouse" && e.owner !== "joint");
     const spouse  = netWorth.filter(e => e.type === "asset" && e.owner === "spouse");
     const joint   = netWorth.filter(e => e.type === "asset" && e.owner === "joint");
-    const hasSpouse = spouse.length > 0 || client?.spouseFirstName;
+    const hasSpouse = spouse.length > 0 || !!client?.spouseFirstName;
     const sum = (arr: any[], cat: string) => arr.filter(e => e.category === cat).reduce((s: number, e: any) => s + Number(e.value), 0);
-    const pRrsp = sum(primary, "RRSP") + sum(joint, "RRSP") / 2;
-    const pTfsa = sum(primary, "TFSA") + sum(joint, "TFSA") / 2;
+    const pRrsp   = sum(primary, "RRSP")   + sum(joint, "RRSP")   / 2;
+    const pTfsa   = sum(primary, "TFSA")   + sum(joint, "TFSA")   / 2;
     const pNonReg = sum(primary, "Non-Registered") + sum(joint, "Non-Registered") / 2;
-    const sRrsp = sum(spouse, "RRSP") + sum(joint, "RRSP") / 2;
-    const sTfsa = sum(spouse, "TFSA") + sum(joint, "TFSA") / 2;
-    const sNonReg = sum(spouse, "Non-Registered") + sum(joint, "Non-Registered") / 2;
+    const sRrsp   = sum(spouse,  "RRSP")   + sum(joint, "RRSP")   / 2;
+    const sTfsa   = sum(spouse,  "TFSA")   + sum(joint, "TFSA")   / 2;
+    const sNonReg = sum(spouse,  "Non-Registered") + sum(joint, "Non-Registered") / 2;
+
     const newDrafts: RetDraft[] = [];
-    newDrafts.push({ ...emptyDraft(hasSpouse ? `${clientName} & ${spouseName} Combined` : clientName), currentRrsp: String(Math.round(pRrsp + sRrsp)), currentTfsa: String(Math.round(pTfsa + sTfsa)), currentNonReg: String(Math.round(pNonReg + sNonReg)) });
-    newDrafts.push({ ...emptyDraft(clientName, clientAge ? String(clientAge) : ""), currentRrsp: String(Math.round(pRrsp)), currentTfsa: String(Math.round(pTfsa)), currentNonReg: String(Math.round(pNonReg)) });
+    newDrafts.push({ 
+      ...emptyDraft(hasSpouse ? `${clientName} & ${spouseName}` : clientName), 
+      rrspBalance: String(Math.round(pRrsp + sRrsp)), 
+      tfsaBalance: String(Math.round(pTfsa + sTfsa)), 
+      nonRegBalance: String(Math.round(pNonReg + sNonReg)) 
+    });
+    newDrafts.push({ 
+      ...emptyDraft(clientName, clientAge ? String(clientAge) : ""), 
+      rrspBalance: String(Math.round(pRrsp)), 
+      tfsaBalance: String(Math.round(pTfsa)), 
+      nonRegBalance: String(Math.round(pNonReg)) 
+    });
     if (hasSpouse) {
-      newDrafts.push({ ...emptyDraft(spouseName, spouseAge ? String(spouseAge) : ""), currentRrsp: String(Math.round(sRrsp)), currentTfsa: String(Math.round(sTfsa)), currentNonReg: String(Math.round(sNonReg)) });
+      newDrafts.push({ 
+        ...emptyDraft(spouseName, spouseAge ? String(spouseAge) : ""), 
+        rrspBalance: String(Math.round(sRrsp)), 
+        tfsaBalance: String(Math.round(sTfsa)), 
+        nonRegBalance: String(Math.round(sNonReg)) 
+      });
     }
     setDrafts(prev => [...prev, ...newDrafts]);
   }
@@ -452,13 +479,13 @@ export function RetirementTab({ clientId, client }: { clientId: number; client?:
       label: p.label ?? clientName,
       currentAge: p.currentAge ? String(p.currentAge) : "",
       retirementAge: p.retirementAge ? String(p.retirementAge) : "65",
-      currentRrsp: p.currentRrsp ?? "0",
-      currentTfsa: p.currentTfsa ?? "0",
-      currentNonReg: p.currentNonReg ?? "0",
+      rrspBalance: p.rrspBalance ?? "0",
+      tfsaBalance: p.tfsaBalance ?? "0",
+      nonRegBalance: p.nonRegBalance ?? "0",
       annualContribution: p.annualContribution ?? "0",
       expectedReturn: p.expectedReturn ?? "6.5",
       inflationRate: p.inflationRate ?? "2.5",
-      desiredIncome: p.desiredIncome ?? "",
+      desiredRetirementIncome: p.desiredRetirementIncome ?? "0",
       cppStartAge: p.cppStartAge ? String(p.cppStartAge) : "65",
       oasStartAge: p.oasStartAge ? String(p.oasStartAge) : "65",
       cppMonthly: p.cppMonthly ?? "900",
@@ -499,26 +526,23 @@ export function RetirementTab({ clientId, client }: { clientId: number; client?:
     finally { setSimulating(false); }
   }
 
-  // Group projections by retirementAge+desiredIncome
+  // Group by retirementAge + desiredRetirementIncome
   const groups: RetirementProj[][] = [];
   const used = new Set<number>();
   for (const p of rows) {
     if (used.has(p.id)) continue;
-    const siblings = rows.filter(r => !used.has(r.id) && r.retirementAge === p.retirementAge && r.desiredIncome === p.desiredIncome && r.id !== p.id);
+    const siblings = rows.filter(r => !used.has(r.id) && r.retirementAge === p.retirementAge && r.desiredRetirementIncome === p.desiredRetirementIncome && r.id !== p.id);
     const group = [p, ...siblings];
     group.forEach(r => used.add(r.id));
     groups.push(group);
   }
 
-  const labelColor = (label: string) => {
-    if (label.includes("Combined") || label.includes("&")) return "text-indigo-600";
+  const labelColor = (label: string | null) => {
+    if (!label) return "text-blue-600";
+    if (label.includes("&")) return "text-indigo-600";
     if (label === spouseName || label === "Spouse") return "text-pink-600";
     return "text-blue-600";
   };
-
-  const F = ({ label, val }: { label: string; val: any }) => (
-    <div><p className="text-[10px] text-gray-400 uppercase font-semibold">{label}</p><p className="text-sm font-semibold text-gray-800">{val ?? "-"}</p></div>
-  );
 
   return (
     <div className="p-6 max-w-5xl mx-auto">
@@ -543,16 +567,22 @@ export function RetirementTab({ clientId, client }: { clientId: number; client?:
           {drafts.map((d, i) => (
             <Card key={i} className="p-5 border-blue-200 bg-blue-50/20">
               <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2">
-                  <h3 className="font-bold text-gray-800">{editingId ? `Edit: ${d.label}` : d.label}</h3>
-                </div>
+                <h3 className="font-bold text-gray-800">{editingId ? `Editing: ${d.label}` : d.label}</h3>
                 <button onClick={() => setDrafts(x => x.filter((_, idx) => idx !== i))} className="text-gray-400 hover:text-red-500"><X className="w-4 h-4" /></button>
               </div>
-              <div className="grid grid-cols-3 gap-3 mb-3">
-                {[["Label","label","text"],["Current Age","currentAge","number"],["Retirement Age","retirementAge","number"],["RRSP Balance","currentRrsp","number"],["TFSA Balance","currentTfsa","number"],["Non-Reg Balance","currentNonReg","number"],["Annual Contribution","annualContribution","number"],["Expected Return %","expectedReturn","number"],["Desired Income","desiredIncome","number"],["CPP Monthly","cppMonthly","number"],["CPP Start Age","cppStartAge","number"],["OAS Monthly","oasMonthly","number"]].map(([l, k, t]) => (
-                  <div key={k}><label className="text-xs font-semibold text-gray-500 mb-1 block">{l}</label>
-                    <input type={t} step="any" value={(d as any)[k]} onChange={e => setDrafts(x => x.map((x2, idx) => idx === i ? { ...x2, [k]: e.target.value } : x2))}
-                      className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm" /></div>
+              <div className="grid grid-cols-3 gap-3">
+                {([
+                  ["Label","label","text"],["Current Age","currentAge","number"],["Retirement Age","retirementAge","number"],
+                  ["RRSP Balance","rrspBalance","number"],["TFSA Balance","tfsaBalance","number"],["Non-Reg Balance","nonRegBalance","number"],
+                  ["Annual Contribution","annualContribution","number"],["Expected Return %","expectedReturn","number"],["Desired Income","desiredRetirementIncome","number"],
+                  ["CPP Monthly","cppMonthly","number"],["CPP Start Age","cppStartAge","number"],["OAS Monthly","oasMonthly","number"],
+                ] as [string,string,string][]).map(([l, k, t]) => (
+                  <div key={k}>
+                    <label className="text-xs font-semibold text-gray-500 mb-1 block">{l}</label>
+                    <input type={t} step="any" value={(d as any)[k]}
+                      onChange={e => setDrafts(x => x.map((x2, idx) => idx === i ? { ...x2, [k]: e.target.value } : x2))}
+                      className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm" />
+                  </div>
                 ))}
               </div>
             </Card>
@@ -567,13 +597,13 @@ export function RetirementTab({ clientId, client }: { clientId: number; client?:
         </div>
       )}
 
-      {/* Saved projections */}
       {rows.length === 0 && drafts.length === 0 && (
         <Card className="p-8 text-center text-gray-400">No projections yet. Click Add Projection to create one.</Card>
       )}
+
       <div className="space-y-4">
         {groups.map((group, gi) => {
-          const main = group.find(p => p.label?.includes("Combined") || p.label?.includes("&")) ?? group[0];
+          const main = group.find(p => p.label?.includes("&")) ?? group[0];
           return (
             <Card key={gi} className="p-5">
               <div className="flex items-center justify-between mb-3">
@@ -583,11 +613,11 @@ export function RetirementTab({ clientId, client }: { clientId: number; client?:
               <div className="divide-y divide-gray-100">
                 {group.map(p => (
                   <div key={p.id} className="flex items-center gap-4 py-2">
-                    <span className={`text-xs font-bold w-32 flex-shrink-0 ${labelColor(p.label ?? "")}`}>{p.label}</span>
-                    <span className="text-xs text-gray-500">Age {p.currentAge} → {p.retirementAge}</span>
-                    <span className="text-xs text-gray-500">RRSP {fmt$(p.currentRrsp)}</span>
-                    <span className="text-xs text-gray-500">TFSA {fmt$(p.currentTfsa)}</span>
-                    <span className="text-xs text-gray-500">Income {fmt$(p.desiredIncome)}</span>
+                    <span className={`text-xs font-bold w-36 flex-shrink-0 ${labelColor(p.label)}`}>{p.label ?? clientName}</span>
+                    <span className="text-xs text-gray-500">Age {p.currentAge} - {p.retirementAge}</span>
+                    <span className="text-xs text-gray-500">RRSP {fmt$(p.rrspBalance)}</span>
+                    <span className="text-xs text-gray-500">TFSA {fmt$(p.tfsaBalance)}</span>
+                    <span className="text-xs text-gray-500">Income {fmt$(p.desiredRetirementIncome)}</span>
                     {p.successRate && <span className={`text-xs font-bold ml-auto ${Number(p.successRate) >= 85 ? "text-emerald-600" : Number(p.successRate) >= 70 ? "text-amber-600" : "text-red-600"}`}>{p.successRate}%</span>}
                     <div className="flex gap-1 flex-shrink-0">
                       <button onClick={() => startEdit(p)} className="p-1 text-gray-300 hover:text-[#0c1e3a]"><Pencil className="w-3.5 h-3.5" /></button>
@@ -602,7 +632,7 @@ export function RetirementTab({ clientId, client }: { clientId: number; client?:
       </div>
     </div>
   );
-}// ── INSURANCE ─────────────────────────────────────────────────────────────────
+// ── INSURANCE ─────────────────────────────────────────────────────────────────
 interface InsuranceRec { id: number; method: string; annualIncome: string|null; yearsToReplace: number|null; existingLifeCoverage: string|null; existingDisability: string|null; existingCriticalIllness: string|null; recommendedLife: string|null; recommendedDisability: string|null; recommendedCriticalIllness: string|null; lifeGap: string|null; disabilityGap: string|null; criticalIllnessGap: string|null; notes: string|null; }
 type InsDraft = { method: string; annualIncome: string; yearsToReplace: string; existingLifeCoverage: string; existingDisability: string; existingCriticalIllness: string; notes: string; };
 const emptyIns = (): InsDraft => ({ method:"dime", annualIncome:"", yearsToReplace:"20", existingLifeCoverage:"", existingDisability:"", existingCriticalIllness:"", notes:"" });

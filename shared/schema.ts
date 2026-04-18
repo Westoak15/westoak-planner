@@ -106,6 +106,7 @@ export const retirementProjections = pgTable("retirement_projections", {
   id:                      serial("id").primaryKey(),
   clientId:                integer("client_id").notNull().references(() => clients.id, { onDelete: "cascade" }),
   planId:                  integer("plan_id").references(() => financialPlans.id, { onDelete: "set null" }),
+  label:                   text("label").default("Base Case"),  
   currentAge:              integer("current_age").notNull(),
   retirementAge:           integer("retirement_age").notNull(),
   lifeExpectancy:          integer("life_expectancy").notNull().default(90),

@@ -6,8 +6,8 @@ import type {
   CapitalGainsAnalysis,
   CapitalGainsScenario,
   IncomeSplittingAnalysis,
-} from "./types";
-import type { TaxYearProjection } from "./types";
+} from "./types.js";
+import type { TaxYearProjection } from "./types.js";
 
 const INCLUSION_LOW       = 0.50;
 const INCLUSION_HIGH      = 0.667;

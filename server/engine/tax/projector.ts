@@ -2,8 +2,8 @@ import { calculateCombinedTax, getMarginalRate } from "../reference/taxBrackets"
 import { getBenefitRate } from "../reference/loader";
 import { projectCpp, projectOas } from "../reference/cppOas";
 import { resolveProvinceCode } from "../retirement/provinceMap";
-import { getRrspAnnualLimit, getTfsaAnnualLimit } from "./roomTracker";
-import type { TaxProjectionProfile, TaxYearProjection } from "./types";
+import { getRrspAnnualLimit, getTfsaAnnualLimit } from "./roomTracker.js";
+import type { TaxProjectionProfile, TaxYearProjection } from "./types.js";
 
 // ── 2024 capital gains inclusion rates ───────────────────────────────────────
 const INCLUSION_RATE_LOW  = 0.50;  // ≤ $250,000 personal annual gain

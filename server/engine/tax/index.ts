@@ -1,9 +1,9 @@
 export { calculateRrspRoom, calculateTfsaRoom, getRrspAnnualLimit, getTfsaAnnualLimit,
-         cumulativeTfsaRoom, projectRrspRoom, projectTfsaRoom } from "./roomTracker";
+         cumulativeTfsaRoom, projectRrspRoom, projectTfsaRoom } from "./roomTracker.js";
 
-export { projectTaxYears } from "./projector";
+export { projectTaxYears } from "./projector.js";
 
-export { analyzeCapitalGains, analyzeIncomeSplitting } from "./capitalGains";
+export { analyzeCapitalGains, analyzeIncomeSplitting } from "./capitalGains.js";
 
 export type {
   TaxProjectionProfile, TaxYearProjection,
@@ -11,4 +11,4 @@ export type {
   TfsaRoomInput, TfsaRoomSummary,
   CapitalGainsPosition, CapitalGainsAnalysis, CapitalGainsScenario,
   IncomeSplittingAnalysis,
-} from "./types";
+} from "./types.js";

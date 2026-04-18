@@ -1,7 +1,7 @@
 import type {
   RrspRoomInput, RrspRoomSummary,
   TfsaRoomInput, TfsaRoomSummary,
-} from "./types";
+} from "./types.js";
 
 // ── RRSP annual limits (CRA published) ────────────────────────────────────────
 const RRSP_ANNUAL_LIMITS: Record<number, number> = {

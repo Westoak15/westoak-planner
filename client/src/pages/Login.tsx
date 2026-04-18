@@ -101,7 +101,17 @@ export default function Login() {
   }
 async function submitRegister() {
     reset(); setBusy(true);
-    try { await register(form.email, form.password, form.securityQuestion, form.securityAnswer); }
+    try { 
+      await register({
+       email: form.email,
+        password: form.password,
+        firstName: form.firstName,
+        lastName: form.lastName,
+        firmName: form.firmName || undefined,
+        securityQuestion: form.securityQuestion,
+        securityAnswer: form.securityAnswer
+     }); 
+  }
     catch (e: any) { setError(e.message); }
     finally { setBusy(false); }
   }

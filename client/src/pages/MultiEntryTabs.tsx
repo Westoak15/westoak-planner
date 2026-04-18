@@ -568,6 +568,7 @@ export function RetirementTab({ clientId, client }: { clientId: number; client?:
       )}
 
       {/* Draft projection forms */}
+      {console.log("RETIREMENT DRAFTS:", drafts.length, drafts)}
       {drafts.map((d, i) => (
         <Card key={i} className="mb-4 p-5 border-blue-200 bg-blue-50/20">
           <div className="flex items-center justify-between mb-4">

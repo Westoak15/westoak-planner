@@ -66,6 +66,18 @@ export const clients = pgTable("clients", {
 });
 export type Client = typeof clients.$inferSelect;
 
+// ── Simulations (Monte Carlo & Guardrails) ────────────────────────────────
+export const simulations = pgTable("simulations", {
+  id: serial("id").primaryKey(),
+  clientId: integer("client_id").notNull().references(() => clients.id, { onDelete: "cascade" }),
+  simulationType: text("simulation_type").notNull(), // "montecarlo" | "guardrail"
+  parameters: jsonb("parameters").notNull(),
+  results: jsonb("results").notNull(),
+  probabilityOfSuccess: numeric("probability_of_success", { precision: 5, scale: 4 }),
+  createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+});
+export type Simulation = typeof simulations.$inferSelect;
+
 // ── Financial Plans ───────────────────────────────────────────────────────────
 export const financialPlans = pgTable("financial_plans", {
   id:            serial("id").primaryKey(),

@@ -7,6 +7,7 @@ import cors from "cors";
 import path from "path";
 import { fileURLToPath } from "url";
 import { authRouter }    from "./routes/auth.js";
+import { networthRouter } from "./routes/networth.js";
 import { clientsRouter } from "./routes/clients.js";
 import { fpRouter }      from "./routes/fp.js";
 import { fpFullRouter }  from "./routes/fp-full.js";
@@ -22,6 +23,7 @@ app.use(cors({ origin: process.env.CLIENT_URL ?? "http://localhost:5173", creden
 app.use(express.json({ limit: "10mb" }));
 
 app.use("/api/auth",    authRouter);
+app.use("/api",         networthRouter);
 app.use("/api/tax",      taxRouter);
 app.use("/api/clients", clientsRouter);
 app.use("/api",         fpRouter);

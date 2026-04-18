@@ -1025,6 +1025,8 @@ const taxSubTabs: Array<{ key: TaxSubTab; label: string }> = [
 // ============================================================================
 
 function TaxNotesPanel({ clientId }: { clientId: number }) {
+  const fmt$ = (n: number) => `$${n.toLocaleString()}`;
+  const fmtPct = (n: number) => `${(n * 100).toFixed(2)}%`; 
   const { data: notes = [] } = useTaxPlanningNotes(clientId);
   const createNote = useCreateTaxPlanningNote();
   const deleteNote = useDeleteTaxPlanningNote(clientId);
@@ -1217,7 +1219,7 @@ function RrspRoomPanel({ clientId }: { clientId: number }) {
   return (
     <div className="space-y-5">
       <div className="p-4 bg-blue-50 border border-blue-200 rounded-xl text-sm text-blue-800">
-        <strong>RRSP Room Tracker</strong> — Calculates your available RRSP contribution room using the CRA 18% formula with
+        <strong>RRSP Room Tracker</strong> ï¿½ Calculates your available RRSP contribution room using the CRA 18% formula with
         carry-forward.
       </div>
 
@@ -1355,7 +1357,7 @@ function TfsaRoomPanel({ clientId }: { clientId: number }) {
   return (
     <div className="space-y-5">
       <div className="p-4 bg-teal-50 border border-teal-200 rounded-xl text-sm text-teal-800">
-        <strong>TFSA Room Tracker</strong> — Tracks cumulative TFSA contribution room since 2009 with annual limit history.
+        <strong>TFSA Room Tracker</strong> ï¿½ Tracks cumulative TFSA contribution room since 2009 with annual limit history.
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -1540,7 +1542,7 @@ function TaxProjectionPanel({ clientId }: { clientId: number }) {
   return (
     <div className="space-y-5">
       <div className="p-4 bg-purple-50 border border-purple-200 rounded-xl text-sm text-purple-800">
-        <strong>Tax Projection</strong> — Year-by-year income, tax, and wealth projection through retirement using 2024 federal
+        <strong>Tax Projection</strong> ï¿½ Year-by-year income, tax, and wealth projection through retirement using 2024 federal
         and provincial tax brackets.
       </div>
 
@@ -1856,7 +1858,7 @@ function CapitalGainsPanel({ clientId }: { clientId: number }) {
   return (
     <div className="space-y-5">
       <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl text-sm text-amber-800">
-        <strong>Capital Gains Analysis</strong> — Analyzes unrealized gains with 2024 dual inclusion rates (50% / 66.67%).
+        <strong>Capital Gains Analysis</strong> ï¿½ Analyzes unrealized gains with 2024 dual inclusion rates (50% / 66.67%).
       </div>
 
       <div className="space-y-3">
@@ -2013,7 +2015,7 @@ function IncomeSplittingPanel({ clientId }: { clientId: number }) {
   return (
     <div className="space-y-5">
       <div className="p-4 bg-indigo-50 border border-indigo-200 rounded-xl text-sm text-indigo-800">
-        <strong>Income Splitting Optimizer</strong> — Finds the best strategy: pension split (T1032), spousal RRSP, CPP sharing,
+        <strong>Income Splitting Optimizer</strong> ï¿½ Finds the best strategy: pension split (T1032), spousal RRSP, CPP sharing,
         or prescribed rate loan.
       </div>
 

@@ -978,6 +978,38 @@ function DebtTab({ clientId, planId }: { clientId: number; planId: number | null
 }
 // â”€â”€ Tax Tab (complete rework â€” engine-backed) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
+// ============================================================================
+// TAX TAB - FIXED VERSION WITH ALL WORKING PANELS
+// ============================================================================
+// This replaces the broken TaxTab and panel components in FinancialPlanning.tsx
+// Key fixes:
+// 1. Proper state management for results
+// 2. Correct mutation calling pattern
+// 3. Complete form handling
+// ============================================================================
+
+import { useState } from "react";
+import { Plus, Trash2, Calculator, TrendingUp, Receipt } from "lucide-react";
+import {
+  useTaxPlanningNotes,
+  useCreateTaxPlanningNote,
+  useDeleteTaxPlanningNote,
+  useTaxProjection,
+  useRrspRoom,
+  useTfsaRoom,
+  useCapitalGains,
+  useIncomeSplit,
+} from "@/hooks/use-plans";
+import type {
+  TaxProjectionResult,
+  RrspRoomResult,
+  TfsaRoomResult,
+  CapitalGainsResult,
+  IncomeSplitResult,
+} from "@/hooks/use-plans";
+
+// ── Type definitions ────────────────────────────────────────────────────────
+
 type TaxSubTab = "notes" | "rrsp" | "tfsa" | "projection" | "capgains" | "splitting";
 
 const taxSubTabs: Array<{ key: TaxSubTab; label: string }> = [
@@ -989,18 +1021,52 @@ const taxSubTabs: Array<{ key: TaxSubTab; label: string }> = [
   { key: "splitting",  label: "Income Splitting" },
 ];
 
+// PANEL: Tax Planning Notes
+// ============================================================================
+
 function TaxNotesPanel({ clientId }: { clientId: number }) {
   const { data: notes = [] } = useTaxPlanningNotes(clientId);
   const createNote = useCreateTaxPlanningNote();
   const deleteNote = useDeleteTaxPlanningNote(clientId);
   const [showAdd, setShowAdd] = useState(false);
-  const [form, setForm] = useState({ taxYear: String(new Date().getFullYear()), category: "General", title: "", content: "" });
-  const categories = ["General", "RRSP Optimization", "TFSA Strategy", "Income Splitting", "Capital Gains", "Tax Loss Harvesting", "Charitable Donations", "Corporate Tax", "Other"];
+  const [form, setForm] = useState({
+    taxYear: String(new Date().getFullYear()),
+    category: "General",
+    title: "",
+    content: "",
+  });
+
+  const categories = [
+    "General",
+    "RRSP Optimization",
+    "TFSA Strategy",
+    "Income Splitting",
+    "Capital Gains",
+    "Tax Loss Harvesting",
+    "Charitable Donations",
+    "Corporate Tax",
+    "Other",
+  ];
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    createNote.mutate({ clientId, data: { taxYear: parseInt(form.taxYear), category: form.category, title: form.title, content: form.content } },
-      { onSuccess: () => { setShowAdd(false); setForm({ taxYear: String(new Date().getFullYear()), category: "General", title: "", content: "" }); } });
+    createNote.mutate(
+      {
+        clientId,
+        data: {
+          taxYear: parseInt(form.taxYear),
+          category: form.category,
+          title: form.title,
+          content: form.content,
+        },
+      },
+      {
+        onSuccess: () => {
+          setShowAdd(false);
+          setForm({ taxYear: String(new Date().getFullYear()), category: "General", title: "", content: "" });
+        },
+      }
+    );
   };
 
   const grouped = (notes as any[]).reduce((acc, n) => {
@@ -1012,126 +1078,246 @@ function TaxNotesPanel({ clientId }: { clientId: number }) {
   return (
     <div className="space-y-4">
       <div className="flex justify-end">
-        <button onClick={() => setShowAdd(true)} data-testid="button-fp-add-tax" className="flex items-center space-x-2 px-3 py-2 bg-secondary text-secondary-foreground text-sm font-semibold rounded-xl hover:bg-secondary/90">
-          <Plus className="w-4 h-4" /><span>Add Note</span>
+        <button
+          onClick={() => setShowAdd(true)}
+          className="flex items-center space-x-2 px-3 py-2 bg-secondary text-secondary-foreground text-sm font-semibold rounded-xl hover:bg-secondary/90"
+        >
+          <Plus className="w-4 h-4" />
+          <span>Add Note</span>
         </button>
       </div>
-      {Object.entries(grouped).sort(([a], [b]) => Number(b) - Number(a)).map(([year, yearNotes]) => (
-        <div key={year} className="border border-border rounded-2xl p-5">
-          <h3 className="text-base font-bold mb-3">Tax Year {year}</h3>
-          <div className="space-y-3">
-            {(yearNotes as any[]).map(n => (
-              <div key={n.id} className="border border-border/50 rounded-xl p-4 hover:bg-muted/30 group" data-testid={`card-fp-tax-${n.id}`}>
-                <div className="flex justify-between items-start">
-                  <div>
-                    <span className="text-xs font-semibold text-amber-600 uppercase">{n.category}</span>
-                    <h4 className="font-semibold mt-1">{n.title}</h4>
-                    <p className="text-sm text-muted-foreground mt-2 whitespace-pre-wrap">{n.content}</p>
-                  </div>
-                  <button onClick={() => { if (confirm("Delete?")) deleteNote.mutate(n.id); }} data-testid={`button-fp-del-tax-${n.id}`} className="opacity-0 group-hover:opacity-100 p-2 hover:bg-red-50 rounded-lg"><Trash2 className="w-4 h-4 text-red-400" /></button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      ))}
-      {notes.length === 0 && <div className="text-center py-10 text-muted-foreground border border-dashed border-border rounded-2xl">No tax planning notes yet.</div>}
+
       {showAdd && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl w-full max-w-md shadow-2xl p-6">
-            <h2 className="text-xl font-display font-bold mb-5">Add Tax Planning Note</h2>
-            <form onSubmit={handleSubmit} className="space-y-4" data-testid="form-fp-tax">
-              <div className="grid grid-cols-2 gap-4">
-                <div><label className="text-sm font-semibold">Tax Year</label><input type="number" required value={form.taxYear} onChange={e => setForm({ ...form, taxYear: e.target.value })} data-testid="input-fp-tax-year" className="w-full px-3 py-2 rounded-xl border mt-1" /></div>
-                <div><label className="text-sm font-semibold">Category</label>
-                  <select value={form.category} onChange={e => setForm({ ...form, category: e.target.value })} data-testid="select-fp-tax-cat" className="w-full px-3 py-2 rounded-xl border mt-1">
-                    {categories.map(c => <option key={c} value={c}>{c}</option>)}
-                  </select>
-                </div>
-              </div>
-              <div><label className="text-sm font-semibold">Title</label><input required value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} data-testid="input-fp-tax-title" className="w-full px-3 py-2 rounded-xl border mt-1" /></div>
-              <div><label className="text-sm font-semibold">Content</label><textarea required value={form.content} onChange={e => setForm({ ...form, content: e.target.value })} data-testid="input-fp-tax-content" className="w-full px-3 py-2 rounded-xl border mt-1 min-h-[120px]" /></div>
-              <div className="pt-4 flex justify-end space-x-3">
-                <button type="button" onClick={() => setShowAdd(false)} className="px-6 py-3 rounded-xl font-semibold text-muted-foreground hover:bg-muted">Cancel</button>
-                <button type="submit" disabled={createNote.isPending} data-testid="button-fp-submit-tax" className="px-6 py-3 rounded-xl font-semibold bg-primary text-primary-foreground">{createNote.isPending ? "Adding..." : "Add Note"}</button>
-              </div>
-            </form>
+        <form onSubmit={handleSubmit} className="border border-border rounded-xl p-4 space-y-3 bg-muted/20">
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-sm font-semibold">Tax Year</label>
+              <input
+                type="number"
+                value={form.taxYear}
+                onChange={(e) => setForm((f) => ({ ...f, taxYear: e.target.value }))}
+                className="w-full px-3 py-2 rounded-xl border mt-1 text-sm"
+                required
+              />
+            </div>
+            <div>
+              <label className="text-sm font-semibold">Category</label>
+              <select
+                value={form.category}
+                onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))}
+                className="w-full px-3 py-2 rounded-xl border mt-1 text-sm"
+              >
+                {categories.map((c) => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
-        </div>
+          <div>
+            <label className="text-sm font-semibold">Title</label>
+            <input
+              type="text"
+              value={form.title}
+              onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
+              className="w-full px-3 py-2 rounded-xl border mt-1 text-sm"
+              required
+            />
+          </div>
+          <div>
+            <label className="text-sm font-semibold">Content</label>
+            <textarea
+              value={form.content}
+              onChange={(e) => setForm((f) => ({ ...f, content: e.target.value }))}
+              className="w-full px-3 py-2 rounded-xl border mt-1 text-sm resize-none"
+              rows={4}
+              required
+            />
+          </div>
+          <div className="flex gap-2">
+            <button type="submit" className="px-4 py-2 bg-primary text-primary-foreground rounded-xl text-sm font-semibold">
+              {createNote.isPending ? "Saving..." : "Save Note"}
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowAdd(false)}
+              className="px-4 py-2 bg-muted text-muted-foreground rounded-xl text-sm font-semibold"
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      )}
+
+      <div className="space-y-6">
+        {Object.entries(grouped)
+          .sort(([a], [b]) => Number(b) - Number(a))
+          .map(([year, yearNotes]) => (
+            <div key={year}>
+              <h3 className="text-lg font-bold mb-3">{year} Tax Year</h3>
+              <div className="grid gap-4">
+                {yearNotes.map((note: any) => (
+                  <div key={note.id} className="border border-border rounded-xl p-4 hover:shadow-md transition-shadow group">
+                    <div className="flex justify-between items-start">
+                      <span className="text-xs font-semibold text-purple-600 uppercase bg-purple-50 px-2 py-1 rounded-lg">
+                        {note.category}
+                      </span>
+                      <button
+                        onClick={() => {
+                          if (confirm("Delete this note?")) deleteNote.mutate(note.id);
+                        }}
+                        className="text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                    <h4 className="font-semibold mt-3">{note.title}</h4>
+                    <p className="text-sm text-muted-foreground mt-2 whitespace-pre-wrap">{note.content}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+      </div>
+
+      {notes.length === 0 && !showAdd && (
+        <p className="text-center text-muted-foreground py-8">No tax planning notes yet.</p>
       )}
     </div>
   );
 }
 
+// ============================================================================
+// PANEL: RRSP Room Calculator
+// ============================================================================
+
 function RrspRoomPanel({ clientId }: { clientId: number }) {
   const rrspRoom = useRrspRoom(clientId);
-  const [form, setForm] = useState({ currentCarryForwardRoom: "0", priorYearEarnedIncome: "80000", currentYearContributions: "0", pensionAdjustment: "0", currentAge: "35" });
+  const [result, setResult] = useState<RrspRoomResult | null>(null);
+  const [form, setForm] = useState({
+    priorYearEarnedIncome: "100000",
+    pensionAdjustment: "0",
+    carryForwardRoom: "50000",
+    contributionsMadeThisYear: "0",
+    marginalTaxRate: "0.435",
+    yearsToProject: "10",
+  });
 
   const handleCalc = () => {
-    rrspRoom.mutate({
-      currentCarryForwardRoom:    parseFloat(form.currentCarryForwardRoom),
-      priorYearEarnedIncome:      parseFloat(form.priorYearEarnedIncome),
-      currentYearContributions:   parseFloat(form.currentYearContributions),
-      pensionAdjustment:          parseFloat(form.pensionAdjustment),
-      currentAge:                 parseInt(form.currentAge),
+    const input: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(form)) {
+      input[k] = Number(v);
+    }
+    rrspRoom.mutate(input, {
+      onSuccess: (data) => setResult(data),
     });
   };
-
-  const result = rrspRoom.data;
 
   return (
     <div className="space-y-5">
       <div className="p-4 bg-blue-50 border border-blue-200 rounded-xl text-sm text-blue-800">
-        <strong>RRSP Room Calculator</strong> â€” Based on CRA's 18% of prior year earned income, subject to the annual dollar limit.
+        <strong>RRSP Room Tracker</strong> — Calculates your available RRSP contribution room using the CRA 18% formula with
+        carry-forward.
       </div>
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-        {[
-          { label: "Carry-Forward Room ($)", key: "currentCarryForwardRoom" },
-          { label: "Prior Year Earned Income ($)", key: "priorYearEarnedIncome" },
-          { label: "Contributions Made This Year ($)", key: "currentYearContributions" },
-          { label: "Pension Adjustment ($)", key: "pensionAdjustment" },
-          { label: "Current Age", key: "currentAge" },
-        ].map(f => (
-          <div key={f.key}>
-            <label className="text-sm font-semibold">{f.label}</label>
-            <input type="number" value={(form as any)[f.key]} onChange={e => setForm(prev => ({ ...prev, [f.key]: e.target.value }))}
-              className="w-full px-3 py-2 rounded-xl border mt-1 text-sm" />
-          </div>
-        ))}
+
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+        <div>
+          <label className="text-sm font-semibold">Prior Year Earned Income</label>
+          <input
+            type="number"
+            value={form.priorYearEarnedIncome}
+            onChange={(e) => setForm((f) => ({ ...f, priorYearEarnedIncome: e.target.value }))}
+            className="w-full px-3 py-2 rounded-xl border mt-1 text-sm"
+          />
+        </div>
+        <div>
+          <label className="text-sm font-semibold">Pension Adjustment</label>
+          <input
+            type="number"
+            value={form.pensionAdjustment}
+            onChange={(e) => setForm((f) => ({ ...f, pensionAdjustment: e.target.value }))}
+            className="w-full px-3 py-2 rounded-xl border mt-1 text-sm"
+          />
+        </div>
+        <div>
+          <label className="text-sm font-semibold">Carry-Forward Room</label>
+          <input
+            type="number"
+            value={form.carryForwardRoom}
+            onChange={(e) => setForm((f) => ({ ...f, carryForwardRoom: e.target.value }))}
+            className="w-full px-3 py-2 rounded-xl border mt-1 text-sm"
+          />
+        </div>
+        <div>
+          <label className="text-sm font-semibold">Contributions Made This Year</label>
+          <input
+            type="number"
+            value={form.contributionsMadeThisYear}
+            onChange={(e) => setForm((f) => ({ ...f, contributionsMadeThisYear: e.target.value }))}
+            className="w-full px-3 py-2 rounded-xl border mt-1 text-sm"
+          />
+        </div>
+        <div>
+          <label className="text-sm font-semibold">Marginal Tax Rate</label>
+          <input
+            type="number"
+            step="0.01"
+            value={form.marginalTaxRate}
+            onChange={(e) => setForm((f) => ({ ...f, marginalTaxRate: e.target.value }))}
+            className="w-full px-3 py-2 rounded-xl border mt-1 text-sm"
+          />
+        </div>
+        <div>
+          <label className="text-sm font-semibold">Years to Project</label>
+          <input
+            type="number"
+            value={form.yearsToProject}
+            onChange={(e) => setForm((f) => ({ ...f, yearsToProject: e.target.value }))}
+            className="w-full px-3 py-2 rounded-xl border mt-1 text-sm"
+          />
+        </div>
       </div>
-      <button onClick={handleCalc} disabled={rrspRoom.isPending} data-testid="button-calc-rrsp" className="flex items-center space-x-2 px-5 py-2.5 bg-primary text-primary-foreground font-semibold rounded-xl hover:bg-primary/90 disabled:opacity-50">
-        <Calculator className="w-4 h-4" /><span>{rrspRoom.isPending ? "Calculating..." : "Calculate Room"}</span>
+
+      <button
+        onClick={handleCalc}
+        disabled={rrspRoom.isPending}
+        className="flex items-center space-x-2 px-4 py-2 bg-primary text-primary-foreground rounded-xl font-semibold hover:bg-primary/90 disabled:opacity-50"
+      >
+        <Calculator className="w-4 h-4" />
+        <span>{rrspRoom.isPending ? "Calculating..." : "Calculate Room"}</span>
       </button>
+
       {result && (
         <div className="space-y-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             {[
-              { label: "New Room This Year",    value: fmt$(result.summary.newRoomThisYear),         color: "text-green-600" },
-              { label: "Carry-Forward",         value: fmt$(result.summary.carryForwardBroughtIn),   color: "text-blue-600" },
-              { label: "Total Available Room",  value: fmt$(result.summary.totalAvailableRoom),      color: "text-primary" },
-              { label: "Closing Room",          value: fmt$(result.summary.closingRoom),             color: "text-purple-600" },
-            ].map(card => (
+              { label: "New Room This Year", value: fmt$(result.summary.newRoomThisYear), color: "text-green-600" },
+              { label: "Carry-Forward Brought In", value: fmt$(result.summary.carryForwardBroughtIn), color: "text-blue-600" },
+              { label: "Total Available Room", value: fmt$(result.summary.totalAvailableRoom), color: "text-teal-600" },
+              { label: "Contributions Made", value: fmt$(result.summary.contributionsMade), color: "text-orange-600" },
+              { label: "Closing Room", value: fmt$(result.summary.closingRoom), color: "text-primary" },
+              { label: "Annual Limit This Year", value: fmt$(result.summary.annualLimitThisYear), color: "text-gray-600" },
+            ].map((card) => (
               <div key={card.label} className="border border-border rounded-xl p-4">
                 <p className="text-xs text-muted-foreground uppercase">{card.label}</p>
                 <p className={`text-xl font-bold mt-1 ${card.color}`}>{card.value}</p>
               </div>
             ))}
           </div>
-          {result.summary.yearsUntilConversion !== null && (
-            <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-sm text-amber-800">
-              <strong>Note:</strong> RRSP must convert to RRIF by December 31 of the year the annuitant turns 71. Approximately <strong>{result.summary.yearsUntilConversion} years</strong> remaining.
-            </div>
-          )}
+
+          <div className="p-4 bg-green-50 border border-green-200 rounded-xl">
+            <p className="font-semibold text-green-800">Marginal Tax Savings: {fmt$(result.marginalTaxSavings)}</p>
+            <p className="text-sm text-green-700 mt-1">Effective After-Tax Cost: {fmt$(result.effectiveCost)}</p>
+          </div>
+
           <div className="border border-border rounded-xl p-4">
-            <p className="text-sm font-semibold mb-3">Future Annual RRSP Limits</p>
-            <div className="grid grid-cols-5 gap-2">
-              {result.futureLimits.map(fl => (
-                <div key={fl.year} className="text-center p-2 bg-muted/50 rounded-lg">
-                  <p className="text-xs text-muted-foreground">{fl.year}</p>
-                  <p className="text-sm font-bold">{fmt$(fl.limit)}</p>
-                </div>
-              ))}
-            </div>
+            <p className="text-sm font-semibold mb-2">Catch-Up Strategy</p>
+            <ul className="text-sm space-y-1 text-muted-foreground">
+              <li>Years to max out: {result.catchUpStrategy.yearsToMaxOut}</li>
+              <li>Annual contribution needed: {fmt$(result.catchUpStrategy.annualContributionNeeded)}</li>
+              <li>Projected refund per year: {fmt$(result.catchUpStrategy.projectedRefundPerYear)}</li>
+            </ul>
           </div>
         </div>
       )}
@@ -1139,67 +1325,158 @@ function RrspRoomPanel({ clientId }: { clientId: number }) {
   );
 }
 
+// ============================================================================
+// PANEL: TFSA Room Calculator
+// ============================================================================
+
 function TfsaRoomPanel({ clientId }: { clientId: number }) {
   const tfsaRoom = useTfsaRoom(clientId);
-  const [form, setForm] = useState({ yearTurned18: String(new Date().getFullYear() - 30), currentCarryForwardRoom: "0", currentYearContributions: "0", currentYearWithdrawals: "0" });
+  const [result, setResult] = useState<TfsaRoomResult | null>(null);
+  const [form, setForm] = useState({
+    birthYear: "1985",
+    priorYearClosingRoom: "20000",
+    contributionsMadeThisYear: "0",
+    withdrawalsLastYear: "0",
+    currentTfsaBalance: "50000",
+    annualContribution: "7000",
+    portfolioReturn: "0.06",
+  });
 
   const handleCalc = () => {
-    tfsaRoom.mutate({
-      yearTurned18:             parseInt(form.yearTurned18),
-      currentCarryForwardRoom:  parseFloat(form.currentCarryForwardRoom),
-      currentYearContributions: parseFloat(form.currentYearContributions),
-      currentYearWithdrawals:   parseFloat(form.currentYearWithdrawals),
+    const input: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(form)) {
+      input[k] = Number(v);
+    }
+    tfsaRoom.mutate(input, {
+      onSuccess: (data) => setResult(data),
     });
   };
-
-  const result = tfsaRoom.data;
 
   return (
     <div className="space-y-5">
       <div className="p-4 bg-teal-50 border border-teal-200 rounded-xl text-sm text-teal-800">
-        <strong>TFSA Room Calculator</strong> â€” Cumulative room accrues from the year you turn 18 (or 2009, whichever is later). Withdrawals are re-added at the start of the following year.
+        <strong>TFSA Room Tracker</strong> — Tracks cumulative TFSA contribution room since 2009 with annual limit history.
       </div>
+
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {[
-          { label: "Year Turned 18", key: "yearTurned18" },
-          { label: "Carry-Forward Room ($)", key: "currentCarryForwardRoom" },
-          { label: "Contributions This Year ($)", key: "currentYearContributions" },
-          { label: "Withdrawals Last Year ($)", key: "currentYearWithdrawals" },
-        ].map(f => (
-          <div key={f.key}>
-            <label className="text-sm font-semibold">{f.label}</label>
-            <input type="number" value={(form as any)[f.key]} onChange={e => setForm(prev => ({ ...prev, [f.key]: e.target.value }))}
-              className="w-full px-3 py-2 rounded-xl border mt-1 text-sm" />
-          </div>
-        ))}
+        <div>
+          <label className="text-sm font-semibold">Birth Year</label>
+          <input
+            type="number"
+            value={form.birthYear}
+            onChange={(e) => setForm((f) => ({ ...f, birthYear: e.target.value }))}
+            className="w-full px-3 py-2 rounded-xl border mt-1 text-sm"
+          />
+        </div>
+        <div>
+          <label className="text-sm font-semibold">Prior Year Closing Room</label>
+          <input
+            type="number"
+            value={form.priorYearClosingRoom}
+            onChange={(e) => setForm((f) => ({ ...f, priorYearClosingRoom: e.target.value }))}
+            className="w-full px-3 py-2 rounded-xl border mt-1 text-sm"
+          />
+        </div>
+        <div>
+          <label className="text-sm font-semibold">Contributions Made This Year</label>
+          <input
+            type="number"
+            value={form.contributionsMadeThisYear}
+            onChange={(e) => setForm((f) => ({ ...f, contributionsMadeThisYear: e.target.value }))}
+            className="w-full px-3 py-2 rounded-xl border mt-1 text-sm"
+          />
+        </div>
+        <div>
+          <label className="text-sm font-semibold">Withdrawals Last Year</label>
+          <input
+            type="number"
+            value={form.withdrawalsLastYear}
+            onChange={(e) => setForm((f) => ({ ...f, withdrawalsLastYear: e.target.value }))}
+            className="w-full px-3 py-2 rounded-xl border mt-1 text-sm"
+          />
+        </div>
+        <div>
+          <label className="text-sm font-semibold">Current TFSA Balance</label>
+          <input
+            type="number"
+            value={form.currentTfsaBalance}
+            onChange={(e) => setForm((f) => ({ ...f, currentTfsaBalance: e.target.value }))}
+            className="w-full px-3 py-2 rounded-xl border mt-1 text-sm"
+          />
+        </div>
+        <div>
+          <label className="text-sm font-semibold">Annual Contribution</label>
+          <input
+            type="number"
+            value={form.annualContribution}
+            onChange={(e) => setForm((f) => ({ ...f, annualContribution: e.target.value }))}
+            className="w-full px-3 py-2 rounded-xl border mt-1 text-sm"
+          />
+        </div>
+        <div>
+          <label className="text-sm font-semibold">Portfolio Return (decimal)</label>
+          <input
+            type="number"
+            step="0.01"
+            value={form.portfolioReturn}
+            onChange={(e) => setForm((f) => ({ ...f, portfolioReturn: e.target.value }))}
+            className="w-full px-3 py-2 rounded-xl border mt-1 text-sm"
+          />
+        </div>
       </div>
-      <button onClick={handleCalc} disabled={tfsaRoom.isPending} data-testid="button-calc-tfsa" className="flex items-center space-x-2 px-5 py-2.5 bg-teal-600 text-white font-semibold rounded-xl hover:bg-teal-700 disabled:opacity-50">
-        <Calculator className="w-4 h-4" /><span>{tfsaRoom.isPending ? "Calculating..." : "Calculate Room"}</span>
+
+      <button
+        onClick={handleCalc}
+        disabled={tfsaRoom.isPending}
+        className="flex items-center space-x-2 px-4 py-2 bg-primary text-primary-foreground rounded-xl font-semibold hover:bg-primary/90 disabled:opacity-50"
+      >
+        <Calculator className="w-4 h-4" />
+        <span>{tfsaRoom.isPending ? "Calculating..." : "Calculate Room"}</span>
       </button>
+
       {result && (
         <div className="space-y-4">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[
-              { label: "Annual Limit This Year",  value: fmt$(result.summary.annualLimitThisYear),   color: "text-green-600" },
-              { label: "Cumulative Room (2009+)", value: fmt$(result.cumulativeRoomSince2009),        color: "text-blue-600" },
-              { label: "Total Available Room",    value: fmt$(result.summary.totalAvailableRoom),     color: "text-teal-600" },
-              { label: "Closing Room",            value: fmt$(result.summary.closingRoom),            color: "text-primary" },
-            ].map(card => (
+              { label: "Annual Limit This Year", value: fmt$(result.summary.annualLimitThisYear), color: "text-green-600" },
+              { label: "Cumulative Room (2009+)", value: fmt$(result.cumulativeRoomSince2009), color: "text-blue-600" },
+              { label: "Total Available Room", value: fmt$(result.summary.totalAvailableRoom), color: "text-teal-600" },
+              { label: "Closing Room", value: fmt$(result.summary.closingRoom), color: "text-primary" },
+            ].map((card) => (
               <div key={card.label} className="border border-border rounded-xl p-4">
                 <p className="text-xs text-muted-foreground uppercase">{card.label}</p>
                 <p className={`text-xl font-bold mt-1 ${card.color}`}>{card.value}</p>
               </div>
             ))}
           </div>
+
           <div className="border border-border rounded-xl p-4">
             <p className="text-sm font-semibold mb-3">Future Annual TFSA Limits</p>
             <div className="grid grid-cols-5 gap-2">
-              {result.futureLimits.map(fl => (
+              {result.futureLimits.map((fl) => (
                 <div key={fl.year} className="text-center p-2 bg-muted/50 rounded-lg">
                   <p className="text-xs text-muted-foreground">{fl.year}</p>
                   <p className="text-sm font-bold">{fmt$(fl.limit)}</p>
                 </div>
               ))}
+            </div>
+          </div>
+
+          <div className="p-4 bg-teal-50 border border-teal-200 rounded-xl">
+            <p className="font-semibold text-teal-800">30-Year TFSA vs Taxable Projection</p>
+            <div className="grid grid-cols-3 gap-3 mt-2 text-sm">
+              <div>
+                <p className="text-teal-700">TFSA Final Balance</p>
+                <p className="font-bold text-teal-900">{fmt$(result.thirtyYearProjection.tfsaBalanceFinal)}</p>
+              </div>
+              <div>
+                <p className="text-teal-700">Taxable Final Balance</p>
+                <p className="font-bold text-teal-900">{fmt$(result.thirtyYearProjection.taxableBalanceFinal)}</p>
+              </div>
+              <div>
+                <p className="text-teal-700">TFSA Advantage</p>
+                <p className="font-bold text-green-700">{fmt$(result.thirtyYearProjection.tfsaAdvantage)}</p>
+              </div>
             </div>
           </div>
         </div>
@@ -1208,106 +1485,321 @@ function TfsaRoomPanel({ clientId }: { clientId: number }) {
   );
 }
 
-function TaxProjectionPanel({ clientId }: { clientId: number }) {
-  const [taxInput, setTaxInput] = useState<Record<string, unknown> | null>(null);
-  const taxProjection = useTaxProjection(clientId, taxInput);
-  const [form, setForm] = useState({
-    currentAge: "40", retirementAge: "65", planToAge: "90", province: "ON",
-    employmentIncome: "120000", selfEmploymentIncome: "0", otherIncome: "0", incomeGrowthRate: "0.03",
-    rrspBalance: "200000", rrspContributionRoom: "50000", rrspAnnualContribution: "18000",
-    tfsaBalance: "80000", tfsaContributionRoom: "20000", tfsaAnnualContribution: "7000",
-    nonRegBalance: "50000", nonRegAcb: "40000", nonRegAnnualContrib: "5000", portfolioYield: "0.06",
-    desiredRetirementIncome: "80000", pensionIncome: "0", cppStartAge: "65", oasStartAge: "65",
-  });
-  const [showTable, setShowTable] = useState(false);
-  const provinces = ["ON", "BC", "AB", "QC", "MB", "SK", "NS", "NB", "PE", "NL"];
+// ============================================================================
+// PANEL: Tax Projection
+// ============================================================================
 
-  const [projResult, setProjResult] = useState<any>(null);
- 
+function TaxProjectionPanel({ clientId }: { clientId: number }) {
+  const taxProjection = useTaxProjection(clientId);
+  const [result, setResult] = useState<TaxProjectionResult | null>(null);
+  const [showTable, setShowTable] = useState(false);
+  const [form, setForm] = useState({
+    currentAge: "40",
+    retirementAge: "65",
+    planToAge: "90",
+    province: "ON",
+    employmentIncome: "120000",
+    selfEmploymentIncome: "0",
+    otherIncome: "0",
+    incomeGrowthRate: "0.03",
+    rrspBalance: "200000",
+    rrspContributionRoom: "50000",
+    rrspAnnualContribution: "18000",
+    tfsaBalance: "80000",
+    tfsaContributionRoom: "20000",
+    tfsaAnnualContribution: "7000",
+    nonRegBalance: "50000",
+    nonRegAcb: "40000",
+    nonRegAnnualContrib: "5000",
+    portfolioYield: "0.06",
+    desiredRetirementIncome: "80000",
+    pensionIncome: "0",
+    cppStartAge: "65",
+    oasStartAge: "65",
+  });
+
+  const provinces = ["ON", "BC", "AB", "QC", "MB", "SK", "NS", "NB", "PE", "NL", "YT", "NT", "NU"];
+
   const handleCalc = () => {
     const input: Record<string, unknown> = {};
     for (const [k, v] of Object.entries(form)) {
       input[k] = isNaN(Number(v)) ? v : Number(v);
     }
-   taxProjection.mutate({ clientId, data: input } as any, {
-     onSuccess: (data: any) => setProjResult(data),
-});
-};
+    taxProjection.mutate(input, {
+      onSuccess: (data) => setResult(data),
+    });
+  };
 
-const result = projResult; 
   return (
     <div className="space-y-5">
       <div className="p-4 bg-purple-50 border border-purple-200 rounded-xl text-sm text-purple-800">
-        <strong>Tax Projection</strong> â€” Year-by-year income, tax, and wealth projection through retirement using 2024 federal and provincial tax brackets.
+        <strong>Tax Projection</strong> — Year-by-year income, tax, and wealth projection through retirement using 2024 federal
+        and provincial tax brackets.
       </div>
+
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div><label className="text-sm font-semibold">Current Age</label><input type="number" value={form.currentAge} onChange={e => setForm(f => ({ ...f, currentAge: e.target.value }))} className="w-full px-3 py-2 rounded-xl border mt-1 text-sm" /></div>
-        <div><label className="text-sm font-semibold">Retirement Age</label><input type="number" value={form.retirementAge} onChange={e => setForm(f => ({ ...f, retirementAge: e.target.value }))} className="w-full px-3 py-2 rounded-xl border mt-1 text-sm" /></div>
-        <div><label className="text-sm font-semibold">Plan To Age</label><input type="number" value={form.planToAge} onChange={e => setForm(f => ({ ...f, planToAge: e.target.value }))} className="w-full px-3 py-2 rounded-xl border mt-1 text-sm" /></div>
-        <div><label className="text-sm font-semibold">Province</label>
-          <select value={form.province} onChange={e => setForm(f => ({ ...f, province: e.target.value }))} className="w-full px-3 py-2 rounded-xl border mt-1 text-sm">
-            {provinces.map(p => <option key={p} value={p}>{p}</option>)}
+        <div>
+          <label className="text-sm font-semibold">Current Age</label>
+          <input
+            type="number"
+            value={form.currentAge}
+            onChange={(e) => setForm((f) => ({ ...f, currentAge: e.target.value }))}
+            className="w-full px-3 py-2 rounded-xl border mt-1 text-sm"
+          />
+        </div>
+        <div>
+          <label className="text-sm font-semibold">Retirement Age</label>
+          <input
+            type="number"
+            value={form.retirementAge}
+            onChange={(e) => setForm((f) => ({ ...f, retirementAge: e.target.value }))}
+            className="w-full px-3 py-2 rounded-xl border mt-1 text-sm"
+          />
+        </div>
+        <div>
+          <label className="text-sm font-semibold">Plan To Age</label>
+          <input
+            type="number"
+            value={form.planToAge}
+            onChange={(e) => setForm((f) => ({ ...f, planToAge: e.target.value }))}
+            className="w-full px-3 py-2 rounded-xl border mt-1 text-sm"
+          />
+        </div>
+        <div>
+          <label className="text-sm font-semibold">Province</label>
+          <select
+            value={form.province}
+            onChange={(e) => setForm((f) => ({ ...f, province: e.target.value }))}
+            className="w-full px-3 py-2 rounded-xl border mt-1 text-sm"
+          >
+            {provinces.map((p) => (
+              <option key={p} value={p}>
+                {p}
+              </option>
+            ))}
           </select>
         </div>
-        <div><label className="text-sm font-semibold">Employment Income ($)</label><input type="number" value={form.employmentIncome} onChange={e => setForm(f => ({ ...f, employmentIncome: e.target.value }))} className="w-full px-3 py-2 rounded-xl border mt-1 text-sm" /></div>
-        <div><label className="text-sm font-semibold">RRSP Balance ($)</label><input type="number" value={form.rrspBalance} onChange={e => setForm(f => ({ ...f, rrspBalance: e.target.value }))} className="w-full px-3 py-2 rounded-xl border mt-1 text-sm" /></div>
-        <div><label className="text-sm font-semibold">TFSA Balance ($)</label><input type="number" value={form.tfsaBalance} onChange={e => setForm(f => ({ ...f, tfsaBalance: e.target.value }))} className="w-full px-3 py-2 rounded-xl border mt-1 text-sm" /></div>
-        <div><label className="text-sm font-semibold">Desired Retirement Income ($)</label><input type="number" value={form.desiredRetirementIncome} onChange={e => setForm(f => ({ ...f, desiredRetirementIncome: e.target.value }))} className="w-full px-3 py-2 rounded-xl border mt-1 text-sm" /></div>
-        <div><label className="text-sm font-semibold">RRSP Annual Contribution ($)</label><input type="number" value={form.rrspAnnualContribution} onChange={e => setForm(f => ({ ...f, rrspAnnualContribution: e.target.value }))} className="w-full px-3 py-2 rounded-xl border mt-1 text-sm" /></div>
-        <div><label className="text-sm font-semibold">TFSA Annual Contribution ($)</label><input type="number" value={form.tfsaAnnualContribution} onChange={e => setForm(f => ({ ...f, tfsaAnnualContribution: e.target.value }))} className="w-full px-3 py-2 rounded-xl border mt-1 text-sm" /></div>
-        <div><label className="text-sm font-semibold">Portfolio Yield</label><input type="number" step="0.01" value={form.portfolioYield} onChange={e => setForm(f => ({ ...f, portfolioYield: e.target.value }))} className="w-full px-3 py-2 rounded-xl border mt-1 text-sm" /></div>
-        <div><label className="text-sm font-semibold">CPP Start Age</label><input type="number" value={form.cppStartAge} onChange={e => setForm(f => ({ ...f, cppStartAge: e.target.value }))} className="w-full px-3 py-2 rounded-xl border mt-1 text-sm" /></div>
+        <div>
+          <label className="text-sm font-semibold">Employment Income</label>
+          <input
+            type="number"
+            value={form.employmentIncome}
+            onChange={(e) => setForm((f) => ({ ...f, employmentIncome: e.target.value }))}
+            className="w-full px-3 py-2 rounded-xl border mt-1 text-sm"
+          />
+        </div>
+        <div>
+          <label className="text-sm font-semibold">Self-Employment Income</label>
+          <input
+            type="number"
+            value={form.selfEmploymentIncome}
+            onChange={(e) => setForm((f) => ({ ...f, selfEmploymentIncome: e.target.value }))}
+            className="w-full px-3 py-2 rounded-xl border mt-1 text-sm"
+          />
+        </div>
+        <div>
+          <label className="text-sm font-semibold">Other Income</label>
+          <input
+            type="number"
+            value={form.otherIncome}
+            onChange={(e) => setForm((f) => ({ ...f, otherIncome: e.target.value }))}
+            className="w-full px-3 py-2 rounded-xl border mt-1 text-sm"
+          />
+        </div>
+        <div>
+          <label className="text-sm font-semibold">Income Growth Rate</label>
+          <input
+            type="number"
+            step="0.01"
+            value={form.incomeGrowthRate}
+            onChange={(e) => setForm((f) => ({ ...f, incomeGrowthRate: e.target.value }))}
+            className="w-full px-3 py-2 rounded-xl border mt-1 text-sm"
+          />
+        </div>
+        <div>
+          <label className="text-sm font-semibold">RRSP Balance</label>
+          <input
+            type="number"
+            value={form.rrspBalance}
+            onChange={(e) => setForm((f) => ({ ...f, rrspBalance: e.target.value }))}
+            className="w-full px-3 py-2 rounded-xl border mt-1 text-sm"
+          />
+        </div>
+        <div>
+          <label className="text-sm font-semibold">RRSP Room</label>
+          <input
+            type="number"
+            value={form.rrspContributionRoom}
+            onChange={(e) => setForm((f) => ({ ...f, rrspContributionRoom: e.target.value }))}
+            className="w-full px-3 py-2 rounded-xl border mt-1 text-sm"
+          />
+        </div>
+        <div>
+          <label className="text-sm font-semibold">RRSP Annual Contribution</label>
+          <input
+            type="number"
+            value={form.rrspAnnualContribution}
+            onChange={(e) => setForm((f) => ({ ...f, rrspAnnualContribution: e.target.value }))}
+            className="w-full px-3 py-2 rounded-xl border mt-1 text-sm"
+          />
+        </div>
+        <div>
+          <label className="text-sm font-semibold">TFSA Balance</label>
+          <input
+            type="number"
+            value={form.tfsaBalance}
+            onChange={(e) => setForm((f) => ({ ...f, tfsaBalance: e.target.value }))}
+            className="w-full px-3 py-2 rounded-xl border mt-1 text-sm"
+          />
+        </div>
+        <div>
+          <label className="text-sm font-semibold">TFSA Room</label>
+          <input
+            type="number"
+            value={form.tfsaContributionRoom}
+            onChange={(e) => setForm((f) => ({ ...f, tfsaContributionRoom: e.target.value }))}
+            className="w-full px-3 py-2 rounded-xl border mt-1 text-sm"
+          />
+        </div>
+        <div>
+          <label className="text-sm font-semibold">TFSA Annual Contribution</label>
+          <input
+            type="number"
+            value={form.tfsaAnnualContribution}
+            onChange={(e) => setForm((f) => ({ ...f, tfsaAnnualContribution: e.target.value }))}
+            className="w-full px-3 py-2 rounded-xl border mt-1 text-sm"
+          />
+        </div>
+        <div>
+          <label className="text-sm font-semibold">Non-Reg Balance</label>
+          <input
+            type="number"
+            value={form.nonRegBalance}
+            onChange={(e) => setForm((f) => ({ ...f, nonRegBalance: e.target.value }))}
+            className="w-full px-3 py-2 rounded-xl border mt-1 text-sm"
+          />
+        </div>
+        <div>
+          <label className="text-sm font-semibold">Non-Reg ACB</label>
+          <input
+            type="number"
+            value={form.nonRegAcb}
+            onChange={(e) => setForm((f) => ({ ...f, nonRegAcb: e.target.value }))}
+            className="w-full px-3 py-2 rounded-xl border mt-1 text-sm"
+          />
+        </div>
+        <div>
+          <label className="text-sm font-semibold">Portfolio Yield</label>
+          <input
+            type="number"
+            step="0.01"
+            value={form.portfolioYield}
+            onChange={(e) => setForm((f) => ({ ...f, portfolioYield: e.target.value }))}
+            className="w-full px-3 py-2 rounded-xl border mt-1 text-sm"
+          />
+        </div>
+        <div>
+          <label className="text-sm font-semibold">Desired Retirement Income</label>
+          <input
+            type="number"
+            value={form.desiredRetirementIncome}
+            onChange={(e) => setForm((f) => ({ ...f, desiredRetirementIncome: e.target.value }))}
+            className="w-full px-3 py-2 rounded-xl border mt-1 text-sm"
+          />
+        </div>
+        <div>
+          <label className="text-sm font-semibold">Pension Income</label>
+          <input
+            type="number"
+            value={form.pensionIncome}
+            onChange={(e) => setForm((f) => ({ ...f, pensionIncome: e.target.value }))}
+            className="w-full px-3 py-2 rounded-xl border mt-1 text-sm"
+          />
+        </div>
+        <div>
+          <label className="text-sm font-semibold">CPP Start Age</label>
+          <input
+            type="number"
+            value={form.cppStartAge}
+            onChange={(e) => setForm((f) => ({ ...f, cppStartAge: e.target.value }))}
+            className="w-full px-3 py-2 rounded-xl border mt-1 text-sm"
+          />
+        </div>
+        <div>
+          <label className="text-sm font-semibold">OAS Start Age</label>
+          <input
+            type="number"
+            value={form.oasStartAge}
+            onChange={(e) => setForm((f) => ({ ...f, oasStartAge: e.target.value }))}
+            className="w-full px-3 py-2 rounded-xl border mt-1 text-sm"
+          />
+        </div>
       </div>
-      <button onClick={handleCalc} disabled={taxProjection.isPending} data-testid="button-calc-tax-projection" className="flex items-center space-x-2 px-5 py-2.5 bg-purple-600 text-white font-semibold rounded-xl hover:bg-purple-700 disabled:opacity-50">
-        <Calculator className="w-4 h-4" /><span>{taxProjection.isPending ? "Projecting..." : "Run Tax Projection"}</span>
+
+      <button
+        onClick={handleCalc}
+        disabled={taxProjection.isPending}
+        className="flex items-center space-x-2 px-4 py-2 bg-primary text-primary-foreground rounded-xl font-semibold hover:bg-primary/90 disabled:opacity-50"
+      >
+        <TrendingUp className="w-4 h-4" />
+        <span>{taxProjection.isPending ? "Projecting..." : "Run Projection"}</span>
       </button>
-      {result?.summary && (
+
+      {result && (
         <div className="space-y-4">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[
-              { label: "Total Tax Paid (lifetime)",  value: fmt$(result.summary.totalTaxPaid),      color: "text-red-600" },
-              { label: "Avg Effective Rate",          value: pct(result.summary.avgEffectiveRate),   color: "text-amber-600" },
-              { label: "Final Wealth",                value: fmt$(result.summary.finalWealth),       color: "text-green-600" },
-              { label: "Peak Tax Year",               value: fmt$(result.summary.peakTax),           color: "text-red-500" },
-            ].map(card => (
+              { label: "Total Lifetime Tax", value: fmt$(result.summary.totalLifetimeTax), color: "text-red-600" },
+              { label: "Average Effective Rate", value: fmtPct(result.summary.averageEffectiveRate), color: "text-orange-600" },
+              { label: "Final Wealth", value: fmt$(result.summary.projectedFinalWealth), color: "text-green-600" },
+              {
+                label: "Success Probability",
+                value: fmtPct(result.summary.successProbability),
+                color: "text-blue-600",
+              },
+            ].map((card) => (
               <div key={card.label} className="border border-border rounded-xl p-4">
                 <p className="text-xs text-muted-foreground uppercase">{card.label}</p>
                 <p className={`text-xl font-bold mt-1 ${card.color}`}>{card.value}</p>
               </div>
             ))}
           </div>
-          {result.summary.lowestMarginalRateYear && (
-            <div className="p-3 bg-green-50 border border-green-200 rounded-xl text-sm text-green-800">
-              <strong>Optimal Year for Capital Gains Realization:</strong> {result.summary.lowestMarginalRateYear.year} (Age {result.summary.lowestMarginalRateYear.age}) â€” Lowest projected marginal rate of {pct(result.summary.lowestMarginalRateYear.rate)}.
-            </div>
-          )}
-          <button onClick={() => setShowTable(t => !t)} className="flex items-center gap-2 text-sm font-semibold text-primary hover:text-primary/80">
-            {showTable ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-            {showTable ? "Hide" : "Show"} Year-by-Year Table ({result.years?.length} years)
+
+          <button
+            onClick={() => setShowTable(!showTable)}
+            className="text-sm font-semibold text-primary hover:underline"
+          >
+            {showTable ? "Hide" : "Show"} Year-by-Year Table
           </button>
-          {showTable && result.years && (
-            <div className="border border-border rounded-xl overflow-auto max-h-[400px]">
+
+          {showTable && (
+            <div className="overflow-x-auto border border-border rounded-xl">
               <table className="w-full text-xs">
-                <thead className="bg-muted/50 sticky top-0">
+                <thead className="bg-muted/50">
                   <tr>
-                    {["Year", "Age", "Phase", "Gross Income", "Taxable", "Total Tax", "Eff. Rate", "Marg. Rate", "Net Income", "Total Wealth"].map(h => (
-                      <th key={h} className="px-3 py-2 text-left font-semibold whitespace-nowrap">{h}</th>
-                    ))}
+                    <th className="px-3 py-2 text-left">Year</th>
+                    <th className="px-3 py-2 text-left">Age</th>
+                    <th className="px-3 py-2 text-left">Phase</th>
+                    <th className="px-3 py-2 text-right">Total Income</th>
+                    <th className="px-3 py-2 text-right">Federal Tax</th>
+                    <th className="px-3 py-2 text-right">Provincial Tax</th>
+                    <th className="px-3 py-2 text-right">Total Tax</th>
+                    <th className="px-3 py-2 text-right">After-Tax</th>
+                    <th className="px-3 py-2 text-right">Total Wealth</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {(result.years as any[]).map((row, i) => (
-                    <tr key={row.year} className={`border-t ${i % 2 === 0 ? "" : "bg-muted/20"} ${row.phase === "retirement" ? "text-blue-700" : ""}`}>
-                      <td className="px-3 py-1.5">{row.year}</td>
-                      <td className="px-3 py-1.5">{row.age}</td>
-                      <td className="px-3 py-1.5 capitalize">{row.phase}</td>
-                      <td className="px-3 py-1.5">{fmt$(row.totalGrossIncome)}</td>
-                      <td className="px-3 py-1.5">{fmt$(row.totalTaxableIncome)}</td>
-                      <td className="px-3 py-1.5 text-red-600">{fmt$(row.totalTax)}</td>
-                      <td className="px-3 py-1.5">{pct(row.effectiveRate)}</td>
-                      <td className="px-3 py-1.5">{pct(row.marginalRate)}</td>
-                      <td className="px-3 py-1.5 text-green-700">{fmt$(row.netIncome)}</td>
-                      <td className="px-3 py-1.5 font-semibold">{fmt$(row.totalWealth)}</td>
+                  {result.projections.map((proj, idx) => (
+                    <tr key={idx} className="border-t border-border hover:bg-muted/20">
+                      <td className="px-3 py-2">{proj.year}</td>
+                      <td className="px-3 py-2">{proj.age}</td>
+                      <td className="px-3 py-2 capitalize">{proj.phase}</td>
+                      <td className="px-3 py-2 text-right">{fmt$(proj.totalIncome)}</td>
+                      <td className="px-3 py-2 text-right">{fmt$(proj.federalTax)}</td>
+                      <td className="px-3 py-2 text-right">{fmt$(proj.provincialTax)}</td>
+                      <td className="px-3 py-2 text-right">{fmt$(proj.totalTax)}</td>
+                      <td className="px-3 py-2 text-right">{fmt$(proj.afterTaxIncome)}</td>
+                      <td className="px-3 py-2 text-right font-semibold">{fmt$(proj.totalWealth)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -1320,163 +1812,289 @@ const result = projResult;
   );
 }
 
-function CapitalGainsPanel({ clientId }: { clientId: number }) {
-  const capitalGains = useCapitalGains(clientId);
-  const [positions, setPositions] = useState([{ name: "", marketValue: "", adjustedCostBase: "" }]);
-  const [currentIncome, setCurrentIncome] = useState("120000");
-  const [province, setProvince] = useState("ON");
+// ============================================================================
+// PANEL: Capital Gains Analysis
+// ============================================================================
 
-  const addPosition = () => setPositions(p => [...p, { name: "", marketValue: "", adjustedCostBase: "" }]);
-  const updatePos = (i: number, field: string, val: string) => setPositions(p => p.map((pos, idx) => idx === i ? { ...pos, [field]: val } : pos));
-  const removePos = (i: number) => setPositions(p => p.filter((_, idx) => idx !== i));
+function CapitalGainsPanel({ clientId }: { clientId: number }) {
+  const capGains = useCapitalGains(clientId);
+  const [result, setResult] = useState<CapitalGainsResult | null>(null);
+  const [positions, setPositions] = useState([
+    { symbol: "XIC.TO", acb: "50000", fmv: "75000" },
+    { symbol: "VFV.TO", acb: "30000", fmv: "45000" },
+  ]);
 
   const handleCalc = () => {
-    const filled = positions.filter(p => p.name && p.marketValue && p.adjustedCostBase);
-    if (filled.length === 0) return;
-    capitalGains.mutate({
-      positions: filled.map(p => ({ name: p.name, marketValue: parseFloat(p.marketValue), adjustedCostBase: parseFloat(p.adjustedCostBase) })),
-      currentIncome: parseFloat(currentIncome),
-      province,
+    const input = {
+      positions: positions.map((p) => ({
+        symbol: p.symbol,
+        acb: Number(p.acb),
+        fmv: Number(p.fmv),
+      })),
+      marginalTaxRate: 0.435,
+    };
+    capGains.mutate(input, {
+      onSuccess: (data) => setResult(data),
     });
   };
 
-  const result = capitalGains.data;
+  const addPosition = () => {
+    setPositions([...positions, { symbol: "", acb: "0", fmv: "0" }]);
+  };
+
+  const removePosition = (idx: number) => {
+    setPositions(positions.filter((_, i) => i !== idx));
+  };
 
   return (
     <div className="space-y-5">
       <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl text-sm text-amber-800">
-        <strong>Capital Gains Analysis</strong> â€” Analyze unrealized gains, estimate tax at different realization amounts, and find the optimal year to crystallize gains (using 2024 inclusion rates: 50% under $250k, 2/3 over $250k).
+        <strong>Capital Gains Analysis</strong> — Analyzes unrealized gains with 2024 dual inclusion rates (50% / 66.67%).
       </div>
+
       <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <p className="text-sm font-semibold">Investment Positions</p>
-          <button onClick={addPosition} className="flex items-center gap-1 text-sm text-primary hover:text-primary/80"><Plus className="w-3 h-3" />Add Position</button>
-        </div>
-        {positions.map((pos, i) => (
-          <div key={i} className="grid grid-cols-3 gap-3 items-end">
-            <div><label className="text-xs font-medium text-muted-foreground">Security Name</label><input value={pos.name} onChange={e => updatePos(i, "name", e.target.value)} placeholder="e.g. BCE Inc" className="w-full px-3 py-2 rounded-xl border mt-1 text-sm" /></div>
-            <div><label className="text-xs font-medium text-muted-foreground">Market Value ($)</label><input type="number" value={pos.marketValue} onChange={e => updatePos(i, "marketValue", e.target.value)} className="w-full px-3 py-2 rounded-xl border mt-1 text-sm" /></div>
-            <div className="flex gap-2">
-              <div className="flex-1"><label className="text-xs font-medium text-muted-foreground">ACB ($)</label><input type="number" value={pos.adjustedCostBase} onChange={e => updatePos(i, "adjustedCostBase", e.target.value)} className="w-full px-3 py-2 rounded-xl border mt-1 text-sm" /></div>
-              {positions.length > 1 && <button onClick={() => removePos(i)} className="mt-5 p-2 text-red-400 hover:bg-red-50 rounded-lg"><Trash2 className="w-4 h-4" /></button>}
+        {positions.map((pos, idx) => (
+          <div key={idx} className="grid grid-cols-4 gap-3 items-end">
+            <div>
+              <label className="text-sm font-semibold">Symbol</label>
+              <input
+                type="text"
+                value={pos.symbol}
+                onChange={(e) => {
+                  const newPos = [...positions];
+                  newPos[idx].symbol = e.target.value;
+                  setPositions(newPos);
+                }}
+                className="w-full px-3 py-2 rounded-xl border mt-1 text-sm"
+              />
             </div>
+            <div>
+              <label className="text-sm font-semibold">ACB</label>
+              <input
+                type="number"
+                value={pos.acb}
+                onChange={(e) => {
+                  const newPos = [...positions];
+                  newPos[idx].acb = e.target.value;
+                  setPositions(newPos);
+                }}
+                className="w-full px-3 py-2 rounded-xl border mt-1 text-sm"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-semibold">FMV</label>
+              <input
+                type="number"
+                value={pos.fmv}
+                onChange={(e) => {
+                  const newPos = [...positions];
+                  newPos[idx].fmv = e.target.value;
+                  setPositions(newPos);
+                }}
+                className="w-full px-3 py-2 rounded-xl border mt-1 text-sm"
+              />
+            </div>
+            <button
+              onClick={() => removePosition(idx)}
+              className="px-3 py-2 bg-destructive/10 text-destructive rounded-xl hover:bg-destructive/20"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
           </div>
         ))}
       </div>
-      <div className="grid grid-cols-2 gap-4">
-        <div><label className="text-sm font-semibold">Current Annual Income ($)</label><input type="number" value={currentIncome} onChange={e => setCurrentIncome(e.target.value)} className="w-full px-3 py-2 rounded-xl border mt-1 text-sm" /></div>
-        <div><label className="text-sm font-semibold">Province</label>
-          <select value={province} onChange={e => setProvince(e.target.value)} className="w-full px-3 py-2 rounded-xl border mt-1 text-sm">
-            {["ON", "BC", "AB", "QC", "MB", "SK", "NS", "NB", "PE", "NL"].map(p => <option key={p} value={p}>{p}</option>)}
-          </select>
-        </div>
+
+      <div className="flex gap-2">
+        <button onClick={addPosition} className="flex items-center space-x-2 px-4 py-2 bg-muted rounded-xl text-sm font-semibold">
+          <Plus className="w-4 h-4" />
+          <span>Add Position</span>
+        </button>
+        <button
+          onClick={handleCalc}
+          disabled={capGains.isPending}
+          className="flex items-center space-x-2 px-4 py-2 bg-primary text-primary-foreground rounded-xl font-semibold hover:bg-primary/90 disabled:opacity-50"
+        >
+          <Calculator className="w-4 h-4" />
+          <span>{capGains.isPending ? "Analyzing..." : "Analyze Gains"}</span>
+        </button>
       </div>
-      <button onClick={handleCalc} disabled={capitalGains.isPending} data-testid="button-calc-capgains" className="flex items-center space-x-2 px-5 py-2.5 bg-amber-600 text-white font-semibold rounded-xl hover:bg-amber-700 disabled:opacity-50">
-        <Calculator className="w-4 h-4" /><span>{capitalGains.isPending ? "Analyzing..." : "Analyze Capital Gains"}</span>
-      </button>
+
       {result && (
         <div className="space-y-4">
-          <div className="grid grid-cols-3 gap-4">
-            <div className="border border-border rounded-xl p-4"><p className="text-xs text-muted-foreground uppercase">Total Unrealized Gain</p><p className="text-xl font-bold text-green-600">{fmt$(result.totalUnrealizedGain)}</p></div>
-            <div className="border border-border rounded-xl p-4"><p className="text-xs text-muted-foreground uppercase">Loss Harvesting Opportunity</p><p className="text-xl font-bold text-blue-600">{fmt$(result.harvestingOpportunity)}</p></div>
-            <div className="border border-border rounded-xl p-4"><p className="text-xs text-muted-foreground uppercase">Optimal Year to Realize</p><p className="text-xl font-bold text-primary">{result.recommendedYear}</p></div>
-          </div>
-          <div className="p-3 bg-muted/50 rounded-xl text-sm text-muted-foreground">{result.reasoning}</div>
-          {result.scenarios.length > 0 && (
-            <div className="border border-border rounded-xl overflow-hidden">
-              <table className="w-full text-sm">
-                <thead className="bg-muted/50"><tr>
-                  <th className="px-4 py-3 text-left">Scenario</th>
-                  <th className="px-4 py-3 text-right">Amount Realized</th>
-                  <th className="px-4 py-3 text-right">Inclusion Rate</th>
-                  <th className="px-4 py-3 text-right">Est. Tax</th>
-                  <th className="px-4 py-3 text-right">Net Proceeds</th>
-                  <th className="px-4 py-3 text-right">Eff. Tax Rate</th>
-                </tr></thead>
-                <tbody>
-                  {result.scenarios.map(s => (
-                    <tr key={s.label} className="border-t hover:bg-muted/30">
-                      <td className="px-4 py-3 font-medium">{s.label}</td>
-                      <td className="px-4 py-3 text-right">{fmt$(s.amountRealized)}</td>
-                      <td className="px-4 py-3 text-right">{(s.inclusionRate * 100).toFixed(0)}%</td>
-                      <td className="px-4 py-3 text-right text-red-600">{fmt$(s.estimatedTax)}</td>
-                      <td className="px-4 py-3 text-right text-green-600">{fmt$(s.netProceeds)}</td>
-                      <td className="px-4 py-3 text-right">{(s.effectiveGainsTaxRate * 100).toFixed(1)}%</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="border border-border rounded-xl p-4">
+              <p className="text-xs text-muted-foreground uppercase">Total Unrealized Gain</p>
+              <p className="text-2xl font-bold mt-1 text-green-600">{fmt$(result.totalUnrealizedGain)}</p>
             </div>
-          )}
+            <div className="border border-border rounded-xl p-4">
+              <p className="text-xs text-muted-foreground uppercase">Loss Harvesting Opportunity</p>
+              <p className="text-2xl font-bold mt-1 text-orange-600">{fmt$(result.lossHarvestingOpportunity)}</p>
+            </div>
+          </div>
+
+          <div className="border border-border rounded-xl p-4">
+            <p className="text-sm font-semibold mb-3">Realization Scenarios (2024 Rates)</p>
+            <div className="space-y-2">
+              {result.scenarios.map((sc) => (
+                <div key={sc.name} className="flex justify-between items-center p-3 bg-muted/30 rounded-lg">
+                  <span className="font-semibold text-sm">{sc.name}</span>
+                  <div className="flex gap-4 text-sm">
+                    <span>Gain: {fmt$(sc.gainRealized)}</span>
+                    <span>Taxable: {fmt$(sc.taxableGain)}</span>
+                    <span className="font-bold text-red-600">Tax: {fmt$(sc.estimatedTax)}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="border border-border rounded-xl overflow-hidden">
+            <table className="w-full text-sm">
+              <thead className="bg-muted/50">
+                <tr>
+                  <th className="px-4 py-2 text-left">Symbol</th>
+                  <th className="px-4 py-2 text-right">ACB</th>
+                  <th className="px-4 py-2 text-right">FMV</th>
+                  <th className="px-4 py-2 text-right">Unrealized Gain</th>
+                </tr>
+              </thead>
+              <tbody>
+                {result.positions.map((pos, idx) => (
+                  <tr key={idx} className="border-t border-border">
+                    <td className="px-4 py-2 font-semibold">{pos.symbol}</td>
+                    <td className="px-4 py-2 text-right">{fmt$(pos.acb)}</td>
+                    <td className="px-4 py-2 text-right">{fmt$(pos.fmv)}</td>
+                    <td className="px-4 py-2 text-right font-bold text-green-600">{fmt$(pos.unrealizedGain)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
     </div>
   );
 }
 
+// ============================================================================
+// PANEL: Income Splitting Optimizer
+// ============================================================================
+
 function IncomeSplittingPanel({ clientId }: { clientId: number }) {
   const incomeSplit = useIncomeSplit(clientId);
+  const [result, setResult] = useState<IncomeSplitResult | null>(null);
   const [form, setForm] = useState({
-    selfIncome: "150000", spouseIncome: "60000", eligiblePensionIncome: "0",
-    selfRrspBalance: "300000", spouseRrspBalance: "80000", yearsToRetirement: "15", province: "ON",
+    higherIncome: "150000",
+    lowerIncome: "40000",
+    pensionIncome: "0",
+    age: "65",
+    province: "ON",
   });
 
+  const provinces = ["ON", "BC", "AB", "QC", "MB", "SK", "NS", "NB", "PE", "NL", "YT", "NT", "NU"];
+
   const handleCalc = () => {
-    incomeSplit.mutate({
-      selfIncome:            parseFloat(form.selfIncome),
-      spouseIncome:          parseFloat(form.spouseIncome),
-      eligiblePensionIncome: parseFloat(form.eligiblePensionIncome),
-      selfRrspBalance:       parseFloat(form.selfRrspBalance),
-      spouseRrspBalance:     parseFloat(form.spouseRrspBalance),
-      yearsToRetirement:     parseInt(form.yearsToRetirement),
-      province:              form.province,
+    const input: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(form)) {
+      input[k] = isNaN(Number(v)) ? v : Number(v);
+    }
+    incomeSplit.mutate(input, {
+      onSuccess: (data) => setResult(data),
     });
   };
-
-  const result = incomeSplit.data;
 
   return (
     <div className="space-y-5">
       <div className="p-4 bg-indigo-50 border border-indigo-200 rounded-xl text-sm text-indigo-800">
-        <strong>Income Splitting Analysis</strong> â€” Evaluates pension income splitting (T1032), spousal RRSP contributions, and TFSA shifting to minimize combined family tax.
+        <strong>Income Splitting Optimizer</strong> — Finds the best strategy: pension split (T1032), spousal RRSP, CPP sharing,
+        or prescribed rate loan.
       </div>
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-        <div><label className="text-sm font-semibold">Primary Income ($)</label><input type="number" value={form.selfIncome} onChange={e => setForm(f => ({ ...f, selfIncome: e.target.value }))} className="w-full px-3 py-2 rounded-xl border mt-1 text-sm" /></div>
-        <div><label className="text-sm font-semibold">Spouse Income ($)</label><input type="number" value={form.spouseIncome} onChange={e => setForm(f => ({ ...f, spouseIncome: e.target.value }))} className="w-full px-3 py-2 rounded-xl border mt-1 text-sm" /></div>
-        <div><label className="text-sm font-semibold">Eligible Pension Income ($)</label><input type="number" value={form.eligiblePensionIncome} onChange={e => setForm(f => ({ ...f, eligiblePensionIncome: e.target.value }))} className="w-full px-3 py-2 rounded-xl border mt-1 text-sm" /></div>
-        <div><label className="text-sm font-semibold">Primary RRSP Balance ($)</label><input type="number" value={form.selfRrspBalance} onChange={e => setForm(f => ({ ...f, selfRrspBalance: e.target.value }))} className="w-full px-3 py-2 rounded-xl border mt-1 text-sm" /></div>
-        <div><label className="text-sm font-semibold">Spouse RRSP Balance ($)</label><input type="number" value={form.spouseRrspBalance} onChange={e => setForm(f => ({ ...f, spouseRrspBalance: e.target.value }))} className="w-full px-3 py-2 rounded-xl border mt-1 text-sm" /></div>
-        <div><label className="text-sm font-semibold">Years to Retirement</label><input type="number" value={form.yearsToRetirement} onChange={e => setForm(f => ({ ...f, yearsToRetirement: e.target.value }))} className="w-full px-3 py-2 rounded-xl border mt-1 text-sm" /></div>
-        <div><label className="text-sm font-semibold">Province</label>
-          <select value={form.province} onChange={e => setForm(f => ({ ...f, province: e.target.value }))} className="w-full px-3 py-2 rounded-xl border mt-1 text-sm">
-            {["ON", "BC", "AB", "QC", "MB", "SK", "NS", "NB", "PE", "NL"].map(p => <option key={p} value={p}>{p}</option>)}
+
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+        <div>
+          <label className="text-sm font-semibold">Higher Income</label>
+          <input
+            type="number"
+            value={form.higherIncome}
+            onChange={(e) => setForm((f) => ({ ...f, higherIncome: e.target.value }))}
+            className="w-full px-3 py-2 rounded-xl border mt-1 text-sm"
+          />
+        </div>
+        <div>
+          <label className="text-sm font-semibold">Lower Income</label>
+          <input
+            type="number"
+            value={form.lowerIncome}
+            onChange={(e) => setForm((f) => ({ ...f, lowerIncome: e.target.value }))}
+            className="w-full px-3 py-2 rounded-xl border mt-1 text-sm"
+          />
+        </div>
+        <div>
+          <label className="text-sm font-semibold">Pension Income</label>
+          <input
+            type="number"
+            value={form.pensionIncome}
+            onChange={(e) => setForm((f) => ({ ...f, pensionIncome: e.target.value }))}
+            className="w-full px-3 py-2 rounded-xl border mt-1 text-sm"
+          />
+        </div>
+        <div>
+          <label className="text-sm font-semibold">Age</label>
+          <input
+            type="number"
+            value={form.age}
+            onChange={(e) => setForm((f) => ({ ...f, age: e.target.value }))}
+            className="w-full px-3 py-2 rounded-xl border mt-1 text-sm"
+          />
+        </div>
+        <div>
+          <label className="text-sm font-semibold">Province</label>
+          <select
+            value={form.province}
+            onChange={(e) => setForm((f) => ({ ...f, province: e.target.value }))}
+            className="w-full px-3 py-2 rounded-xl border mt-1 text-sm"
+          >
+            {provinces.map((p) => (
+              <option key={p} value={p}>
+                {p}
+              </option>
+            ))}
           </select>
         </div>
       </div>
-      <button onClick={handleCalc} disabled={incomeSplit.isPending} data-testid="button-calc-income-split" className="flex items-center space-x-2 px-5 py-2.5 bg-indigo-600 text-white font-semibold rounded-xl hover:bg-indigo-700 disabled:opacity-50">
-        <Calculator className="w-4 h-4" /><span>{incomeSplit.isPending ? "Analyzing..." : "Analyze Income Splitting"}</span>
+
+      <button
+        onClick={handleCalc}
+        disabled={incomeSplit.isPending}
+        className="flex items-center space-x-2 px-4 py-2 bg-primary text-primary-foreground rounded-xl font-semibold hover:bg-primary/90 disabled:opacity-50"
+      >
+        <Receipt className="w-4 h-4" />
+        <span>{incomeSplit.isPending ? "Analyzing..." : "Analyze Income Splitting"}</span>
       </button>
+
       {result && (
         <div className="space-y-4">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[
-              { label: "Strategy",              value: result.strategy.replace(/_/g, " ").toUpperCase(), color: "text-indigo-600" },
-              { label: "Current Combined Tax",  value: fmt$(result.currentCombinedTax),                  color: "text-red-600" },
-              { label: "Optimized Combined Tax",value: fmt$(result.optimizedCombinedTax),               color: "text-green-600" },
-              { label: "Annual Tax Savings",    value: fmt$(result.annualTaxSavings),                    color: "text-green-700" },
-            ].map(card => (
+              { label: "Strategy", value: result.strategy.replace(/_/g, " ").toUpperCase(), color: "text-indigo-600" },
+              { label: "Current Combined Tax", value: fmt$(result.currentCombinedTax), color: "text-red-600" },
+              { label: "Optimized Combined Tax", value: fmt$(result.optimizedCombinedTax), color: "text-green-600" },
+              { label: "Annual Tax Savings", value: fmt$(result.annualTaxSavings), color: "text-green-700" },
+            ].map((card) => (
               <div key={card.label} className="border border-border rounded-xl p-4">
                 <p className="text-xs text-muted-foreground uppercase">{card.label}</p>
                 <p className={`text-lg font-bold mt-1 ${card.color}`}>{card.value}</p>
               </div>
             ))}
           </div>
+
           {result.lifetimeTaxSavings > 0 && (
             <div className="p-4 bg-green-50 border border-green-200 rounded-xl">
               <p className="font-semibold text-green-800">Estimated Lifetime Savings: {fmt$(result.lifetimeTaxSavings)}</p>
               <p className="text-sm text-green-700 mt-2">{result.details}</p>
             </div>
           )}
+
           {result.lifetimeTaxSavings === 0 && (
             <div className="p-4 bg-muted/50 border border-border rounded-xl">
               <p className="text-sm text-muted-foreground">{result.details}</p>
@@ -1488,6 +2106,10 @@ function IncomeSplittingPanel({ clientId }: { clientId: number }) {
   );
 }
 
+// ============================================================================
+// MAIN TAX TAB COMPONENT
+// ============================================================================
+
 export function TaxTab({ clientId }: { clientId: number }) {
   const [activeSubTab, setActiveSubTab] = useState<TaxSubTab>("projection");
 
@@ -1496,26 +2118,33 @@ export function TaxTab({ clientId }: { clientId: number }) {
       <div className="flex items-center justify-between flex-wrap gap-2">
         <h2 className="text-xl font-display font-bold">Tax Planning</h2>
       </div>
+
       <div className="flex gap-1 p-1 bg-muted/50 rounded-xl overflow-x-auto flex-wrap">
-        {taxSubTabs.map(t => (
-          <button key={t.key} onClick={() => setActiveSubTab(t.key)}
-            data-testid={`button-tax-subtab-${t.key}`}
-            className={`px-3 py-2 rounded-lg text-sm font-semibold whitespace-nowrap transition-colors ${activeSubTab === t.key ? "bg-white text-primary shadow-sm" : "text-muted-foreground hover:text-foreground"}`}>
+        {taxSubTabs.map((t) => (
+          <button
+            key={t.key}
+            onClick={() => setActiveSubTab(t.key)}
+            className={`px-3 py-2 rounded-lg text-sm font-semibold whitespace-nowrap transition-colors ${
+              activeSubTab === t.key ? "bg-white text-primary shadow-sm" : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
             {t.label}
           </button>
         ))}
       </div>
+
       <div className="animate-in fade-in duration-200">
-        {activeSubTab === "notes"      && <TaxNotesPanel       clientId={clientId} />}
-        {activeSubTab === "rrsp"       && <RrspRoomPanel        clientId={clientId} />}
-        {activeSubTab === "tfsa"       && <TfsaRoomPanel        clientId={clientId} />}
-        {activeSubTab === "projection" && <TaxProjectionPanel   clientId={clientId} />}
-        {activeSubTab === "capgains"   && <CapitalGainsPanel    clientId={clientId} />}
-        {activeSubTab === "splitting"  && <IncomeSplittingPanel clientId={clientId} />}
+        {activeSubTab === "notes" && <TaxNotesPanel clientId={clientId} />}
+        {activeSubTab === "rrsp" && <RrspRoomPanel clientId={clientId} />}
+        {activeSubTab === "tfsa" && <TfsaRoomPanel clientId={clientId} />}
+        {activeSubTab === "projection" && <TaxProjectionPanel clientId={clientId} />}
+        {activeSubTab === "capgains" && <CapitalGainsPanel clientId={clientId} />}
+        {activeSubTab === "splitting" && <IncomeSplittingPanel clientId={clientId} />}
       </div>
     </div>
   );
 }
+
 
 // â”€â”€ Estate Tab â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 

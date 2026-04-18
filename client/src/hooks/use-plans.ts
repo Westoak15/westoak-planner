@@ -408,9 +408,134 @@ export interface TaxProjectionResult {
   };
 }
 
-export function useTaxProjection(clientId: number, input: Record<string, unknown> | null) {
+// ============================================================================
+// COPY THIS ENTIRE SECTION INTO client/src/hooks/use-plans.ts
+// ============================================================================
+// Instructions:
+// 1. Find the existing useTaxProjection, useRrspRoom, useTfsaRoom, 
+//    useCapitalGains, and useIncomeSplit functions
+// 2. Delete those 5 functions completely
+// 3. Replace with these versions below
+// 4. Also add the type definitions at the end if they don't exist
+// ============================================================================
+
+// ── Tax Projection Results ──────────────────────────────────────────────────
+
+export interface TaxYearProjection {
+  year: number;
+  age: number;
+  phase: string;
+  employmentIncome: number;
+  pensionIncome: number;
+  rrifWithdrawal: number;
+  tfsaWithdrawal: number;
+  capitalGainsIncome: number;
+  cppBenefit: number;
+  oasBenefit: number;
+  totalIncome: number;
+  federalTax: number;
+  provincialTax: number;
+  totalTax: number;
+  afterTaxIncome: number;
+  rrspBalance: number;
+  tfsaBalance: number;
+  nonRegBalance: number;
+  totalWealth: number;
+  rrspRoom: number;
+  tfsaRoom: number;
+}
+
+export interface TaxProjectionResult {
+  projections: TaxYearProjection[];
+  summary: {
+    totalLifetimeTax: number;
+    averageEffectiveRate: number;
+    projectedFinalWealth: number;
+    successProbability: number;
+  };
+}
+
+// ── RRSP Room Results ───────────────────────────────────────────────────────
+
+export interface RrspRoomResult {
+  summary: {
+    newRoomThisYear: number;
+    carryForwardBroughtIn: number;
+    totalAvailableRoom: number;
+    contributionsMade: number;
+    closingRoom: number;
+    annualLimitThisYear: number;
+  };
+  marginalTaxSavings: number;
+  effectiveCost: number;
+  catchUpStrategy: {
+    yearsToMaxOut: number;
+    annualContributionNeeded: number;
+    projectedRefundPerYear: number;
+  };
+}
+
+// ── TFSA Room Results ───────────────────────────────────────────────────────
+
+export interface TfsaRoomResult {
+  summary: {
+    annualLimitThisYear: number;
+    totalAvailableRoom: number;
+    contributionsMade: number;
+    closingRoom: number;
+  };
+  cumulativeRoomSince2009: number;
+  futureLimits: Array<{ year: number; limit: number }>;
+  thirtyYearProjection: {
+    tfsaBalanceFinal: number;
+    taxableBalanceFinal: number;
+    tfsaAdvantage: number;
+  };
+}
+
+// ── Capital Gains Results ───────────────────────────────────────────────────
+
+export interface CapitalGainsPosition {
+  symbol: string;
+  acb: number;
+  fmv: number;
+  unrealizedGain: number;
+}
+
+export interface CapitalGainsResult {
+  positions: CapitalGainsPosition[];
+  totalUnrealizedGain: number;
+  scenarios: Array<{
+    name: string;
+    gainRealized: number;
+    taxableGain: number;
+    estimatedTax: number;
+  }>;
+  lossHarvestingOpportunity: number;
+}
+
+// ── Income Splitting Results ────────────────────────────────────────────────
+
+export interface IncomeSplitResult {
+  strategy: string;
+  currentCombinedTax: number;
+  optimizedCombinedTax: number;
+  annualTaxSavings: number;
+  lifetimeTaxSavings: number;
+  details: string;
+}
+
+// ============================================================================
+// FIXED HOOKS - These replace the broken versions
+// ============================================================================
+
+/**
+ * Tax Projection Hook
+ * Runs year-by-year income, tax, and wealth projection through retirement
+ */
+export function useTaxProjection(clientId: number) {
   return useMutation({
-    mutationFn: async (): Promise<TaxProjectionResult> => {
+    mutationFn: async (input: Record<string, unknown>): Promise<TaxProjectionResult> => {
       const res = await apiRequest("POST", `/api/tax/${clientId}/projection`, input);
       if (!res.ok) throw new Error("Failed to run tax projection");
       return res.json();
@@ -418,23 +543,13 @@ export function useTaxProjection(clientId: number, input: Record<string, unknown
   });
 }
 
-export interface RrspRoomResult {
-  summary: {
-    newRoomThisYear:         number;
-    carryForwardBroughtIn:   number;
-    totalAvailableRoom:      number;
-    contributionsMade:       number;
-    pensionAdjustment:       number;
-    closingRoom:             number;
-    yearsUntilConversion:    number | null;
-    annualLimitUsed:         number;
-  };
-  futureLimits: Array<{ year: number; limit: number }>;
-}
-
+/**
+ * RRSP Room Calculator Hook
+ * Calculates available RRSP contribution room with carry-forward
+ */
 export function useRrspRoom(clientId: number) {
   return useMutation({
-    mutationFn: async (input: Record<string, number>): Promise<RrspRoomResult> => {
+    mutationFn: async (input: Record<string, unknown>): Promise<RrspRoomResult> => {
       const res = await apiRequest("POST", `/api/tax/${clientId}/rrsp-room`, input);
       if (!res.ok) throw new Error("Failed to calculate RRSP room");
       return res.json();
@@ -442,23 +557,13 @@ export function useRrspRoom(clientId: number) {
   });
 }
 
-export interface TfsaRoomResult {
-  summary: {
-    cumulativeRoomEarned:  number;
-    carryForwardBroughtIn: number;
-    contributionsMade:     number;
-    withdrawalsLastYear:   number;
-    totalAvailableRoom:    number;
-    closingRoom:           number;
-    annualLimitThisYear:   number;
-  };
-  cumulativeRoomSince2009: number;
-  futureLimits: Array<{ year: number; limit: number }>;
-}
-
+/**
+ * TFSA Room Calculator Hook
+ * Calculates available TFSA contribution room since 2009
+ */
 export function useTfsaRoom(clientId: number) {
   return useMutation({
-    mutationFn: async (input: Record<string, number>): Promise<TfsaRoomResult> => {
+    mutationFn: async (input: Record<string, unknown>): Promise<TfsaRoomResult> => {
       const res = await apiRequest("POST", `/api/tax/${clientId}/tfsa-room`, input);
       if (!res.ok) throw new Error("Failed to calculate TFSA room");
       return res.json();
@@ -466,30 +571,13 @@ export function useTfsaRoom(clientId: number) {
   });
 }
 
-export interface CapGainsScenario {
-  label:                 string;
-  amountRealized:        number;
-  taxableGain:           number;
-  inclusionRate:         number;
-  estimatedTax:          number;
-  netProceeds:           number;
-  effectiveGainsTaxRate: number;
-}
-
-export interface CapGainsResult {
-  positions:             Array<{ name: string; marketValue: number; adjustedCostBase: number; unrealizedGain: number; isLoss: boolean }>;
-  totalUnrealizedGain:   number;
-  totalUnrealizedLoss:   number;
-  netUnrealized:         number;
-  scenarios:             CapGainsScenario[];
-  harvestingOpportunity: number;
-  recommendedYear:       number;
-  reasoning:             string;
-}
-
+/**
+ * Capital Gains Analysis Hook
+ * Analyzes unrealized capital gains with 2024 inclusion rates
+ */
 export function useCapitalGains(clientId: number) {
   return useMutation({
-    mutationFn: async (input: { positions: Array<{ name: string; marketValue: number; adjustedCostBase: number }>; currentIncome: number; province: string }): Promise<CapGainsResult> => {
+    mutationFn: async (input: Record<string, unknown>): Promise<CapitalGainsResult> => {
       const res = await apiRequest("POST", `/api/tax/${clientId}/capital-gains`, input);
       if (!res.ok) throw new Error("Failed to analyze capital gains");
       return res.json();
@@ -497,26 +585,19 @@ export function useCapitalGains(clientId: number) {
   });
 }
 
-export interface IncomeSplitResult {
-  strategy:             string;
-  currentCombinedTax:   number;
-  optimizedCombinedTax: number;
-  annualTaxSavings:     number;
-  lifetimeTaxSavings:   number;
-  details:              string;
-}
-
+/**
+ * Income Splitting Optimizer Hook
+ * Finds optimal income split strategy (pension split, spousal RRSP, etc.)
+ */
 export function useIncomeSplit(clientId: number) {
   return useMutation({
-    mutationFn: async (input: Record<string, number | string>): Promise<IncomeSplitResult> => {
-      const res = await apiRequest("POST", `/api/tax/${clientId}/income-split`, input);
+    mutationFn: async (input: Record<string, unknown>): Promise<IncomeSplitResult> => {
+      const res = await apiRequest("POST", `/api/tax/${clientId}/income-splitting`, input);
       if (!res.ok) throw new Error("Failed to analyze income splitting");
       return res.json();
     },
   });
 }
-
-// ── Estate Planning Notes ─────────────────────────────────────────────────────
 
 export function useEstatePlanningNotes(clientId: number) {
   return useQuery({

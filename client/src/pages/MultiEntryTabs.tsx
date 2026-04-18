@@ -384,23 +384,37 @@ async function saveAll() {
   );
 }
 
-// ── RETIREMENT ────────────────────────────────────────────────────────────────
-interface RetirementProj { id: number; label: string; currentAge: number|null; retirementAge: number|null; currentRrsp: string|null; currentTfsa: string|null; currentNonReg: string|null; annualContribution: string|null; expectedReturn: string|null; inflationRate: string|null; desiredIncome: string|null; cppStartAge: number|null; oasStartAge: number|null; cppMonthly: string|null; oasMonthly: string|null; projectedBalance: string|null; successRate: string|null; notes: string|null; }
+// ── RETIREMENT TAB (clean rebuild) ────────────────────────────────────────────
+interface RetirementProj { id: number; label: string; currentAge: number|null; retirementAge: number|null; currentRrsp: string|null; currentTfsa: string|null; currentNonReg: string|null; annualContribution: string|null; expectedReturn: string|null; inflationRate: string|null; desiredIncome: string|null; cppStartAge: number|null; oasStartAge: number|null; cppMonthly: string|null; oasMonthly: string|null; projectedBalance: string|null; successRate: string|null; notes: string|null; createdAt?: string; }
 type RetDraft = { label: string; currentAge: string; retirementAge: string; currentRrsp: string; currentTfsa: string; currentNonReg: string; annualContribution: string; expectedReturn: string; inflationRate: string; desiredIncome: string; cppStartAge: string; oasStartAge: string; cppMonthly: string; oasMonthly: string; notes: string; };
+
 export function RetirementTab({ clientId, client }: { clientId: number; client?: any }) {
   const calcAge = (dob: string | null) => dob ? Math.floor((Date.now() - new Date(dob).getTime()) / (365.25 * 24 * 60 * 60 * 1000)) : null;
   const clientAge = calcAge(client?.dateOfBirth);
+  const spouseAge = calcAge(client?.spouseDateOfBirth);
   const retirementAge = client?.retirementAge ?? 65;
   const desiredIncome = client?.desiredRetirementIncome ?? "";
-  const emptyRet = (): RetDraft => ({ label:"Base Case", currentAge: clientAge ? String(clientAge) : "", retirementAge: String(retirementAge), currentRrsp:"", currentTfsa:"", currentNonReg:"", annualContribution:"", expectedReturn:"6.5", inflationRate:"2.5", desiredIncome: desiredIncome ? String(desiredIncome) : "", cppStartAge:"65", oasStartAge:"65", cppMonthly:"900", oasMonthly:"700", notes:"" });
+  const clientName = client ? client.firstName : "Primary";
+  const spouseName = client?.spouseFirstName ?? "Spouse";
+
+  const emptyDraft = (label: string, age?: string): RetDraft => ({
+    label,
+    currentAge: age ?? (clientAge ? String(clientAge) : ""),
+    retirementAge: String(retirementAge),
+    currentRrsp: "", currentTfsa: "", currentNonReg: "",
+    annualContribution: "0", expectedReturn: "6.5", inflationRate: "2.5",
+    desiredIncome: desiredIncome ? String(desiredIncome) : "",
+    cppStartAge: "65", oasStartAge: "65", cppMonthly: "900", oasMonthly: "700",
+    notes: "",
+  });
+
+  const [rows, setRows]     = useState<RetirementProj[]>([]);
+  const [drafts, setDrafts] = useState<RetDraft[]>([]);
+  const [saving, setSaving] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
   const [netWorth, setNetWorth] = useState<any[]>([]);
-  const [rows, setRows]       = useState<RetirementProj[]>([]);
-  const [drafts, setDrafts]   = useState<RetDraft[]>([]);
-  const [saving, setSaving]   = useState(false);
   const [simResult, setSimResult] = useState<any>(null);
   const [simulating, setSimulating] = useState(false);
-  const [showSimSettings, setShowSimSettings] = useState(false);
-  const [simSettings, setSimSettings] = useState({ simulations:1000, equityAllocation:60, equityReturn:7.0, equityStdDev:12.0, bondReturn:4.0, bondStdDev:5.0, inflationRate:2.5, lifeExpectancy:90, guardrailFloor:0.80, guardrailCeiling:1.20, spendingFlexDown:0.10, spendingFlexUp:0.10 });
 
   const load = () => api.get<RetirementProj[]>(`/api/clients/${clientId}/retirement`).then(setRows);
   useEffect(() => {
@@ -408,84 +422,49 @@ export function RetirementTab({ clientId, client }: { clientId: number; client?:
     api.get<any[]>(`/api/clients/${clientId}/net-worth`).then(setNetWorth);
   }, [clientId]);
 
+  function fmt$(v: any) { const n = parseFloat(v ?? "0"); if (!n) return "-"; return "$" + n.toLocaleString("en-CA", { maximumFractionDigits: 0 }); }
+  function fmtPct(v: any) { const n = parseFloat(v ?? "0"); if (!n) return "-"; return n + "%"; }
+
   function addDraft() {
-    const primary = netWorth.filter(e => e.type === "asset" && e.owner !== "spouse"); // includes joint
+    const primary = netWorth.filter(e => e.type === "asset" && e.owner !== "spouse");
     const spouse  = netWorth.filter(e => e.type === "asset" && e.owner === "spouse");
-    const hasSpouse = spouse.length > 0;
-
-    const sum = (arr: any[], cat: string) => arr.filter(e => e.category === cat).reduce((s, e) => s + Number(e.value), 0);
-
-    const pRrsp   = sum(primary, "RRSP");
-    const pTfsa   = sum(primary, "TFSA");
-    const pNonReg = sum(primary, "Non-Registered");
-    const sRrsp   = sum(spouse,  "RRSP");
-    const sTfsa   = sum(spouse,  "TFSA");
-    const sNonReg = sum(spouse,  "Non-Registered");
-
+    const joint   = netWorth.filter(e => e.type === "asset" && e.owner === "joint");
+    const hasSpouse = spouse.length > 0 || client?.spouseFirstName;
+    const sum = (arr: any[], cat: string) => arr.filter(e => e.category === cat).reduce((s: number, e: any) => s + Number(e.value), 0);
+    const pRrsp = sum(primary, "RRSP") + sum(joint, "RRSP") / 2;
+    const pTfsa = sum(primary, "TFSA") + sum(joint, "TFSA") / 2;
+    const pNonReg = sum(primary, "Non-Registered") + sum(joint, "Non-Registered") / 2;
+    const sRrsp = sum(spouse, "RRSP") + sum(joint, "RRSP") / 2;
+    const sTfsa = sum(spouse, "TFSA") + sum(joint, "TFSA") / 2;
+    const sNonReg = sum(spouse, "Non-Registered") + sum(joint, "Non-Registered") / 2;
     const newDrafts: RetDraft[] = [];
-
-    // 1. Combined household projection
-    newDrafts.push({
-      ...emptyRet(),
-      label: client ? `${client.firstName} & ${client.spouseFirstName ?? "Spouse"} Combined` : "Household Combined",
-      currentRrsp:   String(pRrsp + sRrsp)   || "",
-      currentTfsa:   String(pTfsa + sTfsa)   || "",
-      currentNonReg: String(pNonReg + sNonReg) || "",
-    });
-
-    // 2. Primary individual
-    newDrafts.push({
-      ...emptyRet(),
-      label: client ? client.firstName : "Primary",
-      currentRrsp:   pRrsp   > 0 ? String(pRrsp)   : "",
-      currentTfsa:   pTfsa   > 0 ? String(pTfsa)   : "",
-      currentNonReg: pNonReg > 0 ? String(pNonReg) : "",
-    });
-
-    // 3. Spouse individual (only if spouse assets exist)
+    newDrafts.push({ ...emptyDraft(hasSpouse ? `${clientName} & ${spouseName} Combined` : clientName), currentRrsp: String(Math.round(pRrsp + sRrsp)), currentTfsa: String(Math.round(pTfsa + sTfsa)), currentNonReg: String(Math.round(pNonReg + sNonReg)) });
+    newDrafts.push({ ...emptyDraft(clientName, clientAge ? String(clientAge) : ""), currentRrsp: String(Math.round(pRrsp)), currentTfsa: String(Math.round(pTfsa)), currentNonReg: String(Math.round(pNonReg)) });
     if (hasSpouse) {
-      newDrafts.push({
-        ...emptyRet(),
-        label: client?.spouseFirstName ?? "Spouse",
-        currentRrsp:   sRrsp   > 0 ? String(sRrsp)   : "",
-        currentTfsa:   sTfsa   > 0 ? String(sTfsa)   : "",
-        currentNonReg: sNonReg > 0 ? String(sNonReg) : "",
-      });
+      newDrafts.push({ ...emptyDraft(spouseName, spouseAge ? String(spouseAge) : ""), currentRrsp: String(Math.round(sRrsp)), currentTfsa: String(Math.round(sTfsa)), currentNonReg: String(Math.round(sNonReg)) });
     }
-
-    setDrafts(d => [...d, ...newDrafts]);
-  }
-  function updateDraft(i: number, k: keyof RetDraft, v: string) { setDrafts(d => d.map((x, idx) => idx === i ? { ...x, [k]: v } : x)); }
-  function removeDraft(i: number) { setDrafts(d => d.filter((_, idx) => idx !== i)); }
-  const ss = (k: string, v: any) => setSimSettings(s => ({ ...s, [k]: v }));
-
-  function startEdit(e: NWEntry) {
-    const m = (e.metadata ?? {}) as any;
-    setEditingId(e.id);
-    setEditForm({
-      ...e,
-      isSpousal: !!m.spousal,
-      rrspContributor: m.contributor ?? "",
-      pensionType: m.pensionType ?? "DBPP",
-      matchPct: m.matchPct ?? "",
-    });
+    setDrafts(prev => [...prev, ...newDrafts]);
   }
 
-  async function saveEdit() {
-    if (!editingId || !editForm.value) return;
-    setSaving(true);
-    try {
-      const m: any = {};
-      if (editForm.category === "RRSP" && editForm.isSpousal) { m.spousal = true; m.contributor = editForm.rrspContributor; }
-      if (editForm.category === "Pension") { m.pensionType = editForm.pensionType; if (editForm.matchPct) m.matchPct = editForm.matchPct; }
-      await api.put(`/api/net-worth/${editingId}`, {
-        category: editForm.category, name: editForm.name || editForm.category,
-        owner: editForm.owner, value: editForm.value, notes: editForm.notes || null,
-        metadata: Object.keys(m).length ? m : null,
-      });
-      setEditingId(null); setEditForm({});
-      await load();
-    } finally { setSaving(false); }
+  function startEdit(p: RetirementProj) {
+    setEditingId(p.id);
+    setDrafts([{
+      label: p.label ?? clientName,
+      currentAge: p.currentAge ? String(p.currentAge) : "",
+      retirementAge: p.retirementAge ? String(p.retirementAge) : "65",
+      currentRrsp: p.currentRrsp ?? "0",
+      currentTfsa: p.currentTfsa ?? "0",
+      currentNonReg: p.currentNonReg ?? "0",
+      annualContribution: p.annualContribution ?? "0",
+      expectedReturn: p.expectedReturn ?? "6.5",
+      inflationRate: p.inflationRate ?? "2.5",
+      desiredIncome: p.desiredIncome ?? "",
+      cppStartAge: p.cppStartAge ? String(p.cppStartAge) : "65",
+      oasStartAge: p.oasStartAge ? String(p.oasStartAge) : "65",
+      cppMonthly: p.cppMonthly ?? "900",
+      oasMonthly: p.oasMonthly ?? "700",
+      notes: p.notes ?? "",
+    }]);
   }
 
   async function saveAll() {
@@ -493,43 +472,60 @@ export function RetirementTab({ clientId, client }: { clientId: number; client?:
     if (!valid.length) return;
     setSaving(true);
     try {
-      await Promise.all(valid.map(d => api.post(`/api/clients/${clientId}/retirement`, d)));
+      if (editingId) {
+        await api.patch(`/api/retirement/${editingId}`, valid[0]);
+        setEditingId(null);
+      } else {
+        await Promise.all(valid.map(d => api.post(`/api/clients/${clientId}/retirement`, d)));
+      }
       setDrafts([]);
       await load();
     } finally { setSaving(false); }
   }
 
+  async function del(id: number) {
+    if (!confirm("Delete projection?")) return;
+    await api.delete(`/api/retirement/${id}`);
+    await load();
+  }
+
   async function runSim() {
     setSimulating(true);
-    try { const r = await api.post<any>(`/api/clients/${clientId}/simulate`, simSettings); setSimResult(r); await load(); }
-    catch (e: any) { alert(e.message); }
+    try {
+      const r = await api.post<any>(`/api/clients/${clientId}/simulate`, { simulations: 1000, equityAllocation: 60, equityReturn: 7.0, equityStdDev: 12.0, bondReturn: 4.0, bondStdDev: 5.0, inflationRate: 2.5, lifeExpectancy: 90 });
+      setSimResult(r);
+      await load();
+    } catch (e: any) { alert(e.message); }
     finally { setSimulating(false); }
   }
 
-  async function del(id: number) {
-    if (!confirm("Delete projection?")) return;
-    await api.delete(`/api/retirement/${id}`); await load();
+  // Group projections by retirementAge+desiredIncome
+  const groups: RetirementProj[][] = [];
+  const used = new Set<number>();
+  for (const p of rows) {
+    if (used.has(p.id)) continue;
+    const siblings = rows.filter(r => !used.has(r.id) && r.retirementAge === p.retirementAge && r.desiredIncome === p.desiredIncome && r.id !== p.id);
+    const group = [p, ...siblings];
+    group.forEach(r => used.add(r.id));
+    groups.push(group);
   }
-  function startEditRetirement(p: RetirementProj) {
-    setEditingId(p.id);
-    setDrafts([{ label: p.label ?? "Base Case", currentAge: p.currentAge ? String(p.currentAge) : "", retirementAge: p.retirementAge ? String(p.retirementAge) : "65", currentRrsp: p.currentRrsp ?? "", currentTfsa: p.currentTfsa ?? "", currentNonReg: p.currentNonReg ?? "", annualContribution: p.annualContribution ?? "", expectedReturn: p.expectedReturn ?? "6.5", inflationRate: p.inflationRate ?? "2.5", desiredIncome: p.desiredIncome ?? "", cppStartAge: p.cppStartAge ? String(p.cppStartAge) : "65", oasStartAge: p.oasStartAge ? String(p.oasStartAge) : "65", cppMonthly: p.cppMonthly ?? "900", oasMonthly: p.oasMonthly ?? "700", notes: p.notes ?? "" }]);
-  } 
+
+  const labelColor = (label: string) => {
+    if (label.includes("Combined") || label.includes("&")) return "text-indigo-600";
+    if (label === spouseName || label === "Spouse") return "text-pink-600";
+    return "text-blue-600";
+  };
+
   const F = ({ label, val }: { label: string; val: any }) => (
-    <div><p className="text-[10px] text-gray-400 uppercase font-semibold">{label}</p><p className="text-sm font-semibold text-gray-800">{val ?? "—"}</p></div>
+    <div><p className="text-[10px] text-gray-400 uppercase font-semibold">{label}</p><p className="text-sm font-semibold text-gray-800">{val ?? "-"}</p></div>
   );
 
   return (
     <div className="p-6 max-w-5xl mx-auto">
       {simResult && <MonteCarloResults result={simResult} onClose={() => setSimResult(null)} onPrint={() => window.print()} />}
-
-      {/* Header actions */}
       <div className="flex items-center justify-between mb-5">
         <h2 className="text-xl font-bold text-gray-900">Retirement Projections</h2>
         <div className="flex gap-2">
-          <button onClick={() => setShowSimSettings(s => !s)}
-            className="text-sm font-semibold text-[#0c1e3a] border border-[#0c1e3a] hover:bg-[#0c1e3a] hover:text-white px-3 py-1.5 rounded-lg transition-colors">
-            ⚙ Simulation
-          </button>
           <button onClick={runSim} disabled={simulating}
             className="bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-sm font-semibold px-4 py-1.5 rounded-lg">
             {simulating ? "Running..." : "Retirement Checkup"}
@@ -541,80 +537,33 @@ export function RetirementTab({ clientId, client }: { clientId: number; client?:
         </div>
       </div>
 
-      {/* Simulation settings */}
-      {showSimSettings && (
-        <Card className="mb-5 p-5 border-indigo-200 bg-indigo-50/30">
-          <h3 className="font-bold text-gray-800 mb-4">Monte Carlo Settings</h3>
-          <div className="grid grid-cols-4 gap-3 mb-3">
-            {[["Simulations","simulations"],["Equity %","equityAllocation"],["Life Expectancy","lifeExpectancy"],["Inflation %","inflationRate"]].map(([l,k]) => (
-              <div key={k}><label className="text-xs font-semibold text-gray-500 mb-1 block">{l}</label>
-                <InlineInput value={String((simSettings as any)[k])} onChange={v => ss(k, +v)} type="number" /></div>
-            ))}
-          </div>
-          <div className="grid grid-cols-4 gap-3 mb-3">
-            {[["Equity Return %","equityReturn"],["Equity StdDev %","equityStdDev"],["Bond Return %","bondReturn"],["Bond StdDev %","bondStdDev"]].map(([l,k]) => (
-              <div key={k}><label className="text-xs font-semibold text-gray-500 mb-1 block">{l}</label>
-                <InlineInput value={String((simSettings as any)[k])} onChange={v => ss(k, +v)} type="number" /></div>
-            ))}
-          </div>
-          <p className="text-xs font-bold text-indigo-700 uppercase mb-2">Guardrails</p>
-          <div className="grid grid-cols-4 gap-3">
-            {[["Floor %","guardrailFloor",100],["Ceiling %","guardrailCeiling",100],["Max Cut %","spendingFlexDown",100],["Max Raise %","spendingFlexUp",100]].map(([l,k,m]) => (
-              <div key={k}><label className="text-xs font-semibold text-gray-500 mb-1 block">{l}</label>
-                <InlineInput value={String(((simSettings as any)[k] as number) * (m as number))} onChange={v => ss(k, +v / (m as number))} type="number" /></div>
-            ))}
-          </div>
-        </Card>
-      )}
-
-      {/* Draft projection forms */}
-      {console.log("RETIREMENT DRAFTS:", drafts.length, drafts)}
-      {drafts.map((d, i) => (
-        <Card key={i} className="mb-4 p-5 border-blue-200 bg-blue-50/20">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <h3 className="font-bold text-gray-800">New Projection</h3>
-              {d.label === "Household Combined" && <span className="text-xs bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full font-semibold">Household Combined</span>}
-              {d.label === "Primary" && <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-semibold">Primary</span>}
-              {d.label === "Spouse" && <span className="text-xs bg-pink-100 text-pink-700 px-2 py-0.5 rounded-full font-semibold">Spouse</span>}
-            </div>
-            <button onClick={() => removeDraft(i)} className="text-gray-400 hover:text-red-500"><X className="w-4 h-4" /></button>
-          </div>
-          <div className="grid grid-cols-3 gap-3 mb-3">
-            {([["Scenario Label","label","text"],["Current Age","currentAge","number"],["Retirement Age","retirementAge","number"]] as [string,keyof RetDraft,string][]).map(([l,k,t]) => (
-              <div key={k}><label className="text-xs font-semibold text-gray-500 mb-1 block">{l}</label>
-                <InlineInput value={d[k]} onChange={v => updateDraft(i, k, v)} type={t} /></div>
-            ))}
-          </div>
-          <div className="text-xs text-blue-600 bg-blue-50 border border-blue-200 rounded-lg px-3 py-1.5 mb-2">💡 RRSP, TFSA &amp; Non-Reg balances are pre-filled from Net Worth — edit if needed</div>
-          <div className="grid grid-cols-3 gap-3 mb-3">
-            {([["RRSP — from Net Worth ($)","currentRrsp","number"],["TFSA — from Net Worth ($)","currentTfsa","number"],["Non-Reg — from Net Worth ($)","currentNonReg","number"]] as [string,keyof RetDraft,string][]).map(([l,k,t]) => (
-              <div key={k}><label className="text-xs font-semibold text-gray-500 mb-1 block">{l}</label>
-                <InlineInput value={d[k]} onChange={v => updateDraft(i, k, v)} type={t} /></div>
-            ))}
-          </div>
-          <div className="grid grid-cols-3 gap-3 mb-3">
-            {([["Annual Contribution ($)","annualContribution","number"],["Expected Return (%)","expectedReturn","number"],["Desired Income ($)","desiredIncome","number"]] as [string,keyof RetDraft,string][]).map(([l,k,t]) => (
-              <div key={k}><label className="text-xs font-semibold text-gray-500 mb-1 block">{l}</label>
-                <InlineInput value={d[k]} onChange={v => updateDraft(i, k, v)} type={t} /></div>
-            ))}
-          </div>
-          <div className="grid grid-cols-4 gap-3">
-            {([["CPP Age","cppStartAge","number"],["CPP/mo ($)","cppMonthly","number"],["OAS Age","oasStartAge","number"],["OAS/mo ($)","oasMonthly","number"]] as [string,keyof RetDraft,string][]).map(([l,k,t]) => (
-              <div key={k}><label className="text-xs font-semibold text-gray-500 mb-1 block">{l}</label>
-                <InlineInput value={d[k]} onChange={v => updateDraft(i, k, v)} type={t} /></div>
-            ))}
-          </div>
-        </Card>
-      ))}
-
+      {/* Draft forms */}
       {drafts.length > 0 && (
-        <div className="flex justify-end gap-2 mb-5">
-          <button onClick={() => setDrafts([])} className="text-sm text-gray-500 px-4 py-2 border border-gray-200 rounded-lg">Discard All</button>
-          <button onClick={saveAll} disabled={saving}
-            className="flex items-center gap-1.5 bg-[#0c1e3a] hover:bg-[#0e2a4a] disabled:opacity-50 text-white text-sm font-semibold px-5 py-2 rounded-lg">
-            <Save className="w-3.5 h-3.5" /> {saving ? "Saving…" : `Save ${drafts.length} Projection${drafts.length > 1 ? "s" : ""}`}
-          </button>
+        <div className="space-y-4 mb-5">
+          {drafts.map((d, i) => (
+            <Card key={i} className="p-5 border-blue-200 bg-blue-50/20">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <h3 className="font-bold text-gray-800">{editingId ? `Edit: ${d.label}` : d.label}</h3>
+                </div>
+                <button onClick={() => setDrafts(x => x.filter((_, idx) => idx !== i))} className="text-gray-400 hover:text-red-500"><X className="w-4 h-4" /></button>
+              </div>
+              <div className="grid grid-cols-3 gap-3 mb-3">
+                {[["Label","label","text"],["Current Age","currentAge","number"],["Retirement Age","retirementAge","number"],["RRSP Balance","currentRrsp","number"],["TFSA Balance","currentTfsa","number"],["Non-Reg Balance","currentNonReg","number"],["Annual Contribution","annualContribution","number"],["Expected Return %","expectedReturn","number"],["Desired Income","desiredIncome","number"],["CPP Monthly","cppMonthly","number"],["CPP Start Age","cppStartAge","number"],["OAS Monthly","oasMonthly","number"]].map(([l, k, t]) => (
+                  <div key={k}><label className="text-xs font-semibold text-gray-500 mb-1 block">{l}</label>
+                    <input type={t} step="any" value={(d as any)[k]} onChange={e => setDrafts(x => x.map((x2, idx) => idx === i ? { ...x2, [k]: e.target.value } : x2))}
+                      className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm" /></div>
+                ))}
+              </div>
+            </Card>
+          ))}
+          <div className="flex justify-end gap-2">
+            <button onClick={() => { setDrafts([]); setEditingId(null); }} className="text-sm text-gray-500 px-4 py-2 border border-gray-200 rounded-lg">Cancel</button>
+            <button onClick={saveAll} disabled={saving}
+              className="flex items-center gap-1.5 bg-[#0c1e3a] hover:bg-[#0e2a4a] disabled:opacity-50 text-white text-sm font-semibold px-5 py-2 rounded-lg">
+              <Save className="w-3.5 h-3.5" /> {saving ? "Saving..." : editingId ? "Save Changes" : `Save ${drafts.length} Projection${drafts.length > 1 ? "s" : ""}`}
+            </button>
+          </div>
         </div>
       )}
 
@@ -623,52 +572,37 @@ export function RetirementTab({ clientId, client }: { clientId: number; client?:
         <Card className="p-8 text-center text-gray-400">No projections yet. Click Add Projection to create one.</Card>
       )}
       <div className="space-y-4">
-  {(() => {
-    const groups: RetirementProj[][] = [];
-    const used = new Set<number>();
-    for (const p of rows) {
-      if (used.has(p.id)) continue;
-      const siblings = rows.filter(r => !used.has(r.id) && r.retirementAge === p.retirementAge && r.desiredIncome === p.desiredIncome && r.id !== p.id);
-      const group = [p, ...siblings];
-      group.forEach(r => used.add(r.id));
-      groups.push(group);
-    }
-    return groups.map((group, gi) => {
-      const main = group.find(p => p.label === "Household Combined") ?? group[0];
-      return (
-        <Card key={gi} className="p-5">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="font-bold text-gray-900">Retirement Plan - Age {main.retirementAge}</h3>
-            <span className="text-xs text-gray-400">{new Date(main.createdAt ?? "").toLocaleDateString()}</span>
-          </div>
-          <div>
-            {group.map(p => (
-              <div key={p.id} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
-                <div className="flex items-center gap-4 flex-1 min-w-0">
-                  <span className={`text-xs font-bold w-24 flex-shrink-0 ${p.label === "Household Combined" ? "text-indigo-600" : p.label === "Spouse" ? "text-pink-600" : "text-blue-600"}`}>{p.label}</span>
-                  <span className="text-xs text-gray-500">Age {p.currentAge} - {p.retirementAge}</span>
-                  <span className="text-xs text-gray-500">RRSP {fmt$(p.currentRrsp)}</span>
-                  <span className="text-xs text-gray-500">TFSA {fmt$(p.currentTfsa)}</span>
-                  <span className="text-xs text-gray-500">Income {fmt$(p.desiredIncome)}</span>
-                  {p.successRate && <span className={`text-xs font-bold ${Number(p.successRate) >= 85 ? "text-emerald-600" : Number(p.successRate) >= 70 ? "text-amber-600" : "text-red-600"}`}>{p.successRate}%</span>}
-                </div>
-                <div className="flex gap-1 flex-shrink-0">
-                  <button onClick={() => startEditRetirement(p)} className="p-1 text-gray-300 hover:text-[#0c1e3a]"><Pencil className="w-3.5 h-3.5" /></button>
-                  <button onClick={() => { if(confirm("Delete?")) del(p.id); }} className="p-1 text-gray-300 hover:text-red-500"><Trash2 className="w-3.5 h-3.5" /></button>
-                </div>
+        {groups.map((group, gi) => {
+          const main = group.find(p => p.label?.includes("Combined") || p.label?.includes("&")) ?? group[0];
+          return (
+            <Card key={gi} className="p-5">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-bold text-gray-900">Retirement Plan - Target Age {main.retirementAge}</h3>
+                <span className="text-xs text-gray-400">{main.createdAt ? new Date(main.createdAt).toLocaleDateString() : ""}</span>
               </div>
-            ))}
-          </div>
-        </Card>
-      );
-    });
-  })()}
-</div>
-</div>
+              <div className="divide-y divide-gray-100">
+                {group.map(p => (
+                  <div key={p.id} className="flex items-center gap-4 py-2">
+                    <span className={`text-xs font-bold w-32 flex-shrink-0 ${labelColor(p.label ?? "")}`}>{p.label}</span>
+                    <span className="text-xs text-gray-500">Age {p.currentAge} → {p.retirementAge}</span>
+                    <span className="text-xs text-gray-500">RRSP {fmt$(p.currentRrsp)}</span>
+                    <span className="text-xs text-gray-500">TFSA {fmt$(p.currentTfsa)}</span>
+                    <span className="text-xs text-gray-500">Income {fmt$(p.desiredIncome)}</span>
+                    {p.successRate && <span className={`text-xs font-bold ml-auto ${Number(p.successRate) >= 85 ? "text-emerald-600" : Number(p.successRate) >= 70 ? "text-amber-600" : "text-red-600"}`}>{p.successRate}%</span>}
+                    <div className="flex gap-1 flex-shrink-0">
+                      <button onClick={() => startEdit(p)} className="p-1 text-gray-300 hover:text-[#0c1e3a]"><Pencil className="w-3.5 h-3.5" /></button>
+                      <button onClick={() => del(p.id)} className="p-1 text-gray-300 hover:text-red-500"><Trash2 className="w-3.5 h-3.5" /></button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          );
+        })}
+      </div>
+    </div>
   );
-}
-
-// ── INSURANCE ─────────────────────────────────────────────────────────────────
+}// ── INSURANCE ─────────────────────────────────────────────────────────────────
 interface InsuranceRec { id: number; method: string; annualIncome: string|null; yearsToReplace: number|null; existingLifeCoverage: string|null; existingDisability: string|null; existingCriticalIllness: string|null; recommendedLife: string|null; recommendedDisability: string|null; recommendedCriticalIllness: string|null; lifeGap: string|null; disabilityGap: string|null; criticalIllnessGap: string|null; notes: string|null; }
 type InsDraft = { method: string; annualIncome: string; yearsToReplace: string; existingLifeCoverage: string; existingDisability: string; existingCriticalIllness: string; notes: string; };
 const emptyIns = (): InsDraft => ({ method:"dime", annualIncome:"", yearsToReplace:"20", existingLifeCoverage:"", existingDisability:"", existingCriticalIllness:"", notes:"" });

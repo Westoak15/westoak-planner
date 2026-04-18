@@ -1,4 +1,4 @@
-import { calculateCombinedTax } from "../reference/taxBrackets";
+import { calculateCombinedTax } from "../reference/taxBrackets.js";
 import { getBenefitRate } from "../reference/loader";
 import { resolveProvinceCode } from "../retirement/provinceMap";
 import type {

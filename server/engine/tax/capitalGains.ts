@@ -1,6 +1,6 @@
 import { calculateCombinedTax } from "../reference/taxBrackets.js";
-import { getBenefitRate } from "../reference/loader";
-import { resolveProvinceCode } from "../retirement/provinceMap";
+import { getBenefitRate } from "../reference/loader.js";
+import { resolveProvinceCode } from "../retirement/provinceMap.js";
 import type {
   CapitalGainsPosition,
   CapitalGainsAnalysis,

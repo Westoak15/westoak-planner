@@ -8,7 +8,7 @@ import { eq, and } from "drizzle-orm";
 const r = Router();
 
 r.get(
-  "/api/clients/:clientId/net-worth",
+  "/clients/:clientId/net-worth",
   isAuthenticated,
   async (req: AuthRequest, res: Response) => {
     try {
@@ -46,7 +46,7 @@ const createSchema = z.object({
 });
 
 r.post(
-  "/api/clients/:clientId/net-worth",
+  "/clients/:clientId/net-worth",
   isAuthenticated,
   async (req: AuthRequest, res: Response) => {
     try {
@@ -92,7 +92,7 @@ const updateSchema = z.object({
 });
 
 r.patch(
-  "/api/clients/:clientId/net-worth/:id",
+  "/clients/:clientId/net-worth/:id",
   isAuthenticated,
   async (req: AuthRequest, res: Response) => {
     try {
@@ -138,7 +138,7 @@ r.patch(
 );
 
 r.delete(
-  "/api/clients/:clientId/net-worth/:id",
+  "/clients/:clientId/net-worth/:id",
   isAuthenticated,
   async (req: AuthRequest, res: Response) => {
     try {

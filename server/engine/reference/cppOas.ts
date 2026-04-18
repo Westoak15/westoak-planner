@@ -1,4 +1,4 @@
-import { getBenefitRate } from "./loader";
+import { getBenefitRate } from "./loader.js";
 
 export interface CppProjection {
   startAge: number;

@@ -2,7 +2,7 @@ import {
   BENEFIT_RATES_2024,
   RRIF_MINIMUM_FACTORS,
   type GovernmentBenefitRate,
-} from "./benefitRates";
+} from "./benefitRates.js";
 import {
   ALL_PROVINCIAL_BRACKETS_2024,
   type TaxBracket,

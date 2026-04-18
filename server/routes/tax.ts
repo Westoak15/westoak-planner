@@ -56,7 +56,7 @@ taxRouter.post("/:clientId/projection", async (req, res) => {
 
     // Calculate summary
     const totalLifetimeTax = projections.reduce((sum, p) => sum + p.totalTax, 0);
-    const totalGrossIncome = projections.reduce((sum, p) => sum + (p.employmentIncome + p.pensionIncome + p.rrifWithdrawal + p.cppBenefit + p.oasBenefit), 0);
+    const totalGrossIncome = projections.reduce((sum, p) => sum + p.totalGrossIncome, 0);
     const averageEffectiveRate = totalGrossIncome > 0 ? totalLifetimeTax / totalGrossIncome : 0;
     const projectedFinalWealth = projections[projections.length - 1]?.totalWealth || 0;
     const successProbability = projections.every(p => p.totalWealth > 0) ? 0.85 : 0.45;
@@ -81,20 +81,20 @@ taxRouter.post("/:clientId/projection", async (req, res) => {
 taxRouter.post("/:clientId/rrsp-room", async (req, res) => {
   try {
     const clientId = parseInt(req.params.clientId);
-    const input = req.body as Partial<RrspRoomInput>;
+    const input = req.body;
 
     const roomInput: RrspRoomInput = {
+      currentCarryForwardRoom: Number(input.carryForwardRoom || 0),
       priorYearEarnedIncome: Number(input.priorYearEarnedIncome || 0),
+      currentYearContributions: Number(input.contributionsMadeThisYear || 0),
       pensionAdjustment: Number(input.pensionAdjustment || 0),
-      priorYearCarryForward: Number(input.priorYearCarryForward || 0),
-      currentYearContributions: Number(input.currentYearContributions || 0),
     };
 
     const summary = calculateRrspRoom(roomInput);
     
     // Calculate additional insights
-    const marginalTaxRate = Number(req.body.marginalTaxRate || 0.435);
-    const yearsToProject = Number(req.body.yearsToProject || 10);
+    const marginalTaxRate = Number(input.marginalTaxRate || 0.435);
+    const yearsToProject = Number(input.yearsToProject || 10);
     const marginalTaxSavings = summary.totalAvailableRoom * marginalTaxRate;
     const effectiveCost = summary.totalAvailableRoom * (1 - marginalTaxRate);
     
@@ -124,22 +124,23 @@ taxRouter.post("/:clientId/rrsp-room", async (req, res) => {
 taxRouter.post("/:clientId/tfsa-room", async (req, res) => {
   try {
     const clientId = parseInt(req.params.clientId);
-    const input = req.body as Partial<TfsaRoomInput>;
+    const input = req.body;
+
+    const birthYear = Number(input.birthYear || 1985);
+    const currentYear = new Date().getFullYear();
+    const yearTurned18 = birthYear + 18;
 
     const roomInput: TfsaRoomInput = {
-      priorYearClosingBalance: Number(input.priorYearClosingBalance || 0),
-      priorYearWithdrawals: Number(input.priorYearWithdrawals || 0),
-      currentYearContributions: Number(input.currentYearContributions || 0),
-      ageAtYearStart: Number(input.ageAtYearStart || 18),
+      yearTurned18: yearTurned18,
+      currentCarryForwardRoom: Number(input.priorYearClosingRoom || 0),
+      currentYearContributions: Number(input.contributionsMadeThisYear || 0),
+      currentYearWithdrawals: Number(input.withdrawalsLastYear || 0),
     };
 
     const summary = calculateTfsaRoom(roomInput);
     
     // Calculate cumulative room since 2009
-    const birthYear = Number(req.body.birthYear || 1985);
-    const currentYear = new Date().getFullYear();
-    const ageNow = currentYear - birthYear;
-    const cumulativeRoomSince2009 = summary.totalAvailableRoom;
+    const cumulativeRoomSince2009 = summary.cumulativeRoomEarned;
     
     // Future limits (next 5 years, assuming $7000/year)
     const futureLimits = [];
@@ -148,9 +149,9 @@ taxRouter.post("/:clientId/tfsa-room", async (req, res) => {
     }
     
     // 30-year projection
-    const currentBalance = Number(req.body.currentTfsaBalance || 0);
-    const annualContrib = Number(req.body.annualContribution || 7000);
-    const portfolioReturn = Number(req.body.portfolioReturn || 0.06);
+    const currentBalance = Number(input.currentTfsaBalance || 0);
+    const annualContrib = Number(input.annualContribution || 7000);
+    const portfolioReturn = Number(input.portfolioReturn || 0.06);
     
     let tfsaBalance = currentBalance;
     let taxableBalance = currentBalance;
@@ -191,16 +192,48 @@ taxRouter.post("/:clientId/capital-gains", async (req, res) => {
     }
 
     const positions = input.positions.map((p: any) => ({
-      symbol: String(p.symbol || ""),
-      acb: Number(p.acb || 0),
-      fmv: Number(p.fmv || 0),
+      name: String(p.symbol || ""),
+      marketValue: Number(p.fmv || 0),
+      adjustedCostBase: Number(p.acb || 0),
+      unrealizedGain: Number(p.fmv || 0) - Number(p.acb || 0),
+      isLoss: (Number(p.fmv || 0) - Number(p.acb || 0)) < 0,
     }));
 
     const marginalTaxRate = Number(input.marginalTaxRate || 0.435);
     const province = String(input.province || "ON");
+    const currentAge = Number(input.currentAge || 40);
+    const retirementAge = Number(input.retirementAge || 65);
+    const currentIncome = Number(input.currentIncome || 100000);
+    const retirementIncome = Number(input.retirementIncome || 60000);
+    const yearsToRetirement = Math.max(0, retirementAge - currentAge);
 
-    const result = analyzeCapitalGains(positions, marginalTaxRate, province);
-    res.json(result);
+    const result = analyzeCapitalGains(
+      positions,
+      marginalTaxRate,
+      province,
+      currentIncome,
+      retirementIncome,
+      currentAge,
+      yearsToRetirement
+    );
+    
+    // Transform to match frontend expectations
+    res.json({
+      positions: result.positions.map(p => ({
+        symbol: p.name,
+        acb: p.adjustedCostBase,
+        fmv: p.marketValue,
+        unrealizedGain: p.unrealizedGain,
+      })),
+      totalUnrealizedGain: result.totalUnrealizedGain,
+      scenarios: result.scenarios.map(s => ({
+        name: s.label,
+        gainRealized: s.amountRealized,
+        taxableGain: s.taxableGain,
+        estimatedTax: s.estimatedTax,
+      })),
+      lossHarvestingOpportunity: result.harvestingOpportunity,
+    });
   } catch (error) {
     console.error("[capital gains error]", error);
     res.status(500).json({ error: "Failed to analyze capital gains" });
@@ -219,8 +252,19 @@ taxRouter.post("/:clientId/income-splitting", async (req, res) => {
     const pensionIncome = Number(input.pensionIncome || 0);
     const age = Number(input.age || 65);
     const province = String(input.province || "ON");
+    const yearsRemaining = Math.max(1, 90 - age);
+    const hasRrspRoom = Number(input.hasRrspRoom || 0) > 0;
 
-    const result = analyzeIncomeSplitting(higherIncome, lowerIncome, pensionIncome, age, province);
+    const result = analyzeIncomeSplitting(
+      higherIncome,
+      lowerIncome,
+      pensionIncome,
+      age,
+      province,
+      yearsRemaining,
+      hasRrspRoom
+    );
+    
     res.json(result);
   } catch (error) {
     console.error("[income splitting error]", error);

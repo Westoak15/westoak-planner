@@ -1,4 +1,4 @@
-﻿import { useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { EstateScorecard } from "../components/ModuleViews";
 import { api } from "../lib/api";
 import { useState, useMemo, useEffect, Component, type ReactNode } from "react";
@@ -35,7 +35,7 @@ import {
   Users, Calculator, ChevronDown, ChevronUp, Info, Download, Eye, Gift, FileSignature, Printer,
 } from "lucide-react";
 
-// â”€â”€ Tab definitions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Tab definitions ───────────────────────────────────────────────────────────
 
 type TabKey = "overview" | "dashboard" | "networth" | "retirement" | "insurance" | "resp" | "debt" | "tax" | "estate" | "ai";
 
@@ -57,7 +57,7 @@ const moduleToTabMap: Record<string, TabKey> = {
   estate: "estate", debt: "debt", tax: "tax", cashflow: "overview",
 };
 
-// â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Helpers ───────────────────────────────────────────────────────────────────
 
 function esc(s: string | null | undefined): string {
   if (!s) return "";
@@ -71,7 +71,7 @@ function fmt$(n: number): string {
 
 function pct(n: number): string { return `${(n * 100).toFixed(1)}%`; }
 
-// â”€â”€ Report helper â€” opens server-generated HTML report in new window â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Report helper — opens server-generated HTML report in new window ──────────
 
 async function openReport(clientId: number, type: "comprehensive" | "retirement" | "insurance" | "net-worth") {
   const res = await fetch(`/api/reports/${clientId}/${type}`, { credentials: "include" });
@@ -83,7 +83,7 @@ async function openReport(clientId: number, type: "comprehensive" | "retirement"
   win.document.close();
 }
 
-// â”€â”€ Overview Tab â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Overview Tab ──────────────────────────────────────────────────────────────
 
 function OverviewTab({ clientId }: { clientId: number }) {
   const { data: overview, isLoading } = useFinancialPlanningOverview(clientId);
@@ -159,7 +159,7 @@ function OverviewTab({ clientId }: { clientId: number }) {
   );
 }
 
-// â”€â”€ Net Worth Tab â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Net Worth Tab ─────────────────────────────────────────────────────────────
 
 function NetWorthTab({ clientId }: { clientId: number }) {
   const { data: entries = [] } = useNetWorthEntries(clientId);
@@ -275,7 +275,7 @@ function NetWorthTab({ clientId }: { clientId: number }) {
   );
 }
 
-// â”€â”€ Scenario preview for module tabs â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Scenario preview for module tabs ─────────────────────────────────────────
 
 function ModuleScenarioPreview({ planId, module }: { planId: number | null; module: string }) {
   const { data: simResults = [] } = useSimulationResults(planId);
@@ -302,7 +302,7 @@ function ModuleScenarioPreview({ planId, module }: { planId: number | null; modu
   );
 }
 
-// â”€â”€ Retirement Tab â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Retirement Tab ────────────────────────────────────────────────────────────
 
 function RetirementTab({ clientId, planId }: { clientId: number; planId: number | null }) {
   const { data: projections = [] } = useRetirementProjections(clientId);
@@ -395,8 +395,8 @@ function RetirementTab({ clientId, planId }: { clientId: number; planId: number 
     </div>
   );
 }
-// â”€â”€ Insurance Tab â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// (Retained from original â€” full worksheet)
+// ── Insurance Tab ─────────────────────────────────────────────────────────────
+// (Retained from original — full worksheet)
 
 type WorksheetForm = {
   primaryName: string; primaryAge: string; primaryAnnualIncome: string;
@@ -808,7 +808,7 @@ function buildDefaultFromNW() {
   );
 }
 
-// â”€â”€ RESP Tab â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── RESP Tab ──────────────────────────────────────────────────────────────────
 
 function RESPTab({ clientId, planId }: { clientId: number; planId: number | null }) {
   const { data: savings = [] } = useEducationSavings(clientId);
@@ -893,7 +893,7 @@ function RESPTab({ clientId, planId }: { clientId: number; planId: number | null
   );
 }
 
-// â”€â”€ Debt Tab â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Debt Tab ──────────────────────────────────────────────────────────────────
 
 function DebtTab({ clientId, planId }: { clientId: number; planId: number | null }) {
   const { data: debts = [] } = useDebtEntries(clientId);
@@ -976,7 +976,7 @@ function DebtTab({ clientId, planId }: { clientId: number; planId: number | null
     </div>
   );
 }
-// â”€â”€ Tax Tab (complete rework â€” engine-backed) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Tax Tab (complete rework — engine-backed) ─────────────────────────────────
 
 // ============================================================================
 // TAX TAB - FIXED VERSION WITH ALL WORKING PANELS
@@ -1008,7 +1008,7 @@ import type {
   IncomeSplitResult,
 } from "@/hooks/use-plans";
 
-// ── Type definitions ────────────────────────────────────────────────────────
+// -- Type definitions --------------------------------------------------------
 
 type TaxSubTab = "notes" | "rrsp" | "tfsa" | "projection" | "capgains" | "splitting";
 
@@ -1217,7 +1217,7 @@ function RrspRoomPanel({ clientId }: { clientId: number }) {
   return (
     <div className="space-y-5">
       <div className="p-4 bg-blue-50 border border-blue-200 rounded-xl text-sm text-blue-800">
-        <strong>RRSP Room Tracker</strong> — Calculates your available RRSP contribution room using the CRA 18% formula with
+        <strong>RRSP Room Tracker</strong> � Calculates your available RRSP contribution room using the CRA 18% formula with
         carry-forward.
       </div>
 
@@ -1355,7 +1355,7 @@ function TfsaRoomPanel({ clientId }: { clientId: number }) {
   return (
     <div className="space-y-5">
       <div className="p-4 bg-teal-50 border border-teal-200 rounded-xl text-sm text-teal-800">
-        <strong>TFSA Room Tracker</strong> — Tracks cumulative TFSA contribution room since 2009 with annual limit history.
+        <strong>TFSA Room Tracker</strong> � Tracks cumulative TFSA contribution room since 2009 with annual limit history.
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -1490,6 +1490,13 @@ function TfsaRoomPanel({ clientId }: { clientId: number }) {
 // ============================================================================
 
 function TaxProjectionPanel({ clientId }: { clientId: number }) {
+  if (!clientId) {
+    return (
+      <div className="border border-dashed border-border rounded-2xl p-8 text-center text-muted-foreground">
+        <p className="text-sm">Select a client to use Tax Projection</p>
+      </div>
+    );
+  }
   const taxProjection = useTaxProjection(clientId);
   const [result, setResult] = useState<TaxProjectionResult | null>(null);
   const [showTable, setShowTable] = useState(false);
@@ -1533,7 +1540,7 @@ function TaxProjectionPanel({ clientId }: { clientId: number }) {
   return (
     <div className="space-y-5">
       <div className="p-4 bg-purple-50 border border-purple-200 rounded-xl text-sm text-purple-800">
-        <strong>Tax Projection</strong> — Year-by-year income, tax, and wealth projection through retirement using 2024 federal
+        <strong>Tax Projection</strong> � Year-by-year income, tax, and wealth projection through retirement using 2024 federal
         and provincial tax brackets.
       </div>
 
@@ -1849,7 +1856,7 @@ function CapitalGainsPanel({ clientId }: { clientId: number }) {
   return (
     <div className="space-y-5">
       <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl text-sm text-amber-800">
-        <strong>Capital Gains Analysis</strong> — Analyzes unrealized gains with 2024 dual inclusion rates (50% / 66.67%).
+        <strong>Capital Gains Analysis</strong> � Analyzes unrealized gains with 2024 dual inclusion rates (50% / 66.67%).
       </div>
 
       <div className="space-y-3">
@@ -2006,7 +2013,7 @@ function IncomeSplittingPanel({ clientId }: { clientId: number }) {
   return (
     <div className="space-y-5">
       <div className="p-4 bg-indigo-50 border border-indigo-200 rounded-xl text-sm text-indigo-800">
-        <strong>Income Splitting Optimizer</strong> — Finds the best strategy: pension split (T1032), spousal RRSP, CPP sharing,
+        <strong>Income Splitting Optimizer</strong> � Finds the best strategy: pension split (T1032), spousal RRSP, CPP sharing,
         or prescribed rate loan.
       </div>
 
@@ -2146,7 +2153,7 @@ export function TaxTab({ clientId }: { clientId: number }) {
 }
 
 
-// â”€â”€ Estate Tab â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Estate Tab ────────────────────────────────────────────────────────────────
 
 export function EstateNotesTab({ clientId, planId, client }: { clientId: number; planId: number | null; client?: any }) {
   const { data: notes = [] } = useEstatePlanningNotes(clientId);
@@ -2209,7 +2216,7 @@ export function EstateNotesTab({ clientId, planId, client }: { clientId: number;
   );
 }
 
-// â”€â”€ AI Tab â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── AI Tab ────────────────────────────────────────────────────────────────────
 
 export function AITab({ clientId }: { clientId: number }) {
   const { data: recommendations = [] } = useAiRecommendations(clientId);
@@ -2288,7 +2295,7 @@ export function AITab({ clientId }: { clientId: number }) {
   );
 }
 
-// â”€â”€ Main Layout â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Main Layout ───────────────────────────────────────────────────────────────
 
 export function FinancialPlanningContent({ initialClientId }: { initialClientId?: number }) {
   const [activeTab, setActiveTab] = useState<TabKey>("overview");
@@ -2346,7 +2353,7 @@ export function FinancialPlanningContent({ initialClientId }: { initialClientId?
               <t.icon className="w-4 h-4 flex-shrink-0" />
               <span className="truncate">{t.label}</span>
               {staleTabKeys.has(t.key) && (
-                <span className="ml-auto flex-shrink-0 w-2 h-2 rounded-full bg-amber-500 animate-pulse" title="Data has changed â€” review needed" data-testid={`stale-indicator-${t.key}`} />
+                <span className="ml-auto flex-shrink-0 w-2 h-2 rounded-full bg-amber-500 animate-pulse" title="Data has changed — review needed" data-testid={`stale-indicator-${t.key}`} />
               )}
               {!staleTabKeys.has(t.key) && recalculatedTabKeys.has(t.key) && (
                 <span className="ml-auto flex-shrink-0 w-2 h-2 rounded-full bg-blue-500" title="Recently recalculated" data-testid={`recalculated-indicator-${t.key}`} />
@@ -2369,7 +2376,7 @@ export function FinancialPlanningContent({ initialClientId }: { initialClientId?
         {selectedClientId && unresolvedFlags.length === 0 && recentlyResolvedFlags.length > 0 && (
           <div className="mb-4 px-4 py-3 bg-blue-50 border border-blue-200 rounded-xl flex items-center gap-3" data-testid="recalculated-banner">
             <CheckCircle className="w-4 h-4 text-blue-600 flex-shrink-0" />
-            <span className="text-sm font-medium text-blue-800">{recentlyResolvedFlags.length} module{recentlyResolvedFlags.length > 1 ? "s" : ""} recalculated â€” review updated projections</span>
+            <span className="text-sm font-medium text-blue-800">{recentlyResolvedFlags.length} module{recentlyResolvedFlags.length > 1 ? "s" : ""} recalculated — review updated projections</span>
           </div>
         )}
 

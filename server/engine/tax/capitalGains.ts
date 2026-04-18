@@ -9,9 +9,9 @@ import type {
 } from "./types.js";
 import type { TaxYearProjection } from "./types.js";
 
-const INCLUSION_LOW       = 0.50;
-const INCLUSION_HIGH      = 0.667;
-const INCLUSION_THRESHOLD = 250_000;
+// 2024: Flat 50% inclusion rate (dual-rate proposal scrapped)
+const INCLUSION_RATE = 0.50;
+
 
 // ── Capital Gains Analysis ────────────────────────────────────────────────────
 
@@ -36,7 +36,7 @@ export function analyzeCapitalGains(
 
   const buildScenario = (label: string, amount: number): CapitalGainsScenario => {
     const netAmount      = Math.max(0, amount - totalUnrealizedLoss); // offset losses
-    const inclusionRate  = INCLUSION_LOW; // Flat 50% - 2/3 increase cancelled
+    const inclusionRate  = INCLUSION_RATE; // Flat 50% - 2/3 increase cancelled
     const taxableGain    = netAmount * inclusionRate;
     const incomeWithGain = currentIncome + taxableGain;
     const taxWithGain    = calculateCombinedTax(incomeWithGain, provinceCode, bpa).totalTax;
@@ -77,9 +77,6 @@ export function analyzeCapitalGains(
       `Year ${lowestRateRow.year} (age ${lowestRateRow.age}) projects the lowest marginal rate `,
       `of ${(lowestRateRow.marginalRate * 100).toFixed(1)}% with taxable income `,
       `of $${lowestRateRow.totalTaxableIncome.toLocaleString()}.`,
-      netUnrealized > INCLUSION_THRESHOLD
-        ? ` Note: gains above $${INCLUSION_THRESHOLD.toLocaleString()} attract the 2/3 inclusion rate — consider spreading across multiple years.`
-        : "",
     ].join("");
   }
 

@@ -7,8 +7,8 @@ import type { TaxProjectionProfile, TaxYearProjection } from "./types.js";
 
 // ── 2024 capital gains inclusion rates ───────────────────────────────────────
 const INCLUSION_RATE_LOW  = 0.50;  // ≤ $250,000 personal annual gain
-const INCLUSION_RATE_HIGH = 0.667; // > $250,000 personal annual gain
-const INCLUSION_THRESHOLD = 250_000;
+const INCLUSION_RATE = 0.50;
+
 
 // ── RRIF minimum withdrawal factors (from benefitRates) ──────────────────────
 // Simplified: use 1/(90-age) until age 65, then CRA schedule
@@ -129,9 +129,7 @@ export function projectTaxYears(profile: TaxProjectionProfile): TaxYearProjectio
       + cppBenefit + oasBenefit;
 
     // Capital gains inclusion (2024+ rates)
-    const inclusionRate     = capitalGainsIncome > INCLUSION_THRESHOLD
-      ? INCLUSION_RATE_HIGH
-      : INCLUSION_RATE_LOW;
+    const inclusionRate = INCLUSION_RATE;
     const taxableCapGains   = capitalGainsIncome * inclusionRate;
 
     const totalTaxableIncome = Math.max(0, totalGrossIncome + taxableCapGains);

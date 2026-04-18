@@ -12,6 +12,7 @@ import { fpRouter }      from "./routes/fp.js";
 import { fpFullRouter }  from "./routes/fp-full.js";
 import { simulateRouter } from "./routes/simulate.js";
 import { reportsRouter } from "./routes/reports.js";
+import { taxRouter }     from "./routes/tax.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = parseInt(process.env.PORT ?? "5000", 10);
@@ -21,6 +22,7 @@ app.use(cors({ origin: process.env.CLIENT_URL ?? "http://localhost:5173", creden
 app.use(express.json({ limit: "10mb" }));
 
 app.use("/api/auth",    authRouter);
+app.use("/api/tax",      taxRouter);
 app.use("/api/clients", clientsRouter);
 app.use("/api",         fpRouter);
 app.use("/api",         fpFullRouter);

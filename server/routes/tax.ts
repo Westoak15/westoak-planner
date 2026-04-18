@@ -199,23 +199,11 @@ taxRouter.post("/:clientId/capital-gains", async (req, res) => {
       isLoss: (Number(p.fmv || 0) - Number(p.acb || 0)) < 0,
     }));
 
-    const marginalTaxRate = Number(input.marginalTaxRate || 0.435);
-    const province = String(input.province || "ON");
-    const currentAge = Number(input.currentAge || 40);
-    const retirementAge = Number(input.retirementAge || 65);
     const currentIncome = Number(input.currentIncome || 100000);
-    const retirementIncome = Number(input.retirementIncome || 60000);
-    const yearsToRetirement = Math.max(0, retirementAge - currentAge);
+    const province = String(input.province || "ON");
 
-    const result = analyzeCapitalGains(
-      positions,
-      marginalTaxRate,
-      province,
-      currentIncome,
-      retirementIncome,
-      currentAge,
-      yearsToRetirement
-    );
+    // analyzeCapitalGains(positions, currentIncome, province, projectedYears?)
+    const result = analyzeCapitalGains(positions, currentIncome, province);
     
     // Transform to match frontend expectations
     res.json({
@@ -247,22 +235,23 @@ taxRouter.post("/:clientId/income-splitting", async (req, res) => {
     const clientId = parseInt(req.params.clientId);
     const input = req.body;
 
-    const higherIncome = Number(input.higherIncome || 0);
-    const lowerIncome = Number(input.lowerIncome || 0);
-    const pensionIncome = Number(input.pensionIncome || 0);
+    const selfIncome = Number(input.higherIncome || 0);
+    const spouseIncome = Number(input.lowerIncome || 0);
+    const eligiblePensionIncome = Number(input.pensionIncome || 0);
+    const selfRrspBalance = Number(input.selfRrspBalance || 0);
+    const spouseRrspBalance = Number(input.spouseRrspBalance || 0);
     const age = Number(input.age || 65);
     const province = String(input.province || "ON");
-    const yearsRemaining = Math.max(1, 90 - age);
-    const hasRrspRoom = Number(input.hasRrspRoom || 0) > 0;
 
+    // analyzeIncomeSplitting(selfIncome, spouseIncome, eligiblePensionIncome, selfRrspBalance, spouseRrspBalance, age, province)
     const result = analyzeIncomeSplitting(
-      higherIncome,
-      lowerIncome,
-      pensionIncome,
+      selfIncome,
+      spouseIncome,
+      eligiblePensionIncome,
+      selfRrspBalance,
+      spouseRrspBalance,
       age,
-      province,
-      yearsRemaining,
-      hasRrspRoom
+      province
     );
     
     res.json(result);

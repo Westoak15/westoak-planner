@@ -572,7 +572,7 @@ export function RetirementTab({ clientId, client }: { clientId: number; client?:
               </div>
               <div className="grid grid-cols-3 gap-3">
                 {([
-                  ["Label","label","text"],["Current Age","currentAge","number"],["Retirement Age","retirementAge","number"],
+                  ["Client","label","text"],["Current Age","currentAge","number"],["Retirement Age","retirementAge","number"],
                   ["RRSP Balance","rrspBalance","number"],["TFSA Balance","tfsaBalance","number"],["Non-Reg Balance","nonRegBalance","number"],
                   ["Annual Contribution","annualContribution","number"],["Expected Return %","expectedReturn","number"],["Desired Income","desiredRetirementIncome","number"],
                   ["CPP Monthly","cppMonthly","number"],["CPP Start Age","cppStartAge","number"],["OAS Monthly","oasMonthly","number"],
@@ -1052,6 +1052,7 @@ export function DebtTab({ clientId }: { clientId: number }) {
     </div>
   );
 }
+
 
 
 

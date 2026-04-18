@@ -1492,13 +1492,6 @@ function TfsaRoomPanel({ clientId }: { clientId: number }) {
 // ============================================================================
 
 function TaxProjectionPanel({ clientId }: { clientId: number }) {
-  if (!clientId) {
-    return (
-      <div className="border border-dashed border-border rounded-2xl p-8 text-center text-muted-foreground">
-        <p className="text-sm">Select a client to use Tax Projection</p>
-      </div>
-    );
-  }
   const taxProjection = useTaxProjection(clientId);
   const [result, setResult] = useState<TaxProjectionResult | null>(null);
   const [showTable, setShowTable] = useState(false);

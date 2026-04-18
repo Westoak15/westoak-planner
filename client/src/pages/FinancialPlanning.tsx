@@ -1025,8 +1025,6 @@ const taxSubTabs: Array<{ key: TaxSubTab; label: string }> = [
 // ============================================================================
 
 function TaxNotesPanel({ clientId }: { clientId: number }) {
-  const fmt$ = (n: number) => `$${n.toLocaleString()}`;
-  const fmtPct = (n: number) => `${(n * 100).toFixed(2)}%`; 
   const { data: notes = [] } = useTaxPlanningNotes(clientId);
   const createNote = useCreateTaxPlanningNote();
   const deleteNote = useDeleteTaxPlanningNote(clientId);
@@ -1492,6 +1490,8 @@ function TfsaRoomPanel({ clientId }: { clientId: number }) {
 // ============================================================================
 
 function TaxProjectionPanel({ clientId }: { clientId: number }) {
+  const fmt$ = (n: number) => `$${n.toLocaleString()}`;
+  const fmtPct = (n: number) => `${(n * 100).toFixed(2)}%`;   
   const taxProjection = useTaxProjection(clientId);
   const [result, setResult] = useState<TaxProjectionResult | null>(null);
   const [showTable, setShowTable] = useState(false);

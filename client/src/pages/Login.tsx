@@ -99,7 +99,12 @@ export default function Login() {
     catch (e: any) { setError(e.message); }
     finally { setBusy(false); }
   }
-
+async function submitRegister() {
+    reset(); setBusy(true);
+    try { await register(form.email, form.password, form.securityQuestion, form.securityAnswer); }
+    catch (e: any) { setError(e.message); }
+    finally { setBusy(false); }
+  }
   async function submitForgotEmail() {
     reset(); setBusy(true);
     try {

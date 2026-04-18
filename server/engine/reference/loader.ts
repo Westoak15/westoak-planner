@@ -6,7 +6,7 @@ import {
 import {
   ALL_PROVINCIAL_BRACKETS_2024,
   type TaxBracket,
-} from "./taxBrackets";
+} from "./taxBrackets.js";
 
 export interface ReferenceDataCache {
   benefitRates: Map<string, GovernmentBenefitRate>;

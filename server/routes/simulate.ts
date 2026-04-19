@@ -4,15 +4,10 @@ import { clients, retirementProjections } from "../../shared/schema.js";
 export async function runMonteCarlo({ client, projection, assumptions, simulations }: any) { return null; }
 import { isAuthenticated, type AuthRequest } from "../auth/index.js";
 import { eq, and } from "drizzle-orm";
+import { ownsClient } from "../fpUtils.js";
 
 const r = Router();
 r.use(isAuthenticated);
-
-async function ownsClient(clientId: number, userId: number) {
-  const [c] = await db.select({ id: clients.id }).from(clients)
-    .where(and(eq(clients.id, clientId), eq(clients.userId, userId)));
-  return !!c;
-}
 
 // POST /api/clients/:id/simulate
 r.post("/clients/:id/simulate", async (req: AuthRequest, res: Response) => {

@@ -26,6 +26,8 @@ app.use(cors({
 }));
 app.use(express.json({ limit: "10mb" }));
 
+app.get("/api/health",  (_req, res) => res.json({ ok: true }));
+
 app.use("/api/auth",    authRouter);
 app.use("/api/tax",     taxRouter);
 app.use("/api",         fpRouter);
@@ -34,7 +36,7 @@ app.use("/api",         fpFullRouter);
 app.use("/api",         simulateRouter);
 app.use("/api",         simulationRouter);   // ← FIX 1: mounts /api/simulation/:clientId/*
 app.use("/api/reports", reportsRouter);
-app.get("/api/health",  (_req, res) => res.json({ ok: true }));
+
 
 if (process.env.NODE_ENV === "production") {
   const dist = path.join(__dirname, "../client");

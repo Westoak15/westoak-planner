@@ -85,7 +85,8 @@ r.post("/clients/:id/net-worth", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.id;
   if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
   try {
-    const payload = { clientId: cid, ...safe(req.body) };
+    const { type, category, name, value } = req.body;
+    const payload = { clientId: cid, type, category, name, value };
     const [row] = await db.insert(netWorthEntries).values(payload as any).returning();
     res.status(201).json(row);
   } catch (e: any) {

@@ -83,7 +83,7 @@ export function useCreateNetWorthEntry() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ clientId, data }: { clientId: number; data: { type: string; category: string; name: string; value: string } }) => {
-      return api.post(`/api/clients/${clientId}/net-worth`, data);
+      const res = await apiRequest("POST", `/api/clients/${clientId}/net-worth`, data); return res.json();
     },
     onSuccess: (_: any, variables: any) => {
       queryClient.invalidateQueries({ queryKey: ["/api/clients/:clientId/net-worth", variables.clientId] });
@@ -95,7 +95,7 @@ export function useUpdateNetWorthEntry(clientId: number) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, data }: { id: number; data: Partial<{ type: string; category: string; name: string; value: string }> }) => {
-      return api.patch(`/api/net-worth/${id}`, data);
+      const res = await apiRequest("PATCH", `/api/net-worth/${id}`, data); return res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/clients/:clientId/net-worth", clientId] });
@@ -107,7 +107,7 @@ export function useDeleteNetWorthEntry(clientId: number) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: number) => {
-      return api.delete(`/api/net-worth/${id}`);
+      await apiRequest("DELETE", `/api/net-worth/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/clients/:clientId/net-worth", clientId] });

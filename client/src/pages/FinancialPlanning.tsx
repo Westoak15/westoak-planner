@@ -270,7 +270,7 @@ function NetWorthTab({ clientId }: { clientId: number }) {
               <div><label className="text-sm font-semibold">Value ($)</label><input type="number" step="0.01" required value={form.value} onChange={e => setForm({ ...form, value: e.target.value })} data-testid="input-fp-nw-value" className="w-full px-4 py-3 rounded-xl border mt-1" /></div>
               <div className="pt-4 flex justify-end space-x-3">
                 <button type="button" onClick={() => setShowAdd(false)} className="px-6 py-3 rounded-xl font-semibold text-muted-foreground hover:bg-muted">Cancel</button>
-                <button type="submit" disabled={createEntry.isPending} data-testid="button-fp-submit-nw" className="px-6 py-3 rounded-xl font-semibold bg-primary text-primary-foreground">{createEntry.isPending ? "Adding..." : "Add Entry"}</button>
+                <button type="button" onClick={handleAdd as any} disabled={createEntry.isPending} data-testid="button-fp-submit-nw" className="px-6 py-3 rounded-xl font-semibold bg-primary text-primary-foreground">{createEntry.isPending ? "Adding..." : "Add Entry"}</button>
               </div>
             </form>
           </div>

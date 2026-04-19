@@ -16,7 +16,7 @@ import { reportsRouter } from "./routes/reports.js";
 import { taxRouter }     from "./routes/tax.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const PORT = parseInt(process.env.PORT ?? "5000", 10);
+const PORT = parseInt(process.env.PORT ?? "8080", 10);
 
 const app = express();
 app.use(cors({ origin: process.env.CLIENT_URL ?? "http://localhost:5173", credentials: true }));

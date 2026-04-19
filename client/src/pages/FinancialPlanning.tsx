@@ -1,7 +1,7 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { api } from "../lib/api";
 import { useState, useMemo, useEffect, Component, type ReactNode } from "react";
-
+// trying to force build this file
 class ErrorBoundary extends Component<{children:ReactNode;fallback?:ReactNode},{error:boolean}> {
   state = { error: false };
   static getDerivedStateFromError() { return { error: true }; }

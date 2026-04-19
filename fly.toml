@@ -1,5 +1,5 @@
-﻿app = 'fp-standalone'
-primary_region = 'yyz'
+app = "fp-standalone"
+primary_region = "yyz"
 
 [deploy]
   strategy = "immediate"
@@ -14,21 +14,21 @@ primary_region = 'yyz'
 [http_service]
   internal_port = 8080
   force_https = true
-  auto_stop_machines = 'stop'
+  auto_stop_machines = "stop"
   auto_start_machines = true
   min_machines_running = 2
-  processes = ['app']
+  processes = ["app"]
 
 [[vm]]
-  memory = '1gb'
-  cpu_kind = 'shared'
+  memory = "1gb"
+  cpu_kind = "shared"
   cpus = 2
 
 [checks]
   [checks.health]
-    type = 'http'
+    type = "http"
     port = 8080
-    path = '/api/health'
-    interval = '30s'
-    timeout = '10s'
-    grace_period = '121s'
+    path = "/api/health"
+    interval = "30s"
+    timeout = "10s"
+    grace_period = "120s"

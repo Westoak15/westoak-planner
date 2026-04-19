@@ -179,10 +179,15 @@ function NetWorthTab({ clientId }: { clientId: number }) {
   const netWorth = totalAssets - totalLiabilities;
 
   const handleAdd = (ev: React.FormEvent) => {
-    ev.preventDefault();
-    createEntry.mutate({ clientId, data: { type: addType, category: form.category, name: form.name, value: form.value } }, {
+  ev.preventDefault();
+  console.log("MUTATE CALLED", clientId, addType, form);
+  createEntry.mutate(
+    { clientId, data: { type: addType, category: form.category, name: form.name, value: form.value } },
+    {
       onSuccess: () => { setShowAdd(false); setForm({ category: "", name: "", value: "" }); },
-    });
+      onError: (err: any) => { console.error("MUTATE ERROR:", err); alert("Save failed: " + err.message); },
+    }
+   );
   };
 
   return (

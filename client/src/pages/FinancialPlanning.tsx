@@ -1,4 +1,4 @@
-import { useQueryClient } from "@tanstack/react-query";
+﻿import { useQueryClient } from "@tanstack/react-query";
 import { EstateScorecard } from "../components/ModuleViews";
 import { api } from "../lib/api";
 import { useState, useMemo, useEffect, Component, type ReactNode } from "react";
@@ -35,7 +35,7 @@ import {
   Users, Calculator, ChevronDown, ChevronUp, Info, Download, Eye, Gift, FileSignature, Printer,
 } from "lucide-react";
 
-// ── Tab definitions ───────────────────────────────────────────────────────────
+// â”€â”€ Tab definitions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 type TabKey = "overview" | "dashboard" | "networth" | "retirement" | "insurance" | "resp" | "debt" | "tax" | "estate" | "ai";
 
@@ -57,7 +57,7 @@ const moduleToTabMap: Record<string, TabKey> = {
   estate: "estate", debt: "debt", tax: "tax", cashflow: "overview",
 };
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
+// â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function esc(s: string | null | undefined): string {
   if (!s) return "";
@@ -71,7 +71,7 @@ function fmt$(n: number): string {
 
 function pct(n: number): string { return `${(n * 100).toFixed(1)}%`; }
 
-// ── Report helper — opens server-generated HTML report in new window ──────────
+// â”€â”€ Report helper â€” opens server-generated HTML report in new window â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 async function openReport(clientId: number, type: "comprehensive" | "retirement" | "insurance" | "net-worth") {
   const res = await fetch(`/api/reports/${clientId}/${type}`, { credentials: "include" });
@@ -83,7 +83,7 @@ async function openReport(clientId: number, type: "comprehensive" | "retirement"
   win.document.close();
 }
 
-// ── Overview Tab ──────────────────────────────────────────────────────────────
+// â”€â”€ Overview Tab â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function OverviewTab({ clientId }: { clientId: number }) {
   const { data: overview, isLoading } = useFinancialPlanningOverview(clientId);
@@ -159,7 +159,7 @@ function OverviewTab({ clientId }: { clientId: number }) {
   );
 }
 
-// ── Net Worth Tab ─────────────────────────────────────────────────────────────
+// â”€â”€ Net Worth Tab â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function NetWorthTab({ clientId }: { clientId: number }) {
   const { data: entries = [] } = useNetWorthEntries(clientId);
@@ -178,18 +178,19 @@ function NetWorthTab({ clientId }: { clientId: number }) {
   const totalLiabilities = liabilities.reduce((s: number, e: { value: string }) => s + parseFloat(e.value || "0"), 0);
   const netWorth = totalAssets - totalLiabilities;
 
-  const handleAdd = (ev: React.FormEvent) => {
-  ev.preventDefault();
-  console.log("MUTATE CALLED", clientId, addType, form);
-  createEntry.mutate(
-    { clientId, data: { type: addType, category: form.category, name: form.name, value: form.value } },
-    {
-      onSuccess: () => { setShowAdd(false); setForm({ category: "", name: "", value: "" }); },
-      onError: (err: any) => { console.error("MUTATE ERROR:", err); alert("Save failed: " + err.message); },
-    }
-   );
+  const handleAdd = async () => {
+    try {
+      const token = localStorage.getItem("fp_token");
+      const res = await fetch(`/api/clients/${clientId}/net-worth`, {
+        method: "POST",
+        headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ type: addType, category: form.category, name: form.name, value: form.value })
+      });
+      const data = await res.json();
+      if (res.ok) { setShowAdd(false); setForm({ category: "", name: "", value: "" }); }
+      else { alert("Error: " + data.message); }
+    } catch(e: any) { alert("Failed: " + e.message); }
   };
-
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
       <div className="flex justify-between items-center">
@@ -280,7 +281,7 @@ function NetWorthTab({ clientId }: { clientId: number }) {
   );
 }
 
-// ── Scenario preview for module tabs ─────────────────────────────────────────
+// â”€â”€ Scenario preview for module tabs â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function ModuleScenarioPreview({ planId, module }: { planId: number | null; module: string }) {
   const { data: simResults = [] } = useSimulationResults(planId);
@@ -307,7 +308,7 @@ function ModuleScenarioPreview({ planId, module }: { planId: number | null; modu
   );
 }
 
-// ── Retirement Tab ────────────────────────────────────────────────────────────
+// â”€â”€ Retirement Tab â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function RetirementTab({ clientId, planId }: { clientId: number; planId: number | null }) {
   const { data: projections = [] } = useRetirementProjections(clientId);
@@ -400,8 +401,8 @@ function RetirementTab({ clientId, planId }: { clientId: number; planId: number 
     </div>
   );
 }
-// ── Insurance Tab ─────────────────────────────────────────────────────────────
-// (Retained from original — full worksheet)
+// â”€â”€ Insurance Tab â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// (Retained from original â€” full worksheet)
 
 type WorksheetForm = {
   primaryName: string; primaryAge: string; primaryAnnualIncome: string;
@@ -813,7 +814,7 @@ function buildDefaultFromNW() {
   );
 }
 
-// ── RESP Tab ──────────────────────────────────────────────────────────────────
+// â”€â”€ RESP Tab â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function RESPTab({ clientId, planId }: { clientId: number; planId: number | null }) {
   const { data: savings = [] } = useEducationSavings(clientId);
@@ -898,7 +899,7 @@ function RESPTab({ clientId, planId }: { clientId: number; planId: number | null
   );
 }
 
-// ── Debt Tab ──────────────────────────────────────────────────────────────────
+// â”€â”€ Debt Tab â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function DebtTab({ clientId, planId }: { clientId: number; planId: number | null }) {
   const { data: debts = [] } = useDebtEntries(clientId);
@@ -981,7 +982,7 @@ function DebtTab({ clientId, planId }: { clientId: number; planId: number | null
     </div>
   );
 }
-// ── Tax Tab (complete rework — engine-backed) ─────────────────────────────────
+// â”€â”€ Tax Tab (complete rework â€” engine-backed) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 // ============================================================================
 // TAX TAB - FIXED VERSION WITH ALL WORKING PANELS
@@ -1222,7 +1223,7 @@ function RrspRoomPanel({ clientId }: { clientId: number }) {
   return (
     <div className="space-y-5">
       <div className="p-4 bg-blue-50 border border-blue-200 rounded-xl text-sm text-blue-800">
-        <strong>RRSP Room Tracker</strong> � Calculates your available RRSP contribution room using the CRA 18% formula with
+        <strong>RRSP Room Tracker</strong> ï¿½ Calculates your available RRSP contribution room using the CRA 18% formula with
         carry-forward.
       </div>
 
@@ -1360,7 +1361,7 @@ function TfsaRoomPanel({ clientId }: { clientId: number }) {
   return (
     <div className="space-y-5">
       <div className="p-4 bg-teal-50 border border-teal-200 rounded-xl text-sm text-teal-800">
-        <strong>TFSA Room Tracker</strong> � Tracks cumulative TFSA contribution room since 2009 with annual limit history.
+        <strong>TFSA Room Tracker</strong> ï¿½ Tracks cumulative TFSA contribution room since 2009 with annual limit history.
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -1540,7 +1541,7 @@ function TaxProjectionPanel({ clientId }: { clientId: number }) {
   return (
     <div className="space-y-5">
       <div className="p-4 bg-purple-50 border border-purple-200 rounded-xl text-sm text-purple-800">
-        <strong>Tax Projection</strong> � Year-by-year income, tax, and wealth projection through retirement using 2024 federal
+        <strong>Tax Projection</strong> ï¿½ Year-by-year income, tax, and wealth projection through retirement using 2024 federal
         and provincial tax brackets.
       </div>
 
@@ -1856,7 +1857,7 @@ function CapitalGainsPanel({ clientId }: { clientId: number }) {
   return (
     <div className="space-y-5">
       <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl text-sm text-amber-800">
-        <strong>Capital Gains Analysis</strong> � Analyzes unrealized gains with 2024 dual inclusion rates (50% / 66.67%).
+        <strong>Capital Gains Analysis</strong> ï¿½ Analyzes unrealized gains with 2024 dual inclusion rates (50% / 66.67%).
       </div>
 
       <div className="space-y-3">
@@ -2013,7 +2014,7 @@ function IncomeSplittingPanel({ clientId }: { clientId: number }) {
   return (
     <div className="space-y-5">
       <div className="p-4 bg-indigo-50 border border-indigo-200 rounded-xl text-sm text-indigo-800">
-        <strong>Income Splitting Optimizer</strong> � Finds the best strategy: pension split (T1032), spousal RRSP, CPP sharing,
+        <strong>Income Splitting Optimizer</strong> ï¿½ Finds the best strategy: pension split (T1032), spousal RRSP, CPP sharing,
         or prescribed rate loan.
       </div>
 
@@ -2153,7 +2154,7 @@ export function TaxTab({ clientId }: { clientId: number }) {
 }
 
 
-// ── Estate Tab ────────────────────────────────────────────────────────────────
+// â”€â”€ Estate Tab â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export function EstateNotesTab({ clientId, planId, client }: { clientId: number; planId: number | null; client?: any }) {
   const { data: notes = [] } = useEstatePlanningNotes(clientId);
@@ -2216,7 +2217,7 @@ export function EstateNotesTab({ clientId, planId, client }: { clientId: number;
   );
 }
 
-// ── AI Tab ────────────────────────────────────────────────────────────────────
+// â”€â”€ AI Tab â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export function AITab({ clientId }: { clientId: number }) {
   const { data: recommendations = [] } = useAiRecommendations(clientId);
@@ -2295,7 +2296,7 @@ export function AITab({ clientId }: { clientId: number }) {
   );
 }
 
-// ── Main Layout ───────────────────────────────────────────────────────────────
+// â”€â”€ Main Layout â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export function FinancialPlanningContent({ initialClientId }: { initialClientId?: number }) {
   const [activeTab, setActiveTab] = useState<TabKey>("overview");
@@ -2353,7 +2354,7 @@ export function FinancialPlanningContent({ initialClientId }: { initialClientId?
               <t.icon className="w-4 h-4 flex-shrink-0" />
               <span className="truncate">{t.label}</span>
               {staleTabKeys.has(t.key) && (
-                <span className="ml-auto flex-shrink-0 w-2 h-2 rounded-full bg-amber-500 animate-pulse" title="Data has changed — review needed" data-testid={`stale-indicator-${t.key}`} />
+                <span className="ml-auto flex-shrink-0 w-2 h-2 rounded-full bg-amber-500 animate-pulse" title="Data has changed â€” review needed" data-testid={`stale-indicator-${t.key}`} />
               )}
               {!staleTabKeys.has(t.key) && recalculatedTabKeys.has(t.key) && (
                 <span className="ml-auto flex-shrink-0 w-2 h-2 rounded-full bg-blue-500" title="Recently recalculated" data-testid={`recalculated-indicator-${t.key}`} />
@@ -2376,7 +2377,7 @@ export function FinancialPlanningContent({ initialClientId }: { initialClientId?
         {selectedClientId && unresolvedFlags.length === 0 && recentlyResolvedFlags.length > 0 && (
           <div className="mb-4 px-4 py-3 bg-blue-50 border border-blue-200 rounded-xl flex items-center gap-3" data-testid="recalculated-banner">
             <CheckCircle className="w-4 h-4 text-blue-600 flex-shrink-0" />
-            <span className="text-sm font-medium text-blue-800">{recentlyResolvedFlags.length} module{recentlyResolvedFlags.length > 1 ? "s" : ""} recalculated — review updated projections</span>
+            <span className="text-sm font-medium text-blue-800">{recentlyResolvedFlags.length} module{recentlyResolvedFlags.length > 1 ? "s" : ""} recalculated â€” review updated projections</span>
           </div>
         )}
 

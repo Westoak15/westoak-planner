@@ -1185,7 +1185,7 @@ function TaxNotesPanel({ clientId }: { clientId: number }) {
 // PANEL: RRSP Room Calculator
 // ============================================================================
 
-function RrspRoomPanel({ clientId }: { clientId: number }) {
+function RrspRoomPanel({ clientId, prefill, personLabel }: { clientId: number; prefill?: any; personLabel?: string }) {
   const rrspRoom = useRrspRoom(clientId);
   const [result, setResult] = useState<RrspRoomResult | null>(null);
   const [form, setForm] = useState({
@@ -1197,6 +1197,15 @@ function RrspRoomPanel({ clientId }: { clientId: number }) {
     yearsToProject: "10",
   });
 
+  const loadFromClient = () => {
+    if (!prefill) return;
+    setForm(f => ({
+      ...f,
+      priorYearEarnedIncome: prefill.priorYearEarnedIncome ?? f.priorYearEarnedIncome,
+    }));
+    setResult(null);
+  };
+
   const handleCalc = () => {
     const input: Record<string, unknown> = {};
     for (const [k, v] of Object.entries(form)) {
@@ -1207,14 +1216,20 @@ function RrspRoomPanel({ clientId }: { clientId: number }) {
     });
   };
 
-  return (
+ return (
     <div className="space-y-5">
-      <div className="p-4 bg-blue-50 border border-blue-200 rounded-xl text-sm text-blue-800">
-        <strong>RRSP Room Tracker</strong> � Calculates your available RRSP contribution room using the CRA 18% formula with
-        carry-forward.
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex-1 p-4 bg-blue-50 border border-blue-200 rounded-xl text-sm text-blue-800">
+          <strong>RRSP Room Tracker</strong> — Calculates your available RRSP contribution room using the CRA 18% formula with carry-forward.
+        </div>
+        {prefill && (
+          <button onClick={loadFromClient} className="flex-shrink-0 px-3 py-2 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 transition-colors">
+            Load {personLabel ?? "Client"}
+          </button>
+        )}
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+       <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
         <div>
           <label className="text-sm font-semibold">Prior Year Earned Income</label>
           <input
@@ -1322,9 +1337,10 @@ function RrspRoomPanel({ clientId }: { clientId: number }) {
 // PANEL: TFSA Room Calculator
 // ============================================================================
 
-function TfsaRoomPanel({ clientId }: { clientId: number }) {
+function TfsaRoomPanel({ clientId, prefill, personLabel }: { clientId: number; prefill?: any; personLabel?: string }) {
   const tfsaRoom = useTfsaRoom(clientId);
   const [result, setResult] = useState<TfsaRoomResult | null>(null);
+  const fmt$ = (n: number) => `$${n.toLocaleString()}`;
   const [form, setForm] = useState({
     birthYear: "1985",
     priorYearClosingRoom: "20000",
@@ -1335,94 +1351,71 @@ function TfsaRoomPanel({ clientId }: { clientId: number }) {
     portfolioReturn: "0.06",
   });
 
+  const loadFromClient = () => {
+    if (!prefill) return;
+    setForm(f => ({
+      ...f,
+      birthYear:          prefill.birthYear              ?? f.birthYear,
+      currentTfsaBalance: prefill.tfsaBalance             ?? f.currentTfsaBalance,
+      annualContribution: prefill.annualTfsaContribution  ?? f.annualContribution,
+    }));
+    setResult(null);
+  };
+
   const handleCalc = () => {
     const input: Record<string, unknown> = {};
     for (const [k, v] of Object.entries(form)) {
       input[k] = Number(v);
     }
-    tfsaRoom.mutate(input, {
-      onSuccess: (data) => setResult(data),
-    });
+    tfsaRoom.mutate(input, { onSuccess: (data) => setResult(data) });
   };
 
   return (
     <div className="space-y-5">
-      <div className="p-4 bg-teal-50 border border-teal-200 rounded-xl text-sm text-teal-800">
-        <strong>TFSA Room Tracker</strong> � Tracks cumulative TFSA contribution room since 2009 with annual limit history.
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex-1 p-4 bg-teal-50 border border-teal-200 rounded-xl text-sm text-teal-800">
+          <strong>TFSA Room Tracker</strong> — Tracks cumulative TFSA contribution room since 2009 with annual limit history.
+        </div>
+        {prefill && (
+          <button onClick={loadFromClient} className="flex-shrink-0 px-3 py-2 bg-teal-600 text-white text-sm font-semibold rounded-xl hover:bg-teal-700 transition-colors">
+            Load {personLabel ?? "Client"}
+          </button>
+        )}
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div>
           <label className="text-sm font-semibold">Birth Year</label>
-          <input
-            type="number"
-            value={form.birthYear}
-            onChange={(e) => setForm((f) => ({ ...f, birthYear: e.target.value }))}
-            className="w-full px-3 py-2 rounded-xl border mt-1 text-sm"
-          />
+          <input type="number" value={form.birthYear} onChange={(e) => setForm((f) => ({ ...f, birthYear: e.target.value }))} className="w-full px-3 py-2 rounded-xl border mt-1 text-sm" />
         </div>
         <div>
           <label className="text-sm font-semibold">Prior Year Closing Room</label>
-          <input
-            type="number"
-            value={form.priorYearClosingRoom}
-            onChange={(e) => setForm((f) => ({ ...f, priorYearClosingRoom: e.target.value }))}
-            className="w-full px-3 py-2 rounded-xl border mt-1 text-sm"
-          />
+          <input type="number" value={form.priorYearClosingRoom} onChange={(e) => setForm((f) => ({ ...f, priorYearClosingRoom: e.target.value }))} className="w-full px-3 py-2 rounded-xl border mt-1 text-sm" />
         </div>
         <div>
           <label className="text-sm font-semibold">Contributions Made This Year</label>
-          <input
-            type="number"
-            value={form.contributionsMadeThisYear}
-            onChange={(e) => setForm((f) => ({ ...f, contributionsMadeThisYear: e.target.value }))}
-            className="w-full px-3 py-2 rounded-xl border mt-1 text-sm"
-          />
+          <input type="number" value={form.contributionsMadeThisYear} onChange={(e) => setForm((f) => ({ ...f, contributionsMadeThisYear: e.target.value }))} className="w-full px-3 py-2 rounded-xl border mt-1 text-sm" />
         </div>
         <div>
           <label className="text-sm font-semibold">Withdrawals Last Year</label>
-          <input
-            type="number"
-            value={form.withdrawalsLastYear}
-            onChange={(e) => setForm((f) => ({ ...f, withdrawalsLastYear: e.target.value }))}
-            className="w-full px-3 py-2 rounded-xl border mt-1 text-sm"
-          />
+          <input type="number" value={form.withdrawalsLastYear} onChange={(e) => setForm((f) => ({ ...f, withdrawalsLastYear: e.target.value }))} className="w-full px-3 py-2 rounded-xl border mt-1 text-sm" />
         </div>
         <div>
           <label className="text-sm font-semibold">Current TFSA Balance</label>
-          <input
-            type="number"
-            value={form.currentTfsaBalance}
-            onChange={(e) => setForm((f) => ({ ...f, currentTfsaBalance: e.target.value }))}
-            className="w-full px-3 py-2 rounded-xl border mt-1 text-sm"
-          />
+          <input type="number" value={form.currentTfsaBalance} onChange={(e) => setForm((f) => ({ ...f, currentTfsaBalance: e.target.value }))} className="w-full px-3 py-2 rounded-xl border mt-1 text-sm" />
         </div>
         <div>
           <label className="text-sm font-semibold">Annual Contribution</label>
-          <input
-            type="number"
-            value={form.annualContribution}
-            onChange={(e) => setForm((f) => ({ ...f, annualContribution: e.target.value }))}
-            className="w-full px-3 py-2 rounded-xl border mt-1 text-sm"
-          />
+          <input type="number" value={form.annualContribution} onChange={(e) => setForm((f) => ({ ...f, annualContribution: e.target.value }))} className="w-full px-3 py-2 rounded-xl border mt-1 text-sm" />
         </div>
         <div>
           <label className="text-sm font-semibold">Portfolio Return (decimal)</label>
-          <input
-            type="number"
-            step="0.01"
-            value={form.portfolioReturn}
-            onChange={(e) => setForm((f) => ({ ...f, portfolioReturn: e.target.value }))}
-            className="w-full px-3 py-2 rounded-xl border mt-1 text-sm"
-          />
+          <input type="number" step="0.01" value={form.portfolioReturn} onChange={(e) => setForm((f) => ({ ...f, portfolioReturn: e.target.value }))} className="w-full px-3 py-2 rounded-xl border mt-1 text-sm" />
         </div>
       </div>
 
-      <button
-        onClick={handleCalc}
-        disabled={tfsaRoom.isPending}
-        className="flex items-center space-x-2 px-4 py-2 bg-primary text-primary-foreground rounded-xl font-semibold hover:bg-primary/90 disabled:opacity-50"
-      >
+      <button onClick={handleCalc} disabled={tfsaRoom.isPending}
+        className="flex items-center space-x-2 px-4 py-2 bg-primary text-primary-foreground rounded-xl font-semibold hover:bg-primary/90 disabled:opacity-50">
         <Calculator className="w-4 h-4" />
         <span>{tfsaRoom.isPending ? "Calculating..." : "Calculate Room"}</span>
       </button>
@@ -1431,10 +1424,10 @@ function TfsaRoomPanel({ clientId }: { clientId: number }) {
         <div className="space-y-4">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[
-              { label: "Annual Limit This Year", value: fmt$(result.summary.annualLimitThisYear), color: "text-green-600" },
-              { label: "Cumulative Room (2009+)", value: fmt$(result.cumulativeRoomSince2009), color: "text-blue-600" },
-              { label: "Total Available Room", value: fmt$(result.summary.totalAvailableRoom), color: "text-teal-600" },
-              { label: "Closing Room", value: fmt$(result.summary.closingRoom), color: "text-primary" },
+              { label: "Annual Limit This Year",  value: fmt$(result.summary.annualLimitThisYear),  color: "text-green-600" },
+              { label: "Cumulative Room (2009+)", value: fmt$(result.cumulativeRoomSince2009),       color: "text-blue-600"  },
+              { label: "Total Available Room",    value: fmt$(result.summary.totalAvailableRoom),    color: "text-teal-600"  },
+              { label: "Closing Room",            value: fmt$(result.summary.closingRoom),           color: "text-primary"   },
             ].map((card) => (
               <div key={card.label} className="border border-border rounded-xl p-4">
                 <p className="text-xs text-muted-foreground uppercase">{card.label}</p>
@@ -1458,18 +1451,9 @@ function TfsaRoomPanel({ clientId }: { clientId: number }) {
           <div className="p-4 bg-teal-50 border border-teal-200 rounded-xl">
             <p className="font-semibold text-teal-800">30-Year TFSA vs Taxable Projection</p>
             <div className="grid grid-cols-3 gap-3 mt-2 text-sm">
-              <div>
-                <p className="text-teal-700">TFSA Final Balance</p>
-                <p className="font-bold text-teal-900">{fmt$(result.thirtyYearProjection.tfsaBalanceFinal)}</p>
-              </div>
-              <div>
-                <p className="text-teal-700">Taxable Final Balance</p>
-                <p className="font-bold text-teal-900">{fmt$(result.thirtyYearProjection.taxableBalanceFinal)}</p>
-              </div>
-              <div>
-                <p className="text-teal-700">TFSA Advantage</p>
-                <p className="font-bold text-green-700">{fmt$(result.thirtyYearProjection.tfsaAdvantage)}</p>
-              </div>
+              <div><p className="text-teal-700">TFSA Final Balance</p><p className="font-bold text-teal-900">{fmt$(result.thirtyYearProjection.tfsaBalanceFinal)}</p></div>
+              <div><p className="text-teal-700">Taxable Final Balance</p><p className="font-bold text-teal-900">{fmt$(result.thirtyYearProjection.taxableBalanceFinal)}</p></div>
+              <div><p className="text-teal-700">TFSA Advantage</p><p className="font-bold text-green-700">{fmt$(result.thirtyYearProjection.tfsaAdvantage)}</p></div>
             </div>
           </div>
         </div>
@@ -1477,7 +1461,6 @@ function TfsaRoomPanel({ clientId }: { clientId: number }) {
     </div>
   );
 }
-
 // ============================================================================
 // PANEL: Tax Projection
 // ============================================================================
@@ -2405,52 +2388,3 @@ export function FinancialPlanningContent({ initialClientId }: { initialClientId?
 export default function FinancialPlanning() {
   return <FinancialPlanningContent />;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
- 

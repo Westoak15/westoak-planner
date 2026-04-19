@@ -1,4 +1,4 @@
-app = 'fp-standalone'
+﻿app = 'fp-standalone'
 primary_region = 'yyz'
 
 [deploy]
@@ -27,9 +27,8 @@ primary_region = 'yyz'
 [checks]
   [checks.health]
     type = 'http'
-    port = 5173
+    port = 8080
     path = '/api/health'
     interval = '30s'
     timeout = '10s'
     grace_period = '120s'
-

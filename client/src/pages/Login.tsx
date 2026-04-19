@@ -1,4 +1,4 @@
-import { Turnstile } from '@marsidev/react-turnstile'
+//import { Turnstile } from '@marsidev/react-turnstile'
 import { useState } from "react";
 import { useAuth } from "../lib/auth";
 import { Eye, EyeOff, Check, X } from "lucide-react";
@@ -58,9 +58,7 @@ export default function Login() {
   const [showNewPw, setShowNewPw] = useState(false);
   const [error, setError] = useState("");
   const [busy, setBusy]   = useState(false);
-  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
-
-  const [form, setForm] = useState({
+   const [form, setForm] = useState({
     email: "", password: "", firstName: "", lastName: "", firmName: "",
     securityQuestion: SECURITY_QUESTIONS[0], securityAnswer: "",
   });
@@ -218,18 +216,7 @@ async function submitRegister() {
                     </button>
                   </div>
                 )}
-
-                 {mode === "login" && (
-                  <div className="flex justify-center">
-                    <Turnstile
-                      siteKey="0x4AAAAAAC9t57T1sbOWFGmX"
-                      onSuccess={token => setTurnstileToken(token)}
-                      onExpire={() => setTurnstileToken(null)}
-                      onError={() => setTurnstileToken("bypass")}
-                    />
-                  </div>
-                 )}
-
+                
                 {error && <p className="text-red-500 text-sm bg-red-50 rounded-lg px-3 py-2">{error}</p>}
 
                 <button

@@ -1,5 +1,4 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { EstateScorecard } from "../components/ModuleViews";
 import { api } from "../lib/api";
 import { useState, useMemo, useEffect, Component, type ReactNode } from "react";
 
@@ -32,7 +31,7 @@ import {
   Target, DollarSign, PiggyBank, Shield, GraduationCap, CreditCard,
   Receipt, ScrollText, Brain, Plus, Trash2, Sparkles, TrendingUp, TrendingDown,
   AlertTriangle, CheckCircle, Clock, FileText, Printer, Loader2, BarChart3,
-  Users, Calculator, ChevronDown, ChevronUp, Info, Download, Eye, Gift, FileSignature, Printer,
+  Users, Calculator, ChevronDown, ChevronUp, Info, Download, Eye, Gift, FileSignature, 
 } from "lucide-react";
 
 // ── Tab definitions ───────────────────────────────────────────────────────────
@@ -271,7 +270,7 @@ function NetWorthTab({ clientId }: { clientId: number }) {
               <div><label className="text-sm font-semibold">Value ($)</label><input type="number" step="0.01" required value={form.value} onChange={e => setForm({ ...form, value: e.target.value })} data-testid="input-fp-nw-value" className="w-full px-4 py-3 rounded-xl border mt-1" /></div>
               <div className="pt-4 flex justify-end space-x-3">
                 <button type="button" onClick={() => setShowAdd(false)} className="px-6 py-3 rounded-xl font-semibold text-muted-foreground hover:bg-muted">Cancel</button>
-                <button type="button" onClick={(e) => handleAdd(e as any)} disabled={createEntry.isPending} data-testid="button-fp-submit-nw" className="px-6 py-3 rounded-xl font-semibold bg-primary text-primary-foreground">{createEntry.isPending ? "Adding..." : "Add Entry"}</button>
+                <button type="button" onClick={() => handleAdd()} disabled={createEntry.isPending} data-testid="button-fp-submit-nw" className="px-6 py-3 rounded-xl font-semibold bg-primary text-primary-foreground">{createEntry.isPending ? "Adding..." : "Add Entry"}</button>
               </div>
             </form>
           </div>
@@ -994,18 +993,6 @@ function DebtTab({ clientId, planId }: { clientId: number; planId: number | null
 // 3. Complete form handling
 // ============================================================================
 
-import { useState } from "react";
-import { Plus, Trash2, Calculator, TrendingUp, Receipt } from "lucide-react";
-import {
-  useTaxPlanningNotes,
-  useCreateTaxPlanningNote,
-  useDeleteTaxPlanningNote,
-  useTaxProjection,
-  useRrspRoom,
-  useTfsaRoom,
-  useCapitalGains,
-  useIncomeSplit,
-} from "@/hooks/use-plans";
 import type {
   TaxProjectionResult,
   RrspRoomResult,
@@ -1163,7 +1150,7 @@ function TaxNotesPanel({ clientId }: { clientId: number }) {
             <div key={year}>
               <h3 className="text-lg font-bold mb-3">{year} Tax Year</h3>
               <div className="grid gap-4">
-                {yearNotes.map((note: any) => (
+                {(yearNotes as any[]).map((note: any) => (
                   <div key={note.id} className="border border-border rounded-xl p-4 hover:shadow-md transition-shadow group">
                     <div className="flex justify-between items-start">
                       <span className="text-xs font-semibold text-purple-600 uppercase bg-purple-50 px-2 py-1 rounded-lg">
@@ -1797,7 +1784,7 @@ function TaxProjectionPanel({ clientId }: { clientId: number }) {
                   </tr>
                 </thead>
                 <tbody>
-                  {result.projections.map((proj, idx) => (
+                  {(result.projections as any[]).map((proj, idx) => (
                     <tr key={idx} className="border-t border-border hover:bg-muted/20">
                       <td className="px-3 py-2">{proj.year}</td>
                       <td className="px-3 py-2">{proj.age}</td>

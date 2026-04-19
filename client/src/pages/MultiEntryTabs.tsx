@@ -10,13 +10,13 @@ import { Plus, Trash2, Save, X, Pencil } from "lucide-react";
 import { MonteCarloResults } from "../components/MonteCarloResults";
 
 // ── Shared mini components ────────────────────────────────────────────────────
-const TH = ({ children }: { children: React.ReactNode }) => (
+const TH = ({ children }: { children?: React.ReactNode }) =>(
   <th className="text-left px-3 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wide">{children}</th>
 );
 const TD = ({ children, right }: { children: React.ReactNode; right?: boolean }) => (
   <td className={cn("px-3 py-2.5 text-sm", right && "text-right")}>{children}</td>
 );
-function Card({ children, className }: { children: React.ReactNode; className?: string }) {
+function Card({ children, className }: { children?: React.ReactNode; className?: string }) {
   return <div className={cn("bg-white rounded-xl border border-gray-200 shadow-sm", className)}>{children}</div>;
 }
 function SummaryBar({ items }: { items: { label: string; value: string; color: string; bg: string }[] }) {
@@ -31,9 +31,9 @@ function SummaryBar({ items }: { items: { label: string; value: string; color: s
     </div>
   );
 }
-function InlineInput({ value, onChange, type = "text", placeholder, className }: { value: string; onChange: (v: string) => void; type?: string; placeholder?: string; className?: string }) {
+function InlineInput({ value, onChange, type = "text", placeholder, className, maxLength }: { value: string; onChange: (v: string) => void; type?: string; placeholder?: string; className?: string; maxLength?: number }) {
   return (
-    <input type={type} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder}
+    <input type={type} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} maxLength={maxLength}
       className={cn("border border-gray-200 rounded-lg px-2 py-1.5 text-sm w-full focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500", className)} />
   );
 }
@@ -278,7 +278,7 @@ async function saveAll() {
                             Spousal RRSP
                           </label>
                           {editForm.isSpousal && (
-                            <select value={draft.rrspContributor} onChange={e => onChange("rrspContributor", e.target.value)}
+                            <select value={editForm.rrspContributor ?? ""} onChange={e => setEditForm(f => ({ ...f, rrspContributor: e.target.value }))}
                               className="border border-gray-200 rounded px-2 py-1 text-xs w-full">
                               <option value="">Select contributor</option>
                               <option value="client">Client</option>
@@ -653,50 +653,17 @@ export function InsuranceTab({ clientId }: { clientId: number }) {
 
   function updateDraft(i: number, k: keyof InsDraft, v: string) { setDrafts(d => d.map((x, idx) => idx === i ? { ...x, [k]: v } : x)); }
 
-  function startEdit(e: NWEntry) {
-    const m = (e.metadata ?? {}) as any;
-    setEditingId(e.id);
-    setEditForm({
-      ...e,
-      isSpousal: !!m.spousal,
-      rrspContributor: m.contributor ?? "",
-      pensionType: m.pensionType ?? "DBPP",
-      matchPct: m.matchPct ?? "",
-    });
-  }
-
-  async function saveEdit() {
-    if (!editingId || !editForm.value) return;
+    async function saveAll() {
+    const valid = drafts.filter(d => d.annualIncome);
+    if (!valid.length) return;
     setSaving(true);
     try {
-      const m: any = {};
-      if (editForm.category === "RRSP" && editForm.isSpousal) { m.spousal = true; m.contributor = editForm.rrspContributor; }
-      if (editForm.category === "Pension") { m.pensionType = editForm.pensionType; if (editForm.matchPct) m.matchPct = editForm.matchPct; }
-      await api.put(`/api/net-worth/${editingId}`, {
-        category: editForm.category, name: editForm.name || editForm.category,
-        owner: editForm.owner, value: editForm.value, notes: editForm.notes || null,
-        metadata: Object.keys(m).length ? m : null,
-      });
-      setEditingId(null); setEditForm({});
+      await Promise.all(valid.map(d => api.post(`/api/clients/${clientId}/insurance`, d)));
+      setDrafts([]);
       await load();
     } finally { setSaving(false); }
   }
-
-  async function saveAll() {
-  const valid = drafts.filter(d => d.currentAge && d.retirementAge);
-  if (!valid.length) return;
-  setSaving(true);
-  try {
-    if (editingId) {
-      await api.patch(`/api/retirement/${editingId}`, valid[0]);
-      setEditingId(null);
-    } else {
-      await Promise.all(valid.map(d => api.post(`/api/clients/${clientId}/retirement`, d)));
-    }
-    setDrafts([]);
-    await load();
-  } finally { setSaving(false); }
-}
+ 
 
   async function del(id: number) {
     if (!confirm("Delete?")) return;
@@ -797,35 +764,6 @@ export function RespTab({ clientId }: { clientId: number }) {
   useEffect(() => { load(); }, [clientId]);
 
   function updateDraft(i: number, k: keyof EduDraft, v: string) { setDrafts(d => d.map((x, idx) => idx === i ? { ...x, [k]: v } : x)); }
-
-  function startEdit(e: NWEntry) {
-    const m = (e.metadata ?? {}) as any;
-    setEditingId(e.id);
-    setEditForm({
-      ...e,
-      isSpousal: !!m.spousal,
-      rrspContributor: m.contributor ?? "",
-      pensionType: m.pensionType ?? "DBPP",
-      matchPct: m.matchPct ?? "",
-    });
-  }
-
-  async function saveEdit() {
-    if (!editingId || !editForm.value) return;
-    setSaving(true);
-    try {
-      const m: any = {};
-      if (editForm.category === "RRSP" && editForm.isSpousal) { m.spousal = true; m.contributor = editForm.rrspContributor; }
-      if (editForm.category === "Pension") { m.pensionType = editForm.pensionType; if (editForm.matchPct) m.matchPct = editForm.matchPct; }
-      await api.put(`/api/net-worth/${editingId}`, {
-        category: editForm.category, name: editForm.name || editForm.category,
-        owner: editForm.owner, value: editForm.value, notes: editForm.notes || null,
-        metadata: Object.keys(m).length ? m : null,
-      });
-      setEditingId(null); setEditForm({});
-      await load();
-    } finally { setSaving(false); }
-  }
 
   async function saveAll() {
     const valid = drafts.filter(d => d.childName);
@@ -931,35 +869,6 @@ export function DebtTab({ clientId }: { clientId: number }) {
 
   const totalDebt = rows.reduce((s, d) => s + Number(d.balance), 0);
   function updateDraft(i: number, k: keyof DebtDraft, v: string) { setDrafts(d => d.map((x, idx) => idx === i ? { ...x, [k]: v } : x)); }
-
-  function startEdit(e: NWEntry) {
-    const m = (e.metadata ?? {}) as any;
-    setEditingId(e.id);
-    setEditForm({
-      ...e,
-      isSpousal: !!m.spousal,
-      rrspContributor: m.contributor ?? "",
-      pensionType: m.pensionType ?? "DBPP",
-      matchPct: m.matchPct ?? "",
-    });
-  }
-
-  async function saveEdit() {
-    if (!editingId || !editForm.value) return;
-    setSaving(true);
-    try {
-      const m: any = {};
-      if (editForm.category === "RRSP" && editForm.isSpousal) { m.spousal = true; m.contributor = editForm.rrspContributor; }
-      if (editForm.category === "Pension") { m.pensionType = editForm.pensionType; if (editForm.matchPct) m.matchPct = editForm.matchPct; }
-      await api.put(`/api/net-worth/${editingId}`, {
-        category: editForm.category, name: editForm.name || editForm.category,
-        owner: editForm.owner, value: editForm.value, notes: editForm.notes || null,
-        metadata: Object.keys(m).length ? m : null,
-      });
-      setEditingId(null); setEditForm({});
-      await load();
-    } finally { setSaving(false); }
-  }
 
   async function saveAll() {
     const valid = drafts.filter(d => d.name && d.balance);

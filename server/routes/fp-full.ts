@@ -355,124 +355,83 @@ r.post("/plans/:planId/assumptions/seed-defaults", async (req: AuthRequest, res:
 });
 
 // ── Simulation Results ────────────────────────────────────────────────────────
+// REPLACE the entire block from line 357 to line 475 in fp-full.ts with this:
+
+// ── Simulation Results ────────────────────────────────────────────────────────
 r.get("/plans/:planId/simulation-results", async (req: AuthRequest, res: Response) => {
   const p = await ownsPlan(+req.params.planId, req.userId!);
   if (!p) return res.status(404).json({ message: "Not found" });
   res.json(await db.select().from(simulationResults).where(eq(simulationResults.planId, +req.params.planId)));
 });
 
+// FIX 3: replaced broken runMonteCarlo stub import with direct engine call
 r.post("/plans/:planId/run-simulation", async (req: AuthRequest, res: Response) => {
   const p = await ownsPlan(+req.params.planId, req.userId!);
   if (!p) return res.status(404).json({ message: "Not found" });
   try {
-    const [client] = await db.select().from(clients).where(eq(clients.id, p.clientId));
-    const [projRow] = await db.select().from(retirementProjections).where(eq(retirementProjections.clientId, p.clientId));
-    const assumptions = await db.select().from(planAssumptions).where(eq(planAssumptions.planId, +req.params.planId));
+    const [projRow] = await db
+      .select()
+      .from(retirementProjections)
+      .where(eq(retirementProjections.clientId, p.clientId));
+
+    if (!projRow) {
+      return res.status(404).json({ message: "No retirement projection found for this client" });
+    }
+
+    const assumptions = await db
+      .select()
+      .from(planAssumptions)
+      .where(eq(planAssumptions.planId, +req.params.planId));
     const baseAssum = assumptions.find(a => a.scenario === "base") ?? assumptions[0];
 
-    const { runMonteCarlo } = await import("../routes/simulate.js") as any;
-    if (runMonteCarlo) {
-      const result = await runMonteCarlo({ client, projection: projRow, assumptions: baseAssum, simulations: baseAssum?.simulationCount ?? 1000 });
-      res.json(result);
-    } else {
-      res.json({ successRate: 0, percentileBands: { p10: [], p25: [], p50: [], p75: [], p90: [], labels: [] }, finalBalancePercentiles: { p10: 0, p25: 0, p50: 0, p75: 0, p90: 0 }, yearsProjected: 30, simulations: 1000 });
-    }
+    const { runMonteCarloSimulation, PRESET_ALLOCATIONS } = await import("../engine/simulation/monteCarlo.js") as any;
+
+    const params = {
+      initialBalance:      Number(projRow.rrspBalance ?? 0) + Number(projRow.tfsaBalance ?? 0) + Number(projRow.nonRegBalance ?? 0),
+      allocation:          PRESET_ALLOCATIONS["MODERATE"],
+      annualContribution:  Number(projRow.annualContribution ?? 0),
+      yearsToSimulate:     Math.max(1, (projRow.lifeExpectancy ?? 90) - (projRow.currentAge ?? 35)),
+      numberOfPaths:       baseAssum?.simulationCount ?? 1000,
+      inflationRate:       Number(projRow.inflationRate ?? 2) / 100,
+    };
+
+    const result = runMonteCarloSimulation(params);
+    res.json(result);
   } catch (e: any) {
-    console.error("[sim]", e.message);
+    console.error("[run-simulation]", e.message);
     res.status(500).json({ message: e.message });
   }
 });
 
-// ── Stale Flags ───────────────────────────────────────────────────────────────
-r.get("/plans/:planId/stale-flags", async (req: AuthRequest, res: Response) => {
-  const p = await ownsPlan(+req.params.planId, req.userId!);
-  if (!p) return res.status(404).json({ message: "Not found" });
-  res.json(await db.select().from(planStaleFlags).where(eq(planStaleFlags.planId, +req.params.planId)));
+// FIX 4: removed 5 duplicate tax route handlers that were dead code
+// (taxRouter mounted at /api/tax wins over these; tax.ts is the real implementation)
+// DELETED: POST /tax/:clientId/projection
+// DELETED: POST /tax/:clientId/rrsp-room
+// DELETED: POST /tax/:clientId/tfsa-room
+// DELETED: POST /tax/:clientId/capital-gains
+// DELETED: POST /tax/:clientId/income-split
+
+// These two are unique to fp-full.ts — kept:
+r.get("/reports/:clientId/available", async (req: AuthRequest, res: Response) => {
+  const cid = +req.params.clientId;
+  if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
+  const [ret] = await db.select({ id: retirementProjections.id }).from(retirementProjections).where(eq(retirementProjections.clientId, cid));
+  const [ins] = await db.select({ id: insuranceAnalyses.id }).from(insuranceAnalyses).where(eq(insuranceAnalyses.clientId, cid));
+  res.json({ retirement: !!ret, insurance: !!ins, netWorth: true });
 });
 
-// ── Snapshots ─────────────────────────────────────────────────────────────────
-r.get("/plans/:planId/snapshots", async (req: AuthRequest, res: Response) => {
-  const p = await ownsPlan(+req.params.planId, req.userId!);
-  if (!p) return res.status(404).json({ message: "Not found" });
-  res.json(await db.select().from(planSnapshots).where(eq(planSnapshots.planId, +req.params.planId)));
-});
-r.post("/plans/:planId/snapshots", async (req: AuthRequest, res: Response) => {
-  const p = await ownsPlan(+req.params.planId, req.userId!);
-  if (!p) return res.status(404).json({ message: "Not found" });
-  const [row] = await (db.insert(planSnapshots) as any).values({ planId: +req.params.planId, snapshotData: req.body, trigger: req.body.trigger ?? "manual" }).returning();
-  res.status(201).json(row);
-});
-r.get("/plans/:planId/snapshot-comparison", async (_req, res) => res.json([]));
-r.get("/plans/:planId/scenario-comparison",  async (_req, res) => res.json([]));
-
-// ── Action Items ──────────────────────────────────────────────────────────────
-r.get("/plans/:planId/action-items", async (req: AuthRequest, res: Response) => {
-  const p = await ownsPlan(+req.params.planId, req.userId!);
-  if (!p) return res.status(404).json({ message: "Not found" });
-  res.json(await db.select().from(planActionItems).where(eq(planActionItems.planId, +req.params.planId)));
-});
-r.post("/plans/:planId/action-items", async (req: AuthRequest, res: Response) => {
-  const p = await ownsPlan(+req.params.planId, req.userId!);
-  if (!p) return res.status(404).json({ message: "Not found" });
-  const [row] = await (db.insert(planActionItems) as any).values({ planId: +req.params.planId, ...safe(req.body) }).returning();
-  res.status(201).json(row);
-});
-r.put("/action-items/:id", async (req: AuthRequest, res: Response) => {
-  const [ex] = await db.select().from(planActionItems).where(eq(planActionItems.id, +req.params.id));
-  if (!ex) return res.status(404).json({ message: "Not found" });
-  const [u] = await db.update(planActionItems).set(safe(req.body)).where(eq(planActionItems.id, ex.id)).returning();
-  res.json(u);
-});
-r.delete("/action-items/:id", async (req: AuthRequest, res: Response) => {
-  await db.delete(planActionItems).where(eq(planActionItems.id, +req.params.id));
-  res.json({ ok: true });
+r.get("/clients/:clientId/financial-planning-report", async (req: AuthRequest, res: Response) => {
+  const cid = +req.params.clientId;
+  if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
+  try {
+    const [plan]   = await db.select().from(financialPlans).where(eq(financialPlans.clientId, cid));
+    const [client] = await db.select().from(clients).where(eq(clients.id, cid));
+    const { generateComprehensiveReport } = await import("../services/reportGenerator.js") as any;
+    res.setHeader("Content-Type", "text/html; charset=utf-8");
+    res.send(generateComprehensiveReport({ plan, client } as any));
+  } catch (e: any) { res.status(500).json({ message: e.message }); }
 });
 
-// ── Tax engine + reports ──────────────────────────────────────────────────────
-r.post("/tax/:clientId/projection", async (req: AuthRequest, res: Response) => {
-  const cid = +req.params.clientId;
-  if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
-  try {
-    const [client] = await db.select().from(clients).where(eq(clients.id, cid));
-    const { projectTax } = await import("../engine/tax/projector.js") as any;
-    res.json(projectTax({ annualIncome: Number(client.annualIncome ?? 0), spouseIncome: Number(client.spouseAnnualIncome ?? 0), province: client.province ?? "ON", year: new Date().getFullYear(), ...req.body }));
-  } catch (e: any) { res.status(500).json({ message: e.message }); }
-});
-r.post("/tax/:clientId/rrsp-room", async (req: AuthRequest, res: Response) => {
-  const cid = +req.params.clientId;
-  if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
-  try {
-    const [client] = await db.select().from(clients).where(eq(clients.id, cid));
-    const { calculateRrspRoom } = await import("../engine/tax/roomTracker.js") as any;
-    res.json(calculateRrspRoom({ annualIncome: Number(client.annualIncome ?? 0), ...req.body }));
-  } catch (e: any) { res.status(500).json({ message: e.message }); }
-});
-r.post("/tax/:clientId/tfsa-room", async (req: AuthRequest, res: Response) => {
-  const cid = +req.params.clientId;
-  if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
-  try {
-    const { calculateTfsaRoom } = await import("../engine/tax/roomTracker.js") as any;
-    res.json(calculateTfsaRoom(req.body));
-  } catch (e: any) { res.status(500).json({ message: e.message }); }
-});
-r.post("/tax/:clientId/capital-gains", async (req: AuthRequest, res: Response) => {
-  const cid = +req.params.clientId;
-  if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
-  try {
-    const [client] = await db.select().from(clients).where(eq(clients.id, cid));
-    const { analyzeCapitalGains } = await import("../engine/tax/capitalGains.js") as any;
-    res.json((analyzeCapitalGains as any)(req.body.positions ?? [], Number(client.annualIncome ?? 0), client.province ?? "ON"));
-  } catch (e: any) { res.status(500).json({ message: e.message }); }
-});
-r.post("/tax/:clientId/income-split", async (req: AuthRequest, res: Response) => {
-  const cid = +req.params.clientId;
-  if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
-  try {
-    const [client] = await db.select().from(clients).where(eq(clients.id, cid));
-    const { analyzeIncomeSplitting } = await import("../engine/tax/index.js") as any;
-    res.json((analyzeIncomeSplitting as any)({ primaryIncome: Number(client.annualIncome ?? 0), spouseIncome: Number(client.spouseAnnualIncome ?? 0), province: client.province ?? "ON", ...req.body }));
-  } catch (e: any) { res.status(500).json({ message: e.message }); }
-});
 r.get("/reports/:clientId/available", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.clientId;
   if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });

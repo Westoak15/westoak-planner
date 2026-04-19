@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "../lib/auth";
 import { api } from "../lib/api";
@@ -215,7 +214,7 @@ function ClientsTab({ onSelect }: { onSelect: (c: Client) => void }) {
                 <td className="px-5 py-3 text-gray-500">{c.phone ?? "—"}</td>
                 <td className="px-5 py-3 text-blue-600">{c.email ?? "—"}</td>
                 <td className="px-5 py-3 text-gray-500">{c.province ?? "—"}</td>
-                <td className="px-3 py-3"><button onClick={e => { e.stopPropagation(); deletePlan(p.id); }} className="text-gray-300 hover:text-red-500 transition-colors p-1"><Trash2 className="w-3.5 h-3.5" /></button>
+                <td className="px-3 py-3"><button onClick={e => { e.stopPropagation(); if (confirm("Delete client?")) api.delete(`/api/clients/${c.id}`).then(() => window.location.reload()); }} className="text-gray-300 hover:text-red-500 transition-colors p-1"><Trash2 className="w-3.5 h-3.5"/></button>
                     <ChevronRight className="w-4 h-4 text-gray-300" /></td>
               </tr>
             ))}

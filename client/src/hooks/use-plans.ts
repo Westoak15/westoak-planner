@@ -364,59 +364,6 @@ export function useDeleteTaxPlanningNote(clientId: number) {
 
 // ── Tax Engine (new) ──────────────────────────────────────────────────────────
 
-export interface TaxYearProjection {
-  year:               number;
-  age:                number;
-  phase:              "accumulation" | "retirement";
-  employmentIncome:   number;
-  pensionIncome:      number;
-  rrifWithdrawal:     number;
-  tfsaWithdrawal:     number;
-  capitalGainsIncome: number;
-  cppBenefit:         number;
-  oasBenefit:         number;
-  otherIncome:        number;
-  totalGrossIncome:   number;
-  totalTaxableIncome: number;
-  federalTax:         number;
-  provincialTax:      number;
-  totalTax:           number;
-  effectiveRate:      number;
-  marginalRate:       number;
-  netIncome:          number;
-  disposableIncome:   number;
-  rrspBalance:        number;
-  tfsaBalance:        number;
-  nonRegBalance:      number;
-  totalWealth:        number;
-  rrspRoomAvailable:  number;
-  tfsaRoomAvailable:  number;
-}
-
-export interface TaxProjectionResult {
-  years:   TaxYearProjection[];
-  summary: {
-    totalTaxPaid:            number;
-    avgEffectiveRate:        number;
-    peakTax:                 number;
-    accumulationYears:       number;
-    retirementYears:         number;
-    finalWealth:             number;
-    lowestMarginalRateYear:  { year: number; age: number; rate: number } | null;
-  };
-}
-
-// ============================================================================
-// COPY THIS ENTIRE SECTION INTO client/src/hooks/use-plans.ts
-// ============================================================================
-// Instructions:
-// 1. Find the existing useTaxProjection, useRrspRoom, useTfsaRoom, 
-//    useCapitalGains, and useIncomeSplit functions
-// 2. Delete those 5 functions completely
-// 3. Replace with these versions below
-// 4. Also add the type definitions at the end if they don't exist
-// ============================================================================
-
 // ── Tax Projection Results ──────────────────────────────────────────────────
 
 export interface TaxYearProjection {

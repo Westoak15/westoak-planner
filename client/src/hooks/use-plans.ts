@@ -79,16 +79,6 @@ export function useNetWorthEntries(clientId: number) {
   });
 }
 
-export function useNetWorthEntries(clientId: number) {
-  return useQuery({
-    queryKey: ["/api/clients/:clientId/net-worth", clientId],
-    queryFn: async () => {
-      return api.get<any[]>(`/api/clients/${clientId}/net-worth`);
-    },
-    enabled: !!clientId,
-  });
-}
-
 export function useCreateNetWorthEntry() {
   const queryClient = useQueryClient();
   return useMutation({
@@ -123,6 +113,7 @@ export function useDeleteNetWorthEntry(clientId: number) {
       queryClient.invalidateQueries({ queryKey: ["/api/clients/:clientId/net-worth", clientId] });
     },
   });
+}
 
 // ── Retirement ────────────────────────────────────────────────────────────────
 

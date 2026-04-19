@@ -163,20 +163,25 @@ export function NetWorthTab({ clientId, client }: { clientId: number; client?: {
   }
 
 async function saveAll() {
-    const valid = drafts.filter(d => d.currentAge && d.retirementAge);
-    if (!valid.length) return;
-    setSaving(true);
-    try {
-      if (editingId) {
-        await api.patch(`/api/retirement/${editingId}`, valid[0]);
-        setEditingId(null);
-      } else {
-        await Promise.all(valid.map(d => api.post(`/api/clients/${clientId}/retirement`, d)));
-      }
-      setDrafts([]);
-      await load();
-    } finally { setSaving(false); }
-  }
+  const valid = drafts.filter(d => d.value);
+  if (!valid.length) return;
+  setSaving(true);
+  try {
+    await Promise.all(valid.map(d => {
+      const m: any = {};
+      if (d.category === "RRSP" && d.isSpousal) { m.spousal = true; m.contributor = d.rrspContributor; }
+      if (d.category === "Pension") { m.pensionType = d.pensionType; if (d.matchPct) m.matchPct = d.matchPct; }
+      return api.post(`/api/clients/${clientId}/net-worth`, {
+        type: d.type, category: d.category,
+        name: d.name || d.category, owner: d.owner,
+        value: d.value, notes: d.notes || null,
+        metadata: Object.keys(m).length ? m : null,
+      });
+    }));
+    setDrafts([]);
+    await load();
+  } finally { setSaving(false); }
+}
 
   async function del(id: number) {
     if (!confirm("Delete this entry?")) return;

@@ -1196,7 +1196,7 @@ function RrspRoomPanel({ clientId, prefill, personLabel }: { clientId: number; p
     marginalTaxRate: "0.435",
     yearsToProject: "10",
   });
-
+ 
   const loadFromClient = () => {
     if (!prefill) return;
     setForm(f => ({
@@ -1205,7 +1205,7 @@ function RrspRoomPanel({ clientId, prefill, personLabel }: { clientId: number; p
     }));
     setResult(null);
   };
-
+ 
   const handleCalc = () => {
     const input: Record<string, unknown> = {};
     for (const [k, v] of Object.entries(form)) {
@@ -1465,13 +1465,23 @@ function TfsaRoomPanel({ clientId, prefill, personLabel }: { clientId: number; p
 // PANEL: Tax Projection
 // ============================================================================
 
-function TaxProjectionPanel({ clientId }: { clientId: number }) {
+function TaxProjectionPanel({ clientId, prefillPrimary, prefillSpouse, person, primaryLabel, spouseLabel }: {
+  clientId: number;
+  prefillPrimary?: any;
+  prefillSpouse?: any;
+  person?: "primary" | "spouse" | "both";
+  primaryLabel?: string;
+  spouseLabel?: string;
+}) {
   const fmt$ = (n: number) => `$${n.toLocaleString()}`;
-  const fmtPct = (n: number) => `${(n * 100).toFixed(2)}%`;   
+  const fmtPct = (n: number) => `${(n * 100).toFixed(2)}%`;
   const taxProjection = useTaxProjection(clientId);
   const [result, setResult] = useState<TaxProjectionResult | null>(null);
+  const [resultSpouse, setResultSpouse] = useState<TaxProjectionResult | null>(null);
+  const [loadingBoth, setLoadingBoth] = useState(false);
   const [showTable, setShowTable] = useState(false);
   const [form, setForm] = useState({
+
     currentAge: "40",
     retirementAge: "65",
     planToAge: "90",
@@ -1498,24 +1508,84 @@ function TaxProjectionPanel({ clientId }: { clientId: number }) {
 
   const provinces = ["ON", "BC", "AB", "QC", "MB", "SK", "NS", "NB", "PE", "NL", "YT", "NT", "NU"];
 
-  const handleCalc = () => {
-    const input: Record<string, unknown> = {};
-    for (const [k, v] of Object.entries(form)) {
-      input[k] = isNaN(Number(v)) ? v : Number(v);
-    }
-    taxProjection.mutate(input, {
-      onSuccess: (data) => setResult(data),
-    });
+  const applyPrefill = (pf: any) => {
+    if (!pf) return;
+    setForm(f => ({
+      ...f,
+      currentAge:              pf.currentAge              ?? f.currentAge,
+      retirementAge:           pf.retirementAge           ?? f.retirementAge,
+      planToAge:               pf.planToAge               ?? f.planToAge,
+      province:                pf.province                ?? f.province,
+      employmentIncome:        pf.employmentIncome        ?? f.employmentIncome,
+      rrspBalance:             pf.rrspBalance             ?? f.rrspBalance,
+      tfsaBalance:             pf.tfsaBalance             ?? f.tfsaBalance,
+      nonRegBalance:           pf.nonRegBalance           ?? f.nonRegBalance,
+      rrspAnnualContribution:  pf.rrspAnnualContribution  ?? f.rrspAnnualContribution,
+      tfsaAnnualContribution:  pf.annualTfsaContribution  ?? f.tfsaAnnualContribution,
+      desiredRetirementIncome: pf.desiredRetirementIncome ?? f.desiredRetirementIncome,
+      cppStartAge:             pf.cppStartAge             ?? f.cppStartAge,
+      oasStartAge:             pf.oasStartAge             ?? f.oasStartAge,
+    }));
+    setResult(null);
+    setResultSpouse(null);
   };
+
+  const buildInput = (pf?: any) => {
+    const base: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(pf ? { ...form, ...{
+      currentAge: pf.currentAge, retirementAge: pf.retirementAge,
+      planToAge: pf.planToAge, province: pf.province,
+      employmentIncome: pf.employmentIncome, rrspBalance: pf.rrspBalance,
+      tfsaBalance: pf.tfsaBalance, nonRegBalance: pf.nonRegBalance,
+      rrspAnnualContribution: pf.rrspAnnualContribution,
+      tfsaAnnualContribution: pf.annualTfsaContribution,
+      desiredRetirementIncome: pf.desiredRetirementIncome,
+      cppStartAge: pf.cppStartAge, oasStartAge: pf.oasStartAge,
+    }} : form)) {
+      base[k] = isNaN(Number(v)) ? v : Number(v);
+    }
+    return base;
+  };
+
+  const handleCalc = () => {
+    taxProjection.mutate(buildInput(), { onSuccess: (data) => setResult(data) });
+  };
+
+  const handleCalcBoth = async () => {
+    if (!prefillPrimary || !prefillSpouse) return;
+    setLoadingBoth(true);
+    setResult(null);
+    setResultSpouse(null);
+    try {
+      const token = localStorage.getItem("fp_token") ?? "";
+      const headers = { Authorization: `Bearer ${token}`, "Content-Type": "application/json" };
+      const [r1, r2] = await Promise.all([
+        fetch(`/api/tax/${clientId}/projection`, { method: "POST", headers, body: JSON.stringify(buildInput(prefillPrimary)) }).then(r => r.json()),
+        fetch(`/api/tax/${clientId}/projection`, { method: "POST", headers, body: JSON.stringify(buildInput(prefillSpouse)) }).then(r => r.json()),
+      ]);
+      setResult(r1);
+      setResultSpouse(r2);
+    } catch (e) { console.error("[calcBoth]", e); }
+    finally { setLoadingBoth(false); }
+  };
+
 
   return (
     <div className="space-y-5">
-      <div className="p-4 bg-purple-50 border border-purple-200 rounded-xl text-sm text-purple-800">
-        <strong>Tax Projection</strong> � Year-by-year income, tax, and wealth projection through retirement using 2024 federal
-        and provincial tax brackets.
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex-1 p-4 bg-purple-50 border border-purple-200 rounded-xl text-sm text-purple-800">
+          <strong>Tax Projection</strong>
+        </div>
+        <div className="flex gap-2 flex-shrink-0">
+          {prefillPrimary && person !== "both" && (
+            <button onClick={() => applyPrefill(person === "spouse" ? prefillSpouse : prefillPrimary)}
+              className="px-3 py-2 bg-purple-600 text-white text-sm font-semibold rounded-xl hover:bg-purple-700 transition-colors">
+              Load {person === "spouse" ? (spouseLabel ?? "Spouse") : (primaryLabel ?? "Primary")}
+            </button>
+          )}
+        </div>
       </div>
-
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div>
           <label className="text-sm font-semibold">Current Age</label>
           <input
@@ -1958,7 +2028,7 @@ function CapitalGainsPanel({ clientId }: { clientId: number }) {
 // PANEL: Income Splitting Optimizer
 // ============================================================================
 
-function IncomeSplittingPanel({ clientId }: { clientId: number }) {
+function IncomeSplittingPanel({ clientId, prefill }: { clientId: number; prefill?: any }) {
   const incomeSplit = useIncomeSplit(clientId);
   const [result, setResult] = useState<IncomeSplitResult | null>(null);
   const [form, setForm] = useState({
@@ -1970,6 +2040,18 @@ function IncomeSplittingPanel({ clientId }: { clientId: number }) {
   });
 
   const provinces = ["ON", "BC", "AB", "QC", "MB", "SK", "NS", "NB", "PE", "NL", "YT", "NT", "NU"];
+
+  const loadFromClient = () => {
+    if (!prefill) return;
+    setForm(f => ({
+      ...f,
+      higherIncome: prefill.higherIncome ?? f.higherIncome,
+      lowerIncome:  prefill.lowerIncome  ?? f.lowerIncome,
+      province:     prefill.province     ?? f.province,
+      age:          prefill.age          ?? f.age,
+    }));
+    setResult(null);
+  };
 
   const handleCalc = () => {
     const input: Record<string, unknown> = {};
@@ -1983,6 +2065,16 @@ function IncomeSplittingPanel({ clientId }: { clientId: number }) {
 
   return (
     <div className="space-y-5">
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex-1 p-4 bg-indigo-50 border border-indigo-200 rounded-xl text-sm text-indigo-800">
+          <strong>Income Splitting Optimizer</strong>
+        </div>
+        {prefill && (
+          <button onClick={loadFromClient} className="flex-shrink-0 px-3 py-2 bg-indigo-600 text-white text-sm font-semibold rounded-xl hover:bg-indigo-700 transition-colors">
+            Load Client
+          </button>
+        )}
+      </div>
       <div className="p-4 bg-indigo-50 border border-indigo-200 rounded-xl text-sm text-indigo-800">
         <strong>Income Splitting Optimizer</strong> � Finds the best strategy: pension split (T1032), spousal RRSP, CPP sharing,
         or prescribed rate loan.
@@ -2088,13 +2180,82 @@ function IncomeSplittingPanel({ clientId }: { clientId: number }) {
 // MAIN TAX TAB COMPONENT
 // ============================================================================
 
-export function TaxTab({ clientId }: { clientId: number }) {
+export function TaxTab({ clientId, client }: { clientId: number; client?: any }) {
   const [activeSubTab, setActiveSubTab] = useState<TaxSubTab>("projection");
+  const [person, setPerson] = useState<"primary" | "spouse" | "both">("primary");
+  const { data: projections = [] } = useRetirementProjections(clientId);
+  const ret = (projections as any[])[0] ?? null;
+
+  const hasSpouse = !!client?.spouseFirstName;
+  const primaryLabel = client?.firstName ?? "Primary";
+  const spouseLabel  = client?.spouseFirstName ?? "Spouse";
+
+  function buildPrefill(isPrimary: boolean) {
+    if (!client) return null;
+    const dob    = isPrimary ? client.dateOfBirth : client.spouseDateOfBirth;
+    const income = isPrimary ? Number(client.annualIncome ?? 0) : Number(client.spouseAnnualIncome ?? 0);
+    const retAge = isPrimary
+      ? (client.retirementAge ?? Number(ret?.retirementAge ?? 65))
+      : (client.spouseRetirementAge ?? 65);
+    const age       = dob ? (new Date().getFullYear() - new Date(dob).getFullYear()) : 40;
+    const birthYear = dob ? new Date(dob).getFullYear() : (new Date().getFullYear() - age);
+
+    return {
+      currentAge:              String(age),
+      retirementAge:           String(retAge),
+      planToAge:               String(Number(ret?.lifeExpectancy ?? 90)),
+      province:                client.province ?? "ON",
+      employmentIncome:        String(income),
+      priorYearEarnedIncome:   String(income),
+      rrspBalance:             isPrimary ? String(Number(ret?.rrspBalance   ?? 0)) : "0",
+      tfsaBalance:             isPrimary ? String(Number(ret?.tfsaBalance   ?? 0)) : "0",
+      nonRegBalance:           isPrimary ? String(Number(ret?.nonRegBalance ?? 0)) : "0",
+      rrspAnnualContribution:  isPrimary ? String(Number(ret?.annualContribution      ?? 0)) : "0",
+      annualTfsaContribution:  isPrimary ? String(Number(ret?.annualTfsaContribution  ?? 0)) : "0",
+      desiredRetirementIncome: String(Number(ret?.desiredRetirementIncome ?? 0)),
+      cppStartAge:             String(ret?.cppStartAge ?? 65),
+      oasStartAge:             String(ret?.oasStartAge ?? 65),
+      birthYear:               String(birthYear),
+      age:                     String(age),
+      higherIncome:            String(Math.max(Number(client.annualIncome ?? 0), Number(client.spouseAnnualIncome ?? 0))),
+      lowerIncome:             String(Math.min(Number(client.annualIncome ?? 0), Number(client.spouseAnnualIncome ?? 0))),
+    };
+  }
+
+  const prefillPrimary = buildPrefill(true);
+  const prefillSpouse  = buildPrefill(false);
+  const activePrefill  = person === "spouse" ? prefillSpouse : prefillPrimary;
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
       <div className="flex items-center justify-between flex-wrap gap-2">
         <h2 className="text-xl font-display font-bold">Tax Planning</h2>
+        {client && (
+          <div className="flex items-center gap-1 p-1 bg-muted/50 rounded-xl">
+            <button
+              onClick={() => setPerson("primary")}
+              className={`px-3 py-1.5 rounded-lg text-sm font-semibold transition-colors ${person === "primary" ? "bg-white text-primary shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+            >
+              {primaryLabel}
+            </button>
+            {hasSpouse && (
+              <>
+                <button
+                  onClick={() => setPerson("spouse")}
+                  className={`px-3 py-1.5 rounded-lg text-sm font-semibold transition-colors ${person === "spouse" ? "bg-white text-primary shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+                >
+                  {spouseLabel}
+                </button>
+                <button
+                  onClick={() => setPerson("both")}
+                  className={`px-3 py-1.5 rounded-lg text-sm font-semibold transition-colors ${person === "both" ? "bg-white text-primary shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+                >
+                  Both
+                </button>
+              </>
+            )}
+          </div>
+        )}
       </div>
 
       <div className="flex gap-1 p-1 bg-muted/50 rounded-xl overflow-x-auto flex-wrap">
@@ -2112,16 +2273,17 @@ export function TaxTab({ clientId }: { clientId: number }) {
       </div>
 
       <div className="animate-in fade-in duration-200">
-        {activeSubTab === "notes" && <TaxNotesPanel clientId={clientId} />}
-        {activeSubTab === "rrsp" && <RrspRoomPanel clientId={clientId} />}
-        {activeSubTab === "tfsa" && <TfsaRoomPanel clientId={clientId} />}
-        {activeSubTab === "projection" && <TaxProjectionPanel clientId={clientId} />}
-        {activeSubTab === "capgains" && <CapitalGainsPanel clientId={clientId} />}
-        {activeSubTab === "splitting" && <IncomeSplittingPanel clientId={clientId} />}
+        {activeSubTab === "notes"      && <TaxNotesPanel        clientId={clientId} />}
+        {activeSubTab === "rrsp"       && <RrspRoomPanel        clientId={clientId} prefill={activePrefill} personLabel={person === "spouse" ? spouseLabel : primaryLabel} />}
+        {activeSubTab === "tfsa"       && <TfsaRoomPanel        clientId={clientId} prefill={activePrefill} personLabel={person === "spouse" ? spouseLabel : primaryLabel} />}
+        {activeSubTab === "projection" && <TaxProjectionPanel   clientId={clientId} prefillPrimary={prefillPrimary} prefillSpouse={hasSpouse ? prefillSpouse : undefined} person={person} primaryLabel={primaryLabel} spouseLabel={spouseLabel} />}
+        {activeSubTab === "capgains"   && <CapitalGainsPanel    clientId={clientId} />}
+        {activeSubTab === "splitting"  && <IncomeSplittingPanel clientId={clientId} prefill={activePrefill} />}
       </div>
     </div>
   );
 }
+
 
 
 // ── Estate Tab ────────────────────────────────────────────────────────────────
@@ -2276,7 +2438,22 @@ export function FinancialPlanningContent({ initialClientId }: { initialClientId?
     queryKey: ["/api/clients"],
   });
 
+    const { data: selectedClient } = useQuery({
+    queryKey: ["/api/clients/detail", selectedClientId],
+    queryFn: async () => {
+      if (!selectedClientId) return null;
+      const token = localStorage.getItem("fp_token") ?? "";
+      const res = await fetch(`/api/clients/${selectedClientId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) return null;
+      return res.json();
+    },
+    enabled: !!selectedClientId,
+  });
+
   const { data: plans = [] } = useClientPlans(selectedClientId ?? 0);
+
   const sortedPlans = [...plans].sort((a, b) => b.id - a.id);
   const activePlanId = sortedPlans.length > 0 ? sortedPlans[0].id : null;
   const { data: allFlags = [] } = usePlanStaleFlags(activePlanId);
@@ -2367,7 +2544,7 @@ export function FinancialPlanningContent({ initialClientId }: { initialClientId?
             {activeTab === "insurance"  && <InsuranceTab     clientId={selectedClientId} planId={activePlanId} />}
             {activeTab === "resp"       && <RESPTab          clientId={selectedClientId} planId={activePlanId} />}
             {activeTab === "debt"       && <DebtTab          clientId={selectedClientId} planId={activePlanId} />}
-            {activeTab === "tax"        && <TaxTab           clientId={selectedClientId} />}
+            {activeTab === "tax"        && <TaxTab           clientId={selectedClientId} client={selectedClient} />}
             {activeTab === "estate"     && <EstateNotesTab   clientId={selectedClientId} planId={activePlanId} />}
             {activeTab === "ai"         && <AITab            clientId={selectedClientId} />}
           </>

@@ -1,4 +1,4 @@
-import "dotenv/config";
+﻿import "dotenv/config";
 import express from "express";
 
 process.on("unhandledRejection", (reason) => { console.error("[unhandledRejection]", reason); });
@@ -25,8 +25,8 @@ app.use(express.json({ limit: "10mb" }));
 app.use("/api/auth",    authRouter);
 //app.use("/api",         networthRouter);
 app.use("/api/tax",      taxRouter);
-app.use("/api/clients", clientsRouter);
 app.use("/api",         fpRouter);
+app.use("/api/clients", clientsRouter);
 app.use("/api",         fpFullRouter);
 app.use("/api",         simulateRouter);
 app.use("/api/reports",  reportsRouter);
@@ -49,7 +49,7 @@ if (process.env.NODE_ENV === "production") {
 });
 }
 
-app.listen(PORT, "0.0.0.0", () => console.log(`✅  FP running on :${PORT}`));
+app.listen(PORT, "0.0.0.0", () => console.log(`âœ…  FP running on :${PORT}`));
 export default app;
 
 

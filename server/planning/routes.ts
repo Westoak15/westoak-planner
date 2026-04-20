@@ -86,7 +86,7 @@ function sumNwCategory(rows: { type: string; category: string; value: string }[]
 }
 
 /** Sum householdExpenses monthly amounts by category keyword. */
-function sumExpenseCategory(rows: { category: string; monthlyAmount: string }[], keyword: string): number {
+function sumExpenseCategory(rows: { category: string; monthlyAmount: string | null }[], keyword: string): number {
   return rows
     .filter(r => r.category.toLowerCase().includes(keyword.toLowerCase()))
     .reduce((s, r) => s + Number(r.monthlyAmount ?? 0), 0);

@@ -2,8 +2,7 @@ app = "fp-standalone"
 primary_region = "yyz"
 
 [deploy]
-  strategy = "rolling"
-  max_unavailable = 0
+  strategy = "immediate"
 
 [build]
   dockerfile = "Dockerfile"
@@ -33,3 +32,4 @@ primary_region = "yyz"
     interval = "30s"
     timeout = "10s"
     grace_period = "120s"
+

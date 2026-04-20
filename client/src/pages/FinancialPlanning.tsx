@@ -1842,11 +1842,11 @@ function TaxProjectionPanel({ clientId, prefillPrimary, prefillSpouse, person, p
                       <td className="px-3 py-2">{proj.year}</td>
                       <td className="px-3 py-2">{proj.age}</td>
                       <td className="px-3 py-2 capitalize">{proj.phase}</td>
-                      <td className="px-3 py-2 text-right">{fmt$(proj.totalIncome)}</td>
+                      <td className="px-3 py-2 text-right">{fmt$(proj.totalGrossIncome)}</td>
                       <td className="px-3 py-2 text-right">{fmt$(proj.federalTax)}</td>
                       <td className="px-3 py-2 text-right">{fmt$(proj.provincialTax)}</td>
                       <td className="px-3 py-2 text-right">{fmt$(proj.totalTax)}</td>
-                      <td className="px-3 py-2 text-right">{fmt$(proj.afterTaxIncome)}</td>
+                      <td className="px-3 py-2 text-right">{fmt$(proj.netIncome)}</td>
                       <td className="px-3 py-2 text-right font-semibold">{fmt$(proj.totalWealth)}</td>
                     </tr>
                   ))}

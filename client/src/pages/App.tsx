@@ -1465,7 +1465,7 @@ export default function App() {
 )}
           {tab === "ai" && client && (
   <QueryClientProvider client={queryClient}>
-    <AITab clientId={client.id} />
+    <AiTab clientId={client.id} />
   </QueryClientProvider>
 )}
         </div>

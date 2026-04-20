@@ -32,12 +32,12 @@ export {
 } from "./reference/benefitRates";
 
 export {
-  FEDERAL_TAX_BRACKETS_2024,
-  ONTARIO_TAX_BRACKETS_2024,
-  BC_TAX_BRACKETS_2024,
-  ALBERTA_TAX_BRACKETS_2024,
-  QUEBEC_TAX_BRACKETS_2024,
-  ALL_PROVINCIAL_BRACKETS_2024,
+  FEDERAL_TAX_BRACKETS_2025,
+  ONTARIO_TAX_BRACKETS_2025,
+  BC_TAX_BRACKETS_2025,
+  ALBERTA_TAX_BRACKETS_2025,
+  QUEBEC_TAX_BRACKETS_2025,
+  ALL_PROVINCIAL_BRACKETS_2025,
   calculateTaxForBrackets,
   calculateCombinedTax,
   getMarginalRate,
@@ -113,3 +113,4 @@ export {
   type RespYearProjection,
   type RespProjectionOutput,
 } from "./education";
+

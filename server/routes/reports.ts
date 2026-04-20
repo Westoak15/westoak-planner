@@ -206,4 +206,13 @@ r.get("/:clientId/tax-strategy", async (req: AuthRequest, res: Response) => {
   } catch (err) { console.error(err); res.status(500).json({ message: "Failed" }); }
 });
 
+r.get("/:clientId/one-page", async (req: AuthRequest, res: Response) => {
+  try {
+    const d = await fetchClientFpData(+req.params.clientId, req.userId!);
+    if (!d) return res.status(404).json({ message: "Not found" });
+    const html = generateOnePagePlan({ client: d.client, netWorth: d.netWorth, retirement: d.retirement, insurance: d.insurance, plans: [], education: d.education, aiRecs: [], expenses: d.expenses, advisor: d.advisor, generatedAt: new Date().toISOString() } as any);
+    res.setHeader("Content-Type", "text/html; charset=utf-8"); res.send(html);
+  } catch (err: any) { console.error("REPORT ERROR:", err?.message); res.status(500).json({ message: err?.message ?? "Failed" }); }
+});
+
 export { r as reportsRouter };

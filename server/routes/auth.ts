@@ -2,12 +2,12 @@ import { Router, Request, Response } from "express";
 import { db } from "../db/index.js";
 import { users, insertUserSchema } from "../../shared/schema.js";
 import { hashPassword, checkPassword, signToken, isAuthenticated, getUser, type AuthRequest } from "../auth/index.js";
-import { eq, and } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { z } from "zod";
 
 const r = Router();
 
-// ── Register ──────────────────────────────────────────────────────────────────
+// ── Register (GA only — first user self-registers as GA) ──────────────────────
 r.post("/register", async (req: Request, res: Response) => {
   try {
     const body = insertUserSchema.parse(req.body);
@@ -27,8 +27,12 @@ r.post("/register", async (req: Request, res: Response) => {
       firstName: body.firstName, lastName: body.lastName,
       firmName: body.firmName ?? null,
       securityQuestion, securityAnswerHash: answerHash,
-      role: "ga", level: "enhanced", // First registered user is a GA
-    }).returning({ id: users.id, email: users.email, firstName: users.firstName, lastName: users.lastName, firmName: users.firmName, role: users.role, level: users.level, mustResetPassword: users.mustResetPassword });
+      role: "ga", level: "enhanced",
+    }).returning({
+      id: users.id, email: users.email, firstName: users.firstName,
+      lastName: users.lastName, firmName: users.firmName,
+      role: users.role, level: users.level,
+    });
 
     res.status(201).json({ token: signToken(u.id), user: u });
   } catch (e: any) {
@@ -51,7 +55,7 @@ r.post("/login", async (req: Request, res: Response) => {
         id: u.id, email: u.email, firstName: u.firstName, lastName: u.lastName,
         firmName: u.firmName, role: u.role, level: u.level,
         mustResetPassword: u.mustResetPassword,
-      }
+      },
     });
   } catch (e: any) {
     if (e instanceof z.ZodError) return res.status(400).json({ message: "Validation error", errors: e.errors });
@@ -77,7 +81,6 @@ r.post("/change-password", isAuthenticated, async (req: AuthRequest, res: Respon
 
     const [u] = await db.select().from(users).where(eq(users.id, req.userId!)).limit(1);
     if (!u) return res.status(404).json({ message: "User not found" });
-
     if (!await checkPassword(currentPassword, u.passwordHash))
       return res.status(401).json({ message: "Current password is incorrect" });
 
@@ -96,7 +99,7 @@ r.post("/force-reset-password", isAuthenticated, async (req: AuthRequest, res: R
   try {
     const { newPassword } = z.object({ newPassword: z.string().min(8) }).parse(req.body);
     const hash = await hashPassword(newPassword);
-    await db.update(users).set({ passwordHash: hash } as any).where(eq(users.id, req.userId!));
+    await db.update(users).set({ passwordHash: hash, mustResetPassword: false } as any).where(eq(users.id, req.userId!));
     res.json({ message: "Password reset successfully" });
   } catch (e: any) {
     res.status(500).json({ message: e.message ?? "Server error" });
@@ -148,9 +151,7 @@ r.get("/users", isAuthenticated, async (req: AuthRequest, res: Response) => {
     if (!me || me.role !== "ga") return res.status(403).json({ message: "Forbidden" });
     const fas = await db.select({
       id: users.id, email: users.email, firstName: users.firstName, lastName: users.lastName,
-      agentId: users.agentId, agency: users.agency, phone: users.phone,
-      level: users.level, role: users.role, gaId: users.gaId,
-      createdAt: users.createdAt,
+      level: users.level, role: users.role, gaId: users.gaId, createdAt: users.createdAt,
     }).from(users).where(eq(users.gaId, me.id));
     res.json(fas);
   } catch (e: any) {
@@ -169,27 +170,21 @@ r.post("/users", isAuthenticated, async (req: AuthRequest, res: Response) => {
       lastName:  z.string().min(1),
       email:     z.string().email(),
       password:  z.string().min(8),
-      agentId:   z.string().optional(),
-      agency:    z.string().optional(),
-      phone:     z.string().optional(),
       level:     z.enum(["standard", "enhanced"]).default("standard"),
     }).parse(req.body);
 
     const exists = await db.select({ id: users.id }).from(users).where(eq(users.email, body.email)).limit(1);
     if (exists.length) return res.status(409).json({ message: "Email already registered" });
 
-    const hash = await hashPassword(body.password);
+    const hash = await hashPassword(body.password as string);
     const [u] = await (db.insert(users) as any).values({
       email: body.email, passwordHash: hash,
       firstName: body.firstName, lastName: body.lastName,
-      agentId: body.agentId ?? null, agency: body.agency ?? null,
-      phone: body.phone ?? null, level: body.level,
-      role: "fa", gaId: me.id, mustResetPassword: true,
-      securityQuestion: null, securityAnswerHash: null,
+      level: body.level, role: "fa", gaId: me.id,
+      mustResetPassword: true,
     }).returning({
       id: users.id, email: users.email, firstName: users.firstName,
-      lastName: users.lastName, agentId: users.agentId, agency: users.agency,
-      phone: users.phone, level: users.level, role: users.role,
+      lastName: users.lastName, level: users.level, role: users.role,
     });
 
     res.status(201).json(u);
@@ -211,9 +206,6 @@ r.patch("/users/:id", isAuthenticated, async (req: AuthRequest, res: Response) =
     const body = z.object({
       firstName: z.string().min(1).optional(),
       lastName:  z.string().min(1).optional(),
-      agentId:   z.string().optional(),
-      agency:    z.string().optional(),
-      phone:     z.string().optional(),
       level:     z.enum(["standard", "enhanced"]).optional(),
       password:  z.string().min(8).optional(),
     }).parse(req.body);
@@ -227,8 +219,7 @@ r.patch("/users/:id", isAuthenticated, async (req: AuthRequest, res: Response) =
 
     const [u] = await db.update(users).set(update).where(eq(users.id, target.id)).returning({
       id: users.id, email: users.email, firstName: users.firstName,
-      lastName: users.lastName, agentId: users.agentId, agency: users.agency,
-      phone: users.phone, level: users.level, role: users.role,
+      lastName: users.lastName, level: users.level, role: users.role,
     });
     res.json(u);
   } catch (e: any) {

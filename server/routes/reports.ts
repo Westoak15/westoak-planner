@@ -15,11 +15,6 @@ r.use((req: any, res: any, next: any) => {
 });
 
 async function accessibleUserIds(userId: number): Promise<number[]> {
-  const [me] = await db.select({ role: users.role }).from(users).where(eq(users.id, userId)).limit(1);
-  if (me?.role === "ga") {
-    const fas = await db.select({ id: users.id }).from(users).where(eq(users.gaId, userId));
-    return [userId, ...fas.map(f => f.id)];
-  }
   return [userId];
 }
 

@@ -245,7 +245,7 @@ r.get(
       
       res.json({
         health: result.health,
-        probabilityOfSuccess: latest.probabilityOfSuccess,
+        probabilityOfSuccess: latest.successRate,
         lastChecked: latest.createdAt,
         issues: result.issues,
         recommendations: result.recommendations,

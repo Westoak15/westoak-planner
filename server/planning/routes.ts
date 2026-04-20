@@ -1,11 +1,11 @@
-// server/planning/routes.ts
-// ─────────────────────────────────────────────────────────────────────────────
-// Financial Planning Report Routes — adapted for fp-standalone schema
+﻿// server/planning/routes.ts
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Financial Planning Report Routes â€” adapted for fp-standalone schema
 // Mount in server/index.ts:
 //   import { planningRouter } from "./planning/routes.js";
 //   app.use("/api/planning", planningRouter);
 // (isAuthenticated is applied globally via r.use in this file)
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 import { Router, type Response } from "express";
 import { db } from "../db/index.js";
 import {
@@ -45,7 +45,7 @@ import type {
 export const planningRouter = Router();
 planningRouter.use(isAuthenticated);
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
+// â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function ageFrom(dob: string): number {
   const birth = new Date(dob), today = new Date();
@@ -92,7 +92,7 @@ function sumExpenseCategory(rows: { category: string; monthlyAmount: string }[],
     .reduce((s, r) => s + Number(r.monthlyAmount ?? 0), 0);
 }
 
-// ── Ownership check ───────────────────────────────────────────────────────────
+// â”€â”€ Ownership check â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 async function ownsClient(clientId: number, userId: number): Promise<boolean> {
   const [c] = await db
@@ -102,8 +102,8 @@ async function ownsClient(clientId: number, userId: number): Promise<boolean> {
   return !!c;
 }
 
-// ── Load client + advisor ─────────────────────────────────────────────────────
-// fp-standalone: no staff/companies tables — advisor is the authenticated user.
+// â”€â”€ Load client + advisor â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// fp-standalone: no staff/companies tables â€” advisor is the authenticated user.
 // Spouse data is stored inline on the client row (spouseFirstName etc.),
 // not as a separate client record linked via spouseId.
 
@@ -123,7 +123,6 @@ async function loadClientAndAdvisor(
       firstName: users.firstName,
       lastName:  users.lastName,
       email:     users.email,
-      phone:     users.phone,
       firmName:  users.firmName,
     })
     .from(users)
@@ -143,7 +142,7 @@ async function loadClientAndAdvisor(
     age:            clientRow.dateOfBirth ? ageFrom(clientRow.dateOfBirth) : 50,
     province:       toProvince(clientRow.province),
     maritalStatus,
-    // Spouse — inline fields on client row, no separate record lookup needed
+    // Spouse â€” inline fields on client row, no separate record lookup needed
     spouseFirstName:   clientRow.spouseFirstName  ?? undefined,
     spouseLastName:    clientRow.spouseLastName   ?? undefined,
     spouseDateOfBirth: clientRow.spouseDateOfBirth ?? undefined,
@@ -157,7 +156,6 @@ async function loadClientAndAdvisor(
     lastName:    userRow?.lastName  ?? "",
     fullName:    userRow ? `${userRow.firstName} ${userRow.lastName}` : "Your Advisor",
     email:       userRow?.email ?? "",
-    phone:       userRow?.phone ?? undefined,
     companyName: userRow?.firmName ?? "fp-standalone",
   };
 
@@ -167,7 +165,7 @@ return {
   spouseAnnualIncome: Number(clientRow.spouseAnnualIncome ?? 0),
 };
 
-// ── POST /api/planning/report/:clientId ───────────────────────────────────────
+// â”€â”€ POST /api/planning/report/:clientId â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Body: { sections?: string | string[], overrides?: object }
 // Returns: text/html full report
 
@@ -196,7 +194,7 @@ planningRouter.post("/report/:clientId", async (req: AuthRequest, res: Response)
       confidential: true,
     };
 
-    // ── Load DB rows ───────────────────────────────────────────────────────────
+    // â”€â”€ Load DB rows â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     // Child tables are already scoped to this client; ownership verified above.
     const [retRow] = await db
       .select().from(retirementProjections)
@@ -204,7 +202,7 @@ planningRouter.post("/report/:clientId", async (req: AuthRequest, res: Response)
       .limit(1);
 
     // taxPlanningNotes in fp-standalone is a notes table (title/content/category),
-    // not a structured financial data store — all financial fields fall to defaults.
+    // not a structured financial data store â€” all financial fields fall to defaults.
     const [taxNote] = await db
       .select().from(taxPlanningNotes)
       .where(eq(taxPlanningNotes.clientId, clientId))
@@ -225,17 +223,17 @@ planningRouter.post("/report/:clientId", async (req: AuthRequest, res: Response)
     const nwRows       = await db.select().from(netWorthEntries).where(eq(netWorthEntries.clientId, clientId));
     const expenseRows  = await db.select().from(householdExpenses).where(eq(householdExpenses.clientId, clientId));
 
-    // ── Derive portfolio balances from netWorthEntries ─────────────────────────
+    // â”€â”€ Derive portfolio balances from netWorthEntries â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     // fp-standalone stores RRSP/TFSA/etc. as net worth asset entries by category.
     const rrspBalance   = sumNwCategory(nwRows, "rrsp");
     const tfsaBalance   = sumNwCategory(nwRows, "tfsa");
     const nonRegBalance = sumNwCategory(nwRows, "non-registered") || sumNwCategory(nwRows, "non_reg");
     const rrifBalance   = sumNwCategory(nwRows, "rrif");
 
-    // ── Derive expense buckets from householdExpenses ──────────────────────────
+    // â”€â”€ Derive expense buckets from householdExpenses â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const totalMonthlyExpenses = expenseRows.reduce((s, e) => s + Number(e.monthlyAmount ?? 0), 0);
 
-    // ── Build inputs ───────────────────────────────────────────────────────────
+    // â”€â”€ Build inputs â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const province = client.province;
     const age      = client.age;
 
@@ -244,10 +242,10 @@ planningRouter.post("/report/:clientId", async (req: AuthRequest, res: Response)
     //   lifeExpectancy      (not planToAge)
     //   pensionIncome       (annual, not monthly)
     //   expectedReturn      (combined portfolio rate, not separate equity/bond)
-    //   equityAllocation    (0–1 decimal)
+    //   equityAllocation    (0â€“1 decimal)
     const retRawReturn     = Number(retRow?.expectedReturn ?? 7) / 100;
-    const retEquityAlloc   = Number(retRow?.equityAllocation ?? 0.60);
-    // Approximate split: equityReturn ≈ totalReturn / equityAlloc, bondReturn ≈ remainder
+    const retEquityAlloc   = Number((retRow as any)?.equityAllocation ?? 0.60);
+    // Approximate split: equityReturn â‰ˆ totalReturn / equityAlloc, bondReturn â‰ˆ remainder
     const impliedEquityRet = retEquityAlloc > 0 ? Math.min(retRawReturn / retEquityAlloc, 0.12) : 0.07;
     const impliedBondRet   = retEquityAlloc < 1 ? Math.max(retRawReturn - impliedEquityRet * retEquityAlloc, 0.02) : 0.035;
 
@@ -257,21 +255,21 @@ planningRouter.post("/report/:clientId", async (req: AuthRequest, res: Response)
     const retInputs: RetirementInputs = {
       currentAge:               age,
       retirementAge:            Number(retRow?.retirementAge   ?? 65),
-      planToAge:                Number(retRow?.lifeExpectancy  ?? 90),   // lifeExpectancy → planToAge
+      planToAge:                Number(retRow?.lifeExpectancy  ?? 90),   // lifeExpectancy â†’ planToAge
       province,
       rrspBalance:              Number(retRow?.rrspBalance      ?? rrspBalance),
       tfsaBalance:              Number(retRow?.tfsaBalance      ?? tfsaBalance),
       nonRegBalance:            Number(retRow?.nonRegBalance    ?? nonRegBalance),
-      pensionMonthly:           Number(retRow?.pensionIncome    ?? 0) / 12,   // annual → monthly
-      annualRrspContribution:   Number(retRow?.annualContribution ?? 10000),  // annualContribution → annualRrspContribution
+      pensionMonthly:           Number(retRow?.pensionIncome    ?? 0) / 12,   // annual â†’ monthly
+      annualRrspContribution:   Number(retRow?.annualContribution ?? 10000),  // annualContribution â†’ annualRrspContribution
       annualTfsaContribution:   Number(retRow?.annualTfsaContribution ?? 7000),
-      annualNonRegContribution: Number(retRow?.annualNonRegContribution ?? 0),
+      annualNonRegContribution: Number((retRow as any)?.annualNonRegContribution ?? 0),
       employmentIncome:         clientAnnualIncome,
       spouseEmploymentIncome:   clientSpouseAnnualIncome,
       desiredRetirementIncome:  Number(retRow?.desiredRetirementIncome ?? 60000),
       cppStartAge:              Number(retRow?.cppStartAge  ?? 65),
       oasStartAge:              Number(retRow?.oasStartAge  ?? 65),
-      yearsInCanada:            Number(retRow?.yearsInCanada ?? 40),
+      yearsInCanada:            Number((retRow as any)?.yearsInCanada ?? 40),
       spouseAge:                client.spouseAge,
       spouseRrspBalance:        0,   // not stored separately in fp-standalone
       spouseTfsaBalance:        0,
@@ -280,11 +278,11 @@ planningRouter.post("/report/:clientId", async (req: AuthRequest, res: Response)
       bondReturn:               impliedBondRet,
       inflationRate:            Number(retRow?.inflationRate  ?? 2) / 100,
       equityAllocation:         retEquityAlloc,
-      rrifConversionAge:        Number(retRow?.rrifConversionAge ?? 71),
+      rrifConversionAge:        Number((retRow as any)?.rrifConversionAge ?? 71),
       ...overrides.retirement,
     };
 
-    // taxPlanningNotes has no financial columns in fp-standalone — all default
+    // taxPlanningNotes has no financial columns in fp-standalone â€” all default
     const taxInputs: TaxInputs = {
       taxYear:              new Date().getFullYear(),
       province,
@@ -378,21 +376,21 @@ planningRouter.post("/report/:clientId", async (req: AuthRequest, res: Response)
       numberOfDependents:     0,   // not in fp-standalone schema
       annualIncome:           taxInputs.employmentIncome,
       spouseAnnualIncome:     taxInputs.spouseEmploymentIncome,
-      incomeReplacementYears: Number(insRow?.yearsOfIncomeNeeded ?? 20),
+      incomeReplacementYears: Number((insRow as any)?.yearsOfIncomeNeeded ?? 20),
       liquidAssets:           tfsaBalance + nonRegBalance,  // best proxy available
       rrspBalance,
       tfsaBalance,
       nonRegInvestments:      nonRegBalance,
       realEstateEquity:       0,   // not in fp-standalone schema
-      mortgageBalance:        Number(insRow?.mortgageBalance ?? debtRows.find(d => d.category === "mortgage")?.balance ?? 0),
+      mortgageBalance:        Number((insRow as any)?.mortgageBalance ?? debtRows.find(d => d.category === "mortgage")?.balance ?? 0),
       otherDebt:              debtRows.filter(d => d.category !== "mortgage").reduce((s, d) => s + Number(d.balance ?? 0), 0),
-      finalExpenses:          Number(insRow?.finalExpenses ?? 25000),
+      finalExpenses:          Number((insRow as any)?.finalExpenses ?? 25000),
       existingLifeInsurance:  Number(insRow?.existingLifeCoverage ?? 0),
       existingGroupBenefits:  0,   // not in fp-standalone schema
-      monthlyExpenses:        Number(insRow?.monthlyExpenses ?? totalMonthlyExpenses ?? 5000),
-      existingDisabilityBenefit: Number(insRow?.existingDisabilityCoverage ?? 0),
+      monthlyExpenses:        Number((insRow as any)?.monthlyExpenses ?? totalMonthlyExpenses ?? 5000),
+      existingDisabilityBenefit: Number((insRow as any)?.existingDisabilityCoverage ?? 0),
       waitingPeriod:          90,
-      existingCriticalIllness: Number(insRow?.existingCriticalIllnessCoverage ?? 0),
+      existingCriticalIllness: Number((insRow as any)?.existingCriticalIllnessCoverage ?? 0),
       province2:              province,
       ...overrides.insurance,
     };
@@ -405,9 +403,9 @@ planningRouter.post("/report/:clientId", async (req: AuthRequest, res: Response)
         name:               e.childName ?? "Child",
         birthYear:          e.childAge  ? (new Date().getFullYear() - e.childAge) : 2015,
         age:                e.childAge  ?? 9,
-        existingRespBalance: Number(e.currentBalance ?? 0),
+        existingRespBalance: Number(e.currentRespBalance ?? 0),
       })),
-      existingRespBalance: eduRows.reduce((s, e) => s + Number(e.currentBalance ?? 0), 0),
+      existingRespBalance: eduRows.reduce((s, e) => s + Number(e.currentRespBalance ?? 0), 0),
       annualContribution:  eduRows.reduce((s, e) => s + Number(e.monthlyContribution ?? 0) * 12, 0) || 2500,
       expectedReturnRate:  portfolioReturn,
       educationType:       "university",
@@ -416,7 +414,7 @@ planningRouter.post("/report/:clientId", async (req: AuthRequest, res: Response)
     };
 
     // estatePlanningNotes in fp-standalone is a notes table (title/content),
-    // not a structured financial data store — all financial fields fall to defaults.
+    // not a structured financial data store â€” all financial fields fall to defaults.
     const estInputs: EstateInputs = {
       province,
       age,
@@ -452,7 +450,7 @@ planningRouter.post("/report/:clientId", async (req: AuthRequest, res: Response)
       spouseGrossMonthlyIncome: (taxInputs.spouseEmploymentIncome ?? 0) / 12,
       debts: debtRows.map(d => ({
         name:                 d.name,
-        type:                 (d.category as any) ?? "other",   // category → type for engine
+        type:                 (d.category as any) ?? "other",   // category â†’ type for engine
         balance:              Number(d.balance ?? 0),
         interestRate:         d.interestRate ? Number(d.interestRate) / 100 : 0.05,
         minimumPayment:       Number(d.minimumPayment ?? Math.round(Number(d.balance ?? 0) * 0.02)),
@@ -476,7 +474,7 @@ planningRouter.post("/report/:clientId", async (req: AuthRequest, res: Response)
       ...overrides.debt,
     };
 
-    // ── Run engines ────────────────────────────────────────────────────────────
+    // â”€â”€ Run engines â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const engineResults: Parameters<typeof generateComprehensiveReport>[1] = {};
 
     if (wanted.includes("retirement"))      engineResults.retirement      = projectRetirement(retInputs);
@@ -517,7 +515,7 @@ planningRouter.post("/report/:clientId", async (req: AuthRequest, res: Response)
   }
 });
 
-// ── GET /api/planning/summary/:clientId — JSON summary of available data ──────
+// â”€â”€ GET /api/planning/summary/:clientId â€” JSON summary of available data â”€â”€â”€â”€â”€â”€
 planningRouter.get("/summary/:clientId", async (req: AuthRequest, res: Response) => {
   try {
     const userId   = req.userId!;

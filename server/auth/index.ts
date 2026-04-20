@@ -34,7 +34,7 @@ export async function getUser(id: number) {
   const [u] = await db.select({
     id: users.id, email: users.email,
     firstName: users.firstName, lastName: users.lastName, firmName: users.firmName,
-    role: users.role, level: users.level, mustResetPassword: users.mustResetPassword,
+    role: users.role,
   }).from(users).where(eq(users.id, id));
   return u ?? null;
 }

@@ -1446,7 +1446,6 @@ export default function App() {
           {tab === "admin" && <AdminPanel />}
           {tab === "agents" && <AgentsTab />}
           {tab === "resp"    && client && <RespTabNew clientId={client.id} />}
-          {tab === "debt"    && client && <DebtTabNew clientId={client.id} />}
           {tab === "expenses" && client && (
             <QueryClientProvider client={queryClient}>
               <ExpensesTab clientId={client.id} />

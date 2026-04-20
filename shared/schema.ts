@@ -339,3 +339,10 @@ export const planActionItems = pgTable("plan_action_items", {
   createdAt:   timestamp("created_at").defaultNow().notNull(),
   updatedAt:   timestamp("updated_at").defaultNow().notNull(),
 });
+
+// ── Insert types ──────────────────────────────────────────────────────────────
+export type InsertFinancialPlan = typeof financialPlans.$inferInsert;
+export type InsertEducationSaving = any;
+export type InsertDebtEntry = any;
+export type InsertTaxPlanningNote = any;
+export type InsertEstatePlanningNote = any;

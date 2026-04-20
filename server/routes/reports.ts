@@ -118,7 +118,7 @@ r.get("/:clientId/retirement", async (req: AuthRequest, res: Response) => {
     if (!d) return res.status(404).json({ message: "Not found" });
     const html = generateRetirementReport({ client: d.client as any, retirement: d.retirement as any, advisor: d.advisor as any, generatedAt: new Date().toISOString() } as any);
     res.setHeader("Content-Type", "text/html; charset=utf-8"); res.send(html);
-  } } catch (err: any) { console.error("REPORT ERROR:", err?.message, err?.stack?.split('\n')[1]); res.status(500).json({ message: err?.message ?? "Failed" }); }
+  }  catch (err: any) { console.error("REPORT ERROR:", err?.message, err?.stack?.split('\n')[1]); res.status(500).json({ message: err?.message ?? "Failed" }); }
 });
 
 // GET /api/reports/:clientId/insurance
@@ -128,7 +128,7 @@ r.get("/:clientId/insurance", async (req: AuthRequest, res: Response) => {
     if (!d) return res.status(404).json({ message: "Not found" });
     const html = generateInsuranceReport({ client: d.client as any, insurance: d.insurance as any, products: [], generatedAt: new Date().toISOString() } as any);
     res.setHeader("Content-Type", "text/html; charset=utf-8"); res.send(html);
-  } } catch (err: any) { console.error("REPORT ERROR:", err?.message, err?.stack?.split('\n')[1]); res.status(500).json({ message: err?.message ?? "Failed" }); }
+  }  catch (err: any) { console.error("REPORT ERROR:", err?.message, err?.stack?.split('\n')[1]); res.status(500).json({ message: err?.message ?? "Failed" }); }
 });
 
 // GET /api/reports/:clientId/cash-flow
@@ -138,7 +138,7 @@ r.get("/:clientId/cash-flow", async (req: AuthRequest, res: Response) => {
     if (!d) return res.status(404).json({ message: "Not found" });
     const html = generateCashFlowReport({ client: d.client as any, expenses: d.expenses as any, retirement: d.retirement as any, advisor: d.advisor as any, generatedAt: new Date().toISOString() } as any);
     res.setHeader("Content-Type", "text/html; charset=utf-8"); res.send(html);
-  } } catch (err: any) { console.error("REPORT ERROR:", err?.message, err?.stack?.split('\n')[1]); res.status(500).json({ message: err?.message ?? "Failed" }); }
+  }  catch (err: any) { console.error("REPORT ERROR:", err?.message, err?.stack?.split('\n')[1]); res.status(500).json({ message: err?.message ?? "Failed" }); }
 });
 
 // GET /api/reports/:clientId/asset-allocation
@@ -148,7 +148,7 @@ r.get("/:clientId/asset-allocation", async (req: AuthRequest, res: Response) => 
     if (!d) return res.status(404).json({ message: "Not found" });
     const html = generateAssetAllocationReport({ client: d.client as any, netWorth: d.netWorth as any, advisor: d.advisor as any, generatedAt: new Date().toISOString() } as any);
     res.setHeader("Content-Type", "text/html; charset=utf-8"); res.send(html);
-  } } catch (err: any) { console.error("REPORT ERROR:", err?.message, err?.stack?.split('\n')[1]); res.status(500).json({ message: err?.message ?? "Failed" }); }
+  }  catch (err: any) { console.error("REPORT ERROR:", err?.message, err?.stack?.split('\n')[1]); res.status(500).json({ message: err?.message ?? "Failed" }); }
 });
 
 // GET /api/reports/:clientId/retirement-readiness
@@ -158,7 +158,7 @@ r.get("/:clientId/retirement-readiness", async (req: AuthRequest, res: Response)
     if (!d) return res.status(404).json({ message: "Not found" });
     const html = generateRetirementReadinessReport({ client: d.client as any, retirement: d.retirement as any, expenses: d.expenses as any, netWorth: d.netWorth as any, advisor: d.advisor as any, generatedAt: new Date().toISOString() } as any);
     res.setHeader("Content-Type", "text/html; charset=utf-8"); res.send(html);
-  } } catch (err: any) { console.error("REPORT ERROR:", err?.message, err?.stack?.split('\n')[1]); res.status(500).json({ message: err?.message ?? "Failed" }); }
+  }  catch (err: any) { console.error("REPORT ERROR:", err?.message, err?.stack?.split('\n')[1]); res.status(500).json({ message: err?.message ?? "Failed" }); }
 });
 
 // GET /api/reports/:clientId/goal-status
@@ -168,7 +168,7 @@ r.get("/:clientId/goal-status", async (req: AuthRequest, res: Response) => {
     if (!d) return res.status(404).json({ message: "Not found" });
     const html = generateGoalStatusReport({ client: d.client as any, plans: [], education: d.education as any, retirement: d.retirement as any, netWorth: d.netWorth as any, advisor: d.advisor as any, generatedAt: new Date().toISOString() } as any);
     res.setHeader("Content-Type", "text/html; charset=utf-8"); res.send(html);
-  } } catch (err: any) { console.error("REPORT ERROR:", err?.message, err?.stack?.split('\n')[1]); res.status(500).json({ message: err?.message ?? "Failed" }); }
+  }  catch (err: any) { console.error("REPORT ERROR:", err?.message, err?.stack?.split('\n')[1]); res.status(500).json({ message: err?.message ?? "Failed" }); }
 });
 
 // GET /api/reports/:clientId/insurance-audit
@@ -178,7 +178,7 @@ r.get("/:clientId/insurance-audit", async (req: AuthRequest, res: Response) => {
     if (!d) return res.status(404).json({ message: "Not found" });
     const html = generateInsuranceAuditReport({ client: d.client as any, insurance: d.insurance as any, products: [], netWorth: d.netWorth as any, advisor: d.advisor as any, generatedAt: new Date().toISOString() } as any);
     res.setHeader("Content-Type", "text/html; charset=utf-8"); res.send(html);
-  } } catch (err: any) { console.error("REPORT ERROR:", err?.message, err?.stack?.split('\n')[1]); res.status(500).json({ message: err?.message ?? "Failed" }); }
+  }  catch (err: any) { console.error("REPORT ERROR:", err?.message, err?.stack?.split('\n')[1]); res.status(500).json({ message: err?.message ?? "Failed" }); }
 });
 
 // GET /api/reports/:clientId/estate-summary
@@ -188,7 +188,7 @@ r.get("/:clientId/estate-summary", async (req: AuthRequest, res: Response) => {
     if (!d) return res.status(404).json({ message: "Not found" });
     const html = generateEstateSummaryReport({ client: d.client as any, estateNotes: d.estateNotes as any, netWorth: d.netWorth as any, products: [], advisor: d.advisor as any, generatedAt: new Date().toISOString() } as any);
     res.setHeader("Content-Type", "text/html; charset=utf-8"); res.send(html);
-  } } catch (err: any) { console.error("REPORT ERROR:", err?.message, err?.stack?.split('\n')[1]); res.status(500).json({ message: err?.message ?? "Failed" }); }
+  }  catch (err: any) { console.error("REPORT ERROR:", err?.message, err?.stack?.split('\n')[1]); res.status(500).json({ message: err?.message ?? "Failed" }); }
 });
 
 // GET /api/reports/:clientId/tax-strategy
@@ -198,7 +198,7 @@ r.get("/:clientId/tax-strategy", async (req: AuthRequest, res: Response) => {
     if (!d) return res.status(404).json({ message: "Not found" });
     const html = generateTaxStrategyReport({ client: d.client as any, taxNotes: d.taxNotes as any, netWorth: d.netWorth as any, retirement: d.retirement as any, advisor: d.advisor as any, generatedAt: new Date().toISOString() } as any);
     res.setHeader("Content-Type", "text/html; charset=utf-8"); res.send(html);
-  } } catch (err: any) { console.error("REPORT ERROR:", err?.message, err?.stack?.split('\n')[1]); res.status(500).json({ message: err?.message ?? "Failed" }); }
+  }  catch (err: any) { console.error("REPORT ERROR:", err?.message, err?.stack?.split('\n')[1]); res.status(500).json({ message: err?.message ?? "Failed" }); }
 });
 
 // GET /api/reports/:clientId/one-page
@@ -208,7 +208,7 @@ r.get("/:clientId/one-page", async (req: AuthRequest, res: Response) => {
     if (!d) return res.status(404).json({ message: "Not found" });
     const html = generateOnePagePlan({ client: d.client as any, netWorth: d.netWorth as any, retirement: d.retirement as any, insurance: d.insurance as any, plans: [], education: d.education as any, aiRecs: [], expenses: d.expenses as any, advisor: d.advisor as any, generatedAt: new Date().toISOString() } as any);
     res.setHeader("Content-Type", "text/html; charset=utf-8"); res.send(html);
-  } } catch (err: any) { console.error("REPORT ERROR:", err?.message, err?.stack?.split('\n')[1]); res.status(500).json({ message: err?.message ?? "Failed" }); }
+  }  catch (err: any) { console.error("REPORT ERROR:", err?.message, err?.stack?.split('\n')[1]); res.status(500).json({ message: err?.message ?? "Failed" }); }
 });
 
 

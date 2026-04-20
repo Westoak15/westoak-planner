@@ -2438,28 +2438,14 @@ export function FinancialPlanningContent({ initialClientId }: { initialClientId?
     queryKey: ["/api/clients"],
   });
 
-    const { data: selectedClient } = useQuery({
+const { data: selectedClient } = useQuery({
     queryKey: ["client-detail", selectedClientId],
     queryFn: () => selectedClientId ? api.get(`/api/clients/${selectedClientId}`) : null,
     enabled: !!selectedClientId,
-  });
+});
 
-  const { data: plans = [] } = useClientPlans(selectedClientId ?? 0);
-    queryKey: ["/api/clients/detail", selectedClientId],
-    queryFn: async () => {
-      if (!selectedClientId) return null;
-      const token = localStorage.getItem("fp_token") ?? "";
-      const res = await fetch(`/api/clients/${selectedClientId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!res.ok) return null;
-      return res.json();
-    },
-    enabled: !!selectedClientId,
-  });
-
-  const { data: plans = [] } = useClientPlans(selectedClientId ?? 0);
-
+const { data: plans = [] } = useClientPlans(selectedClientId ?? 0);
+    
   const sortedPlans = [...plans].sort((a, b) => b.id - a.id);
   const activePlanId = sortedPlans.length > 0 ? sortedPlans[0].id : null;
   const { data: allFlags = [] } = usePlanStaleFlags(activePlanId);

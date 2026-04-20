@@ -1438,36 +1438,16 @@ export default function App() {
           {tab === "networth"   && client && <NetWorthTabNew   clientId={client.id} client={client} />}
           {tab === "retirement" && client && <RetirementTabNew clientId={client.id} client={client} />}
           {tab === "insurance" && client && <PoliciesTab clientId={client.id} client={client} />}
-          {tab === "fna"        && client && (
-            <QueryClientProvider client={queryClient}>
-            <FnaTabNew clientId={client.id} planId={null} client={client} />
-            </QueryClientProvider>
-          )}
+          {tab === "fna" && client && <FnaTabNew clientId={client.id} planId={null} client={client} />}
           {tab === "admin" && <AdminPanel />}
           {tab === "agents" && <AgentsTab />}
           {tab === "resp"    && client && <RespTabNew clientId={client.id} />}
-          {tab === "expenses" && client && (
-            <QueryClientProvider client={queryClient}>
-              <ExpensesTab clientId={client.id} />
-            </QueryClientProvider>
-          )}
+          {tab === "expenses" && client && <ExpensesTab clientId={client.id} />}
           {tab === "dashboard"  && client && <DashboardTab     clientId={client.id} />}
           {tab === "reports" && client && <ReportsTab clientId={client.id} />}
-          {tab === "tax" && client && (
-            <QueryClientProvider client={queryClient}>
-              <TaxTabNew clientId={client.id} client={client} />
-            </QueryClientProvider>
-          )}
-          {tab === "estate" && client && (
-            <QueryClientProvider client={queryClient}>
-              <EstateTabNew clientId={client.id} planId={null} client={client} />
-            </QueryClientProvider>
-          )}
-          {tab === "ai" && client && (
-            <QueryClientProvider client={queryClient}>
-              <AITab clientId={client.id} />
-            </QueryClientProvider>
-          )}
+          {tab === "tax" && client && <TaxTabNew clientId={client.id} client={client} />}
+          {tab === "estate" && client && <EstateTabNew clientId={client.id} planId={null} client={client} />}
+          {tab === "ai" && client && <AITab clientId={client.id} />}
         </div>
       </div>
     </div>

@@ -9,7 +9,8 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { authRouter }       from "./routes/auth.js";
 import { clientsRouter }    from "./routes/clients.js";
-import { fpRouter }         from "./routes/fp.js";
+import { fpRouter } from "./routes/fp.js";
+import { fpAliasesRouter } from "./routes/fp-aliases.js";
 import { fpFullRouter }     from "./routes/fp-full.js";
 import { simulateRouter }   from "./routes/simulate.js";
 import { simulationRouter } from "./routes/simulation.js";   // ← FIX 1: was missing
@@ -31,6 +32,7 @@ app.get("/api/health",  (_req, res) => res.json({ ok: true }));
 app.use("/api/auth",    authRouter);
 app.use("/api/tax",     taxRouter);
 app.use("/api",         fpRouter);
+app.use("/api",         fpAliasesRouter);
 app.use("/api/clients", clientsRouter);
 app.use("/api",         fpFullRouter);
 app.use("/api",         simulateRouter);

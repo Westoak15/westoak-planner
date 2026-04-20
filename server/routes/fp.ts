@@ -258,6 +258,18 @@ r.post("/clients/:id/tax", async (req: AuthRequest, res: Response) => {
 });
 
 r.patch("/tax/:id", async (req: AuthRequest, res: Response) => {
+  r.get("/clients/:id/tax-planning-notes", async (req: AuthRequest, res: Response) => {
+  const cid = +req.params.id;
+  if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
+  res.json(await db.select().from(taxNotes).where(eq(taxNotes.clientId, cid)));
+});
+r.post("/clients/:id/tax-planning-notes", async (req: AuthRequest, res: Response) => {
+  const cid = +req.params.id;
+  if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
+  const [row] = await (db.insert(taxNotes) as any).values({ clientId: cid, ...safe(req.body) }).returning();
+  res.json(row);
+});
+
   const [ex] = await db.select({ id: taxNotes.id, clientId: taxNotes.clientId })
     .from(taxNotes).where(eq(taxNotes.id, +req.params.id));
   if (!ex || !await ownsClient(ex.clientId, req.userId!)) return res.status(404).json({ message: "Not found" });

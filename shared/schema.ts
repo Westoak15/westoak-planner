@@ -212,7 +212,6 @@ export const estatePlanningNotes = pgTable("estate_planning_notes", {
   title:              text("title").notNull(),
   content:            text("content").notNull(),
   documentReference:  text("document_reference"),
-  reviewDate:         text("review_date"),
   createdAt:          timestamp("created_at").defaultNow().notNull(),
   updatedAt:          timestamp("updated_at").defaultNow().notNull(),
 });

@@ -10,7 +10,7 @@ interface ReportSection {
 }
 
 const REPORT_SECTIONS: ReportSection[] = [
-  { id: "one-page",             label: "One Page Plan",          description: "Executive summary",                                    category: "Summary",      route: "one-page" },
+  { id: "one-page",             label: "One Page Plan",          description: "Executive summary",                                   category: "Summary",      route: "one-page" },
   { id: "comprehensive",        label: "Comprehensive Plan",     description: "Full plan - generates all sections",                  category: "Summary",      route: "comprehensive" },
   { id: "net-worth",            label: "Net Worth Statement",    description: "Balance sheet",                                       category: "Net Worth",    route: "net-worth" },
   { id: "asset-allocation",     label: "Asset Allocation",       description: "Asset breakdown",                                     category: "Net Worth",    route: "asset-allocation" },

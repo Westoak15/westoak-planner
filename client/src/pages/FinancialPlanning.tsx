@@ -2439,6 +2439,12 @@ export function FinancialPlanningContent({ initialClientId }: { initialClientId?
   });
 
     const { data: selectedClient } = useQuery({
+    queryKey: ["client-detail", selectedClientId],
+    queryFn: () => selectedClientId ? api.get(`/api/clients/${selectedClientId}`) : null,
+    enabled: !!selectedClientId,
+  });
+
+  const { data: plans = [] } = useClientPlans(selectedClientId ?? 0);
     queryKey: ["/api/clients/detail", selectedClientId],
     queryFn: async () => {
       if (!selectedClientId) return null;
@@ -2544,7 +2550,7 @@ export function FinancialPlanningContent({ initialClientId }: { initialClientId?
             {activeTab === "insurance"  && <InsuranceTab     clientId={selectedClientId} planId={activePlanId} />}
             {activeTab === "resp"       && <RESPTab          clientId={selectedClientId} planId={activePlanId} />}
             {activeTab === "debt"       && <DebtTab          clientId={selectedClientId} planId={activePlanId} />}
-            {activeTab === "tax"        && <TaxTab           clientId={selectedClientId} client={selectedClient} />}
+            {activeTab === "tax" && <TaxTab clientId={selectedClientId} client={selectedClient} />}
             {activeTab === "estate"     && <EstateNotesTab   clientId={selectedClientId} planId={activePlanId} />}
             {activeTab === "ai"         && <AITab            clientId={selectedClientId} />}
           </>

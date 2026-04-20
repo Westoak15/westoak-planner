@@ -1438,7 +1438,11 @@ export default function App() {
           {tab === "networth"   && client && <NetWorthTabNew   clientId={client.id} client={client} />}
           {tab === "retirement" && client && <RetirementTabNew clientId={client.id} client={client} />}
           {tab === "insurance" && client && <PoliciesTab clientId={client.id} client={client} />}
-          {tab === "fna" && client && <FnaTabNew clientId={client.id} planId={null} client={client} />}
+          {tab === "fna" && client && (
+            <QueryClientProvider client={queryClient}>
+              <FnaTabNew clientId={client.id} planId={null} client={client} />
+            </QueryClientProvider>
+          )}
           {tab === "admin" && <AdminPanel />}
           {tab === "agents" && <AgentsTab />}
           {tab === "resp"    && client && <RespTabNew clientId={client.id} />}

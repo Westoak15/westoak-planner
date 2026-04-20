@@ -318,8 +318,7 @@ if (totalDebt > 50000)      recs.push({ clientId: cid, category: "debt",       p
 recs.push({ clientId: cid, category: "tax",       priority: "medium", title: "Annual RRSP/TFSA Review",    content: "Review contribution room and optimize between RRSP and TFSA based on current and expected future marginal tax rates." });
 recs.push({ clientId: cid, category: "insurance", priority: "medium", title: "Insurance Needs Review",     content: "Conduct annual review of life, disability, and critical illness coverage gaps." });
 
-  const inserted = await Promise.all(recs.map(rec => db.insert(aiRecommendations).values(rec).returning().then(([x]) => x)));
-  res.json(inserted);
+  const inserted = await Promise.all(recs.map(rec => (db.insert(aiRecommendations) as any).values(rec).returning().then(([x]: any) => x)));
 });
 
 r.patch("/ai/:id", async (req: AuthRequest, res: Response) => {

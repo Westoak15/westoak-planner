@@ -1463,11 +1463,12 @@ export default function App() {
     <EstateTabNew clientId={client.id} planId={null} client={client} />
   </QueryClientProvider>
 )}
-          {tab === "ai" && client && (
+{tab === "ai" && client && (
   <QueryClientProvider client={queryClient}>
-    <AiTab clientId={client.id} />
+    <AITab clientId={client.id} />
   </QueryClientProvider>
 )}
+
         </div>
       </div>
     </div>

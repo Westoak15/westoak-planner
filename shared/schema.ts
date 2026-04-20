@@ -244,18 +244,21 @@ export const clientPolicies = pgTable("client_policies", {
   updatedAt:        timestamp("updated_at").defaultNow().notNull(),
 });
 
-// ── Household Expenses ────────────────────────────────────────────────────────
+/// ── Household Expenses ────────────────────────────────────────────────────────
 export const householdExpenses = pgTable("household_expenses", {
-  id:             serial("id").primaryKey(),
-  clientId:       integer("client_id").notNull().references(() => clients.id, { onDelete: "cascade" }),
-  category:       text("category").notNull(),
-  description:    text("description"),
-  monthlyAmount:  decimal("monthly_amount", { precision: 10, scale: 2 }),
-  annualAmount:   decimal("annual_amount", { precision: 15, scale: 2 }),
-  frequency:      text("frequency"),
-  notes:          text("notes"),
-  createdAt:      timestamp("created_at").defaultNow().notNull(),
-  updatedAt:      timestamp("updated_at").defaultNow().notNull(),
+  id:                      serial("id").primaryKey(),
+  clientId:                integer("client_id").notNull().references(() => clients.id, { onDelete: "cascade" }),
+  category:                text("category").notNull(),
+  description:             text("description"),
+  monthlyAmount:           decimal("monthly_amount", { precision: 10, scale: 2 }),
+  annualAmount:            decimal("annual_amount", { precision: 15, scale: 2 }),
+  frequency:               text("frequency"),
+  isEssential:             boolean("is_essential").default(true),
+  includeInRetirement:     boolean("include_in_retirement").default(true),
+  retirementAdjustmentPct: integer("retirement_adjustment_pct").default(100),
+  notes:                   text("notes"),
+  createdAt:               timestamp("created_at").defaultNow().notNull(),
+  updatedAt:               timestamp("updated_at").defaultNow().notNull(),
 });
 
 // ── Simulations ───────────────────────────────────────────────────────────────

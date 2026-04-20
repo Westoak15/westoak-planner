@@ -246,6 +246,7 @@ export const clientPolicies = pgTable("client_policies", {
   premiumFrequency: text("premium_frequency"),
   inforceDate:      text("inforce_date"),
   renewalDate:      text("renewal_date"),
+  reviewDate: text("review_date"),
   beneficiary:      text("beneficiary"),
   notes:            text("notes"),
   createdAt:        timestamp("created_at").defaultNow().notNull(),

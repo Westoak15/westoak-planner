@@ -73,7 +73,7 @@ export type FinancialPlan = typeof financialPlans.$inferSelect;
 export const netWorthEntries = pgTable("net_worth_entries", {
   id:        serial("id").primaryKey(),
   clientId:  integer("client_id").notNull().references(() => clients.id, { onDelete: "cascade" }),
-  planId: integer("plan_id").references(() => financialPlans.id, { onDelete: "cascade" }),
+  planId:    integer("plan_id"),
   type:      text("type").notNull(), // "asset" | "liability"
   category:  text("category").notNull(),
   name:      text("name").notNull(),
@@ -89,7 +89,7 @@ export const netWorthEntries = pgTable("net_worth_entries", {
 export const retirementProjections = pgTable("retirement_projections", {
   id:                      serial("id").primaryKey(),
   clientId:                integer("client_id").notNull().references(() => clients.id, { onDelete: "cascade" }),
-  planId: integer("plan_id").references(() => financialPlans.id, { onDelete: "cascade" }),
+  planId:                  integer("plan_id"),
   label:                   text("label"),
   currentAge:              integer("current_age"),
   retirementAge:           integer("retirement_age"),
@@ -120,7 +120,7 @@ export const retirementProjections = pgTable("retirement_projections", {
 export const insuranceAnalyses = pgTable("insurance_analyses", {
   id:                           serial("id").primaryKey(),
   clientId:                     integer("client_id").notNull().references(() => clients.id, { onDelete: "cascade" }),
-  planId: integer("plan_id").references(() => financialPlans.id, { onDelete: "cascade" }),
+  planId: integer("plan_id"),
   method:                       text("method"),
   primaryName:                  text("primary_name"),
   primaryAge:                   integer("primary_age"),
@@ -150,7 +150,7 @@ export const insuranceAnalyses = pgTable("insurance_analyses", {
 export const educationSavings = pgTable("education_savings", {
   id:                  serial("id").primaryKey(),
   clientId:            integer("client_id").notNull().references(() => clients.id, { onDelete: "cascade" }),
-  planId: integer("plan_id").references(() => financialPlans.id, { onDelete: "cascade" }),
+  planId: integer("plan_id"),
   childName:           text("child_name").notNull(),
   childDob:            text("child_dob"),
   childAge:            integer("child_age"),
@@ -174,7 +174,7 @@ export const educationPlans = educationSavings; // legacy alias
 export const debtEntries = pgTable("debt_entries", {
   id:             serial("id").primaryKey(),
   clientId:       integer("client_id").notNull().references(() => clients.id, { onDelete: "cascade" }),
-  planId: integer("plan_id").references(() => financialPlans.id, { onDelete: "cascade" }),
+  planId: integer("plan_id"),
   name:           text("name").notNull(),
   category:       text("category").notNull(),
   balance:        decimal("balance", { precision: 15, scale: 2 }).notNull(),
@@ -192,7 +192,7 @@ export const debtEntries = pgTable("debt_entries", {
 export const taxPlanningNotes = pgTable("tax_planning_notes", {
   id:              serial("id").primaryKey(),
   clientId:        integer("client_id").notNull().references(() => clients.id, { onDelete: "cascade" }),
-  planId: integer("plan_id").references(() => financialPlans.id, { onDelete: "cascade" }),
+  planId: integer("plan_id"),
   taxYear:         integer("tax_year"),
   category:        text("category"),
   title:           text("title").notNull(),
@@ -207,7 +207,7 @@ export const taxNotes = taxPlanningNotes; // legacy alias
 export const estatePlanningNotes = pgTable("estate_planning_notes", {
   id:                 serial("id").primaryKey(),
   clientId:           integer("client_id").notNull().references(() => clients.id, { onDelete: "cascade" }),
-  planId: integer("plan_id").references(() => financialPlans.id, { onDelete: "cascade" }),
+  planId: integer("plan_id"),
   category:           text("category"),
   title:              text("title").notNull(),
   content:            text("content").notNull(),
@@ -222,7 +222,7 @@ export const estateNotes = estatePlanningNotes; // legacy alias
 export const aiRecommendations = pgTable("ai_recommendations", {
   id:          serial("id").primaryKey(),
   clientId:    integer("client_id").notNull().references(() => clients.id, { onDelete: "cascade" }),
-  planId: integer("plan_id").references(() => financialPlans.id, { onDelete: "cascade" }),
+  planId: integer("plan_id"),
   category:    text("category").notNull(),
   priority:    text("priority").notNull().default("medium"),
   title:       text("title").notNull(),

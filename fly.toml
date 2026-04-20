@@ -2,7 +2,8 @@ app = "fp-standalone"
 primary_region = "yyz"
 
 [deploy]
-  strategy = "immediate"
+  strategy = "rolling"
+  max_unavailable = 0
 
 [build]
   dockerfile = "Dockerfile"

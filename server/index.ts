@@ -47,9 +47,10 @@ if (process.env.NODE_ENV === "production") {
     },
   }));
   app.get("*", (req, res) => {
-    if (req.path.includes(".")) { res.status(404).send("Not found"); return; }
-    res.sendFile(path.join(dist, "index.html"));
-  });
+  if (req.path.startsWith("/api/")) { res.status(404).json({ message: "Not found" }); return; }
+  if (req.path.includes(".")) { res.status(404).send("Not found"); return; }
+  res.sendFile(path.join(dist, "index.html"));
+});
 }
 
 app.listen(PORT, "0.0.0.0", () => console.log(`✅ FP running on :${PORT}`));

@@ -59,7 +59,7 @@ function tfsaSection(inputs: ComprehensiveReportInputs, r: TfsaAnalysis): string
 }
 
 function capitalGainsSection(inputs: ComprehensiveReportInputs, r: CapitalGainsAnalysis): string {
-  return `<div class="page">${pageHeader(inputs.meta,"Capital Gains")}${sectionHeader("Section 5","Capital Gains Analysis","2024 \u2014 Dual Inclusion Rate Applies")}
+  return `<div class="page">${pageHeader(inputs.meta,"Capital Gains")}${sectionHeader("Section 5","Capital Gains Analysis","2025 — 50% Inclusion Rate")}
   ${callout(`<strong>2024 Capital Gains Inclusion Rate Change:</strong> For individuals, the first $250,000 of net annual capital gains remains at a 50% inclusion rate. Gains above $250,000 are now included at 66.67% (effective June 25, 2024).`,"warning")}
   ${metricGrid([{label:"Total Proceeds",value:fmt.dollar(r.totalProceeds)},{label:"Total Adjusted Cost Base",value:fmt.dollar(r.totalACB)},{label:"Net Capital Gain",value:fmt.dollar(r.netGain),variant:r.netGain>0?"amber":"green"},{label:"Tax on Gains",value:fmt.dollar(r.totalTaxOnGains),variant:"red"}])}
   ${metricGrid([{label:"Gains at 50% Inclusion",value:fmt.dollar(r.gainUnder250k),sub:"Under $250,000 threshold"},{label:"Gains at 66.67% Inclusion",value:fmt.dollar(r.gainOver250k),sub:"Over $250,000 threshold",variant:r.gainOver250k>0?"amber":""},{label:"Taxable Gain",value:fmt.dollar(r.taxableGain)},{label:"Effective Rate on Gains",value:fmt.pct(r.effectiveRateOnGains)}])}

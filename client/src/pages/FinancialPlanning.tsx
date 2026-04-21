@@ -1897,7 +1897,7 @@ function CapitalGainsPanel({ clientId }: { clientId: number }) {
   return (
     <div className="space-y-5">
       <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl text-sm text-amber-800">
-        <strong>Capital Gains Analysis</strong> � Analyzes unrealized gains with 2024 dual inclusion rates (50% / 66.67%).
+        <strong>Capital Gains Analysis</strong> Analyzes unrealized gains with 2025 rates (50%).
       </div>
 
       <div className="space-y-3">

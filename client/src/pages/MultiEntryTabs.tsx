@@ -60,10 +60,12 @@ type NWDraft = {
   isSpousal: boolean; rrspContributor: string;
   // Pension extras
   pensionType: string; matchPct: string;
+  // Liability extras
+  monthlyPayment: string;
 };
 
 function emptyDraft(type: "asset"|"liability"): NWDraft {
-  return { type, category: type === "asset" ? "RRSP" : "Mortgage", name: "", owner: "primary", value: "", notes: "", isSpousal: false, rrspContributor: "", pensionType: "DBPP", matchPct: "" };
+  return { type, category: type === "asset" ? "RRSP" : "Mortgage", name: "", owner: "primary", value: "", notes: "", isSpousal: false, rrspContributor: "", pensionType: "DBPP", matchPct: "", monthlyPayment: "" }
 }
 
 // Conditional extra fields based on category
@@ -229,7 +231,9 @@ async function saveAll() {
               <thead className="bg-gray-50 border-b border-gray-100">
                 <tr>
                   <TH>Owner</TH><TH>Category</TH><TH>Name / Description</TH>
-                  <TH>{type === "asset" ? "Value" : "Balance Owing"}</TH><TH>Notes</TH><TH></TH>
+                  <TH>{type === "asset" ? "Value" : "Balance Owing"}</TH>
+                 {type === "liability" && <TH>Monthly Pmt</TH>}
+                  <TH>Notes</TH><TH></TH>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -259,11 +263,18 @@ async function saveAll() {
                           <label className="text-[10px] text-gray-400 uppercase font-semibold block mb-0.5">{type === "asset" ? "Value ($)" : "Balance ($)"}</label>
                           <InlineInput value={String(editForm.value ?? "")} onChange={v => setEditForm(f => ({...f, value: v}))} type="number" />
                         </div>
+                        {type === "liability" && (
+                          <div>
+                            <label className="text-[10px] text-gray-400 uppercase font-semibold block mb-0.5">Monthly Pmt ($)</label>
+                            <InlineInput value={String((editForm as any).monthlyPayment ?? "")} onChange={v => setEditForm(f => ({...f, monthlyPayment: v}))} type="number" />
+                          </div>
+                        )}
                         <div className="flex gap-1 items-end">
                           <div className="flex-1">
                             <label className="text-[10px] text-gray-400 uppercase font-semibold block mb-0.5">Notes</label>
                             <InlineInput value={editForm.notes ?? ""} onChange={v => setEditForm(f => ({...f, notes: v}))} />
                           </div>
+                       
                           <div className="flex gap-1 mb-1.5">
                             <button onClick={saveEdit} disabled={saving} title="Save" className="text-emerald-500 hover:text-emerald-700"><Save className="w-4 h-4" /></button>
                             <button onClick={() => { setEditingId(null); setEditForm({}); }} title="Cancel" className="text-gray-400 hover:text-gray-600"><X className="w-4 h-4" /></button>
@@ -348,6 +359,12 @@ async function saveAll() {
                           </div>
                           {/* Value */}
                           <div>
+                             {d.type === "liability" && (
+                            <div>
+                              <label className="text-[10px] text-gray-400 uppercase font-semibold block mb-0.5">Monthly Pmt ($)</label>
+                              <InlineInput value={d.monthlyPayment} onChange={v => updateDraft(ri, "monthlyPayment", v)} type="number" placeholder="0" />
+                            </div>
+                          )}
                             <label className="text-[10px] text-gray-400 uppercase font-semibold block mb-0.5">{type === "asset" ? "Value ($)" : "Balance Owing ($)"}</label>
                             <InlineInput value={d.value} onChange={v => updateDraft(ri, "value", v)} type="number" placeholder="0" />
                           </div>

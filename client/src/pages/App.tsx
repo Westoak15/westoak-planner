@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "../lib/auth";
 import { api } from "../lib/api";
 import { Sidebar, type Tab } from "../components/Sidebar";
+import { LettersTab } from "./LettersTab";
 import { FinancialPlanningContent } from "./FinancialPlanning";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "../lib/queryClient";
@@ -1452,6 +1453,7 @@ export default function App() {
   </QueryClientProvider>
 )}
           {tab === "dashboard"  && client && <DashboardTab     clientId={client.id} />}
+          {tab === "letters" && client && <LettersTab clientId={client.id} client={client} />}
           {tab === "reports" && client && <ReportsTab clientId={client.id} />}
           {tab === "tax" && client && (
   <QueryClientProvider client={queryClient}>

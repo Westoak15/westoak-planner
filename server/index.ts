@@ -16,6 +16,7 @@ import { simulateRouter }   from "./routes/simulate.js";
 import { simulationRouter } from "./routes/simulation.js";   // ← FIX 1: was missing
 import { reportsRouter }    from "./routes/reports.js";
 import { taxRouter }        from "./routes/tax.js";
+import { lettersRouter } from "./routes/letters.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = parseInt(process.env.PORT ?? "8080", 10);
@@ -38,6 +39,7 @@ app.use("/api",         fpFullRouter);
 app.use("/api",         simulateRouter);
 app.use("/api",         simulationRouter);   // ← FIX 1: mounts /api/simulation/:clientId/*
 app.use("/api/reports", reportsRouter);
+app.use("/api",         lettersRouter);
 
 
 if (process.env.NODE_ENV === "production") {

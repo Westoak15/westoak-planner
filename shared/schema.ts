@@ -347,6 +347,17 @@ export const planActionItems = pgTable("plan_action_items", {
   updatedAt:   timestamp("updated_at").defaultNow().notNull(),
 });
 
+// ── Reason Why Letters ────────────────────────────────────────────────────────
+export const reasonWhyLetters = pgTable("reason_why_letters", {
+  id:         serial("id").primaryKey(),
+  clientId:   integer("client_id").notNull().references(() => clients.id, { onDelete: "cascade" }),
+  letterType: text("letter_type").notNull().default("life"),
+  subject:    text("subject"),
+  body:       text("body"),
+  createdAt:  timestamp("created_at").defaultNow().notNull(),
+  updatedAt:  timestamp("updated_at").defaultNow().notNull(),
+});
+
 // ── Insert types ──────────────────────────────────────────────────────────────
 export type InsertFinancialPlan = typeof financialPlans.$inferInsert;
 export type InsertEducationSaving = any;

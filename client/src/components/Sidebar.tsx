@@ -6,7 +6,7 @@ import {
 import { cn } from "../lib/utils";
 
 export type Tab =
-  | "clients" | "dashboard"
+  | "clients" | "letters" | "dashboard"
   | "networth" | "retirement" | "insurance" | "fna"
   | "resp" | "expenses" | "tax" | "estate" | "ai"
   | "planning" | "reports" | "admin" | "agents";

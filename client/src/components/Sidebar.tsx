@@ -39,7 +39,7 @@ const ALL_TABS: { key: Tab; label: string; icon: any; dividerBefore?: boolean; g
    
 ];
 
-const STANDARD_TABS: Tab[] = ["clients", "networth", "insurance", "fna"];
+const STANDARD_TABS: Tab[] = ["clients", "networth", "insurance", "fna", "letters"];
 const PLAN_TABS: Tab[] = ["dashboard","networth","retirement","insurance", "expenses","fna","resp","tax","estate", "reports", "letters", "ai","planning"];
 const NO_CLIENT_TABS: Tab[] = ["clients", "admin", "agents"];
 

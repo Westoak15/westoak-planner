@@ -161,8 +161,9 @@ export function NetWorthTab({ clientId, client }: { clientId: number; client?: {
       rrspContributor: m.contributor ?? "",
       pensionType: m.pensionType ?? "DBPP",
       matchPct: m.matchPct ?? "",
+      monthlyPayment: m.monthlyPayment ?? "",
+      respBeneficiary: m.respBeneficiary ?? "",
     } as any);
-    setEditForm((f: any) => ({ ...f, monthlyPayment: m.monthlyPayment ?? "", respBeneficiary: m.respBeneficiary ?? "" }));
   }
 
   async function saveEdit() {

@@ -48,7 +48,7 @@ function InlineSelect({ value, onChange, options }: { value: string; onChange: (
 }
 
 const PROVINCES = ["AB","BC","MB","NB","NL","NS","NT","NU","ON","PE","QC","SK","YT"];
-const NW_ASSET_CATS = ["RRSP","TFSA","Non-Registered","Real Estate","Business","Pension","Cash/Bank","ESU","RSU","Other Asset"];
+const NW_ASSET_CATS = ["RRSP","TFSA","Non-Registered", "RESP", "Real Estate","Business","Pension","Cash/Bank","ESU","RSU","Other Asset"];
 const NW_LIAB_CATS  = ["Mortgage","HELOC","Car Loan","Credit Card","Student Loan","Line of Credit","Other Liability"];
 const DEBT_TYPES    = ["mortgage","heloc","car_loan","credit_card","student_loan","line_of_credit","other"];
 const PENSION_TYPES = ["DBPP","DCPP","Self-Directed","Matching Contributions"];

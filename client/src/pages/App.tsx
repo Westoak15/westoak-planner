@@ -842,7 +842,7 @@ function InsuranceTab({ clientId }: { clientId: number }) {
 // ─────────────────────────────────────────────────────────────────────────────
 // RESP Tab
 // ─────────────────────────────────────────────────────────────────────────────
-function <RespTab clientId={client.id} client={client}: { clientId: number; client?: any }) {
+function RespTab({ clientId, client }: { clientId: number; client?: any }) {
   const [rows, setRows]     = useState<EduPlan[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm]     = useState({ childName:"", childDob:"", currentRespBalance:"", annualContribution:"", targetAmount:"", notes:"" });

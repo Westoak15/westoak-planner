@@ -823,15 +823,11 @@ export function RespTab({ clientId, client }: { clientId: number; client?: any }
       const dep = deps[0];
       setDrafts(d => [...d, { ...emptyEdu(), childName: dep.name ?? "", childDob: dep.dob ?? "", currentRespBalance: String(totalResp || "") }]);
     } else {
-      // Multiple children — one draft per child, split RESP balance equally
       const perChild = deps.length > 0 ? Math.round(totalResp / deps.length) : 0;
       const newDrafts = deps.map((dep: any) => ({ ...emptyEdu(), childName: dep.name ?? "", childDob: dep.dob ?? "", currentRespBalance: String(perChild || "") }));
       setDrafts(d => [...d, ...newDrafts]);
     }
   }
-    load();
-    api.get<any[]>(`/api/clients/${clientId}/net-worth`).then(setNetWorth);
-  }, [clientId]);
 
   function updateDraft(i: number, k: keyof EduDraft, v: string) { setDrafts(d => d.map((x, idx) => idx === i ? { ...x, [k]: v } : x)); }
 

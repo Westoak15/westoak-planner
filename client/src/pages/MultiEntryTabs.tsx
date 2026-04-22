@@ -135,7 +135,7 @@ export function NetWorthTab({ clientId, client }: { clientId: number; client?: {
   const [saving, setSaving]   = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [simResult, setSimResult] = useState<any>(null);
-  const [editForm, setEditForm]   = useState<Partial<NWEntry & { isSpousal: boolean; rrspContributor: string; pensionType: string; matchPct: string }>>({});
+  const [editForm, setEditForm]   = useState<Partial<NWEntry & { isSpousal: boolean; rrspContributor: string; pensionType: string; matchPct: string; monthlyPayment: string; respBeneficiary: string }>>({});
 
   const spouseName = client?.spouseFirstName ? `${client.spouseFirstName} ${client.spouseLastName ?? ""}`.trim() : "";
   const primaryName = client ? `${client.firstName} ${client.lastName}` : "Primary";
@@ -163,7 +163,7 @@ export function NetWorthTab({ clientId, client }: { clientId: number; client?: {
       matchPct: m.matchPct ?? "",
       monthlyPayment: m.monthlyPayment ?? "",
       respBeneficiary: m.respBeneficiary ?? "",
-    } as any);
+    });
   }
 
   async function saveEdit() {

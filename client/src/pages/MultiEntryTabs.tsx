@@ -342,6 +342,7 @@ async function saveAll() {
                     </TD>
                     <TD><span className="font-medium text-gray-800">{e.name}</span></TD>
                     <TD right><span className="font-semibold">{fmt$(e.value)}</span></TD>
+                    {type === "liability" && <TD><span className="text-gray-400 text-xs">{e.metadata?.monthlyPayment ? fmt$(e.metadata.monthlyPayment) : ""}</span></TD>}
                     <TD><span className="text-gray-400 text-xs">{e.notes ?? ""}</span></TD>
                     <TD>
                       <div className="flex items-center gap-2">
@@ -407,7 +408,7 @@ async function saveAll() {
                 })}
 
                 {rows.length === 0 && draftRows.length === 0 && (
-                  <tr><td colSpan={6} className="px-4 py-6 text-center text-gray-400 text-sm">No {type}s yet — click Add to add one</td></tr>
+                  <tr><td colSpan={type === "liability" ? 7 : 6} className="px-4 py-6 text-center text-gray-400 text-sm">No {type}s yet — click Add to add one</td></tr>
                 )}
               </tbody>
             </table>

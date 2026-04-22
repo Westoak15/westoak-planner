@@ -583,7 +583,8 @@ export function RetirementTab({ clientId, client }: { clientId: number; client?:
         ))}
       </div>
       {activeSubTab === "drawdown" && <DrawdownTab clientId={clientId} client={client} />}
-      {activeSubTab === "projections" && <div>
+      {activeSubTab === "projections" && (
+      <div>
       <div className="flex items-center justify-between mb-5">
         <h2 className="text-xl font-bold text-gray-900">Retirement Projections</h2>
       {/* Draft forms */}
@@ -655,8 +656,9 @@ export function RetirementTab({ clientId, client }: { clientId: number; client?:
             </Card>
           );
         })}
-           </div>
-    </div>}
+                </div>
+    </div>
+    )}
   </div>
   );
 }

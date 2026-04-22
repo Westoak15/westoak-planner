@@ -842,14 +842,34 @@ function InsuranceTab({ clientId }: { clientId: number }) {
 // ─────────────────────────────────────────────────────────────────────────────
 // RESP Tab
 // ─────────────────────────────────────────────────────────────────────────────
-function RespTab({ clientId }: { clientId: number }) {
+function <RespTab clientId={client.id} client={client}: { clientId: number; client?: any }) {
   const [rows, setRows]     = useState<EduPlan[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm]     = useState({ childName:"", childDob:"", currentRespBalance:"", annualContribution:"", targetAmount:"", notes:"" });
   const [busy, setBusy]     = useState(false);
+  const [netWorth, setNetWorth] = useState<any[]>([]);
 
   const load = () => api.get<EduPlan[]>(`/api/clients/${clientId}/education`).then(setRows);
-  useEffect(() => { load(); }, [clientId]);
+  useEffect(() => {
+    load();
+    api.get<any[]>(`/api/clients/${clientId}/net-worth`).then(setNetWorth);
+  }, [clientId]);
+
+  function prefillFromClient() {
+    const deps: any[] = Array.isArray(client?.dependants) ? client.dependants : [];
+    const totalResp = netWorth.filter((e:any) => e.category === "RESP").reduce((s:number, e:any) => s + Number(e.value||0), 0);
+    if (deps.length === 0) {
+      setForm(f => ({ ...f, currentRespBalance: String(totalResp||"") }));
+    } else if (deps.length === 1) {
+      setForm(f => ({ ...f, childName: deps[0].name??"", childDob: deps[0].dob??"", currentRespBalance: String(totalResp||"") }));
+    } else {
+      // Multiple children — combine names, split balance
+      const names = deps.map((d:any) => d.name).filter(Boolean).join(", ");
+      const perChild = Math.round(totalResp / deps.length);
+      setForm(f => ({ ...f, childName: names, currentRespBalance: String(perChild||"") }));
+    }
+    setShowForm(true);
+  }
 
   async function add() {
     setBusy(true);
@@ -865,7 +885,7 @@ function RespTab({ clientId }: { clientId: number }) {
 
   return (
     <div className="p-6 max-w-4xl mx-auto">
-      <SectionHeader title="RESP / Education Savings" onAdd={() => setShowForm(true)} />
+      <SectionHeader title="RESP / Education Savings" onAdd={prefillFromClient} />
 
       {showForm && (
         <Card className="mb-5">

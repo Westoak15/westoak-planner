@@ -61,16 +61,33 @@ type NWDraft = {
   isSpousal: boolean; rrspContributor: string;
   // Pension extras
   pensionType: string; matchPct: string;
-  // Liability extras
+   // Liability extras
   monthlyPayment: string;
+  // RESP extras
+  respBeneficiary: string;
 };
 
 function emptyDraft(type: "asset"|"liability"): NWDraft {
-  return { type, category: type === "asset" ? "RRSP" : "Mortgage", name: "", owner: "primary", value: "", notes: "", isSpousal: false, rrspContributor: "", pensionType: "DBPP", matchPct: "", monthlyPayment: "" }
+  return { type, category: type === "asset" ? "RRSP" : "Mortgage", name: "", owner: "primary", value: "", notes: "", isSpousal: false, rrspContributor: "", pensionType: "DBPP", matchPct: "", monthlyPayment: "", respBeneficiary: "" };
 }
 
 // Conditional extra fields based on category
-function ExtraFields({ draft, onChange, spouseName }: { draft: NWDraft; onChange: (k: keyof NWDraft, v: any) => void; spouseName: string }) {
+function ExtraFields({ draft, onChange, spouseName, dependants }: { draft: NWDraft; onChange: (k: keyof NWDraft, v: any) => void; spouseName: string; dependants?: any[] }) {
+  if (draft.category === "RESP") {
+    const deps = Array.isArray(dependants) ? dependants : [];
+    const options = [{ value: "all", label: "All Children" }, ...deps.map((d: any) => ({ value: d.name ?? "", label: d.name ?? "" }))];
+    return (
+      <div className="flex items-center gap-3 mt-1">
+        <span className="text-xs text-gray-500">Beneficiary:</span>
+        <select value={draft.respBeneficiary} onChange={e => onChange("respBeneficiary", e.target.value)}
+          className="border border-gray-200 rounded px-2 py-1 text-xs">
+          <option value="">Select beneficiary</option>
+          {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+        </select>
+        <span className="text-[10px] text-gray-400">(Owner = subscriber/parent; Beneficiary = child)</span>
+      </div>
+    );
+  }
   if (draft.category === "RRSP") {
     return (
       <div className="flex items-center gap-3 mt-1">
@@ -175,7 +192,7 @@ async function saveAll() {
       const m: any = {};
       if (d.category === "RRSP" && d.isSpousal) { m.spousal = true; m.contributor = d.rrspContributor; }
       if (d.category === "Pension") { m.pensionType = d.pensionType; if (d.matchPct) m.matchPct = d.matchPct; }
-      if (d.type === "liability" && d.monthlyPayment) m.monthlyPayment = d.monthlyPayment;
+      if (d.category === "RESP" && d.respBeneficiary) m.respBeneficiary = d.respBeneficiary;
       return api.post(`/api/clients/${clientId}/net-worth`, {
         type: d.type, category: d.category,
         name: d.name || d.category, owner: d.owner,
@@ -381,7 +398,7 @@ async function saveAll() {
                           </div>
                         </div>
                         {/* Conditional extra fields */}
-                        <ExtraFields draft={d} onChange={(k, v) => updateDraft(ri, k, v)} spouseName={spouseName} />
+                        <ExtraFields draft={d} onChange={(k, v) => updateDraft(ri, k, v)} spouseName={spouseName} dependants={Array.isArray((client as any)?.dependants) ? (client as any).dependants : []} />
                       </td>
                     </tr>
                   );
@@ -785,13 +802,36 @@ interface EduPlan { id: number; childName: string; childDob: string|null; curren
 type EduDraft = { childName: string; childDob: string; currentRespBalance: string; annualContribution: string; targetAmount: string; notes: string; };
 const emptyEdu = (): EduDraft => ({ childName:"", childDob:"", currentRespBalance:"", annualContribution:"2500", targetAmount:"", notes:"" });
 
-export function RespTab({ clientId }: { clientId: number }) {
+export function RespTab({ clientId, client }: { clientId: number; client?: any }) {
   const [rows, setRows]     = useState<EduPlan[]>([]);
   const [drafts, setDrafts] = useState<EduDraft[]>([]);
   const [saving, setSaving] = useState(false);
-
+  const [netWorth, setNetWorth] = useState<any[]>([]);
   const load = () => api.get<EduPlan[]>(`/api/clients/${clientId}/education`).then(setRows);
-  useEffect(() => { load(); }, [clientId]);
+  useEffect(() => {
+    load();
+    api.get<any[]>(`/api/clients/${clientId}/net-worth`).then(setNetWorth);
+  }, [clientId]);
+
+  function addDraft() {
+    const deps: any[] = Array.isArray(client?.dependants) ? client.dependants : [];
+    const respEntries = netWorth.filter(e => e.category === "RESP");
+    const totalResp = respEntries.reduce((s: number, e: any) => s + Number(e.value || 0), 0);
+    if (deps.length === 0) {
+      setDrafts(d => [...d, { ...emptyEdu(), currentRespBalance: String(totalResp || "") }]);
+    } else if (deps.length === 1) {
+      const dep = deps[0];
+      setDrafts(d => [...d, { ...emptyEdu(), childName: dep.name ?? "", childDob: dep.dob ?? "", currentRespBalance: String(totalResp || "") }]);
+    } else {
+      // Multiple children — one draft per child, split RESP balance equally
+      const perChild = deps.length > 0 ? Math.round(totalResp / deps.length) : 0;
+      const newDrafts = deps.map((dep: any) => ({ ...emptyEdu(), childName: dep.name ?? "", childDob: dep.dob ?? "", currentRespBalance: String(perChild || "") }));
+      setDrafts(d => [...d, ...newDrafts]);
+    }
+  }
+    load();
+    api.get<any[]>(`/api/clients/${clientId}/net-worth`).then(setNetWorth);
+  }, [clientId]);
 
   function updateDraft(i: number, k: keyof EduDraft, v: string) { setDrafts(d => d.map((x, idx) => idx === i ? { ...x, [k]: v } : x)); }
 
@@ -823,7 +863,7 @@ export function RespTab({ clientId }: { clientId: number }) {
     <div className="p-6 max-w-5xl mx-auto">
       <div className="flex items-center justify-between mb-5">
         <h2 className="text-xl font-bold text-gray-900">RESP / Education Savings</h2>
-        <button onClick={() => setDrafts(d => [...d, emptyEdu()])}
+        <button onClick={addDraft}
           className="flex items-center gap-1.5 text-sm font-semibold text-white bg-[#0c1e3a] hover:bg-[#0e2a4a] px-3 py-1.5 rounded-lg">
           <Plus className="w-3.5 h-3.5" /> Add Child
         </button>

@@ -848,6 +848,8 @@ function RespTab({ clientId, client }: { clientId: number; client?: any }) {
   const [form, setForm]     = useState({ childName:"", childDob:"", currentRespBalance:"", annualContribution:"", targetAmount:"", notes:"" });
   const [busy, setBusy]     = useState(false);
   const [netWorth, setNetWorth] = useState<any[]>([]);
+  const [editingId, setEditingId]   = useState<number|null>(null);
+  const [editForm, setEditForm]     = useState<any>({});
 
   const load = () => api.get<EduPlan[]>(`/api/clients/${clientId}/education`).then(setRows);
   useEffect(() => {
@@ -882,6 +884,17 @@ function RespTab({ clientId, client }: { clientId: number; client?: any }) {
     if (!confirm("Delete?")) return;
     await api.delete(`/api/education/${id}`); await load();
   }
+  function startEdit(e: any) {
+    setEditingId(e.id);
+    setEditForm({ childName: e.childName, childDob: e.childDob ?? "", currentRespBalance: e.currentRespBalance ?? "", annualContribution: e.annualContribution ?? "", targetAmount: e.targetAmount ?? "", notes: e.notes ?? "" });
+  }
+  async function patch() {
+    if (!editingId) return;
+    setBusy(true);
+    try { await api.patch(`/api/education/${editingId}`, editForm); await load(); setEditingId(null); }
+    catch (e: any) { alert(e.message); }
+    finally { setBusy(false); }
+  }
 
   return (
     <div className="p-6 max-w-4xl mx-auto">
@@ -915,16 +928,36 @@ function RespTab({ clientId, client }: { clientId: number; client?: any }) {
             <Card key={e.id}>
               <div className="flex items-center justify-between mb-3">
                 <h3 className="font-bold text-gray-900">{e.childName}</h3>
-                <button onClick={() => del(e.id)} className="text-gray-300 hover:text-red-500"><Trash2 className="w-4 h-4" /></button>
+                <div className="flex gap-2">
+                  <button onClick={() => startEdit(e)} className="text-gray-300 hover:text-blue-500"><Pencil className="w-4 h-4" /></button>
+                  <button onClick={() => del(e.id)} className="text-gray-300 hover:text-red-500"><Trash2 className="w-4 h-4" /></button>
+                </div>
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <Field label="Date of Birth"       value={e.childDob} />
-                <Field label="Current Balance"     value={fmt$(e.currentRespBalance)} />
-                <Field label="Annual Contribution" value={fmt$(e.annualContribution)} />
-                <Field label="Target"              value={fmt$(e.targetAmount)} />
-                <Field label="Projected Balance"   value={fmt$(e.projectedBalance)} />
-                <Field label="CESG Grant"           value={fmt$(e.cespGrant)} />
-              </div>
+              {editingId === e.id ? (
+                <div>
+                  <div className="grid grid-cols-3 gap-3 mb-3">
+                    <Input label="Child's Name" value={editForm.childName} onChange={v => setEditForm((f:any)=>({...f,childName:v}))} />
+                    <DobInput label="Date of Birth" value={editForm.childDob} onChange={v => setEditForm((f:any)=>({...f,childDob:v}))} />
+                    <Input label="Current Balance ($)" type="number" value={editForm.currentRespBalance} onChange={v => setEditForm((f:any)=>({...f,currentRespBalance:v}))} />
+                    <Input label="Annual Contribution ($)" type="number" value={editForm.annualContribution} onChange={v => setEditForm((f:any)=>({...f,annualContribution:v}))} />
+                    <Input label="Target Amount ($)" type="number" value={editForm.targetAmount} onChange={v => setEditForm((f:any)=>({...f,targetAmount:v}))} />
+                    <Input label="Notes" value={editForm.notes} onChange={v => setEditForm((f:any)=>({...f,notes:v}))} />
+                  </div>
+                  <div className="flex gap-2 justify-end">
+                    <button onClick={() => setEditingId(null)} className="text-sm text-gray-500 px-4 py-2">Cancel</button>
+                    <button onClick={patch} disabled={busy} className="bg-[#0c1e3a] text-white text-sm font-semibold px-4 py-2 rounded-lg disabled:opacity-50">{busy ? "Saving…" : "Save"}</button>
+                  </div>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-3">
+                  <Field label="Date of Birth"       value={e.childDob} />
+                  <Field label="Current Balance"     value={fmt$(e.currentRespBalance)} />
+                  <Field label="Annual Contribution" value={fmt$(e.annualContribution)} />
+                  <Field label="Target"              value={fmt$(e.targetAmount)} />
+                  <Field label="Projected Balance"   value={fmt$(e.projectedBalance)} />
+                  <Field label="CESG Grant"           value={fmt$(e.cespGrant)} />
+                </div>
+              )}
             </Card>
           ))}
         </div>

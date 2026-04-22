@@ -322,12 +322,25 @@ async function saveAll() {
                           )}
                         </div>
                       )}
-                      {editForm.category === "Pension" && (
+{editForm.category === "Pension" && (
                         <div className="flex items-center gap-3 mt-1">
                           <InlineSelect value={editForm.pensionType ?? "DBPP"} onChange={v => setEditForm(f => ({...f, pensionType: v}))} options={PENSION_TYPES} />
                           {editForm.pensionType === "Matching Contributions" && (
                             <InlineInput value={editForm.matchPct ?? ""} onChange={v => setEditForm(f => ({...f, matchPct: v}))} placeholder="Match %" className="w-20" />
                           )}
+                        </div>
+                      )}
+                      {editForm.category === "RESP" && (
+                        <div className="flex items-center gap-3 mt-1">
+                          <span className="text-xs text-gray-500">Beneficiary:</span>
+                          <select value={(editForm as any).respBeneficiary ?? ""} onChange={e => setEditForm(f => ({...f, respBeneficiary: e.target.value}))}
+                            className="border border-gray-200 rounded px-2 py-1 text-xs">
+                            <option value="">Select beneficiary</option>
+                            <option value="all">All Children</option>
+                            {Array.isArray((client as any)?.dependants) && (client as any).dependants.map((d: any) => (
+                              <option key={d.name} value={d.name}>{d.name}</option>
+                            ))}
+                          </select>
                         </div>
                       )}
                     </td>

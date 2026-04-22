@@ -154,6 +154,7 @@ export function NetWorthTab({ clientId, client }: { clientId: number; client?: {
       const m: any = {};
       if (editForm.category === "RRSP" && editForm.isSpousal) { m.spousal = true; m.contributor = editForm.rrspContributor; }
       if (editForm.category === "Pension") { m.pensionType = editForm.pensionType; if (editForm.matchPct) m.matchPct = editForm.matchPct; }
+      if ((editForm as any).monthlyPayment) m.monthlyPayment = (editForm as any).monthlyPayment;
       await api.put(`/api/net-worth/${editingId}`, {
         category: editForm.category, name: editForm.name || editForm.category,
         owner: editForm.owner, value: editForm.value, notes: editForm.notes || null,
@@ -173,6 +174,7 @@ async function saveAll() {
       const m: any = {};
       if (d.category === "RRSP" && d.isSpousal) { m.spousal = true; m.contributor = d.rrspContributor; }
       if (d.category === "Pension") { m.pensionType = d.pensionType; if (d.matchPct) m.matchPct = d.matchPct; }
+      if (d.type === "liability" && d.monthlyPayment) m.monthlyPayment = d.monthlyPayment;
       return api.post(`/api/clients/${clientId}/net-worth`, {
         type: d.type, category: d.category,
         name: d.name || d.category, owner: d.owner,

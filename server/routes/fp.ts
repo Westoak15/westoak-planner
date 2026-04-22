@@ -8,6 +8,7 @@ import {
 import { isAuthenticated, type AuthRequest } from "../auth/index.js";
 import { safe, ownsClient } from "../fpUtils.js";   // Item 3: shared utils
 import { eq, and } from "drizzle-orm";
+import { runDrawdownStrategies, type DrawdownInput } from "../engine/drawdown.js";
 
 const r = Router();
 r.use(isAuthenticated);
@@ -403,6 +404,15 @@ r.delete("/clients/:id/expenses/:eid", async (req: AuthRequest, res: Response) =
   if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
   await db.delete(householdExpenses).where(and(eq(householdExpenses.id, +req.params.eid), eq(householdExpenses.clientId, cid)));
   res.json({ ok: true });
+});
+
+r.post("/clients/:clientId/drawdown", async (req: AuthRequest, res: Response) => {
+  const cid = +req.params.clientId;
+  if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
+  try {
+    const results = runDrawdownStrategies(req.body as DrawdownInput);
+    res.json(results);
+  } catch (e: any) { res.status(500).json({ message: e.message }); }
 });
 
 export { r as fpRouter };

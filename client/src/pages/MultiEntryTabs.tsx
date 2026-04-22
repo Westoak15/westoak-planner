@@ -260,8 +260,8 @@ async function saveAll() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {rows.map(e => editingId === e.id ? (
-                  // ── Edit mode ──────────────────────────────────────────
+                {rows.map(e => editingId === +e.id ? (   
+                // ── Edit mode ──────────────────────────────────────────
                   <tr key={e.id} className="bg-amber-50/50 border-b border-amber-100">
                     <td colSpan={type === "liability" ? 7 : 6} className="px-3 py-2">
                       <div className="grid grid-cols-5 gap-2 mb-1">

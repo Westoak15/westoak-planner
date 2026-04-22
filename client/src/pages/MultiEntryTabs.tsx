@@ -656,10 +656,9 @@ export function RetirementTab({ clientId, client }: { clientId: number; client?:
             </Card>
           );
         })}
-                </div>
+       </div>
+    </div>}
     </div>
-    )}
-  </div>
   );
 }
 // ── INSURANCE ─────────────────────────────────────────────────────────────────

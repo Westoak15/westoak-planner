@@ -155,14 +155,14 @@ export function NetWorthTab({ clientId, client }: { clientId: number; client?: {
 
   function startEdit(e: NWEntry) {
     const m = (e.metadata ?? {}) as any;
-    setEditingId(e.id);
-    setEditForm({
+   setEditForm({
       ...e,
       isSpousal: !!m.spousal,
       rrspContributor: m.contributor ?? "",
       pensionType: m.pensionType ?? "DBPP",
       matchPct: m.matchPct ?? "",
-    });
+    } as any);
+    setEditForm((f: any) => ({ ...f, monthlyPayment: m.monthlyPayment ?? "", respBeneficiary: m.respBeneficiary ?? "" }));
   }
 
   async function saveEdit() {
@@ -173,6 +173,7 @@ export function NetWorthTab({ clientId, client }: { clientId: number; client?: {
       if (editForm.category === "RRSP" && editForm.isSpousal) { m.spousal = true; m.contributor = editForm.rrspContributor; }
       if (editForm.category === "Pension") { m.pensionType = editForm.pensionType; if (editForm.matchPct) m.matchPct = editForm.matchPct; }
       if ((editForm as any).monthlyPayment) m.monthlyPayment = (editForm as any).monthlyPayment;
+      if ((editForm as any).respBeneficiary) m.respBeneficiary = (editForm as any).respBeneficiary;
       await api.put(`/api/net-worth/${editingId}`, {
         category: editForm.category, name: editForm.name || editForm.category,
         owner: editForm.owner, value: editForm.value, notes: editForm.notes || null,

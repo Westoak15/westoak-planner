@@ -157,6 +157,7 @@ export function NetWorthTab({ clientId, client }: { clientId: number; client?: {
     const m = (e.metadata ?? {}) as any;
    setEditForm({
       ...e,
+      notes: e.notes ?? "",
       isSpousal: !!m.spousal,
       rrspContributor: m.contributor ?? "",
       pensionType: m.pensionType ?? "DBPP",

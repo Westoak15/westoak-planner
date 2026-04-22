@@ -155,7 +155,8 @@ export function NetWorthTab({ clientId, client }: { clientId: number; client?: {
 
   function startEdit(e: NWEntry) {
     const m = (e.metadata ?? {}) as any;
-   setEditForm({
+    setEditingId(+e.id);
+    setEditForm({
       ...e,
       notes: e.notes ?? "",
       isSpousal: !!m.spousal,

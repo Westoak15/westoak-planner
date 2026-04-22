@@ -573,12 +573,11 @@ export function RetirementTab({ clientId, client }: { clientId: number; client?:
  return (
     <div className="p-6 max-w-5xl mx-auto">
       {simResult && <MonteCarloResults result={simResult} onClose={() => setSimResult(null)} onPrint={() => window.print()} />}
-      {/* Sub-tab nav */}
       <div className="flex gap-1 mb-5 border-b border-gray-200">
-        {([["projections","Retirement Projections"],["drawdown","Drawdown Strategies"]] as const).map(([key,label]) => (
+        {(["projections","drawdown"] as const).map(key => (
           <button key={key} onClick={() => setActiveSubTab(key)}
             className={`px-4 py-2 text-sm font-semibold rounded-t-lg transition-colors ${activeSubTab === key ? "bg-white border border-b-white border-gray-200 text-[#0c1e3a] -mb-px" : "text-gray-500 hover:text-gray-700"}`}>
-            {label}
+            {key === "projections" ? "Retirement Projections" : "Drawdown Strategies"}
           </button>
         ))}
       </div>
@@ -587,7 +586,17 @@ export function RetirementTab({ clientId, client }: { clientId: number; client?:
       <div>
       <div className="flex items-center justify-between mb-5">
         <h2 className="text-xl font-bold text-gray-900">Retirement Projections</h2>
-      {/* Draft forms */}
+        <div className="flex gap-2">
+          <button onClick={runSim} disabled={simulating}
+            className="bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-sm font-semibold px-4 py-1.5 rounded-lg">
+            {simulating ? "Running..." : "Retirement Checkup"}
+          </button>
+          <button onClick={addDraft}
+            className="flex items-center gap-1.5 text-sm font-semibold text-white bg-[#0c1e3a] hover:bg-[#0e2a4a] px-3 py-1.5 rounded-lg">
+            <Plus className="w-3.5 h-3.5" /> Add Projection
+          </button>
+        </div>
+      </div>
       {drafts.length > 0 && (
         <div className="space-y-4 mb-5">
           {drafts.map((d, i) => (
@@ -621,13 +630,10 @@ export function RetirementTab({ clientId, client }: { clientId: number; client?:
             </button>
           </div>
         </div>
-        
       )}
-
       {rows.length === 0 && drafts.length === 0 && (
         <Card className="p-8 text-center text-gray-400">No projections yet. Click Add Projection to create one.</Card>
       )}
-
       <div className="space-y-4">
         {groups.map((group, gi) => {
           const main = group.find(p => p.label?.includes("&")) ?? group[0];
@@ -656,8 +662,9 @@ export function RetirementTab({ clientId, client }: { clientId: number; client?:
             </Card>
           );
         })}
-       </div>
-    </div>}
+      </div>
+      </div>
+      )}
     </div>
   );
 }

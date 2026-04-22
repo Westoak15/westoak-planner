@@ -262,7 +262,7 @@ async function saveAll() {
                 {rows.map(e => editingId === e.id ? (
                   // ── Edit mode ──────────────────────────────────────────
                   <tr key={e.id} className="bg-amber-50/50 border-b border-amber-100">
-                    <td colSpan={6} className="px-3 py-2">
+                    <td colSpan={type === "liability" ? 7 : 6} className="px-3 py-2">
                       <div className="grid grid-cols-5 gap-2 mb-1">
                         <div>
                           <label className="text-[10px] text-gray-400 uppercase font-semibold block mb-0.5">Owner</label>
@@ -357,7 +357,7 @@ async function saveAll() {
                   const ri = drafts.indexOf(d);
                   return (
                     <tr key={ri} className="bg-blue-50/50 border-b border-blue-100">
-                      <td colSpan={6} className="px-3 py-2">
+                      <td colSpan={type === "liability" ? 7 : 6} className="px-3 py-2">
                         <div className="grid grid-cols-5 gap-2 mb-1">
                           {/* Owner */}
                           <div>

@@ -6,10 +6,10 @@ import {
 import { cn } from "../lib/utils";
 
 export type Tab =
-  | "clients" | "letters" | "dashboard"
+  | "clients" | "dashboard"
   | "networth" | "retirement" | "insurance" | "fna"
   | "resp" | "expenses" | "tax" | "estate" | "ai"
-  | "planning" | "reports" | "admin" | "agents";
+  | "planning" | "reports" | "letters" | "admin" | "agents";
 
 interface Props {
   activeTab: Tab;
@@ -32,14 +32,15 @@ const ALL_TABS: { key: Tab; label: string; icon: any; dividerBefore?: boolean; g
   { key: "expenses",   label: "Expenses",     icon: Receipt },
   { key: "tax",        label: "Tax",          icon: Receipt },
   { key: "estate",     label: "Estate",       icon: ScrollText },
-  { key: "reports", label: "Reports", icon: FileText }, 
+  { key: "reports",    label: "Reports",      icon: FileText }, 
+  { key: "letters",    label: "Letters",      icon: FileText },
   { key: "ai",         label: "AI Insights",  icon: Brain },
   { key: "planning",   label: "Full FP View", icon: ClipboardList, dividerBefore: true },
    
 ];
 
 const STANDARD_TABS: Tab[] = ["clients", "networth", "insurance", "fna"];
-const PLAN_TABS: Tab[] = ["dashboard","networth","retirement","insurance", "expenses","fna","resp","tax","estate", "reports", "ai","planning"];
+const PLAN_TABS: Tab[] = ["dashboard","networth","retirement","insurance", "expenses","fna","resp","tax","estate", "reports", "letters", "ai","planning"];
 const NO_CLIENT_TABS: Tab[] = ["clients", "admin", "agents"];
 
 export function Sidebar({ activeTab, onTab, clientName, role, level }: Props) {

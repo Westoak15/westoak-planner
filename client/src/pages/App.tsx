@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "../lib/auth";
+import { token } from "../lib/api";
 import { api } from "../lib/api";
 import { Sidebar, type Tab } from "../components/Sidebar";
 import { LettersTab } from "./LettersTab";
@@ -1305,25 +1306,24 @@ function ChangePasswordModal({ onClose, forceReset = false }: { onClose: () => v
   const pwOk  = rules.every(r => r.ok);
   const match = form.next === form.confirm && form.confirm.length > 0;
 
-  async function save() {
+async function save() {
     if (!pwOk)  return setError("Password does not meet requirements.");
     if (!match) return setError("Passwords do not match.");
     setError(""); setBusy(true);
     try {
-      if (forceReset) {
-        await api.post("/api/auth/force-reset-password", { 
-          newPassword: form.next,
-          securityQuestion: form.securityQuestion || undefined,
-          securityAnswer: form.securityAnswer || undefined,
-        });
-      } else {
-        await api.post("/api/auth/change-password", { 
-          currentPassword: form.current, 
-          newPassword: form.next,
-          securityQuestion: form.securityQuestion || undefined,
-          securityAnswer: form.securityAnswer || undefined,
-        });
-      }
+      const res = forceReset
+        ? await api.post<any>("/api/auth/force-reset-password", {
+            newPassword: form.next,
+            securityQuestion: form.securityQuestion || undefined,
+            securityAnswer: form.securityAnswer || undefined,
+          })
+        : await api.post<any>("/api/auth/change-password", {
+            currentPassword: form.current,
+            newPassword: form.next,
+            securityQuestion: form.securityQuestion || undefined,
+            securityAnswer: form.securityAnswer || undefined,
+          });
+      if (res?.token) token.set(res.token);
       setSuccess(true);
       setTimeout(onClose, 1500);
     } catch (e: any) { setError(e.message); }

@@ -91,7 +91,8 @@ r.post("/change-password", isAuthenticated, async (req: AuthRequest, res: Respon
       updates.securityAnswerHash = await hashPassword(securityAnswer.toLowerCase().trim());
     }
     await db.update(users).set(updates).where(eq(users.id, req.userId!));
-    res.json({ message: "Password changed successfully" });
+    const newToken = signToken(u.id);
+    res.json({ message: "Password changed successfully", token: newToken });
   } catch (e: any) {
     if (e instanceof z.ZodError) return res.status(400).json({ message: "Validation error", errors: e.errors });
     console.error("[change-password]", e.message);

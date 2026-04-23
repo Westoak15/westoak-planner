@@ -95,18 +95,14 @@ function prefillFromOwner(owner: string) {
     const salary    = isPrimary ? client?.annualIncome : client?.spouseAnnualIncome;
     const retAge    = isPrimary ? (client?.retirementAge ?? 65) : (client?.spouseRetirementAge ?? 65);
     const penType   = isPrimary ? client?.pensionType : (client as any)?.spousePensionType;
-    upd("subscriberOwner", owner);
-     const penType   = isPrimary ? client?.pensionType : (client as any)?.spousePensionType;
     const typeMap: Record<string,string> = { "DBPP":"dbpp","DCPP":"dcpp","Group RRSP":"group_rrsp","DPSP":"dpsp" };
-    const age = dob ? Math.floor((Date.now() - new Date(dob).getTime()) / (365.25*24*60*60*1000)) : null;
+    const age       = dob ? Math.floor((Date.now() - new Date(dob).getTime()) / (365.25*24*60*60*1000)) : null;
     const projYears = (age && retAge) ? String(retAge - age) : "";
     upd("subscriberOwner", owner);
-    if (salary)   upd("bestAverageEarnings", String(Math.round(Number(salary))));
-    if (retAge)   upd("retirementAge", retAge);
+    if (salary)    upd("bestAverageEarnings", String(Math.round(Number(salary))));
+    if (retAge)    upd("retirementAge", retAge);
     if (projYears) upd("projectedYearsAtRetirement", projYears);
     if (penType && typeMap[penType]) upd("pensionType", typeMap[penType]);
-  }
-    if (penType) upd("pensionType", penType.toLowerCase().replace(" ", "_"));
   }
 
   function openNew(owner: "primary" | "spouse" = "primary") {

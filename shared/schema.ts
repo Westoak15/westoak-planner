@@ -2,6 +2,20 @@ import { pgTable, serial, text, integer, boolean, timestamp, jsonb, decimal, rea
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
+export const financialGoals = pgTable("financial_goals", {
+  id:            serial("id").primaryKey(),
+  clientId:      integer("client_id").notNull().references(() => clients.id, { onDelete: "cascade" }),
+  goalType:      text("goal_type").notNull().default("custom"),
+  title:         text("title").notNull(),
+  targetAmount:  decimal("target_amount", { precision: 15, scale: 2 }),
+  currentAmount: decimal("current_amount", { precision: 15, scale: 2 }),
+  targetDate:    text("target_date"),
+  status:        text("status").notNull().default("in_progress"),
+  notes:         text("notes"),
+  createdAt:     timestamp("created_at").defaultNow().notNull(),
+  updatedAt:     timestamp("updated_at").defaultNow().notNull(),
+});
+
 // ── Users ─────────────────────────────────────────────────────────────────────
 export const users = pgTable("users", {
   id:           serial("id").primaryKey(),

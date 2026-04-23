@@ -14,6 +14,7 @@ import { AdminPanel } from "./AdminPanel"
 import { AgentsTab } from "./AgentsTab";
 import { ExpensesTab } from "./ExpensesTab";
 import { PoliciesTab } from "./PoliciesTab";
+import { GoalsTab } from "./GoalsTab";
 import { fmt$, fmtPct, initials, avatarBg, cn } from "../lib/utils";
 import {
   Plus, Pencil, Trash2, X, Check, ChevronRight, Search,

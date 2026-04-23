@@ -488,10 +488,12 @@ export function RetirementTab({ clientId, client }: { clientId: number; client?:
   const [simulating, setSimulating] = useState(false);
   const [activeSubTab, setActiveSubTab] = useState<"projections"|"drawdown">("projections");
 
+  const [expenses, setExpenses] = useState<any[]>([]);
   const load = () => api.get<RetirementProj[]>(`/api/clients/${clientId}/retirement`).then(setRows);
   useEffect(() => {
     load();
     api.get<any[]>(`/api/clients/${clientId}/net-worth`).then(setNetWorth);
+    api.get<any[]>(`/api/clients/${clientId}/expenses`).then(setExpenses);
   }, [clientId]);
 
   const fmt$ = (v: any) => { const n = parseFloat(v ?? "0"); if (!n) return "-"; return "$" + n.toLocaleString("en-CA", { maximumFractionDigits: 0 }); };
@@ -510,18 +512,32 @@ export function RetirementTab({ clientId, client }: { clientId: number; client?:
     const sTfsa   = sum(spouse,  "TFSA")   + sum(joint, "TFSA")   / 2;
     const sNonReg = sum(spouse,  "Non-Registered") + sum(joint, "Non-Registered") / 2;
 
+// Calculate retirement income need from expenses
+    const retirementExpenses = expenses.filter((e: any) => e.includeInRetirement);
+    const annualExpenseNeed = retirementExpenses.reduce((s: number, e: any) => {
+      const monthly = Number(e.monthlyAmount || 0);
+      const adj = Number(e.retirementAdjustmentPct ?? 100) / 100;
+      return s + (monthly * 12 * adj);
+    }, 0);
+    const expenseBasedIncome = annualExpenseNeed > 0 ? String(Math.round(annualExpenseNeed)) : (client?.desiredRetirementIncome ? String(client.desiredRetirementIncome) : "0");
+    
+    const retirementExpenses = expenses.filter((e: any) => e.includeInRetirement);
+    const annualExpenseNeed = retirementExpenses.reduce((s: number, e: any) => { const monthly = Number(e.monthlyAmount || 0); const adj = Number(e.retirementAdjustmentPct ?? 100) / 100; return s + (monthly * 12 * adj); }, 0);
+
     const newDrafts: RetDraft[] = [];
-    newDrafts.push({ 
-      ...emptyDraft(hasSpouse ? `${clientName} & ${spouseName}` : clientName), 
-      rrspBalance: String(Math.round(pRrsp + sRrsp)), 
-      tfsaBalance: String(Math.round(pTfsa + sTfsa)), 
-      nonRegBalance: String(Math.round(pNonReg + sNonReg)) 
+   newDrafts.push({
+      ...emptyDraft(hasSpouse ? `${clientName} & ${spouseName}` : clientName),
+      rrspBalance: String(Math.round(pRrsp + sRrsp)),
+      tfsaBalance: String(Math.round(pTfsa + sTfsa)),
+      nonRegBalance: String(Math.round(pNonReg + sNonReg)),
+      desiredRetirementIncome: expenseBasedIncome,
     });
     newDrafts.push({ 
       ...emptyDraft(clientName, clientAge ? String(clientAge) : ""), 
       rrspBalance: String(Math.round(pRrsp)), 
       tfsaBalance: String(Math.round(pTfsa)), 
       nonRegBalance: String(Math.round(pNonReg)) 
+      desiredRetirementIncome: expenseBasedIncome,
     });
     if (hasSpouse) {
       newDrafts.push({ 
@@ -529,6 +545,7 @@ export function RetirementTab({ clientId, client }: { clientId: number; client?:
         rrspBalance: String(Math.round(sRrsp)), 
         tfsaBalance: String(Math.round(sTfsa)), 
         nonRegBalance: String(Math.round(sNonReg)) 
+        desiredRetirementIncome: expenseBasedIncome,
       });
     }
     setDrafts(prev => [...prev, ...newDrafts]);

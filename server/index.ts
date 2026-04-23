@@ -17,6 +17,8 @@ import { simulationRouter } from "./routes/simulation.js";   // ← FIX 1: was m
 import { reportsRouter }    from "./routes/reports.js";
 import { taxRouter }        from "./routes/tax.js";
 import { lettersRouter } from "./routes/letters.js";
+import { goalsRouter } from "./routes/goals.js";
+
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = parseInt(process.env.PORT ?? "8080", 10);
@@ -27,7 +29,7 @@ app.use(cors({
   credentials: true,
 }));
 app.use(express.json({ limit: "10mb" }));
-
+app.use("/api", goalsRouter);
 app.get("/api/health",  (_req, res) => res.json({ ok: true }));
 
 app.use("/api/auth",    authRouter);

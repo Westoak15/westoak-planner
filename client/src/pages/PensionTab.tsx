@@ -98,7 +98,7 @@ function prefillFromOwner(owner: string) {
     const typeMap: Record<string,string> = { "DBPP":"dbpp","DCPP":"dcpp","Group RRSP":"group_rrsp","DPSP":"dpsp" };
     const age       = dob ? Math.floor((Date.now() - new Date(dob).getTime()) / (365.25*24*60*60*1000)) : null;
     const currentService = Number(form?.yearsOfService || 0);
-    const projYears = (age && retAge) ? String(currentService + (retAge - age)) : "";
+    const projYears = (age && retAge) ? String(currentService + (retAge - age)) : ""
     upd("subscriberOwner", owner);
     if (salary)    upd("bestAverageEarnings", String(Math.round(Number(salary))));
     if (retAge)    upd("retirementAge", retAge);
@@ -116,7 +116,8 @@ function prefillFromOwner(owner: string) {
     const mappedType = penType ? penType.toLowerCase().replace(" ", "_") : "dbpp";
     const dob = isPrimary ? client?.dateOfBirth : client?.spouseDateOfBirth;
     const age = dob ? Math.floor((Date.now() - new Date(dob).getTime()) / (365.25*24*60*60*1000)) : null;
-    const projYears = (age && retAge) ? String(retAge - age) : "";
+    const currentService = Number(form?.yearsOfService || 0);
+    const projYears = (age && retAge) ? String(currentService + (retAge - age)) : "";
     setForm({
       ...base,
       subscriberOwner: owner,

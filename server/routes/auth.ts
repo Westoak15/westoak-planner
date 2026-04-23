@@ -115,7 +115,9 @@ r.post("/force-reset-password", isAuthenticated, async (req: AuthRequest, res: R
       updates.securityAnswerHash = await hashPassword(securityAnswer.toLowerCase().trim());
     }
     await db.update(users).set(updates).where(eq(users.id, req.userId!));
-    res.json({ message: "Password reset successfully" });
+    const [u] = await db.select().from(users).where(eq(users.id, req.userId!)).limit(1);
+    const newToken = signToken(u.id);
+    res.json({ message: "Password reset successfully", token: newToken });
   } catch (e: any) {
     res.status(500).json({ message: e.message ?? "Server error" });
   }

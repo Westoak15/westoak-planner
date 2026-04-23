@@ -96,8 +96,16 @@ function prefillFromOwner(owner: string) {
     const retAge    = isPrimary ? (client?.retirementAge ?? 65) : (client?.spouseRetirementAge ?? 65);
     const penType   = isPrimary ? client?.pensionType : (client as any)?.spousePensionType;
     upd("subscriberOwner", owner);
-    if (salary)  upd("bestAverageEarnings", String(Math.round(Number(salary))));
-    if (retAge)  upd("retirementAge", retAge);
+     const penType   = isPrimary ? client?.pensionType : (client as any)?.spousePensionType;
+    const typeMap: Record<string,string> = { "DBPP":"dbpp","DCPP":"dcpp","Group RRSP":"group_rrsp","DPSP":"dpsp" };
+    const age = dob ? Math.floor((Date.now() - new Date(dob).getTime()) / (365.25*24*60*60*1000)) : null;
+    const projYears = (age && retAge) ? String(retAge - age) : "";
+    upd("subscriberOwner", owner);
+    if (salary)   upd("bestAverageEarnings", String(Math.round(Number(salary))));
+    if (retAge)   upd("retirementAge", retAge);
+    if (projYears) upd("projectedYearsAtRetirement", projYears);
+    if (penType && typeMap[penType]) upd("pensionType", typeMap[penType]);
+  }
     if (penType) upd("pensionType", penType.toLowerCase().replace(" ", "_"));
   }
 
@@ -109,12 +117,16 @@ function prefillFromOwner(owner: string) {
     const retAge  = isPrimary ? (client?.retirementAge ?? 65) : (client?.spouseRetirementAge ?? 65);
     const penType = isPrimary ? client?.pensionType : (client as any)?.spousePensionType;
     const mappedType = penType ? penType.toLowerCase().replace(" ", "_") : "dbpp";
+    const dob = isPrimary ? client?.dateOfBirth : client?.spouseDateOfBirth;
+    const age = dob ? Math.floor((Date.now() - new Date(dob).getTime()) / (365.25*24*60*60*1000)) : null;
+    const projYears = (age && retAge) ? String(retAge - age) : "";
     setForm({
       ...base,
       subscriberOwner: owner,
       pensionType: mappedType,
       bestAverageEarnings: salary ? String(Math.round(Number(salary))) : "",
       retirementAge: retAge,
+      projectedYearsAtRetirement: projYears,
     });
     setShowForm(true);
   }

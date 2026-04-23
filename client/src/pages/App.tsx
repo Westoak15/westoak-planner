@@ -25,7 +25,7 @@ import {
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
 // ─────────────────────────────────────────────────────────────────────────────
-interface Client { id: number; firstName: string; lastName: string; email: string | null; phone: string | null; dateOfBirth: string | null; province: string | null; occupation: string | null; employmentStatus: string | null; annualIncome: string | null; spouseFirstName: string | null; spouseLastName: string | null; spouseDateOfBirth: string | null; spouseOccupation: string | null; spouseAnnualIncome: string | null; spouseRetirementAge: number | null; spouseDesiredRetirementIncome: string | null; dependants: any; retirementAge: number | null; desiredRetirementIncome: string | null; notes: string | null; pensionType: string | null; updatedAt: string; }
+interface Client { id: number; firstName: string; lastName: string; email: string | null; phone: string | null; dateOfBirth: string | null; province: string | null; occupation: string | null; employmentStatus: string | null; annualIncome: string | null; spouseFirstName: string | null; spouseLastName: string | null; spouseDateOfBirth: string | null; spouseOccupation: string | null; spouseAnnualIncome: string | null; spouseRetirementAge: number | null; spouseDesiredRetirementIncome: string | null; spousePensionType: string | null; dependants: any; retirementAge: number | null; desiredRetirementIncome: string | null; notes: string | null; pensionType: string | null; updatedAt: string; }
 interface Plan { id: number; name: string; status: string; createdAt: string; }
 interface NWEntry { id: number; type: string; category: string; name: string; value: string; notes: string | null; }
 interface RetirementProj { id: number; label: string; currentAge: number | null; retirementAge: number | null; currentRrsp: string | null; currentTfsa: string | null; currentNonReg: string | null; annualContribution: string | null; expectedReturn: string | null; desiredIncome: string | null; cppStartAge: number | null; oasStartAge: number | null; cppMonthly: string | null; oasMonthly: string | null; projectedBalance: string | null; successRate: string | null; notes: string | null; }
@@ -36,7 +36,7 @@ interface AiRec { id: number; category: string; priority: string; title: string;
 interface Overview { netWorth: number; totalAssets: number; totalLiabilities: number; totalDebt: number; retirementProjections: number; insuranceAnalyses: number; educationPlans: number; taxNotes: number; estateNotes: number; aiRecommendations: number; pendingAi: number; plans: number; }
 
 const PROVINCES = ["AB","BC","MB","NB","NL","NS","NT","NU","ON","PE","QC","SK","YT"];
-const NW_ASSET_CATS = ["RRSP","TFSA","Non-Registered","Real Estate","Business","Pension","Cash/Bank","Other Asset"];
+const NW_ASSET_CATS = ["RRSP","TFSA","Non-Registered","Real Estate","Business","Cash/Bank","Other Asset"];
 const NW_LIAB_CATS  = ["Mortgage","HELOC","Car Loan","Credit Card","Student Loan","Line of Credit","Other Liability"];
 const DEBT_TYPES    = ["mortgage","heloc","car_loan","credit_card","student_loan","line_of_credit","other"];
 
@@ -348,6 +348,7 @@ function ClientDetail({ client, onBack, onPlanSelect, onUpdate, level }: { clien
               <Input label="Spouse Occupation" value={form.spouseOccupation ?? ""} onChange={v => u("spouseOccupation", v)} />
               <Input label="Spouse Income" type="number" value={form.spouseAnnualIncome ?? ""} onChange={v => u("spouseAnnualIncome", v)} />
               <Input label="Spouse Retirement Age" type="number" value={String(form.spouseRetirementAge ?? "")} onChange={v => u("spouseRetirementAge", +v)} />
+              <Select label="Spouse Pension Type" value={(form as any).spousePensionType ?? ""} onChange={v => u("spousePensionType", v)} options={["", "DBPP", "DCPP", "Group RRSP", "DPSP", "No Pension"]} />
               <Input label="Spouse Desired Income" type="number" value={form.spouseDesiredRetirementIncome ?? ""} onChange={v => u("spouseDesiredRetirementIncome", v)} />
             </div>
           ) : (
@@ -357,6 +358,7 @@ function ClientDetail({ client, onBack, onPlanSelect, onUpdate, level }: { clien
               <Field label="Occupation"        value={client.spouseOccupation} />
               <Field label="Income"            value={fmt$(client.spouseAnnualIncome)} />
               <Field label="Retirement Age"    value={client.spouseRetirementAge} />
+              <Field label="Pension Type"      value={(client as any).spousePensionType} />
               <Field label="Desired Income"    value={fmt$(client.spouseDesiredRetirementIncome)} />
             </div>
           )}
@@ -1571,6 +1573,7 @@ export default function App() {
     </div>
   );
 }
+
 
 
 

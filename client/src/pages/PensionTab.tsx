@@ -91,24 +91,28 @@ export function PensionTab({ clientId, client }: { clientId: number; client?: an
 
 function prefillFromOwner(owner: string) {
     const isPrimary = owner === "primary";
-    const dob         = isPrimary ? client?.dateOfBirth : client?.spouseDateOfBirth;
-    const salary      = isPrimary ? client?.annualIncome : client?.spouseAnnualIncome;
-    const retAge      = isPrimary ? (client?.retirementAge ?? 65) : (client?.spouseRetirementAge ?? 65);
-    const age         = dob ? Math.floor((Date.now() - new Date(dob).getTime()) / (365.25*24*60*60*1000)) : null;
+    const dob       = isPrimary ? client?.dateOfBirth : client?.spouseDateOfBirth;
+    const salary    = isPrimary ? client?.annualIncome : client?.spouseAnnualIncome;
+    const retAge    = isPrimary ? (client?.retirementAge ?? 65) : (client?.spouseRetirementAge ?? 65);
+    const penType   = isPrimary ? client?.pensionType : (client as any)?.spousePensionType;
     upd("subscriberOwner", owner);
     if (salary)  upd("bestAverageEarnings", String(Math.round(Number(salary))));
     if (retAge)  upd("retirementAge", retAge);
+    if (penType) upd("pensionType", penType.toLowerCase().replace(" ", "_"));
   }
 
   function openNew(owner: "primary" | "spouse" = "primary") {
     setEditingId(null);
     const base = emptyPlan();
     const isPrimary = owner === "primary";
-    const salary = isPrimary ? client?.annualIncome : client?.spouseAnnualIncome;
-    const retAge = isPrimary ? (client?.retirementAge ?? 65) : (client?.spouseRetirementAge ?? 65);
+    const salary  = isPrimary ? client?.annualIncome : client?.spouseAnnualIncome;
+    const retAge  = isPrimary ? (client?.retirementAge ?? 65) : (client?.spouseRetirementAge ?? 65);
+    const penType = isPrimary ? client?.pensionType : (client as any)?.spousePensionType;
+    const mappedType = penType ? penType.toLowerCase().replace(" ", "_") : "dbpp";
     setForm({
       ...base,
       subscriberOwner: owner,
+      pensionType: mappedType,
       bestAverageEarnings: salary ? String(Math.round(Number(salary))) : "",
       retirementAge: retAge,
     });

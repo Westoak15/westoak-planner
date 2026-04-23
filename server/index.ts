@@ -29,10 +29,9 @@ app.use(cors({
   credentials: true,
 }));
 app.use(express.json({ limit: "10mb" }));
-app.use("/api", goalsRouter);
 app.get("/api/health",  (_req, res) => res.json({ ok: true }));
-
 app.use("/api/auth",    authRouter);
+app.use("/api", goalsRouter);
 app.use("/api/tax",     taxRouter);
 app.use("/api",         fpRouter);
 app.use("/api",         fpAliasesRouter);

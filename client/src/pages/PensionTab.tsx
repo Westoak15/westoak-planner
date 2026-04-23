@@ -45,6 +45,15 @@ const fmtPct = (v: string | number | null) => {
   return (Number(v) * 100).toFixed(2) + "%";
 };
 
+function prefillFromOwner(owner: string) {
+  const isPrimary = owner === "primary";
+  const dob = isPrimary ? client?.dateOfBirth : client?.spouseDateOfBirth;
+  const salary = isPrimary ? client?.annualIncome : client?.spouseAnnualIncome;
+  const age = dob ? Math.floor((Date.now() - new Date(dob).getTime()) / (365.25*24*60*60*1000)) : null;
+  upd("subscriberOwner", owner);
+  if (salary) upd("bestAverageEarnings", String(Math.round(Number(salary))));
+}
+
 function calcDBPPAnnual(plan: PensionPlan): number {
   const rate   = Number(plan.accrualRate || 0);
   const years  = Number(plan.projectedYearsAtRetirement || plan.yearsOfService || 0);
@@ -58,6 +67,7 @@ function calcDCPPBalance(plan: PensionPlan): number {
 
 const emptyPlan = (): Partial<PensionPlan> => ({
   pensionType: "dbpp",
+  subscriberOwner: "primary",
   employerName: "",
   accrualRate: "0.02",
   yearsOfService: "",
@@ -136,7 +146,18 @@ export function PensionTab({ clientId, client }: { clientId: number; client?: an
               <h3 className="text-lg font-bold text-gray-900">{editingId ? "Edit Pension Plan" : "Add Pension Plan"}</h3>
               <button onClick={() => setShowForm(false)} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
             </div>
-            <div className="p-5 space-y-4">
+                 <div className="p-5 space-y-4">
+              {/* Owner */}
+              <div>
+                <label className="text-xs font-semibold text-gray-500 block mb-1">Plan Owner</label>
+                <select value={form.subscriberOwner ?? "primary"} onChange={e => prefillFromOwner(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm">
+                  <option value="primary">{client?.firstName ?? "Primary"} {client?.lastName ?? ""}</option>
+                  {client?.spouseFirstName && <option value="spouse">{client.spouseFirstName} {client.spouseLastName ?? ""}</option>}
+                </select>
+              </div>
+              {/* Basic Info */}
+              <div className="grid grid-cols-2 gap-4">
               {/* Basic Info */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -319,6 +340,9 @@ export function PensionTab({ clientId, client }: { clientId: number; client?: an
                       <h3 className="font-bold text-gray-900">{p.employerName || "Unnamed Plan"}</h3>
                       <span className="text-xs bg-[#0c1e3a]/10 text-[#0c1e3a] font-semibold px-2 py-0.5 rounded-full">
                         {typeInfo.label.split("—")[0].trim()}
+                      </span>
+                      <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">
+                        {(p as any).subscriberOwner === "spouse" ? (client?.spouseFirstName ?? "Spouse") : (client?.firstName ?? "Primary")}
                       </span>
                       {p.isVested && <span className="text-xs bg-green-100 text-green-700 font-semibold px-2 py-0.5 rounded-full">Vested</span>}
                     </div>

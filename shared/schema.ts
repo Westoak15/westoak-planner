@@ -383,7 +383,7 @@ export const pensionPlans = pgTable("pension_plans", {
   notes:                      text("notes"),
   createdAt:                  timestamp("created_at").defaultNow().notNull(),
   updatedAt:                  timestamp("updated_at").defaultNow().notNull(),
-});
+  });
 
 // ── Reason Why Letters ────────────────────────────────────────────────────────
 export const reasonWhyLetters = pgTable("reason_why_letters", {

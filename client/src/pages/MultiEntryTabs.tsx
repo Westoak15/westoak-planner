@@ -520,10 +520,7 @@ export function RetirementTab({ clientId, client }: { clientId: number; client?:
       return s + (monthly * 12 * adj);
     }, 0);
     const expenseBasedIncome = annualExpenseNeed > 0 ? String(Math.round(annualExpenseNeed)) : (client?.desiredRetirementIncome ? String(client.desiredRetirementIncome) : "0");
-    
-    const retirementExpenses = expenses.filter((e: any) => e.includeInRetirement);
-    const annualExpenseNeed = retirementExpenses.reduce((s: number, e: any) => { const monthly = Number(e.monthlyAmount || 0); const adj = Number(e.retirementAdjustmentPct ?? 100) / 100; return s + (monthly * 12 * adj); }, 0);
-
+      
     const newDrafts: RetDraft[] = [];
    newDrafts.push({
       ...emptyDraft(hasSpouse ? `${clientName} & ${spouseName}` : clientName),
@@ -536,7 +533,7 @@ export function RetirementTab({ clientId, client }: { clientId: number; client?:
       ...emptyDraft(clientName, clientAge ? String(clientAge) : ""), 
       rrspBalance: String(Math.round(pRrsp)), 
       tfsaBalance: String(Math.round(pTfsa)), 
-      nonRegBalance: String(Math.round(pNonReg)) 
+      nonRegBalance: String(Math.round(pNonReg)), 
       desiredRetirementIncome: expenseBasedIncome,
     });
     if (hasSpouse) {
@@ -544,7 +541,7 @@ export function RetirementTab({ clientId, client }: { clientId: number; client?:
         ...emptyDraft(spouseName, spouseAge ? String(spouseAge) : ""), 
         rrspBalance: String(Math.round(sRrsp)), 
         tfsaBalance: String(Math.round(sTfsa)), 
-        nonRegBalance: String(Math.round(sNonReg)) 
+        nonRegBalance: String(Math.round(sNonReg)), 
         desiredRetirementIncome: expenseBasedIncome,
       });
     }

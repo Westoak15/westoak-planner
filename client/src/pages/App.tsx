@@ -1508,6 +1508,7 @@ export default function App() {
 )}
           {tab === "dashboard"  && client && <DashboardTab     clientId={client.id} />}
           {tab === "letters" && client && <LettersTab clientId={client.id} client={client} />}
+          {tab === "goals" && client && <GoalsTab clientId={client.id} client={client} />}
           {tab === "reports" && client && <ReportsTab clientId={client.id} />}
           {tab === "tax" && client && (
   <QueryClientProvider client={queryClient}>

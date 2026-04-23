@@ -54,6 +54,7 @@ export const clients = pgTable("clients", {
   annualIncome:                decimal("annual_income", { precision: 15, scale: 2 }),
   retirementAge:               integer("retirement_age"),
   desiredRetirementIncome:     decimal("desired_retirement_income", { precision: 15, scale: 2 }),
+  pensionType:                 text("pension_type"),
   spouseFirstName:             text("spouse_first_name"),
   spouseLastName:              text("spouse_last_name"),
   spouseDateOfBirth:           text("spouse_date_of_birth"),

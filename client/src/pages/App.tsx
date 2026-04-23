@@ -315,6 +315,7 @@ function ClientDetail({ client, onBack, onPlanSelect, onUpdate, level }: { clien
               <Select label="Province"   value={form.province ?? "ON"} onChange={v => u("province", v)} options={PROVINCES} />
               <Input label="Occupation"  value={form.occupation ?? ""} onChange={v => u("occupation", v)} />
               <Input label="Annual Income" type="number" value={form.annualIncome ?? ""} onChange={v => u("annualIncome", v)} />
+              <Select label="Pension Type" value={(form as any).pensionType ?? ""} onChange={v => u("pensionType", v)} options={["", "DBPP", "DCPP", "Group RRSP", "DPSP", "No Pension"]} />
               <Input label="Retirement Age" type="number" value={String(form.retirementAge ?? "")} onChange={v => u("retirementAge", +v)} />
               <Input label="Desired Retirement Income" type="number" value={form.desiredRetirementIncome ?? ""} onChange={v => u("desiredRetirementIncome", v)} />
             </div>
@@ -326,6 +327,7 @@ function ClientDetail({ client, onBack, onPlanSelect, onUpdate, level }: { clien
               <Field label="Province"  value={client.province} />
               <Field label="Occupation" value={client.occupation} />
               <Field label="Annual Income" value={fmt$(client.annualIncome)} />
+              <Field label="Pension Type" value={(client as any).pensionType} />
               <Field label="Retirement Age" value={client.retirementAge} />
               <Field label="Desired Income" value={fmt$(client.desiredRetirementIncome)} />
             </div>
@@ -1283,8 +1285,8 @@ function OverviewTab({ clientId, onTabChange }: { clientId: number; onTabChange:
 // ─────────────────────────────────────────────────────────────────────────────
 // Change Password Modal
 // ─────────────────────────────────────────────────────────────────────────────
-function ChangePasswordModal({ onClose }: { onClose: () => void }) {
-  const [form, setForm]     = useState({ current:"", next:"", confirm:"" });
+function ChangePasswordModal({ onClose, forceReset = false }: { onClose: () => void; forceReset?: boolean }) {
+  const [form, setForm]     = useState({ current:"", next:"", confirm:"", securityQuestion:"", securityAnswer:"" });
   const [showCur, setShowCur] = useState(false);
   const [showNew, setShowNew] = useState(false);
   const [busy, setBusy]     = useState(false);
@@ -1306,7 +1308,20 @@ function ChangePasswordModal({ onClose }: { onClose: () => void }) {
     if (!match) return setError("Passwords do not match.");
     setError(""); setBusy(true);
     try {
-      await api.post("/api/auth/change-password", { currentPassword: form.current, newPassword: form.next });
+      if (forceReset) {
+        await api.post("/api/auth/force-reset-password", { 
+          newPassword: form.next,
+          securityQuestion: form.securityQuestion || undefined,
+          securityAnswer: form.securityAnswer || undefined,
+        });
+      } else {
+        await api.post("/api/auth/change-password", { 
+          currentPassword: form.current, 
+          newPassword: form.next,
+          securityQuestion: form.securityQuestion || undefined,
+          securityAnswer: form.securityAnswer || undefined,
+        });
+      }
       setSuccess(true);
       setTimeout(onClose, 1500);
     } catch (e: any) { setError(e.message); }
@@ -1332,8 +1347,8 @@ function ChangePasswordModal({ onClose }: { onClose: () => void }) {
           </div>
         ) : (
           <div className="space-y-4">
-            {/* Current password */}
-            <div>
+            {/* Current password — hidden on force reset */}
+            {!forceReset && <div>
               <label className="block text-xs font-semibold text-gray-500 mb-1">Current Password</label>
               <div className="relative">
                 <input type={showCur ? "text" : "password"} value={form.current}
@@ -1345,8 +1360,7 @@ function ChangePasswordModal({ onClose }: { onClose: () => void }) {
                   {showCur ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
-            </div>
-
+             </div>}
             {/* New password */}
             <div>
               <label className="block text-xs font-semibold text-gray-500 mb-1">New Password</label>
@@ -1386,6 +1400,29 @@ function ChangePasswordModal({ onClose }: { onClose: () => void }) {
               {form.confirm && match  && <p className="text-xs text-emerald-600 mt-1">✓ Passwords match</p>}
             </div>
 
+            {/* Security Question - shown for first-time setup or force reset */}
+            <div className="border-t border-gray-100 pt-3">
+              <p className="text-xs font-semibold text-gray-500 mb-2">
+                {forceReset ? "Set your security question (required for password recovery)" : "Update security question (optional)"}
+              </p>
+              <div className="space-y-2">
+                <select value={form.securityQuestion} onChange={e => setForm(f=>({...f,securityQuestion:e.target.value}))}
+                  className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500/30">
+                  <option value="">Select a security question...</option>
+                  <option value="What was the name of your first pet?">What was the name of your first pet?</option>
+                  <option value="What was the name of your elementary school?">What was the name of your elementary school?</option>
+                  <option value="What is your mother's maiden name?">What is your mother's maiden name?</option>
+                  <option value="What city were you born in?">What city were you born in?</option>
+                  <option value="What was the make of your first car?">What was the make of your first car?</option>
+                  <option value="What is the name of your childhood best friend?">What is the name of your childhood best friend?</option>
+                </select>
+                {form.securityQuestion && (
+                  <input type="text" value={form.securityAnswer} onChange={e => setForm(f=>({...f,securityAnswer:e.target.value}))}
+                    placeholder="Your answer" className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500/30" />
+                )}
+              </div>
+            </div>
+
             {error && <p className="text-red-500 text-sm bg-red-50 rounded-lg px-3 py-2">{error}</p>}
 
             <div className="flex gap-2 pt-1">
@@ -1409,7 +1446,8 @@ export default function App() {
   const { user, logout } = useAuth();
   const role = user?.role ?? "fa";
   const level = user?.level ?? "standard";
-  const [showChangePw, setShowChangePw] = useState(false);
+  const [showForceReset, setShowForceReset] = useState(!!user?.mustResetPassword);
+  const [showChangePw, setShowChangePw]     = useState(false);
   const [tab, setTab] = useState<Tab>(user?.role === "ga" ? "agents" : "clients");
   const [client, setClient]       = useState<Client | null>(null);
   const [plan, setPlan]           = useState<Plan | null>(null);
@@ -1463,7 +1501,7 @@ export default function App() {
               <LogOut className="w-4 h-4" />
             </button>
           </div>
-          {showChangePw && <ChangePasswordModal onClose={() => setShowChangePw(false)} />}
+         {showForceReset && <ChangePasswordModal forceReset onClose={() => setShowForceReset(false)} />}
         </header>
 
         {/* Content */}

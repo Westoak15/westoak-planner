@@ -74,18 +74,23 @@ r.get("/me", isAuthenticated, async (req: AuthRequest, res: Response) => {
 // ── Change Password (logged in) ───────────────────────────────────────────────
 r.post("/change-password", isAuthenticated, async (req: AuthRequest, res: Response) => {
   try {
-    const { currentPassword, newPassword } = z.object({
-      currentPassword: z.string().min(1),
-      newPassword:     z.string().min(8),
+    const { currentPassword, newPassword, securityQuestion, securityAnswer } = z.object({
+      currentPassword:  z.string().min(1),
+      newPassword:      z.string().min(8),
+      securityQuestion: z.string().optional(),
+      securityAnswer:   z.string().optional(),
     }).parse(req.body);
-
     const [u] = await db.select().from(users).where(eq(users.id, req.userId!)).limit(1);
     if (!u) return res.status(404).json({ message: "User not found" });
     if (!await checkPassword(currentPassword, u.passwordHash))
       return res.status(401).json({ message: "Current password is incorrect" });
-
     const hash = await hashPassword(newPassword);
-    await db.update(users).set({ passwordHash: hash } as any).where(eq(users.id, req.userId!));
+    const updates: any = { passwordHash: hash, mustResetPassword: false };
+    if (securityQuestion && securityAnswer) {
+      updates.securityQuestion  = securityQuestion;
+      updates.securityAnswerHash = await hashPassword(securityAnswer.toLowerCase().trim());
+    }
+    await db.update(users).set(updates).where(eq(users.id, req.userId!));
     res.json({ message: "Password changed successfully" });
   } catch (e: any) {
     if (e instanceof z.ZodError) return res.status(400).json({ message: "Validation error", errors: e.errors });
@@ -97,9 +102,18 @@ r.post("/change-password", isAuthenticated, async (req: AuthRequest, res: Respon
 // ── Force Reset Password (FA first login) ─────────────────────────────────────
 r.post("/force-reset-password", isAuthenticated, async (req: AuthRequest, res: Response) => {
   try {
-    const { newPassword } = z.object({ newPassword: z.string().min(8) }).parse(req.body);
+   const { newPassword, securityQuestion, securityAnswer } = z.object({ 
+      newPassword: z.string().min(8),
+      securityQuestion: z.string().optional(),
+      securityAnswer: z.string().optional(),
+    }).parse(req.body);
     const hash = await hashPassword(newPassword);
-    await db.update(users).set({ passwordHash: hash, mustResetPassword: false } as any).where(eq(users.id, req.userId!));
+    const updates: any = { passwordHash: hash, mustResetPassword: false };
+    if (securityQuestion && securityAnswer) {
+      updates.securityQuestion   = securityQuestion;
+      updates.securityAnswerHash = await hashPassword(securityAnswer.toLowerCase().trim());
+    }
+    await db.update(users).set(updates).where(eq(users.id, req.userId!));
     res.json({ message: "Password reset successfully" });
   } catch (e: any) {
     res.status(500).json({ message: e.message ?? "Server error" });

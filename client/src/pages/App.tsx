@@ -1493,6 +1493,7 @@ export default function App() {
           )}
           {tab === "networth"   && client && <NetWorthTabNew   clientId={client.id} client={client} />}
           {tab === "retirement" && client && <RetirementTabNew clientId={client.id} client={client} />}
+          {tab === "pension"    && client && <PensionTab clientId={client.id} client={client} />}
           {tab === "insurance" && client && <PoliciesTab clientId={client.id} client={client} />}
           {tab === "fna" && client && (
             <QueryClientProvider client={queryClient}>
@@ -1509,7 +1510,6 @@ export default function App() {
 )}
           {tab === "dashboard"  && client && <DashboardTab     clientId={client.id} />}
           {tab === "letters" && client && <LettersTab clientId={client.id} client={client} />}
-          {tab === "pension" && client && <PensionTab clientId={client.id} client={client} />}
           {tab === "goals" && client && <GoalsTab clientId={client.id} client={client} />}
           {tab === "reports" && client && <ReportsTab clientId={client.id} />}
           {tab === "tax" && client && (

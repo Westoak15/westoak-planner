@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { TrendingDown, DollarSign, Percent, ChevronDown, ChevronUp, Info } from "lucide-react";
+import { api } from "../lib/api";
 
 interface DrawdownYear {
   age: number; year: number;
@@ -50,6 +51,29 @@ export function DrawdownTab({ clientId, client }: { clientId: number; client?: a
     inflationRate: "2",
   });
   const [results, setResults] = useState<DrawdownResults | null>(null);
+  useEffect(() => {
+    api.get<any[]>(`/api/clients/${clientId}/pensions`).then((pensions: any[]) => {
+      const dbppIncome = pensions
+        .filter(p => p.pensionType === "dbpp")
+        .reduce((s, p) => {
+          const rate = Number(p.accrualRate || 0);
+          const years = Number(p.projectedYearsAtRetirement || p.yearsOfService || 0);
+          const salary = Number(p.bestAverageEarnings || 0);
+          return s + (rate * years * salary);
+        }, 0);
+      const dcppBalance = pensions
+        .filter(p => p.pensionType !== "dbpp")
+        .reduce((s, p) => s + Number(p.currentBalance || 0), 0);
+      if (dbppIncome > 0 || dcppBalance > 0) {
+        setForm(f => ({
+          ...f,
+          pensionIncome: dbppIncome > 0 ? String(Math.round(dbppIncome)) : f.pensionIncome,
+          nonRegBalance: dcppBalance > 0 ? String(Math.round(Number(f.nonRegBalance || 0) + dcppBalance)) : f.nonRegBalance,
+        }));
+      }
+    }).catch(() => {});
+  }, [clientId]);
+  
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [activeStrategy, setActiveStrategy] = useState<"rrspFirst"|"tfsaFirst"|"blended">("blended");

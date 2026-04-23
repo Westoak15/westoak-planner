@@ -1,7 +1,7 @@
 import {
   Users, LayoutDashboard, Scale, PiggyBank,
   Shield, GraduationCap, CreditCard, Receipt, ScrollText, Brain, ClipboardList,
-  FileHeart, Settings, UserCheck, FileText, Target
+  FileHeart, Settings, UserCheck, FileText, Target, Building2
 } from "lucide-react";
 import { cn } from "../lib/utils";
 
@@ -9,7 +9,7 @@ export type Tab =
   | "clients" | "dashboard"
   | "networth" | "retirement" | "insurance" | "fna"
   | "resp" | "expenses" | "tax" | "estate" | "ai"
-  | "planning" | "reports" | "letters" | "goals" | "admin" | "agents"
+  | "planning" | "reports" | "letters" | "goals" | "pension" | "admin" | "agents";
 
 interface Props {
   activeTab: Tab;
@@ -26,6 +26,7 @@ const ALL_TABS: { key: Tab; label: string; icon: any; dividerBefore?: boolean; g
   { key: "dashboard",  label: "Dashboard",    icon: LayoutDashboard, dividerBefore: true },
   { key: "networth",   label: "Net Worth",    icon: Scale },  
   { key: "goals",      label: "Goals",        icon: Target },
+  { key: "pension",    label: "Pension",      icon: Building2 },
   { key: "retirement", label: "Retirement",   icon: PiggyBank },
   { key: "insurance",  label: "Policies",     icon: Shield },
   { key: "fna",        label: "FNA",          icon: FileHeart },
@@ -41,7 +42,7 @@ const ALL_TABS: { key: Tab; label: string; icon: any; dividerBefore?: boolean; g
 ];
 
 const STANDARD_TABS: Tab[] = ["clients", "networth", "insurance", "fna", "letters"];
-const PLAN_TABS: Tab[] = ["dashboard","networth", "goals", "retirement","insurance", "expenses","fna","resp","tax","estate", "reports", "letters", "ai","planning"];
+const PLAN_TABS: Tab[] = ["dashboard","networth", "goals", "pension", "retirement","insurance", "expenses","fna","resp","tax","estate", "reports", "letters", "ai","planning"];
 const NO_CLIENT_TABS: Tab[] = ["clients", "admin", "agents"];
 
 export function Sidebar({ activeTab, onTab, clientName, role, level }: Props) {

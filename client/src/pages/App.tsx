@@ -15,6 +15,7 @@ import { AgentsTab } from "./AgentsTab";
 import { ExpensesTab } from "./ExpensesTab";
 import { PoliciesTab } from "./PoliciesTab";
 import { GoalsTab } from "./GoalsTab";
+import { PensionTab } from "./PensionTab";
 import { fmt$, fmtPct, initials, avatarBg, cn } from "../lib/utils";
 import {
   Plus, Pencil, Trash2, X, Check, ChevronRight, Search,
@@ -1508,6 +1509,7 @@ export default function App() {
 )}
           {tab === "dashboard"  && client && <DashboardTab     clientId={client.id} />}
           {tab === "letters" && client && <LettersTab clientId={client.id} client={client} />}
+          {tab === "pension" && client && <PensionTab clientId={client.id} client={client} />}
           {tab === "goals" && client && <GoalsTab clientId={client.id} client={client} />}
           {tab === "reports" && client && <ReportsTab clientId={client.id} />}
           {tab === "tax" && client && (

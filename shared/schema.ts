@@ -361,6 +361,30 @@ export const planActionItems = pgTable("plan_action_items", {
   updatedAt:   timestamp("updated_at").defaultNow().notNull(),
 });
 
+//── Pension Plans ────────────────────────────────────────────────────────
+export const pensionPlans = pgTable("pension_plans", {
+  id:                         serial("id").primaryKey(),
+  clientId:                   integer("client_id").notNull().references(() => clients.id, { onDelete: "cascade" }),
+  pensionType:                text("pension_type").notNull().default("dbpp"),
+  employerName:               text("employer_name"),
+  accrualRate:                decimal("accrual_rate", { precision: 5, scale: 4 }),
+  yearsOfService:             decimal("years_of_service", { precision: 5, scale: 2 }),
+  projectedYearsAtRetirement: decimal("projected_years_at_retirement", { precision: 5, scale: 2 }),
+  bestAverageEarnings:        decimal("best_average_earnings", { precision: 15, scale: 2 }),
+  currentBalance:             decimal("current_balance", { precision: 15, scale: 2 }),
+  employerMatchPct:           decimal("employer_match_pct", { precision: 5, scale: 4 }),
+  retirementAge:              integer("retirement_age").default(65),
+  indexingType:               text("indexing_type").default("none"),
+  indexingRate:               decimal("indexing_rate", { precision: 5, scale: 4 }),
+  bridgeBenefit:              decimal("bridge_benefit", { precision: 15, scale: 2 }),
+  bridgeBenefitEndAge:        integer("bridge_benefit_end_age").default(65),
+  survivorBenefitPct:         decimal("survivor_benefit_pct", { precision: 5, scale: 4 }),
+  isVested:                   boolean("is_vested").default(true),
+  notes:                      text("notes"),
+  createdAt:                  timestamp("created_at").defaultNow().notNull(),
+  updatedAt:                  timestamp("updated_at").defaultNow().notNull(),
+});
+
 // ── Reason Why Letters ────────────────────────────────────────────────────────
 export const reasonWhyLetters = pgTable("reason_why_letters", {
   id:         serial("id").primaryKey(),

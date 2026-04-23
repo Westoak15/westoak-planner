@@ -18,7 +18,7 @@ import { reportsRouter }    from "./routes/reports.js";
 import { taxRouter }        from "./routes/tax.js";
 import { lettersRouter } from "./routes/letters.js";
 import { goalsRouter } from "./routes/goals.js";
-
+import { pensionRouter } from "./routes/pension.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = parseInt(process.env.PORT ?? "8080", 10);
@@ -31,7 +31,8 @@ app.use(cors({
 app.use(express.json({ limit: "10mb" }));
 app.get("/api/health",  (_req, res) => res.json({ ok: true }));
 app.use("/api/auth",    authRouter);
-app.use("/api", goalsRouter);
+app.use("/api",         goalsRouter);
+app.use("/api", pensionRouter);
 app.use("/api/tax",     taxRouter);
 app.use("/api",         fpRouter);
 app.use("/api",         fpAliasesRouter);

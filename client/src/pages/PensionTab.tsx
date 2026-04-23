@@ -5,6 +5,7 @@ import { Plus, Trash2, Pencil, Save, X, Building2, Calculator } from "lucide-rea
 interface PensionPlan {
   id: number;
   pensionType: string;
+  subscriberOwner: string | null;
   employerName: string | null;
   accrualRate: string | null;
   yearsOfService: string | null;
@@ -44,15 +45,6 @@ const fmtPct = (v: string | number | null) => {
   if (!v) return "—";
   return (Number(v) * 100).toFixed(2) + "%";
 };
-
-function prefillFromOwner(owner: string) {
-  const isPrimary = owner === "primary";
-  const dob = isPrimary ? client?.dateOfBirth : client?.spouseDateOfBirth;
-  const salary = isPrimary ? client?.annualIncome : client?.spouseAnnualIncome;
-  const age = dob ? Math.floor((Date.now() - new Date(dob).getTime()) / (365.25*24*60*60*1000)) : null;
-  upd("subscriberOwner", owner);
-  if (salary) upd("bestAverageEarnings", String(Math.round(Number(salary))));
-}
 
 function calcDBPPAnnual(plan: PensionPlan): number {
   const rate   = Number(plan.accrualRate || 0);
@@ -96,6 +88,14 @@ export function PensionTab({ clientId, client }: { clientId: number; client?: an
   useEffect(() => { load(); }, [clientId]);
 
   const upd = (k: string, v: any) => setForm((f: any) => ({ ...f, [k]: v }));
+
+function prefillFromOwner(owner: string) {
+    const isPrimary = owner === "primary";
+    const dob    = isPrimary ? client?.dateOfBirth : client?.spouseDateOfBirth;
+    const salary = isPrimary ? client?.annualIncome : client?.spouseAnnualIncome;
+    upd("subscriberOwner", owner);
+    if (salary) upd("bestAverageEarnings", String(Math.round(Number(salary))));
+  }
 
   function openNew() { setEditingId(null); setForm(emptyPlan()); setShowForm(true); }
   function openEdit(p: PensionPlan) {
@@ -156,8 +156,6 @@ export function PensionTab({ clientId, client }: { clientId: number; client?: an
                   {client?.spouseFirstName && <option value="spouse">{client.spouseFirstName} {client.spouseLastName ?? ""}</option>}
                 </select>
               </div>
-              {/* Basic Info */}
-              <div className="grid grid-cols-2 gap-4">
               {/* Basic Info */}
               <div className="grid grid-cols-2 gap-4">
                 <div>

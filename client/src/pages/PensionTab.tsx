@@ -88,6 +88,16 @@ export function PensionTab({ clientId, client }: { clientId: number; client?: an
   useEffect(() => { load(); }, [clientId]);
 
   const upd = (k: string, v: any) => setForm((f: any) => ({ ...f, [k]: v }));
+  useEffect(() => {
+  if (!form?.yearsOfService || !form?.retirementAge) return;
+  const owner = form.subscriberOwner ?? "primary";
+  const isPrimary = owner === "primary";
+  const dob = isPrimary ? client?.dateOfBirth : client?.spouseDateOfBirth;
+  const age = dob ? Math.floor((Date.now() - new Date(dob).getTime()) / (365.25*24*60*60*1000)) : null;
+  const retAge = Number(form.retirementAge);
+  const currentService = Number(form.yearsOfService);
+  if (age && retAge) upd("projectedYearsAtRetirement", String(currentService + (retAge - age)));
+}, [form?.yearsOfService]);
 
 function prefillFromOwner(owner: string) {
     const isPrimary = owner === "primary";

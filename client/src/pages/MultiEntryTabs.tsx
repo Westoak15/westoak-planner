@@ -718,7 +718,8 @@ export function RetirementTab({ clientId, client, person = "primary" }: { client
                 ))}
               </div>
             </Card>
-          ))}
+            );
+          })}
           <div className="flex justify-end gap-2">
             <button onClick={() => { setDrafts([]); setEditingId(null); }} className="text-sm text-gray-500 px-4 py-2 border border-gray-200 rounded-lg">Cancel</button>
             <button onClick={saveAll} disabled={saving}

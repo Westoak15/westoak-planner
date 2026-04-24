@@ -313,21 +313,46 @@ function RetirementTab({ clientId, planId }: { clientId: number; planId: number 
   const { data: projections = [] } = useRetirementProjections(clientId);
   const createProjection = useCreateRetirementProjection();
   const { data: assumptions = [] } = usePlanAssumptions(planId);
+  const { data: pensionPlans = [] } = useQuery<any[]>({ queryKey: ["/api/clients", clientId, "pensions"], queryFn: () => api.get(`/api/clients/${clientId}/pensions`) });
   const [showCalc, setShowCalc] = useState(false);
+
+  // Calculate total annual DBPP pension income from all plans
+  const totalPensionIncome = useMemo(() => {
+    return pensionPlans.reduce((sum: number, p: any) => {
+      if (p.pensionType === "dbpp" && p.accrualRate && p.projectedYearsAtRetirement && p.bestAverageEarnings) {
+        return sum + (Number(p.accrualRate) * Number(p.projectedYearsAtRetirement) * Number(p.bestAverageEarnings));
+      }
+      if (p.pensionType === "dcpp" && p.currentBalance) {
+        // Rough annuity estimate: 4% of DCPP balance
+        return sum + (Number(p.currentBalance) * 0.04);
+      }
+      return sum;
+    }, 0);
+  }, [pensionPlans]);
+
   const [form, setForm] = useState({
     currentAge: "35", retirementAge: "65", lifeExpectancy: "90",
     currentSavings: "100000", annualContribution: "12000",
     expectedReturn: "7", inflationRate: "2", desiredRetirementIncome: "60000",
+    pensionIncome: "0",
   });
+
+  // Auto-update pensionIncome when pension plans load
+  useEffect(() => {
+    if (totalPensionIncome > 0) {
+      setForm(f => ({ ...f, pensionIncome: String(Math.round(totalPensionIncome)) }));
+    }
+  }, [totalPensionIncome]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    createProjection.mutate({ clientId, data: {
+ createProjection.mutate({ clientId, data: {
       currentAge: parseInt(form.currentAge), retirementAge: parseInt(form.retirementAge),
       lifeExpectancy: parseInt(form.lifeExpectancy), currentSavings: form.currentSavings,
       annualContribution: form.annualContribution, expectedReturn: form.expectedReturn,
       inflationRate: form.inflationRate, desiredRetirementIncome: form.desiredRetirementIncome,
-    }}, { onSuccess: () => setShowCalc(false) });
+      pensionIncome: form.pensionIncome,
+    }}, { onSuccess: () => setShowCalc(false) });;
   };
 
   return (
@@ -387,7 +412,12 @@ function RetirementTab({ clientId, planId }: { clientId: number; planId: number 
               <div className="grid grid-cols-3 gap-4">
                 <div><label className="text-sm font-semibold">Expected Return (%)</label><input type="number" step="0.1" required value={form.expectedReturn} onChange={e => setForm({ ...form, expectedReturn: e.target.value })} data-testid="input-fp-return" className="w-full px-3 py-2 rounded-xl border mt-1" /></div>
                 <div><label className="text-sm font-semibold">Inflation (%)</label><input type="number" step="0.1" required value={form.inflationRate} onChange={e => setForm({ ...form, inflationRate: e.target.value })} data-testid="input-fp-inflation" className="w-full px-3 py-2 rounded-xl border mt-1" /></div>
-                <div><label className="text-sm font-semibold">Desired Income ($)</label><input type="number" required value={form.desiredRetirementIncome} onChange={e => setForm({ ...form, desiredRetirementIncome: e.target.value })} data-testid="input-fp-desired-income" className="w-full px-3 py-2 rounded-xl border mt-1" /></div>
+                 <div>
+                  <label className="text-sm font-semibold">Pension Income ($)
+                    {totalPensionIncome > 0 && <span className="ml-2 text-xs text-emerald-600 font-normal">auto-calculated from pension plans</span>}
+                  </label>
+                  <input type="number" value={form.pensionIncome} onChange={e => setForm({ ...form, pensionIncome: e.target.value })} className="w-full px-3 py-2 rounded-xl border mt-1" />
+                </div>
               </div>
               <div className="pt-4 flex justify-end space-x-3">
                 <button type="button" onClick={() => setShowCalc(false)} className="px-6 py-3 rounded-xl font-semibold text-muted-foreground hover:bg-muted">Cancel</button>

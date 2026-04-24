@@ -1429,7 +1429,7 @@ async function save() {
 
             <div className="flex gap-2 pt-1">
               <button onClick={onClose} className="flex-1 text-sm text-gray-500 border border-gray-200 py-2.5 rounded-xl hover:bg-gray-50">Cancel</button>
-              <button onClick={save} disabled={busy || !pwOk || !match || !form.current}
+              <button onClick={save} disabled={busy || !pwOk || !match || (!forceReset && !form.current)}
                 className="flex-1 bg-[#0c1e3a] hover:bg-[#0e2a4a] disabled:opacity-50 text-white text-sm font-semibold py-2.5 rounded-xl">
                 {busy ? "Saving…" : "Change Password"}
               </button>

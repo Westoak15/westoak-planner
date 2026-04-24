@@ -2360,7 +2360,7 @@ export function TaxTab({ clientId, client, person: personProp }: { clientId: num
       nonRegBalance:           isPrimary ? String(Number(ret?.nonRegBalance ?? 0)) : "0",
       rrspAnnualContribution:  isPrimary ? String(Number(ret?.annualContribution      ?? 0)) : "0",
       annualTfsaContribution:  isPrimary ? String(Number(ret?.annualTfsaContribution  ?? 0)) : "0",
-      desiredRetirementIncome: String(Number(ret?.desiredRetirementIncome ?? 0)),
+      desiredRetirementIncome: String(Number(ret?.desiredRetirementIncome ?? (isPrimary ? client.desiredRetirementIncome : client.spouseDesiredRetirementIncome) ?? 0)),
       cppStartAge:             String(ret?.cppStartAge ?? 65),
       oasStartAge:             String(ret?.oasStartAge ?? 65),
       birthYear:               String(birthYear),
@@ -2375,7 +2375,7 @@ export function TaxTab({ clientId, client, person: personProp }: { clientId: num
   const activePrefill  = person === "spouse" ? prefillSpouse : prefillPrimary;
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-300">
+    <div className="space-y-6 animate-in fade-in duration-300 px-1">
       <div className="flex items-center justify-between flex-wrap gap-2">
         <h2 className="text-xl font-display font-bold">Tax Planning</h2>
         {/* Person selection moved to top-level tabs */}

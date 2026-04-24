@@ -121,7 +121,91 @@ r.get("/:clientId/retirement", async (req: AuthRequest, res: Response) => {
   try {
     const d = await fetchClientFpData(+req.params.clientId, req.userId!);
     if (!d) return res.status(404).json({ message: "Not found" });
-    const html = generateRetirementReport({ client: d.client, retirement: d.retirement, advisor: d.advisor, generatedAt: new Date().toISOString() } as any);
+
+    // Run live Monte Carlo so report reflects current data
+    let simulation = null;
+    try {
+      const { pensionPlans } = await import("../../shared/schema.js");
+      const plans = await db.select().from(pensionPlans).where(eq(pensionPlans.clientId, +req.params.clientId));
+      const pensionIncome = plans.reduce((sum: number, p: any) => {
+        if (p.pensionType === "dbpp" && p.accrualRate && p.projectedYearsAtRetirement && p.bestAverageEarnings)
+          return sum + (Number(p.accrualRate) * Number(p.projectedYearsAtRetirement) * Number(p.bestAverageEarnings));
+        if (p.pensionType === "dcpp" && p.currentBalance)
+          return sum + (Number(p.currentBalance) * 0.04);
+        return sum;
+      }, 0);
+
+      const ret = d.retirement;
+      const client = d.client;
+      const currentAge    = ret?.currentAge    ?? (new Date().getFullYear() - new Date(client.dateOfBirth ?? "1970-01-01").getFullYear());
+      const retirementAge = ret?.retirementAge ?? client.retirementAge ?? 65;
+      const lifeExpectancy = ret?.lifeExpectancy ?? 90;
+      const desiredIncome  = Number(ret?.desiredRetirementIncome ?? client.desiredRetirementIncome ?? 50000);
+      const rrsp  = Number(ret?.currentSavings ?? 0);
+      const annualContrib = Number(ret?.annualContribution ?? 0);
+      const cppMonthly = 900;
+      const oasMonthly = 700;
+      const cppAge = ret?.cppStartAge ?? 65;
+      const oasAge = ret?.oasStartAge ?? 65;
+      const portReturn = 0.065;
+      const portStdDev = 0.10;
+      const infl = 0.025;
+      const totalYears = Math.max(1, lifeExpectancy - currentAge);
+      const yearsToRetirement = Math.max(0, retirementAge - currentAge);
+      const simCount = 1000;
+      const outcomes: number[] = [];
+      const yearlyBands: number[][] = Array.from({ length: totalYears }, () => []);
+      let successCount = 0;
+      for (let s = 0; s < simCount; s++) {
+        let bal = rrsp;
+        let spending = desiredIncome;
+        for (let yr = 0; yr < totalYears; yr++) {
+          const age = currentAge + yr;
+          const z = Math.sqrt(-2*Math.log(Math.random())) * Math.cos(2*Math.PI*Math.random());
+          const r = portReturn + portStdDev * z;
+          if (age < retirementAge) {
+            bal = (bal + annualContrib) * (1 + r);
+          } else {
+            const cpp = age >= cppAge ? cppMonthly * 12 : 0;
+            const oas = age >= oasAge ? oasMonthly * 12 : 0;
+            const netW = Math.max(0, spending - cpp - oas - pensionIncome);
+            bal = Math.max(0, (bal - netW) * (1 + r));
+            spending *= (1 + infl);
+          }
+          yearlyBands[yr].push(bal);
+        }
+        outcomes.push(bal);
+        if (bal > 0) successCount++;
+      }
+      const sorted = (arr: number[]) => [...arr].sort((a, b) => a - b);
+      const pct = (arr: number[], p: number) => { const s = sorted(arr); return s[Math.floor(s.length * p)] ?? 0; };
+      const p10  = yearlyBands.map(b => Math.round(pct(b, 0.1)));
+      const p25  = yearlyBands.map(b => Math.round(pct(b, 0.25)));
+      const p50  = yearlyBands.map(b => Math.round(pct(b, 0.5)));
+      const p75  = yearlyBands.map(b => Math.round(pct(b, 0.75)));
+      const p90  = yearlyBands.map(b => Math.round(pct(b, 0.9)));
+      simulation = {
+        successRate: (successCount / simCount),   // decimal for report (0.0–1.0)
+        simulationCount: simCount,
+        yearsProjected: totalYears,
+        pensionIncome: Math.round(pensionIncome),
+        percentileBands: yearlyBands.map((_, i) => ({
+          age: currentAge + i,
+          p10: p10[i], p25: p25[i], p50: p50[i], p75: p75[i], p90: p90[i],
+        })),
+        finalBalancePercentiles: {
+          p10: Math.round(pct(outcomes, 0.1)),
+          p25: Math.round(pct(outcomes, 0.25)),
+          p50: Math.round(pct(outcomes, 0.5)),
+          p75: Math.round(pct(outcomes, 0.75)),
+          p90: Math.round(pct(outcomes, 0.9)),
+        },
+      };
+    } catch (simErr) {
+      console.error("[retirement report sim]", simErr);
+    }
+
+    const html = generateRetirementReport({ client: d.client, retirement: d.retirement, sim: simulation, advisor: d.advisor, generatedAt: new Date().toISOString() } as any);
     res.setHeader("Content-Type", "text/html; charset=utf-8"); res.send(html);
   } catch (err) { console.error(err); res.status(500).json({ message: "Failed" }); }
 });

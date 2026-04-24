@@ -314,6 +314,7 @@ function RetirementTab({ clientId, planId }: { clientId: number; planId: number 
   const createProjection = useCreateRetirementProjection();
   const { data: assumptions = [] } = usePlanAssumptions(planId);
   const { data: pensionPlans = [] } = useQuery<any[]>({ queryKey: ["/api/clients", clientId, "pensions"], queryFn: () => api.get(`/api/clients/${clientId}/pensions`) });
+  const { data: client } = useQuery<any>({ queryKey: ["/api/clients", clientId], queryFn: () => api.get(`/api/clients/${clientId}`) });
   const [showCalc, setShowCalc] = useState(false);
 
   // Calculate total annual DBPP pension income from all plans
@@ -344,12 +345,48 @@ function RetirementTab({ clientId, planId }: { clientId: number; planId: number 
     householdDesiredIncome: "80000",
   });
 
+  // Auto-populate from client record when client data loads
+  useEffect(() => {
+    if (!client) return;
+    const dob = client.dateOfBirth;
+    const age = dob ? Math.floor((Date.now() - new Date(dob).getTime()) / (365.25*24*60*60*1000)) : null;
+    const spouseDob = client.spouseDateOfBirth;
+    const spouseAge = spouseDob ? Math.floor((Date.now() - new Date(spouseDob).getTime()) / (365.25*24*60*60*1000)) : null;
+    const hasSpouse = !!client.spouseFirstName;
+    setForm(f => ({
+      ...f,
+      householdType: hasSpouse ? "couple" : "individual",
+      currentAge: age ? String(age) : f.currentAge,
+      retirementAge: client.retirementAge ? String(client.retirementAge) : f.retirementAge,
+      desiredRetirementIncome: client.desiredRetirementIncome ?? f.desiredRetirementIncome,
+      spouseAge: spouseAge ? String(spouseAge) : f.spouseAge,
+      spouseRetirementAge: client.spouseRetirementAge ? String(client.spouseRetirementAge) : f.spouseRetirementAge,
+      householdDesiredIncome: (client.desiredRetirementIncome && client.spouseDesiredRetirementIncome)
+        ? String(Number(client.desiredRetirementIncome) + Number(client.spouseDesiredRetirementIncome))
+        : client.desiredRetirementIncome ?? f.householdDesiredIncome,
+    }));
+  }, [client]);
+
   // Auto-update pensionIncome when pension plans load
   useEffect(() => {
     if (totalPensionIncome > 0) {
       setForm(f => ({ ...f, pensionIncome: String(Math.round(totalPensionIncome)) }));
     }
   }, [totalPensionIncome]);
+
+  // Auto-update spouse pension income
+  useEffect(() => {
+    const spousePension = pensionPlans
+      .filter((p: any) => p.subscriberOwner === "spouse")
+      .reduce((sum: number, p: any) => {
+        if (p.pensionType === "dbpp" && p.accrualRate && p.projectedYearsAtRetirement && p.bestAverageEarnings)
+          return sum + (Number(p.accrualRate) * Number(p.projectedYearsAtRetirement) * Number(p.bestAverageEarnings));
+        if (p.pensionType === "dcpp" && p.currentBalance)
+          return sum + (Number(p.currentBalance) * 0.04);
+        return sum;
+      }, 0);
+    if (spousePension > 0) setForm(f => ({ ...f, spousePensionIncome: String(Math.round(spousePension)) }));
+  }, [pensionPlans]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

@@ -54,7 +54,7 @@ function ProgressBar({ current, target, status }: { current: number; target: num
 
 const emptyGoal = () => ({ goalType: "custom", title: "", targetAmount: "", currentAmount: "", targetDate: "", status: "in_progress", notes: "" });
 
-export function GoalsTab({ clientId, client }: { clientId: number; client?: any }) {
+export function GoalsTab({ clientId, client, person = "primary" }: { clientId: number; client?: any; person?: string }) {
   const [goals, setGoals]       = useState<Goal[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);

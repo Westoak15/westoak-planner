@@ -1451,6 +1451,7 @@ export default function App() {
   const [showForceReset, setShowForceReset] = useState(!!user?.mustResetPassword);
   const [showChangePw, setShowChangePw]     = useState(false);
   const [tab, setTab] = useState<Tab>(user?.role === "ga" ? "agents" : "clients");
+  const [person, setPerson] = useState<"primary"|"spouse"|"combined">("primary");
   const [client, setClient]       = useState<Client | null>(null);
   const [plan, setPlan]           = useState<Plan | null>(null);
   const [showClientDetail, setShowClientDetail] = useState(false);
@@ -1473,10 +1474,13 @@ export default function App() {
   }
 
   const clientName = client ? `${client.firstName} ${client.lastName}` : undefined;
+  const hasSpouse = !!client?.spouseFirstName;
+  const PERSON_TABS: Tab[] = ["retirement", "goals", "tax"];
+  const showPersonTabs = client && PERSON_TABS.includes(tab);
 
   return (
     <div className="flex h-screen overflow-hidden bg-gray-50">
-      <Sidebar activeTab={tab} onTab={t => { if (t === "clients") { setShowClientDetail(false); } setTab(t as any); }} clientName={clientName} role={role} level={level} />
+      <Sidebar activeTab={tab} onTab={t => { if (t === "clients") { setShowClientDetail(false); } setTab(t as any); setPerson("primary"); }} clientName={clientName} role={role} level={level} />
 
       {/* Main content */}
       <div className="flex-1 flex flex-col overflow-hidden">
@@ -1531,8 +1535,26 @@ export default function App() {
               <FinancialPlanningContent initialClientId={client.id} />
             </QueryClientProvider>
           )}
+          {/* Person tabs — shown for retirement, goals, tax */}
+          {showPersonTabs && hasSpouse && (
+            <div className="flex gap-1 mb-4 bg-gray-100 rounded-xl p-1 w-fit border border-gray-200">
+              <button onClick={() => setPerson("primary")}
+                className={`px-4 py-1.5 rounded-lg text-sm font-semibold transition-colors ${person === "primary" ? "bg-white shadow text-[#0c1e3a] border border-gray-200" : "text-gray-500 hover:text-gray-800"}`}>
+                {client.firstName}
+              </button>
+              <button onClick={() => setPerson("spouse")}
+                className={`px-4 py-1.5 rounded-lg text-sm font-semibold transition-colors ${person === "spouse" ? "bg-white shadow text-purple-700 border border-gray-200" : "text-gray-500 hover:text-gray-800"}`}>
+                {client.spouseFirstName}
+              </button>
+              <button onClick={() => setPerson("combined")}
+                className={`px-4 py-1.5 rounded-lg text-sm font-semibold transition-colors ${person === "combined" ? "bg-white shadow text-blue-700 border border-gray-200" : "text-gray-500 hover:text-gray-800"}`}>
+                Combined
+              </button>
+            </div>
+          )}
+
           {tab === "networth"   && client && <NetWorthTabNew   clientId={client.id} client={client} />}
-          {tab === "retirement" && client && <RetirementTabNew clientId={client.id} client={client} />}
+          {tab === "retirement" && client && <RetirementTabNew clientId={client.id} client={client} person={person} />}
           {tab === "pension"    && client && <PensionTab clientId={client.id} client={client} />}
           {tab === "insurance" && client && <PoliciesTab clientId={client.id} client={client} />}
           {tab === "fna" && client && (
@@ -1550,11 +1572,11 @@ export default function App() {
 )}
           {tab === "dashboard"  && client && <DashboardTab     clientId={client.id} />}
           {tab === "letters" && client && <LettersTab clientId={client.id} client={client} />}
-          {tab === "goals" && client && <GoalsTab clientId={client.id} client={client} />}
+          {tab === "goals" && client && <GoalsTab clientId={client.id} client={client} person={person} />}
           {tab === "reports" && client && <ReportsTab clientId={client.id} />}
           {tab === "tax" && client && (
   <QueryClientProvider client={queryClient}>
-    <TaxTabNew clientId={client.id} client={client} />
+    <TaxTabNew clientId={client.id} client={client} person={person} />
   </QueryClientProvider>
 )}
           {tab === "estate" && client && (

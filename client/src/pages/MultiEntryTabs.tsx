@@ -461,20 +461,28 @@ type RetDraft = {
   cppMonthly: string; oasMonthly: string; notes: string; 
 };
 
-export function RetirementTab({ clientId, client }: { clientId: number; client?: any }) {
+export function RetirementTab({ clientId, client, person = "primary" }: { clientId: number; client?: any; person?: string }) {
   const calcAge = (dob: string | null) => dob ? Math.floor((Date.now() - new Date(dob).getTime()) / (365.25 * 24 * 60 * 60 * 1000)) : null;
   const clientAge = calcAge(client?.dateOfBirth);
   const spouseAge = calcAge(client?.spouseDateOfBirth);
   const clientName = client ? client.firstName : "Primary";
   const spouseName = client?.spouseFirstName ?? "Spouse";
-
+  const isSpouse   = person === "spouse";
+  const isCouple   = person === "combined";
+  const activeAge  = isSpouse ? spouseAge : clientAge;
+  const activeRetAge = isSpouse ? (client?.spouseRetirementAge ?? 65) : (client?.retirementAge ?? 65);
+  const activeDesiredIncome = isCouple
+    ? String((Number(client?.desiredRetirementIncome ?? 0) + Number(client?.spouseDesiredRetirementIncome ?? 0)))
+    : isSpouse
+      ? String(client?.spouseDesiredRetirementIncome ?? 0)
+      : String(client?.desiredRetirementIncome ?? 0);
   const emptyDraft = (label: string, age?: string): RetDraft => ({
     label,
-    currentAge: age ?? (clientAge ? String(clientAge) : ""),
-    retirementAge: String(client?.retirementAge ?? 65),
+    currentAge: age ?? (activeAge ? String(activeAge) : ""),
+    retirementAge: String(activeRetAge),
     rrspBalance: "0", tfsaBalance: "0", nonRegBalance: "0",
     annualContribution: "0", expectedReturn: "6.5", inflationRate: "2.5",
-    desiredRetirementIncome: client?.desiredRetirementIncome ? String(client.desiredRetirementIncome) : "0",
+    desiredRetirementIncome: activeDesiredIncome,
     cppStartAge: "65", oasStartAge: "65", cppMonthly: "900", oasMonthly: "700",
     notes: "",
   });

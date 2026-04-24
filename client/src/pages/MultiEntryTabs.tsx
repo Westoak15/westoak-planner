@@ -546,27 +546,37 @@ export function RetirementTab({ clientId, client, person = "primary" }: { client
     const expenseBasedIncome = annualExpenseNeed > 0 ? String(Math.round(annualExpenseNeed)) : (client?.desiredRetirementIncome ? String(client.desiredRetirementIncome) : "0");
       
     const newDrafts: RetDraft[] = [];
-   newDrafts.push({
-      ...emptyDraft(hasSpouse ? `${clientName} & ${spouseName}` : clientName),
-      rrspBalance: String(Math.round(pRrsp + sRrsp)),
-      tfsaBalance: String(Math.round(pTfsa + sTfsa)),
-      nonRegBalance: String(Math.round(pNonReg + sNonReg + dcppBalance)),
-      desiredRetirementIncome: expenseBasedIncome,
-    });
-    newDrafts.push({ 
-      ...emptyDraft(clientName, clientAge ? String(clientAge) : ""), 
-      rrspBalance: String(Math.round(pRrsp)), 
-      tfsaBalance: String(Math.round(pTfsa)), 
-      nonRegBalance: String(Math.round(pNonReg)), 
-      desiredRetirementIncome: expenseBasedIncome,
-    });
-    if (hasSpouse) {
-      newDrafts.push({ 
-        ...emptyDraft(spouseName, spouseAge ? String(spouseAge) : ""), 
-        rrspBalance: String(Math.round(sRrsp)), 
-        tfsaBalance: String(Math.round(sTfsa)), 
-        nonRegBalance: String(Math.round(sNonReg)), 
-        desiredRetirementIncome: expenseBasedIncome,
+    const combinedIncome = annualExpenseNeed > 0 ? String(Math.round(annualExpenseNeed))
+      : String(Number(client?.desiredRetirementIncome ?? 0) + Number(client?.spouseDesiredRetirementIncome ?? 0));
+    const primaryIncome  = client?.desiredRetirementIncome ? String(client.desiredRetirementIncome) : expenseBasedIncome;
+    const spouseIncome   = client?.spouseDesiredRetirementIncome ? String(client.spouseDesiredRetirementIncome) : expenseBasedIncome;
+
+    if (person === "combined" || person === "primary") {
+      if (person === "combined") {
+        newDrafts.push({
+          ...emptyDraft(`${clientName} & ${spouseName}`),
+          rrspBalance:             String(Math.round(pRrsp + sRrsp)),
+          tfsaBalance:             String(Math.round(pTfsa + sTfsa)),
+          nonRegBalance:           String(Math.round(pNonReg + sNonReg + dcppBalance)),
+          desiredRetirementIncome: combinedIncome,
+        });
+      } else {
+        newDrafts.push({
+          ...emptyDraft(clientName, clientAge ? String(clientAge) : ""),
+          rrspBalance:             String(Math.round(pRrsp)),
+          tfsaBalance:             String(Math.round(pTfsa)),
+          nonRegBalance:           String(Math.round(pNonReg)),
+          desiredRetirementIncome: primaryIncome,
+        });
+      }
+    }
+    if (person === "spouse" && hasSpouse) {
+      newDrafts.push({
+        ...emptyDraft(spouseName, spouseAge ? String(spouseAge) : ""),
+        rrspBalance:             String(Math.round(sRrsp)),
+        tfsaBalance:             String(Math.round(sTfsa)),
+        nonRegBalance:           String(Math.round(sNonReg)),
+        desiredRetirementIncome: spouseIncome,
       });
     }
     setDrafts(prev => [...prev, ...newDrafts]);
@@ -625,6 +635,18 @@ export function RetirementTab({ clientId, client, person = "primary" }: { client
     finally { setSimulating(false); }
   }
 
+  // Filter rows and drafts by person
+  const filteredRows = rows.filter(r => {
+    if (person === "primary")  return !r.label?.includes("&") && r.label !== spouseName && r.label !== "Spouse";
+    if (person === "spouse")   return r.label === spouseName || r.label === "Spouse";
+    return true; // combined shows all
+  });
+  const filteredDrafts = drafts.filter(d => {
+    if (person === "primary")  return !d.label?.includes("&") && d.label !== spouseName && d.label !== "Spouse";
+    if (person === "spouse")   return d.label === spouseName || d.label === "Spouse";
+    return true;
+  });
+
   // Group by retirementAge + desiredRetirementIncome
   const groups: RetirementProj[][] = [];
   const used = new Set<number>();
@@ -670,13 +692,15 @@ export function RetirementTab({ clientId, client, person = "primary" }: { client
           </button>
         </div>
       </div>
-      {drafts.length > 0 && (
+      {filteredDrafts.length > 0 && (
         <div className="space-y-4 mb-5">
-          {drafts.map((d, i) => (
+          {filteredDrafts.map((d, i) => {
+            const i2 = drafts.indexOf(d);
+            return (
             <Card key={i} className="p-5 border-blue-200 bg-blue-50/20">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="font-bold text-gray-800">{editingId ? `Editing: ${d.label}` : d.label}</h3>
-                <button onClick={() => setDrafts(x => x.filter((_, idx) => idx !== i))} className="text-gray-400 hover:text-red-500"><X className="w-4 h-4" /></button>
+                <button onClick={() => setDrafts(x => x.filter((_, idx) => idx !== i2))} className="text-gray-400 hover:text-red-500"><X className="w-4 h-4" /></button>
               </div>
               <div className="grid grid-cols-3 gap-3">
                 {([

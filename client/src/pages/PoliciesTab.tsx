@@ -45,11 +45,13 @@ export function PoliciesTab({ clientId, client }: { clientId: number; client?: a
   const [editId, setEditId]     = useState<number | null>(null);
   const [draft, setDraft]       = useState<PolicyDraft>(emptyDraft());
   const [saving, setSaving]     = useState(false);
-
+  const [activePerson, setActivePerson] = useState<"primary"|"spouse">("primary");
+  const hasSpouse = !!client?.spouseFirstName;
   const spouseName = client?.spouseFirstName
     ? `${client.spouseFirstName} ${client.spouseLastName ?? ""}`.trim()
     : null;
-
+  const clientName = client?.firstName ?? "Client";
+  const filteredPolicies = policies.filter(p => activePerson === "primary" ? p.insured !== "spouse" : p.insured === "spouse");
   const load = () => {
     setLoading(true);
     api.get<Policy[]>(`/api/clients/${clientId}/policies`)
@@ -61,7 +63,7 @@ export function PoliciesTab({ clientId, client }: { clientId: number; client?: a
 
   const u = (k: keyof PolicyDraft, v: string) => setDraft(d => ({ ...d, [k]: v }));
 
-  function openCreate() { setDraft(emptyDraft()); setEditId(null); setShowForm(true); }
+  function openCreate() { setDraft({ ...emptyDraft(), insured: activePerson }); setEditId(null); setShowForm(true); }
 
   function openEdit(p: Policy) {
     setDraft({
@@ -117,16 +119,28 @@ export function PoliciesTab({ clientId, client }: { clientId: number; client?: a
 
   return (
     <div className="p-6 max-w-4xl mx-auto">
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex justify-between items-center mb-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Insurance Policies</h1>
-          <p className="text-sm text-gray-400 mt-0.5">{policies.length} polic{policies.length !== 1 ? "ies" : "y"} on file</p>
+          <p className="text-sm text-gray-400 mt-0.5">{filteredPolicies.length} polic{filteredPolicies.length !== 1 ? "ies" : "y"} on file</p>
         </div>
         <button onClick={openCreate}
           className="flex items-center gap-2 bg-[#0c1e3a] hover:bg-[#0e2a4a] text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors">
           <Plus className="w-4 h-4" /> Add Policy
         </button>
       </div>
+      {hasSpouse && (
+        <div className="flex gap-1 mb-5 bg-gray-100 rounded-xl p-1 w-fit border border-gray-200">
+          <button onClick={() => setActivePerson("primary")}
+            className={`px-4 py-1.5 rounded-lg text-sm font-semibold transition-colors ${activePerson === "primary" ? "bg-white shadow text-[#0c1e3a] border border-gray-200" : "text-gray-500 hover:text-gray-800"}`}>
+            {clientName}
+          </button>
+          <button onClick={() => setActivePerson("spouse")}
+            className={`px-4 py-1.5 rounded-lg text-sm font-semibold transition-colors ${activePerson === "spouse" ? "bg-white shadow text-purple-700 border border-gray-200" : "text-gray-500 hover:text-gray-800"}`}>
+            {spouseName}
+          </button>
+        </div>
+      )}
 
       {loading ? (
         <div className="text-center py-16 text-gray-400">Loading…</div>
@@ -138,17 +152,17 @@ export function PoliciesTab({ clientId, client }: { clientId: number; client?: a
         </div>
       ) : (
         <div className="space-y-5">
-          {primaryPolicies.length > 0 && (
-            <div>
-              <h2 className="text-sm font-bold text-[#0c1e3a] uppercase tracking-wider mb-2">
-                {client ? `${client.firstName} ${client.lastName}` : "Primary"}
-              </h2>
-              <div className="space-y-1.5">
-                {primaryPolicies.map(p => <PolicyCard key={p.id} p={p} />)}
-              </div>
+          {filteredPolicies.length === 0 ? (
+            <div className="text-center py-10 border-2 border-dashed border-gray-200 rounded-2xl">
+              <Shield className="w-8 h-8 text-gray-300 mx-auto mb-2" />
+              <p className="text-gray-500 font-semibold">No policies for {activePerson === "spouse" ? spouseName : clientName}</p>
+            </div>
+          ) : (
+            <div className="space-y-1.5">
+              {filteredPolicies.map(p => <PolicyCard key={p.id} p={p} />)}
             </div>
           )}
-          {spousePolicies.length > 0 && (
+          {false && spousePolicies.length > 0 && (
             <div>
               <h2 className="text-sm font-bold text-purple-600 uppercase tracking-wider mb-2">
                 {spouseName || "Spouse"}

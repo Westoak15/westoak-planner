@@ -34,7 +34,7 @@ r.post("/clients/:id/pensions", async (req: AuthRequest, res: Response) => {
     indexingRate: body.indexingRate || null,
     bridgeBenefit: body.bridgeBenefit || null,
     bridgeBenefitEndAge: body.bridgeBenefitEndAge || 65,
-    survivorBenefitPct: body.survivorBenefitPct || null,
+    survivorBenefitPct: body.survivorBenefitPct != null && body.survivorBenefitPct !== "" ? body.survivorBenefitPct : null,
     isVested: body.isVested ?? true,
     notes: body.notes || null,
   }).returning();
@@ -60,7 +60,7 @@ r.patch("/pensions/:id", async (req: AuthRequest, res: Response) => {
     indexingRate: body.indexingRate || null,
     bridgeBenefit: body.bridgeBenefit || null,
     bridgeBenefitEndAge: body.bridgeBenefitEndAge || 65,
-    survivorBenefitPct: body.survivorBenefitPct || null,
+    survivorBenefitPct: body.survivorBenefitPct != null && body.survivorBenefitPct !== "" ? body.survivorBenefitPct : null,
     isVested: body.isVested ?? true,
     notes: body.notes || null,
     updatedAt: new Date(),

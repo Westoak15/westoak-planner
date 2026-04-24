@@ -37,6 +37,7 @@ r.post("/clients/:id/retirement-projections", async (req: AuthRequest, res: Resp
       return sum;
     }, 0);
 
+    const isCouple       = body.householdType === "couple";
     const currentAge     = Number(body.currentAge ?? 40);
     const retirementAge  = Number(body.retirementAge ?? 65);
     const lifeExpectancy = Number(body.lifeExpectancy ?? 90);
@@ -47,41 +48,70 @@ r.post("/clients/:id/retirement-projections", async (req: AuthRequest, res: Resp
     const stdDev         = 0.10;
     const infl           = Number(body.inflationRate ?? 2) / 100;
     const cppAge         = Number(body.cppStartAge ?? 65);
-    const oasAge         = Number(body.oasStartAge ?? 65);
     const cppAnnual      = 900 * 12;
     const oasAnnual      = 700 * 12;
-    const totalYears     = Math.max(1, lifeExpectancy - currentAge);
-    const simCount       = 1000;
+
+    // Spouse fields
+    const spouseAge      = Number(body.spouseAge ?? currentAge);
+    const spouseRetAge   = Number(body.spouseRetirementAge ?? retirementAge);
+    const spouseLifeExp  = Number(body.spouseLifeExpectancy ?? lifeExpectancy);
+    const spouseSavings  = Number(body.spouseSavings ?? 0);
+    const spouseContrib  = Number(body.spouseContribution ?? 0);
+    const spousePension  = Number(body.spousePensionIncome ?? 0);
+    const spouseCppAge   = Number(body.spouseCppStartAge ?? 65);
+
+    const planToAge  = isCouple ? Math.max(lifeExpectancy, spouseLifeExp) : lifeExpectancy;
+    const totalYears = Math.max(1, planToAge - currentAge);
+    const simCount   = 1000;
     const outcomes: number[] = [];
     let successCount = 0;
 
     for (let s = 0; s < simCount; s++) {
-      let bal = currentSavings;
-      let spending = desiredIncome;
+      let balPrimary = currentSavings;
+      let balSpouse  = isCouple ? spouseSavings : 0;
+      let spending   = desiredIncome;
       for (let yr = 0; yr < totalYears; yr++) {
-        const age = currentAge + yr;
+        const age   = currentAge + yr;
+        const spAge = spouseAge + yr;
         const z = Math.sqrt(-2 * Math.log(Math.random())) * Math.cos(2 * Math.PI * Math.random());
         const r = expectedReturn + stdDev * z;
-        if (age < retirementAge) {
-          bal = (bal + annualContrib) * (1 + r);
-        } else {
-          const cpp = age >= cppAge ? cppAnnual : 0;
-          const oas = age >= oasAge ? oasAnnual : 0;
-          const netW = Math.max(0, spending - cpp - oas - pensionIncome);
-          bal = Math.max(0, (bal - netW) * (1 + r));
-          spending *= (1 + infl);
+        const primRetired   = age >= retirementAge;
+        const spouseRetired = isCouple && spAge >= spouseRetAge;
+        if (!primRetired) balPrimary = (balPrimary + annualContrib) * (1 + r);
+        else              balPrimary = Math.max(0, balPrimary * (1 + r));
+        if (isCouple) {
+          if (!spouseRetired) balSpouse = (balSpouse + spouseContrib) * (1 + r);
+          else                balSpouse = Math.max(0, balSpouse * (1 + r));
+        }
+        const bothRetired = primRetired && (!isCouple || spouseRetired);
+        if (bothRetired) {
+          const cpp  = age >= cppAge     ? cppAnnual : 0;
+          const oas  = age >= cppAge     ? oasAnnual : 0;
+          const scpp = isCouple && spAge >= spouseCppAge ? cppAnnual : 0;
+          const soas = isCouple && spAge >= spouseCppAge ? oasAnnual : 0;
+          const totalGov = cpp + oas + scpp + soas + pensionIncome + (isCouple ? spousePension : 0);
+          const combinedPool = balPrimary + balSpouse;
+          const netW = Math.max(0, spending - totalGov);
+          const ratio = combinedPool > 0 ? balPrimary / combinedPool : 0.5;
+          balPrimary = Math.max(0, balPrimary - netW * ratio);
+          balSpouse  = Math.max(0, balSpouse  - netW * (1 - ratio));
+          spending  *= (1 + infl);
         }
       }
-      outcomes.push(bal);
-      if (bal > 0) successCount++;
+      const finalBal = balPrimary + (isCouple ? balSpouse : 0);
+      outcomes.push(finalBal);
+      if (finalBal > 0) successCount++;
     }
-
     const sorted = [...outcomes].sort((a, b) => a - b);
     const pct = (p: number) => sorted[Math.floor(sorted.length * p)] ?? 0;
-    const successRate    = successCount / simCount;
-    const medianBalance  = Math.round(pct(0.5));
-    const desiredTotal   = desiredIncome * (lifeExpectancy - retirementAge);
-    const projectedTotal = medianBalance + (cppAnnual + oasAnnual + pensionIncome) * (lifeExpectancy - retirementAge);
+    const successRate   = successCount / simCount;
+    const medianBalance = Math.round(pct(0.5));
+    const retYears      = planToAge - retirementAge;
+    const totalCpp      = isCouple ? cppAnnual * 2 : cppAnnual;
+    const totalOas      = isCouple ? oasAnnual * 2 : oasAnnual;
+    const totalPension  = pensionIncome + (isCouple ? spousePension : 0);
+    const projectedTotal = medianBalance + (totalCpp + totalOas + totalPension) * retYears;
+    const desiredTotal   = desiredIncome * retYears;
     const shortfall      = Math.round(projectedTotal - desiredTotal);
 
     const [row] = await (db.insert(retirementProjections) as any).values({

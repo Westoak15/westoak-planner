@@ -43,6 +43,18 @@ r.post("/clients/:id/simulate", async (req: AuthRequest, res: Response) => {
   const nonReg        = Number(proj?.nonRegBalance  ?? 0);
   const annualContrib = Number(proj?.annualContribution ?? 0);
   const desiredIncome = Number(proj?.desiredRetirementIncome  ?? client.desiredRetirementIncome ?? 50000);
+  const { pensionPlans } = await import("../../shared/schema.js");
+  const plans = await db.select().from(pensionPlans).where(eq(pensionPlans.clientId, cid));
+  const pensionIncome = plans.reduce((sum: number, p: any) => {
+    if (p.pensionType === "dbpp" && p.accrualRate && p.projectedYearsAtRetirement && p.bestAverageEarnings) {
+      return sum + (Number(p.accrualRate) * Number(p.projectedYearsAtRetirement) * Number(p.bestAverageEarnings));
+    }
+    if (p.pensionType === "dcpp" && p.currentBalance) {
+      return sum + (Number(p.currentBalance) * 0.04);
+    }
+    return sum;
+  }, 0);
+  
   const cppMonthly    = Number(proj?.cppMonthly     ?? 900);
   const oasMonthly    = Number(proj?.oasMonthly     ?? 700);
   const cppAge        = proj?.cppStartAge  ?? 65;
@@ -91,7 +103,7 @@ r.post("/clients/:id/simulate", async (req: AuthRequest, res: Response) => {
         // Retirement phase — apply guardrails
         const cpp = age >= cppAge ? cppMonthly * 12 : 0;
         const oas = age >= oasAge ? oasMonthly * 12 : 0;
-        const govBenefits = cpp + oas;
+        const govBenefits = cpp + oas + pensionIncome;
         const netWithdrawal = Math.max(0, spending - govBenefits);
 
         // Guardrail check vs glide path

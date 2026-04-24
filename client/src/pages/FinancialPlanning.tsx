@@ -309,12 +309,12 @@ function ModuleScenarioPreview({ planId, module }: { planId: number | null; modu
 
 // ── Retirement Tab ────────────────────────────────────────────────────────────
 
-function RetirementTab({ clientId, planId }: { clientId: number; planId: number | null }) {
+function RetirementTab({ clientId, planId, person, client: clientProp }: { clientId: number; planId: number | null; person?: string; client?: any }) {
   const { data: projections = [] } = useRetirementProjections(clientId);
   const createProjection = useCreateRetirementProjection();
   const { data: assumptions = [] } = usePlanAssumptions(planId);
   const { data: pensionPlans = [] } = useQuery<any[]>({ queryKey: ["/api/clients", clientId, "pensions"], queryFn: () => api.get(`/api/clients/${clientId}/pensions`) });
-  const { data: client } = useQuery<any>({ queryKey: ["/api/clients", clientId], queryFn: () => api.get(`/api/clients/${clientId}`) });
+  const client = clientProp;
   const [showCalc, setShowCalc] = useState(false);
 
   // Calculate total annual DBPP pension income from all plans
@@ -348,24 +348,29 @@ function RetirementTab({ clientId, planId }: { clientId: number; planId: number 
   // Auto-populate from client record when client data loads
   useEffect(() => {
     if (!client) return;
-    const dob = client.dateOfBirth;
+    const isPrimary = person !== "spouse";
+    const isCouple  = person === "combined";
+    const dob = isPrimary ? client.dateOfBirth : client.spouseDateOfBirth;
     const age = dob ? Math.floor((Date.now() - new Date(dob).getTime()) / (365.25*24*60*60*1000)) : null;
     const spouseDob = client.spouseDateOfBirth;
     const spouseAge = spouseDob ? Math.floor((Date.now() - new Date(spouseDob).getTime()) / (365.25*24*60*60*1000)) : null;
-    const hasSpouse = !!client.spouseFirstName;
     setForm(f => ({
       ...f,
-      householdType: hasSpouse ? "couple" : "individual",
-      currentAge: age ? String(age) : f.currentAge,
-      retirementAge: client.retirementAge ? String(client.retirementAge) : f.retirementAge,
-      desiredRetirementIncome: client.desiredRetirementIncome ?? f.desiredRetirementIncome,
-      spouseAge: spouseAge ? String(spouseAge) : f.spouseAge,
-      spouseRetirementAge: client.spouseRetirementAge ? String(client.spouseRetirementAge) : f.spouseRetirementAge,
+      householdType: isCouple ? "couple" : "individual",
+      currentAge:    age ? String(age) : f.currentAge,
+      retirementAge: isPrimary
+        ? (client.retirementAge        ? String(client.retirementAge)        : f.retirementAge)
+        : (client.spouseRetirementAge  ? String(client.spouseRetirementAge)  : f.retirementAge),
+      desiredRetirementIncome: isPrimary
+        ? (client.desiredRetirementIncome        ?? f.desiredRetirementIncome)
+        : (client.spouseDesiredRetirementIncome  ?? f.desiredRetirementIncome),
+      spouseAge:            spouseAge ? String(spouseAge) : f.spouseAge,
+      spouseRetirementAge:  client.spouseRetirementAge ? String(client.spouseRetirementAge) : f.spouseRetirementAge,
       householdDesiredIncome: (client.desiredRetirementIncome && client.spouseDesiredRetirementIncome)
         ? String(Number(client.desiredRetirementIncome) + Number(client.spouseDesiredRetirementIncome))
-        : client.desiredRetirementIncome ?? f.householdDesiredIncome,
+        : (client.desiredRetirementIncome ?? f.householdDesiredIncome),
     }));
-  }, [client]);
+  }, [client, person]);
 
   // Auto-update pensionIncome when pension plans load
   useEffect(() => {
@@ -2314,9 +2319,9 @@ function IncomeSplittingPanel({ clientId, prefill }: { clientId: number; prefill
 // MAIN TAX TAB COMPONENT
 // ============================================================================
 
-export function TaxTab({ clientId, client }: { clientId: number; client?: any }) {
+export function TaxTab({ clientId, client, person: personProp }: { clientId: number; client?: any; person?: string }) {
   const [activeSubTab, setActiveSubTab] = useState<TaxSubTab>("projection");
-  const [person, setPerson] = useState<"primary" | "spouse" | "both">("primary");
+  const person = (personProp === "spouse" ? "spouse" : personProp === "combined" ? "both" : "primary") as "primary" | "spouse" | "both";
   const { data: projections = [] } = useRetirementProjections(clientId);
   const ret = (projections as any[])[0] ?? null;
 
@@ -2364,32 +2369,7 @@ export function TaxTab({ clientId, client }: { clientId: number; client?: any })
     <div className="space-y-6 animate-in fade-in duration-300">
       <div className="flex items-center justify-between flex-wrap gap-2">
         <h2 className="text-xl font-display font-bold">Tax Planning</h2>
-        {client && (
-          <div className="flex items-center gap-1 p-1 bg-muted/50 rounded-xl">
-            <button
-              onClick={() => setPerson("primary")}
-              className={`px-3 py-1.5 rounded-lg text-sm font-semibold transition-colors ${person === "primary" ? "bg-white text-primary shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
-            >
-              {primaryLabel}
-            </button>
-            {hasSpouse && (
-              <>
-                <button
-                  onClick={() => setPerson("spouse")}
-                  className={`px-3 py-1.5 rounded-lg text-sm font-semibold transition-colors ${person === "spouse" ? "bg-white text-primary shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
-                >
-                  {spouseLabel}
-                </button>
-                <button
-                  onClick={() => setPerson("both")}
-                  className={`px-3 py-1.5 rounded-lg text-sm font-semibold transition-colors ${person === "both" ? "bg-white text-primary shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
-                >
-                  Both
-                </button>
-              </>
-            )}
-          </div>
-        )}
+        {/* Person selection moved to top-level tabs */}
       </div>
 
       <div className="flex gap-1 p-1 bg-muted/50 rounded-xl overflow-x-auto flex-wrap">
@@ -2566,6 +2546,7 @@ export function AITab({ clientId }: { clientId: number }) {
 
 export function FinancialPlanningContent({ initialClientId }: { initialClientId?: number }) {
   const [activeTab, setActiveTab] = useState<TabKey>("overview");
+  const [person, setPerson] = useState<"primary"|"spouse"|"combined">("primary");
   const [selectedClientId, setSelectedClientId] = useState<number | null>(initialClientId ?? null);
 
   const { data: clients = [] } = useQuery<Array<{ id: number; firstName: string; lastName: string }>>({
@@ -2656,6 +2637,27 @@ const { data: plans = [] } = useClientPlans(selectedClientId ?? 0);
 
         {selectedClientId ? (
           <>
+            {/* Person tabs — Client / Spouse / Combined */}
+            {selectedClient && (
+              <div className="flex gap-1 mb-5 bg-muted/40 rounded-xl p-1 border border-border w-fit">
+                <button onClick={() => setPerson("primary")}
+                  className={`px-4 py-1.5 rounded-lg text-sm font-semibold transition-colors ${person === "primary" ? "bg-white shadow text-[#0c1e3a] border border-border" : "text-muted-foreground hover:text-foreground"}`}>
+                  {(selectedClient as any).firstName ?? "Client"}
+                </button>
+                {(selectedClient as any).spouseFirstName && (
+                  <button onClick={() => setPerson("spouse")}
+                    className={`px-4 py-1.5 rounded-lg text-sm font-semibold transition-colors ${person === "spouse" ? "bg-white shadow text-purple-700 border border-border" : "text-muted-foreground hover:text-foreground"}`}>
+                    {(selectedClient as any).spouseFirstName}
+                  </button>
+                )}
+                {(selectedClient as any).spouseFirstName && (
+                  <button onClick={() => setPerson("combined")}
+                    className={`px-4 py-1.5 rounded-lg text-sm font-semibold transition-colors ${person === "combined" ? "bg-white shadow text-blue-700 border border-border" : "text-muted-foreground hover:text-foreground"}`}>
+                    Combined
+                  </button>
+                )}
+              </div>
+            )}
             {activeTab === "overview"   && <OverviewTab      clientId={selectedClientId} />}
             {activeTab === "dashboard"  && activePlanId && <SimulationDashboard planId={activePlanId} />}
             {activeTab === "dashboard"  && !activePlanId && (
@@ -2666,11 +2668,11 @@ const { data: plans = [] } = useClientPlans(selectedClientId ?? 0);
               </div>
             )}
             {activeTab === "networth"   && <NetWorthTab      clientId={selectedClientId} />}
-            {activeTab === "retirement" && <RetirementTab    clientId={selectedClientId} planId={activePlanId} />}
-            {activeTab === "insurance"  && <InsuranceTab     clientId={selectedClientId} planId={activePlanId} />}
+            {activeTab === "retirement" && <RetirementTab    clientId={selectedClientId} planId={activePlanId} person={person} client={selectedClient} />}
+            {activeTab === "insurance"  && <InsuranceTab     clientId={selectedClientId} planId={activePlanId} client={selectedClient} />}
             {activeTab === "resp"       && <RESPTab          clientId={selectedClientId} planId={activePlanId} />}
             {activeTab === "debt"       && <DebtTab          clientId={selectedClientId} planId={activePlanId} />}
-            {activeTab === "tax" && <TaxTab clientId={selectedClientId} client={selectedClient} />}
+            {activeTab === "tax" && <TaxTab clientId={selectedClientId} client={selectedClient} person={person} />}
             {activeTab === "estate"     && <EstateNotesTab   clientId={selectedClientId} planId={activePlanId} />}
             {activeTab === "ai"         && <AITab            clientId={selectedClientId} />}
           </>

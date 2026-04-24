@@ -1344,6 +1344,8 @@ function RrspRoomPanel({ clientId, prefill, personLabel }: { clientId: number; p
     }));
     setResult(null);
   };
+
+  useEffect(() => { loadFromClient(); }, [prefill]);
  
   const handleCalc = () => {
     const input: Record<string, unknown> = {};
@@ -1501,6 +1503,8 @@ function TfsaRoomPanel({ clientId, prefill, personLabel }: { clientId: number; p
     setResult(null);
   };
 
+  useEffect(() => { loadFromClient(); }, [prefill]);
+
   const handleCalc = () => {
     const input: Record<string, unknown> = {};
     for (const [k, v] of Object.entries(form)) {
@@ -1619,8 +1623,11 @@ function TaxProjectionPanel({ clientId, prefillPrimary, prefillSpouse, person, p
   const [resultSpouse, setResultSpouse] = useState<TaxProjectionResult | null>(null);
   const [loadingBoth, setLoadingBoth] = useState(false);
   const [showTable, setShowTable] = useState(false);
-  const [form, setForm] = useState({
+ useEffect(() => { 
+    if (person !== "both") applyPrefill(person === "spouse" ? prefillSpouse : prefillPrimary); 
+  }, [prefillPrimary, prefillSpouse, person]);
 
+  const [form, setForm] = useState({
     currentAge: "40",
     retirementAge: "65",
     planToAge: "90",
@@ -2191,6 +2198,8 @@ function IncomeSplittingPanel({ clientId, prefill }: { clientId: number; prefill
     }));
     setResult(null);
   };
+
+  useEffect(() => { loadFromClient(); }, [prefill]);
 
   const handleCalc = () => {
     const input: Record<string, unknown> = {};

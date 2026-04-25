@@ -1563,7 +1563,7 @@ function TfsaRoomPanel({ clientId, prefill, person = "primary", primaryLabel = "
 
   const del = async (id: number) => {
     if (!confirm("Delete this analysis?")) return;
-    await api.delete(`/api/tax/analyses/${id}`);
+    await api.delete(`/api/tax/tax-analyses/${id}`);
     await load();
   };
 
@@ -1751,7 +1751,7 @@ function TaxProjectionPanel({ clientId, prefillPrimary, prefillSpouse, person = 
 
   const del = async (id: number) => {
     if (!confirm("Delete this projection?")) return;
-    await api.delete(`/api/tax/analyses/${id}`);
+    await api.delete(`/api/tax/tax-analyses/${id}`);
     await load();
   };
 
@@ -2296,7 +2296,7 @@ function IncomeSplittingPanel({ clientId, prefill, person = "primary", primaryLa
 
   const del = async (id: number) => {
     if (!confirm("Delete this analysis?")) return;
-    await api.delete(`/api/tax/analyses/${id}`);
+    await api.delete(`/api/tax/tax-analyses/${id}`);
     await load();
   };
 

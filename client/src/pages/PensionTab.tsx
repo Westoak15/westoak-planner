@@ -86,9 +86,7 @@ export function PensionTab({ clientId, client }: { clientId: number; client?: an
   const [activePerson, setActivePerson] = useState<"primary" | "spouse">("primary");
   const hasSpouse  = !!client?.spouseFirstName;
   const clientName = client?.firstName ?? "Client";
-  const spouseName = client?.spouseFirstName
-    ? `${client.spouseFirstName} ${client.spouseLastName ?? ""}`.trim()
-    : "Spouse";
+  const spouseName = client?.spouseFirstName ?? "Spouse";
 
   const load = () => api.get<PensionPlan[]>(`/api/clients/${clientId}/pensions`).then(setPlans).catch(() => {});
   useEffect(() => { load(); }, [clientId]);
@@ -196,18 +194,10 @@ function prefillFromOwner(owner: string) {
           <h2 className="text-xl font-bold text-gray-900">Pension Plans</h2>
           <p className="text-sm text-gray-500 mt-0.5">Employer pension plans and defined benefit entitlements</p>
         </div>
-        <div className="flex gap-2">
-          <button onClick={() => openNew("primary")}
-            className="flex items-center gap-1.5 text-sm font-semibold text-white bg-[#0c1e3a] hover:bg-[#0e2a4a] px-3 py-2 rounded-xl">
-            <Plus className="w-4 h-4" /> {client?.firstName ?? "Primary"}
-          </button>
-          {client?.spouseFirstName && (
-            <button onClick={() => openNew("spouse")}
-              className="flex items-center gap-1.5 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 px-3 py-2 rounded-xl">
-              <Plus className="w-4 h-4" /> {client.spouseFirstName}
-            </button>
-          )}
-        </div>
+        <button onClick={() => openNew(activePerson)}
+          className="flex items-center gap-1.5 text-sm font-semibold text-white bg-[#0c1e3a] hover:bg-[#0e2a4a] px-3 py-2 rounded-xl">
+          <Plus className="w-4 h-4" /> Add Plan
+        </button>
       </div>
 
       {/* Modal Form */}

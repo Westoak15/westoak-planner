@@ -1995,155 +1995,273 @@ function TaxProjectionPanel({ clientId, prefillPrimary, prefillSpouse, person, p
 // PANEL: Capital Gains Analysis
 // ============================================================================
 
-function CapitalGainsPanel({ clientId }: { clientId: number }) {
+const PROVINCE_RATES: Record<string, number> = {
+  ON: 53.53, BC: 53.50, AB: 48.00, QC: 53.31, MB: 50.40,
+  SK: 47.50, NS: 54.00, NB: 52.50, PE: 51.37, NL: 51.30,
+  YT: 48.00, NT: 47.05, NU: 44.50,
+};
+
+function CapitalGainsPanel({ clientId, client }: { clientId: number; client?: any }) {
   const capGains = useCapitalGains(clientId);
   const [result, setResult] = useState<CapitalGainsResult | null>(null);
+  const [province, setProvince]         = useState<string>(client?.province ?? "ON");
+  const [marginalRate, setMarginalRate] = useState<string>(
+    String((PROVINCE_RATES[client?.province ?? "ON"] ?? 53.53).toFixed(2))
+  );
+  const [carryForwardLoss, setCarryForwardLoss] = useState("0");
   const [positions, setPositions] = useState([
-    { symbol: "XIC.TO", acb: "50000", fmv: "75000" },
-    { symbol: "VFV.TO", acb: "30000", fmv: "45000" },
+    { type: "stock", symbol: "", acb: "", fmv: "", lcgeEligible: false },
   ]);
+
+  const provinces = ["ON","BC","AB","QC","MB","SK","NS","NB","PE","NL","YT","NT","NU"];
+  const ASSET_TYPES = [
+    { key: "stock",    label: "Stock / ETF" },
+    { key: "realestate", label: "Real Estate" },
+    { key: "smallbiz", label: "Small Business Shares" },
+    { key: "farmfish", label: "Farm / Fishing Property" },
+    { key: "other",    label: "Other" },
+  ];
+  const LCGE_TYPES = ["smallbiz", "farmfish"];
+  const LCGE_LIMIT = 1250000;
+
+  const addPosition = () =>
+    setPositions(p => [...p, { type: "stock", symbol: "", acb: "", fmv: "", lcgeEligible: false }]);
+
+  const removePosition = (i: number) =>
+    setPositions(p => p.filter((_, idx) => idx !== i));
+
+  const updatePos = (i: number, k: string, v: any) =>
+    setPositions(p => p.map((x, idx) => {
+      if (idx !== i) return x;
+      const updated = { ...x, [k]: v };
+      if (k === "type") updated.lcgeEligible = LCGE_TYPES.includes(v);
+      return updated;
+    }));
+
+  // Live client-side preview
+  const preview = positions.map(p => {
+    const acb = Number(p.acb || 0);
+    const fmv = Number(p.fmv || 0);
+    const gain = fmv - acb;
+    return { ...p, gain };
+  });
+  const totalGain      = preview.reduce((s, p) => s + Math.max(0, p.gain), 0);
+  const totalLoss      = preview.reduce((s, p) => s + Math.abs(Math.min(0, p.gain)), 0);
+  const lcgeGains      = preview.filter(p => p.lcgeEligible).reduce((s, p) => s + Math.max(0, p.gain), 0);
+  const lcgeSheltered  = Math.min(lcgeGains, LCGE_LIMIT);
+  const netGain        = Math.max(0, totalGain - totalLoss - Number(carryForwardLoss || 0) - lcgeSheltered);
+  const taxableGain    = netGain * 0.5;
+  const estTax         = taxableGain * (Number(marginalRate) / 100);
 
   const handleCalc = () => {
     const input = {
-      positions: positions.map((p) => ({
-        symbol: p.symbol,
+      positions: positions.map(p => ({
+        symbol: p.symbol || p.type,
         acb: Number(p.acb),
         fmv: Number(p.fmv),
+        lcgeEligible: p.lcgeEligible,
       })),
-      marginalTaxRate: 0.435,
+      marginalTaxRate: Number(marginalRate) / 100,
+      carryForwardLoss: Number(carryForwardLoss || 0),
+      province,
     };
-    capGains.mutate(input, {
-      onSuccess: (data) => setResult(data),
-    });
-  };
-
-  const addPosition = () => {
-    setPositions([...positions, { symbol: "", acb: "0", fmv: "0" }]);
-  };
-
-  const removePosition = (idx: number) => {
-    setPositions(positions.filter((_, i) => i !== idx));
+    capGains.mutate(input, { onSuccess: data => setResult(data) });
   };
 
   return (
     <div className="space-y-5">
-      <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl text-sm text-amber-800">
-        <strong>Capital Gains Analysis</strong> Analyzes unrealized gains with 2025 rates (50%).
-      </div>
-
-      <div className="space-y-3">
-        {positions.map((pos, idx) => (
-          <div key={idx} className="grid grid-cols-4 gap-3 items-end">
-            <div>
-              <label className="text-sm font-semibold">Symbol</label>
-              <input
-                type="text"
-                value={pos.symbol}
-                onChange={(e) => {
-                  const newPos = [...positions];
-                  newPos[idx].symbol = e.target.value;
-                  setPositions(newPos);
-                }}
-                className="w-full px-3 py-2 rounded-xl border mt-1 text-sm"
-              />
-            </div>
-            <div>
-              <label className="text-sm font-semibold">ACB</label>
-              <input
-                type="number"
-                value={pos.acb}
-                onChange={(e) => {
-                  const newPos = [...positions];
-                  newPos[idx].acb = e.target.value;
-                  setPositions(newPos);
-                }}
-                className="w-full px-3 py-2 rounded-xl border mt-1 text-sm"
-              />
-            </div>
-            <div>
-              <label className="text-sm font-semibold">FMV</label>
-              <input
-                type="number"
-                value={pos.fmv}
-                onChange={(e) => {
-                  const newPos = [...positions];
-                  newPos[idx].fmv = e.target.value;
-                  setPositions(newPos);
-                }}
-                className="w-full px-3 py-2 rounded-xl border mt-1 text-sm"
-              />
-            </div>
-            <button
-              onClick={() => removePosition(idx)}
-              className="px-3 py-2 bg-destructive/10 text-destructive rounded-xl hover:bg-destructive/20"
-            >
-              <Trash2 className="w-4 h-4" />
-            </button>
+      {/* Header */}
+      <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl">
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <div>
+            <p className="font-semibold text-amber-900 text-sm">Capital Gains Analyser — 2025</p>
+            <p className="text-xs text-amber-700 mt-0.5">50% inclusion rate · LCGE $1.25M · Losses carry forward indefinitely</p>
           </div>
-        ))}
+          <span className="text-xs bg-green-100 text-green-700 font-semibold px-3 py-1 rounded-full">
+            Rate increase cancelled Mar 21, 2025
+          </span>
+        </div>
       </div>
 
-      <div className="flex gap-2">
-        <button onClick={addPosition} className="flex items-center space-x-2 px-4 py-2 bg-muted rounded-xl text-sm font-semibold">
-          <Plus className="w-4 h-4" />
-          <span>Add Position</span>
-        </button>
-        <button
-          onClick={handleCalc}
-          disabled={capGains.isPending}
-          className="flex items-center space-x-2 px-4 py-2 bg-primary text-primary-foreground rounded-xl font-semibold hover:bg-primary/90 disabled:opacity-50"
-        >
-          <Calculator className="w-4 h-4" />
-          <span>{capGains.isPending ? "Analyzing..." : "Analyze Gains"}</span>
-        </button>
+      {/* Tax Settings */}
+      <div className="grid grid-cols-3 gap-4">
+        <div>
+          <label className="text-sm font-semibold">Province</label>
+          <select value={province}
+            onChange={e => { setProvince(e.target.value); setMarginalRate(String((PROVINCE_RATES[e.target.value] ?? 53.53).toFixed(2))); }}
+            className="w-full px-3 py-2 rounded-xl border mt-1 text-sm">
+            {provinces.map(p => <option key={p} value={p}>{p}</option>)}
+          </select>
+        </div>
+        <div>
+          <label className="text-sm font-semibold">Marginal Tax Rate (%)</label>
+          <input type="number" step="0.1" value={marginalRate}
+            onChange={e => setMarginalRate(e.target.value)}
+            className="w-full px-3 py-2 rounded-xl border mt-1 text-sm" />
+          <p className="text-[10px] text-gray-400 mt-0.5">Combined fed + prov on regular income</p>
+        </div>
+        <div>
+          <label className="text-sm font-semibold">Prior Year Losses Carry-Forward ($)</label>
+          <input type="number" value={carryForwardLoss}
+            onChange={e => setCarryForwardLoss(e.target.value)}
+            className="w-full px-3 py-2 rounded-xl border mt-1 text-sm" placeholder="0" />
+          <p className="text-[10px] text-gray-400 mt-0.5">Carries forward indefinitely (T1A)</p>
+        </div>
       </div>
+
+      {/* Positions */}
+      <div>
+        <div className="flex items-center justify-between mb-2">
+          <label className="text-sm font-semibold">Positions</label>
+          <button onClick={addPosition}
+            className="flex items-center gap-1 text-xs font-semibold text-[#0c1e3a] hover:underline">
+            <Plus className="w-3.5 h-3.5" /> Add Position
+          </button>
+        </div>
+        <div className="border border-gray-200 rounded-xl overflow-hidden">
+          <table className="w-full text-sm">
+            <thead className="bg-gray-50 border-b border-gray-200">
+              <tr>
+                <th className="px-3 py-2 text-left text-xs font-semibold text-gray-500">Asset Type</th>
+                <th className="px-3 py-2 text-left text-xs font-semibold text-gray-500">Name / Symbol</th>
+                <th className="px-3 py-2 text-right text-xs font-semibold text-gray-500">ACB ($)</th>
+                <th className="px-3 py-2 text-right text-xs font-semibold text-gray-500">FMV ($)</th>
+                <th className="px-3 py-2 text-right text-xs font-semibold text-gray-500">Gain / Loss</th>
+                <th className="px-3 py-2 text-center text-xs font-semibold text-gray-500">LCGE</th>
+                <th className="px-3 py-2"></th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {positions.map((pos, i) => {
+                const gain = Number(pos.fmv || 0) - Number(pos.acb || 0);
+                const hasValues = pos.acb && pos.fmv;
+                return (
+                  <tr key={i} className="hover:bg-gray-50">
+                    <td className="px-3 py-2">
+                      <select value={pos.type} onChange={e => updatePos(i, "type", e.target.value)}
+                        className="border border-gray-200 rounded-lg px-2 py-1.5 text-xs w-full">
+                        {ASSET_TYPES.map(t => <option key={t.key} value={t.key}>{t.label}</option>)}
+                      </select>
+                    </td>
+                    <td className="px-3 py-2">
+                      <input value={pos.symbol} onChange={e => updatePos(i, "symbol", e.target.value)}
+                        className="border border-gray-200 rounded-lg px-2 py-1.5 text-xs w-full" placeholder="e.g. XIC.TO" />
+                    </td>
+                    <td className="px-3 py-2">
+                      <input type="number" value={pos.acb} onChange={e => updatePos(i, "acb", e.target.value)}
+                        className="border border-gray-200 rounded-lg px-2 py-1.5 text-xs w-full text-right" placeholder="0" />
+                    </td>
+                    <td className="px-3 py-2">
+                      <input type="number" value={pos.fmv} onChange={e => updatePos(i, "fmv", e.target.value)}
+                        className="border border-gray-200 rounded-lg px-2 py-1.5 text-xs w-full text-right" placeholder="0" />
+                    </td>
+                    <td className="px-3 py-2 text-right">
+                      {hasValues && (
+                        <span className={`text-xs font-bold ${gain >= 0 ? "text-green-600" : "text-red-600"}`}>
+                          {gain >= 0 ? "+" : ""}${Math.abs(gain).toLocaleString("en-CA", { maximumFractionDigits: 0 })}
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-3 py-2 text-center">
+                      <input type="checkbox" checked={pos.lcgeEligible}
+                        onChange={e => updatePos(i, "lcgeEligible", e.target.checked)}
+                        disabled={!LCGE_TYPES.includes(pos.type)}
+                        className="w-4 h-4 rounded"
+                        title={LCGE_TYPES.includes(pos.type) ? "Eligible for $1.25M LCGE" : "Only for small business shares or farm/fishing property"} />
+                    </td>
+                    <td className="px-3 py-2">
+                      <button onClick={() => removePosition(i)} className="text-gray-300 hover:text-red-500">
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Live Summary */}
+      {(totalGain > 0 || totalLoss > 0) && (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {[
+            { label: "Gross Gains",       value: totalGain,    color: "text-green-700",  bg: "bg-green-50"  },
+            { label: "Losses + Carry-Fwd", value: totalLoss + Number(carryForwardLoss || 0), color: "text-red-600", bg: "bg-red-50" },
+            { label: "LCGE Sheltered",    value: lcgeSheltered, color: "text-blue-700",   bg: "bg-blue-50"   },
+            { label: "Est. Tax Owing",    value: estTax,       color: "text-orange-700", bg: "bg-orange-50" },
+          ].map(c => (
+            <div key={c.label} className={`${c.bg} rounded-xl p-3`}>
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">{c.label}</p>
+              <p className={`text-lg font-bold ${c.color}`}>
+                ${Math.round(c.value).toLocaleString("en-CA")}
+              </p>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {(totalGain > 0 || totalLoss > 0) && (
+        <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 text-sm space-y-1.5">
+          <div className="flex justify-between"><span className="text-gray-600">Net capital gain</span><span className="font-semibold">${Math.round(netGain).toLocaleString("en-CA")}</span></div>
+          <div className="flex justify-between"><span className="text-gray-600">Taxable gain (50% inclusion)</span><span className="font-semibold">${Math.round(taxableGain).toLocaleString("en-CA")}</span></div>
+          <div className="flex justify-between"><span className="text-gray-600">Marginal rate applied</span><span className="font-semibold">{marginalRate}%</span></div>
+          <div className="flex justify-between border-t border-gray-200 pt-1.5 mt-1.5">
+            <span className="font-bold text-gray-800">Estimated tax</span>
+            <span className="font-bold text-orange-700">${Math.round(estTax).toLocaleString("en-CA")}</span>
+          </div>
+          {lcgeSheltered > 0 && (
+            <div className="flex justify-between text-blue-700">
+              <span className="font-semibold">LCGE tax saving</span>
+              <span className="font-semibold">${Math.round(lcgeSheltered * 0.5 * Number(marginalRate) / 100).toLocaleString("en-CA")}</span>
+            </div>
+          )}
+        </div>
+      )}
+
+      <button onClick={handleCalc} disabled={capGains.isPending}
+        className="flex items-center space-x-2 px-4 py-2 bg-primary text-primary-foreground rounded-xl font-semibold hover:bg-primary/90 disabled:opacity-50">
+        <Calculator className="w-4 h-4" />
+        <span>{capGains.isPending ? "Analysing…" : "Run Full Analysis"}</span>
+      </button>
 
       {result && (
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="border border-border rounded-xl p-4">
               <p className="text-xs text-muted-foreground uppercase">Total Unrealized Gain</p>
-              <p className="text-2xl font-bold mt-1 text-green-600">{fmt$(result.totalUnrealizedGain)}</p>
+              <p className="text-2xl font-bold mt-1 text-green-600">${Math.round(result.totalUnrealizedGain).toLocaleString("en-CA")}</p>
             </div>
             <div className="border border-border rounded-xl p-4">
               <p className="text-xs text-muted-foreground uppercase">Loss Harvesting Opportunity</p>
-              <p className="text-2xl font-bold mt-1 text-orange-600">{fmt$(result.lossHarvestingOpportunity)}</p>
+              <p className="text-2xl font-bold mt-1 text-orange-600">${Math.round(result.lossHarvestingOpportunity).toLocaleString("en-CA")}</p>
             </div>
           </div>
-
-          <div className="border border-border rounded-xl p-4">
-            <p className="text-sm font-semibold mb-3">Realization Scenarios (2024 Rates)</p>
-            <div className="space-y-2">
-              {result.scenarios.map((sc) => (
-                <div key={sc.name} className="flex justify-between items-center p-3 bg-muted/30 rounded-lg">
-                  <span className="font-semibold text-sm">{sc.name}</span>
-                  <div className="flex gap-4 text-sm">
-                    <span>Gain: {fmt$(sc.gainRealized)}</span>
-                    <span>Taxable: {fmt$(sc.taxableGain)}</span>
-                    <span className="font-bold text-red-600">Tax: {fmt$(sc.estimatedTax)}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
           <div className="border border-border rounded-xl overflow-hidden">
             <table className="w-full text-sm">
               <thead className="bg-muted/50">
                 <tr>
-                  <th className="px-4 py-2 text-left">Symbol</th>
-                  <th className="px-4 py-2 text-right">ACB</th>
-                  <th className="px-4 py-2 text-right">FMV</th>
-                  <th className="px-4 py-2 text-right">Unrealized Gain</th>
+                  <th className="px-3 py-2 text-left">Position</th>
+                  <th className="px-3 py-2 text-right">ACB</th>
+                  <th className="px-3 py-2 text-right">FMV</th>
+                  <th className="px-3 py-2 text-right">Unrealized Gain</th>
+                  <th className="px-3 py-2 text-right">Taxable (50%)</th>
+                  <th className="px-3 py-2 text-right">Est. Tax</th>
                 </tr>
               </thead>
               <tbody>
-                {result.positions.map((pos, idx) => (
-                  <tr key={idx} className="border-t border-border">
-                    <td className="px-4 py-2 font-semibold">{pos.symbol}</td>
-                    <td className="px-4 py-2 text-right">{fmt$(pos.acb)}</td>
-                    <td className="px-4 py-2 text-right">{fmt$(pos.fmv)}</td>
-                    <td className="px-4 py-2 text-right font-bold text-green-600">{fmt$(pos.unrealizedGain)}</td>
+                {result.positions.map((pos: any, idx: number) => (
+                  <tr key={idx} className="border-t border-border hover:bg-muted/20">
+                    <td className="px-3 py-2 font-semibold">{pos.symbol}</td>
+                    <td className="px-3 py-2 text-right">${Math.round(pos.acb).toLocaleString("en-CA")}</td>
+                    <td className="px-3 py-2 text-right">${Math.round(pos.fmv).toLocaleString("en-CA")}</td>
+                    <td className={`px-3 py-2 text-right font-bold ${pos.unrealizedGain >= 0 ? "text-green-600" : "text-red-600"}`}>
+                      ${Math.round(Math.abs(pos.unrealizedGain)).toLocaleString("en-CA")}
+                    </td>
+                    <td className="px-3 py-2 text-right">${Math.round(pos.unrealizedGain * 0.5).toLocaleString("en-CA")}</td>
+                    <td className="px-3 py-2 text-right font-semibold text-orange-700">
+                      ${Math.round(pos.unrealizedGain * 0.5 * Number(marginalRate) / 100).toLocaleString("en-CA")}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -2202,10 +2320,9 @@ function IncomeSplittingPanel({ clientId, prefill }: { clientId: number; prefill
         <div className="flex-1 p-4 bg-indigo-50 border border-indigo-200 rounded-xl text-sm text-indigo-800">
           <strong>Income Splitting Optimizer</strong>
         </div>
-        {prefill && <span className="text-xs text-indigo-600 font-semibold">↻ Auto-loaded</span>}
-      </div>
+       </div>
       <div className="p-4 bg-indigo-50 border border-indigo-200 rounded-xl text-sm text-indigo-800">
-        <strong>Income Splitting Optimizer</strong> � Finds the best strategy: pension split (T1032), spousal RRSP, CPP sharing,
+        <strong>Income Splitting Optimizer</strong> Finds the best strategy: pension split (T1032), spousal RRSP, CPP sharing,
         or prescribed rate loan.
       </div>
 
@@ -2397,7 +2514,7 @@ export function TaxTab({ clientId, client }: { clientId: number; client?: any })
         {activeSubTab === "rrsp"       && <RrspRoomPanel        clientId={clientId} prefill={activePrefill} personLabel={person === "spouse" ? spouseLabel : primaryLabel} />}
         {activeSubTab === "tfsa"       && <TfsaRoomPanel        clientId={clientId} prefill={activePrefill} personLabel={person === "spouse" ? spouseLabel : primaryLabel} />}
         {activeSubTab === "projection" && <TaxProjectionPanel   clientId={clientId} prefillPrimary={prefillPrimary} prefillSpouse={hasSpouse ? prefillSpouse : undefined} person={person} primaryLabel={primaryLabel} spouseLabel={spouseLabel} />}
-        {activeSubTab === "capgains"   && <CapitalGainsPanel    clientId={clientId} />}
+        {activeSubTab === "capgains"   && <CapitalGainsPanel    clientId={clientId} client={client} />}
         {activeSubTab === "splitting"  && <IncomeSplittingPanel clientId={clientId} prefill={activePrefill} />}
       </div>
     </div>

@@ -1475,7 +1475,7 @@ export default function App() {
 
   const clientName = client ? `${client.firstName} ${client.lastName}` : undefined;
   const hasSpouse = !!client?.spouseFirstName;
-  const PERSON_TABS: Tab[] = ["retirement", "goals", "tax"];
+  const PERSON_TABS: Tab[] = ["retirement", "goals"];
   const showPersonTabs = client && PERSON_TABS.includes(tab);
 
   return (

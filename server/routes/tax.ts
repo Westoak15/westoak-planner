@@ -326,10 +326,12 @@ taxRouter.get("/client/:clientId/analyses", async (req, res) => {
   try {
     const clientId = parseInt(req.params.clientId);
     const { type } = req.query;
-    let query = db.select().from(taxAnalyses).where(eq(taxAnalyses.clientId, clientId));
-    const rows = await query;
+    const rows = await db.select().from(taxAnalyses).where(eq(taxAnalyses.clientId, clientId));
     res.json(type ? rows.filter((r: any) => r.type === type) : rows);
-  } catch (e) { res.status(500).json({ error: "Failed" }); }
+  } catch (e: any) {
+    console.error("[tax analyses get]", e?.message);
+    res.status(500).json({ error: e?.message ?? "Failed" });
+  }
 });
 
 taxRouter.post("/client/:clientId/analyses", async (req, res) => {

@@ -1345,7 +1345,7 @@ function RrspRoomPanel({ clientId, prefill, person = "primary", primaryLabel = "
   const load = async () => {
     setLoading(true);
     try {
-      const data = await api.get<any[]>(`/api/tax/${clientId}/analyses?type=rrsp`);
+      const data = await api.get<any[]>(`/api/tax/client/${clientId}/analyses?type=rrsp`);
       setAnalyses(data.filter((a: any) => a.owner === owner));
     } catch { setAnalyses([]); }
     finally { setLoading(false); }
@@ -1381,7 +1381,7 @@ function RrspRoomPanel({ clientId, prefill, person = "primary", primaryLabel = "
       const result = await api.post(`/api/tax/${clientId}/rrsp-room`, input);
       const payload = { type: "rrsp", owner, label: form.label, inputData: form, resultData: result };
       if (editingId) await api.patch(`/api/tax/tax-analyses/${editingId}`, payload);
-      else await api.post(`/api/tax/${clientId}/analyses`, payload);
+      else await api.post(`/api/tax/client/${clientId}/analyses`, payload);
       setShowForm(false);
       await load();
     } catch (e: any) { alert(e.message); }
@@ -1517,7 +1517,7 @@ function TfsaRoomPanel({ clientId, prefill, person = "primary", primaryLabel = "
   const load = async () => {
     setLoading(true);
     try {
-      const data = await api.get<any[]>(`/api/tax/${clientId}/analyses?type=tfsa`);
+      const data = await api.get<any[]>(`/api/tax/client/${clientId}/analyses?type=tfsa`);
       setAnalyses(data.filter((a: any) => a.owner === owner));
     } catch { setAnalyses([]); }
     finally { setLoading(false); }
@@ -1554,7 +1554,7 @@ function TfsaRoomPanel({ clientId, prefill, person = "primary", primaryLabel = "
       const result = await api.post(`/api/tax/${clientId}/tfsa-room`, input);
       const payload = { type: "tfsa", owner, label: form.label, inputData: form, resultData: result };
       if (editingId) await api.patch(`/api/tax/tax-analyses/${editingId}`, payload);
-      else await api.post(`/api/tax/${clientId}/analyses`, payload);
+      else await api.post(`/api/tax/client/${clientId}/analyses`, payload);
       setShowForm(false);
       await load();
     } catch (e: any) { alert(e.message); }
@@ -1697,7 +1697,7 @@ function TaxProjectionPanel({ clientId, prefillPrimary, prefillSpouse, person = 
   const load = async () => {
     setLoading(true);
     try {
-      const data = await api.get<any[]>(`/api/tax/${clientId}/analyses?type=projection`);
+      const data = await api.get<any[]>(`/api/tax/client/${clientId}/analyses?type=projection`);
       setAnalyses(data.filter((a: any) => a.owner === owner));
     } catch { setAnalyses([]); }
     finally { setLoading(false); }
@@ -1742,7 +1742,7 @@ function TaxProjectionPanel({ clientId, prefillPrimary, prefillSpouse, person = 
       const result = await api.post(`/api/tax/${clientId}/projection`, input);
       const payload = { type: "projection", owner, label: form.label, inputData: form, resultData: result };
       if (editingId) await api.patch(`/api/tax/tax-analyses/${editingId}`, payload);
-      else await api.post(`/api/tax/${clientId}/analyses`, payload);
+      else await api.post(`/api/tax/client/${clientId}/analyses`, payload);
       setShowForm(false);
       await load();
     } catch (e: any) { alert(e.message); }
@@ -2249,7 +2249,7 @@ function IncomeSplittingPanel({ clientId, prefill, person = "primary", primaryLa
   const load = async () => {
     setLoading(true);
     try {
-      const data = await api.get<any[]>(`/api/tax/${clientId}/analyses?type=splitting`);
+      const data = await api.get<any[]>(`/api/tax/client/${clientId}/analyses?type=splitting`);
       setAnalyses(data);
     } catch { setAnalyses([]); }
     finally { setLoading(false); }
@@ -2287,7 +2287,7 @@ function IncomeSplittingPanel({ clientId, prefill, person = "primary", primaryLa
       const result = await api.post(`/api/tax/${clientId}/income-splitting`, input);
       const payload = { type: "splitting", owner: "joint", label: form.label, inputData: form, resultData: result };
       if (editingId) await api.patch(`/api/tax/tax-analyses/${editingId}`, payload);
-      else await api.post(`/api/tax/${clientId}/analyses`, payload);
+      else await api.post(`/api/tax/client/${clientId}/analyses`, payload);
       setShowForm(false);
       await load();
     } catch (e: any) { alert(e.message); }

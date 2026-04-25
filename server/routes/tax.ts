@@ -340,7 +340,7 @@ taxRouter.post("/:clientId/analyses", async (req, res) => {
   } catch (e) { res.status(500).json({ error: "Failed" }); }
 });
 
-taxRouter.patch("/analyses/:id", async (req, res) => {
+taxRouter.patch("/tax-analyses/:id", async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     const { id: _id, clientId: _cid, createdAt, updatedAt, ...body } = req.body;
@@ -350,7 +350,7 @@ taxRouter.patch("/analyses/:id", async (req, res) => {
   } catch (e) { res.status(500).json({ error: "Failed" }); }
 });
 
-taxRouter.delete("/analyses/:id", async (req, res) => {
+taxRouter.delete("/tax-analyses/:id", async (req, res) => {
   try {
     await db.delete(taxAnalyses).where(eq(taxAnalyses.id, parseInt(req.params.id)));
     res.json({ ok: true });

@@ -1380,7 +1380,7 @@ function RrspRoomPanel({ clientId, prefill, person = "primary", primaryLabel = "
       }
       const result = await api.post(`/api/tax/${clientId}/rrsp-room`, input);
       const payload = { type: "rrsp", owner, label: form.label, inputData: form, resultData: result };
-      if (editingId) await api.patch(`/api/tax/analyses/${editingId}`, payload);
+      if (editingId) await api.patch(`/api/tax/tax-analyses/${editingId}`, payload);
       else await api.post(`/api/tax/${clientId}/analyses`, payload);
       setShowForm(false);
       await load();
@@ -1390,7 +1390,7 @@ function RrspRoomPanel({ clientId, prefill, person = "primary", primaryLabel = "
 
   const del = async (id: number) => {
     if (!confirm("Delete this analysis?")) return;
-    await api.delete(`/api/tax/analyses/${id}`);
+    await api.delete(`/api/tax/tax-analyses/${id}`);
     await load();
   };
 
@@ -1553,7 +1553,7 @@ function TfsaRoomPanel({ clientId, prefill, person = "primary", primaryLabel = "
       }
       const result = await api.post(`/api/tax/${clientId}/tfsa-room`, input);
       const payload = { type: "tfsa", owner, label: form.label, inputData: form, resultData: result };
-      if (editingId) await api.patch(`/api/tax/analyses/${editingId}`, payload);
+      if (editingId) await api.patch(`/api/tax/tax-analyses/${editingId}`, payload);
       else await api.post(`/api/tax/${clientId}/analyses`, payload);
       setShowForm(false);
       await load();
@@ -1741,7 +1741,7 @@ function TaxProjectionPanel({ clientId, prefillPrimary, prefillSpouse, person = 
       }
       const result = await api.post(`/api/tax/${clientId}/projection`, input);
       const payload = { type: "projection", owner, label: form.label, inputData: form, resultData: result };
-      if (editingId) await api.patch(`/api/tax/analyses/${editingId}`, payload);
+      if (editingId) await api.patch(`/api/tax/tax-analyses/${editingId}`, payload);
       else await api.post(`/api/tax/${clientId}/analyses`, payload);
       setShowForm(false);
       await load();
@@ -1956,7 +1956,7 @@ const PROVINCE_RATES: Record<string, number> = {
   YT: 48.00, NT: 47.05, NU: 44.50,
 };
 
-function CapitalGainsPanel({ clientId, client }: { clientId: number; client?: any }) {
+function CapitalGainsPanel({ clientId, client, person = "primary" }: { clientId: number; client?: any; person?: string }) {
   const capGains = useCapitalGains(clientId);
   const [result, setResult] = useState<CapitalGainsResult | null>(null);
   const [province, setProvince]         = useState<string>(client?.province ?? "ON");
@@ -2286,7 +2286,7 @@ function IncomeSplittingPanel({ clientId, prefill, person = "primary", primaryLa
       }
       const result = await api.post(`/api/tax/${clientId}/income-splitting`, input);
       const payload = { type: "splitting", owner: "joint", label: form.label, inputData: form, resultData: result };
-      if (editingId) await api.patch(`/api/tax/analyses/${editingId}`, payload);
+      if (editingId) await api.patch(`/api/tax/tax-analyses/${editingId}`, payload);
       else await api.post(`/api/tax/${clientId}/analyses`, payload);
       setShowForm(false);
       await load();

@@ -423,3 +423,15 @@ export const capitalGainsPositions = pgTable("capital_gains_positions", {
 });
 
 export const insertCapitalGainsPositionSchema = createInsertSchema(capitalGainsPositions).omit({ id: true, createdAt: true, updatedAt: true });
+
+export const taxAnalyses = pgTable("tax_analyses", {
+  id:         serial("id").primaryKey(),
+  clientId:   integer("client_id").notNull().references(() => clients.id, { onDelete: "cascade" }),
+  type:       text("type").notNull(),
+  owner:      text("owner").notNull().default("primary"),
+  label:      text("label"),
+  inputData:  jsonb("input_data"),
+  resultData: jsonb("result_data"),
+  createdAt:  timestamp("created_at").defaultNow().notNull(),
+  updatedAt:  timestamp("updated_at").defaultNow().notNull(),
+});

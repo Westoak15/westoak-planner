@@ -28,10 +28,11 @@ import {
   RespFundingGauge, EstateScorecard, DebtPayoffTimeline,
 } from "@/components/planning/ModuleViews";
 import {
-  Target, DollarSign, PiggyBank, Shield, GraduationCap, CreditCard,
+   Target, DollarSign, PiggyBank, Shield, GraduationCap, CreditCard,
   Receipt, ScrollText, Brain, Plus, Trash2, Sparkles, TrendingUp, TrendingDown,
   AlertTriangle, CheckCircle, Clock, FileText, Printer, Loader2, BarChart3,
-  Users, Calculator, ChevronDown, ChevronUp, Info, Download, Eye, Gift, FileSignature, 
+  Users, Calculator, ChevronDown, ChevronUp, Info, Download, Eye, Gift, FileSignature,
+  Pencil, Save, X,
 } from "lucide-react";
 
 // ── Tab definitions ───────────────────────────────────────────────────────────
@@ -1325,145 +1326,168 @@ function TaxNotesPanel({ clientId }: { clientId: number }) {
 // PANEL: RRSP Room Calculator
 // ============================================================================
 
-function RrspRoomPanel({ clientId, prefill, personLabel }: { clientId: number; prefill?: any; personLabel?: string }) {
-  const rrspRoom = useRrspRoom(clientId);
-  const [result, setResult] = useState<RrspRoomResult | null>(null);
+function RrspRoomPanel({ clientId, prefill, person = "primary", primaryLabel = "Primary", spouseLabel = "Spouse" }: {
+  clientId: number; prefill?: any; person?: string; primaryLabel?: string; spouseLabel?: string;
+}) {
+  const owner = person === "spouse" ? "spouse" : "primary";
+  const personLabel = person === "spouse" ? spouseLabel : primaryLabel;
+  const [analyses, setAnalyses] = useState<any[]>([]);
+  const [loading, setLoading]   = useState(true);
+  const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [saving, setSaving]     = useState(false);
   const [form, setForm] = useState({
-    priorYearEarnedIncome: "100000",
-    pensionAdjustment: "0",
-    carryForwardRoom: "50000",
-    contributionsMadeThisYear: "0",
-    marginalTaxRate: "0.435",
-    yearsToProject: "10",
+    label: "", priorYearEarnedIncome: "", pensionAdjustment: "0",
+    carryForwardRoom: "0", contributionsMadeThisYear: "0",
+    marginalTaxRate: "0.435", yearsToProject: "10",
   });
- 
-  const loadFromClient = () => {
-    if (!prefill) return;
-    setForm(f => ({
-      ...f,
-      priorYearEarnedIncome: prefill.priorYearEarnedIncome ?? f.priorYearEarnedIncome,
-    }));
-    setResult(null);
+
+  const load = async () => {
+    setLoading(true);
+    try {
+      const data = await api.get<any[]>(`/api/tax/${clientId}/analyses?type=rrsp`);
+      setAnalyses(data.filter((a: any) => a.owner === owner));
+    } catch { setAnalyses([]); }
+    finally { setLoading(false); }
   };
 
-  useEffect(() => { loadFromClient(); }, [prefill]);
- 
-  const handleCalc = () => {
-    const input: Record<string, unknown> = {};
-    for (const [k, v] of Object.entries(form)) {
-      input[k] = Number(v);
-    }
-    rrspRoom.mutate(input, {
-      onSuccess: (data) => setResult(data),
+  useEffect(() => { load(); }, [clientId, owner]);
+
+  const openNew = () => {
+    setEditingId(null);
+    setForm({
+      label: `RRSP Analysis ${new Date().getFullYear()} — ${personLabel}`,
+      priorYearEarnedIncome: prefill?.priorYearEarnedIncome ?? "",
+      pensionAdjustment: "0", carryForwardRoom: "0",
+      contributionsMadeThisYear: "0", marginalTaxRate: "0.435", yearsToProject: "10",
     });
+    setShowForm(true);
   };
 
- return (
+  const openEdit = (a: any) => {
+    setEditingId(a.id);
+    setForm({ label: a.label ?? "", ...a.inputData });
+    setShowForm(true);
+  };
+
+  const save = async () => {
+    setSaving(true);
+    try {
+      const input: Record<string, unknown> = {};
+      for (const [k, v] of Object.entries(form)) {
+        if (k === "label") continue;
+        input[k] = Number(v);
+      }
+      const result = await api.post(`/api/tax/${clientId}/rrsp-room`, input);
+      const payload = { type: "rrsp", owner, label: form.label, inputData: form, resultData: result };
+      if (editingId) await api.patch(`/api/tax/analyses/${editingId}`, payload);
+      else await api.post(`/api/tax/${clientId}/analyses`, payload);
+      setShowForm(false);
+      await load();
+    } catch (e: any) { alert(e.message); }
+    finally { setSaving(false); }
+  };
+
+  const del = async (id: number) => {
+    if (!confirm("Delete this analysis?")) return;
+    await api.delete(`/api/tax/analyses/${id}`);
+    await load();
+  };
+
+  return (
     <div className="space-y-5">
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex items-start justify-between gap-4">
         <div className="flex-1 p-4 bg-blue-50 border border-blue-200 rounded-xl text-sm text-blue-800">
-          <strong>RRSP Room Tracker</strong> — Calculates your available RRSP contribution room using the CRA 18% formula with carry-forward.
+          <strong>RRSP Room Tracker</strong> — Calculates available contribution room using the CRA 18% formula with carry-forward.
         </div>
+        <button onClick={openNew}
+          className="flex items-center gap-1.5 text-sm font-semibold text-white bg-[#0c1e3a] hover:bg-[#0e2a4a] px-4 py-2 rounded-xl whitespace-nowrap">
+          <Plus className="w-4 h-4" /> New Analysis
+        </button>
       </div>
 
-       <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-        <div>
-          <label className="text-sm font-semibold">Prior Year Earned Income</label>
-          <input
-            type="number"
-            value={form.priorYearEarnedIncome}
-            onChange={(e) => setForm((f) => ({ ...f, priorYearEarnedIncome: e.target.value }))}
-            className="w-full px-3 py-2 rounded-xl border mt-1 text-sm"
-          />
-        </div>
-        <div>
-          <label className="text-sm font-semibold">Pension Adjustment</label>
-          <input
-            type="number"
-            value={form.pensionAdjustment}
-            onChange={(e) => setForm((f) => ({ ...f, pensionAdjustment: e.target.value }))}
-            className="w-full px-3 py-2 rounded-xl border mt-1 text-sm"
-          />
-        </div>
-        <div>
-          <label className="text-sm font-semibold">Carry-Forward Room</label>
-          <input
-            type="number"
-            value={form.carryForwardRoom}
-            onChange={(e) => setForm((f) => ({ ...f, carryForwardRoom: e.target.value }))}
-            className="w-full px-3 py-2 rounded-xl border mt-1 text-sm"
-          />
-        </div>
-        <div>
-          <label className="text-sm font-semibold">Contributions Made This Year</label>
-          <input
-            type="number"
-            value={form.contributionsMadeThisYear}
-            onChange={(e) => setForm((f) => ({ ...f, contributionsMadeThisYear: e.target.value }))}
-            className="w-full px-3 py-2 rounded-xl border mt-1 text-sm"
-          />
-        </div>
-        <div>
-          <label className="text-sm font-semibold">Marginal Tax Rate</label>
-          <input
-            type="number"
-            step="0.01"
-            value={form.marginalTaxRate}
-            onChange={(e) => setForm((f) => ({ ...f, marginalTaxRate: e.target.value }))}
-            className="w-full px-3 py-2 rounded-xl border mt-1 text-sm"
-          />
-        </div>
-        <div>
-          <label className="text-sm font-semibold">Years to Project</label>
-          <input
-            type="number"
-            value={form.yearsToProject}
-            onChange={(e) => setForm((f) => ({ ...f, yearsToProject: e.target.value }))}
-            className="w-full px-3 py-2 rounded-xl border mt-1 text-sm"
-          />
-        </div>
-      </div>
-
-      <button
-        onClick={handleCalc}
-        disabled={rrspRoom.isPending}
-        className="flex items-center space-x-2 px-4 py-2 bg-primary text-primary-foreground rounded-xl font-semibold hover:bg-primary/90 disabled:opacity-50"
-      >
-        <Calculator className="w-4 h-4" />
-        <span>{rrspRoom.isPending ? "Calculating..." : "Calculate Room"}</span>
-      </button>
-
-      {result && (
-        <div className="space-y-4">
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-            {[
-              { label: "New Room This Year", value: fmt$(result.summary.newRoomThisYear), color: "text-green-600" },
-              { label: "Carry-Forward Brought In", value: fmt$(result.summary.carryForwardBroughtIn), color: "text-blue-600" },
-              { label: "Total Available Room", value: fmt$(result.summary.totalAvailableRoom), color: "text-teal-600" },
-              { label: "Contributions Made", value: fmt$(result.summary.contributionsMade), color: "text-orange-600" },
-              { label: "Closing Room", value: fmt$(result.summary.closingRoom), color: "text-primary" },
-              { label: "Annual Limit This Year", value: fmt$(result.summary.annualLimitThisYear), color: "text-gray-600" },
-            ].map((card) => (
-              <div key={card.label} className="border border-border rounded-xl p-4">
-                <p className="text-xs text-muted-foreground uppercase">{card.label}</p>
-                <p className={`text-xl font-bold mt-1 ${card.color}`}>{card.value}</p>
+      {showForm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg">
+            <div className="flex items-center justify-between p-5 border-b border-gray-100">
+              <h3 className="text-lg font-bold text-gray-900">{editingId ? "Edit" : "New"} RRSP Analysis — {personLabel}</h3>
+              <button onClick={() => setShowForm(false)} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
+            </div>
+            <div className="p-5 space-y-4">
+              <div>
+                <label className="text-xs font-semibold text-gray-500 block mb-1">Label</label>
+                <input value={form.label} onChange={e => setForm(f => ({ ...f, label: e.target.value }))}
+                  className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm" />
               </div>
-            ))}
+              <div className="grid grid-cols-2 gap-3">
+                {[
+                  ["Prior Year Earned Income ($)", "priorYearEarnedIncome"],
+                  ["Pension Adjustment ($)", "pensionAdjustment"],
+                  ["Carry-Forward Room ($)", "carryForwardRoom"],
+                  ["Contributions This Year ($)", "contributionsMadeThisYear"],
+                  ["Marginal Tax Rate (e.g. 0.435)", "marginalTaxRate"],
+                  ["Years to Project", "yearsToProject"],
+                ].map(([label, key]) => (
+                  <div key={key}>
+                    <label className="text-xs font-semibold text-gray-500 block mb-1">{label}</label>
+                    <input type="number" step="any" value={(form as any)[key]}
+                      onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
+                      className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm" placeholder="0" />
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="flex gap-3 justify-end p-5 border-t border-gray-100">
+              <button onClick={() => setShowForm(false)} className="text-sm text-gray-500 px-4 py-2">Cancel</button>
+              <button onClick={save} disabled={saving}
+                className="flex items-center gap-1.5 bg-[#0c1e3a] hover:bg-[#0e2a4a] disabled:opacity-50 text-white text-sm font-semibold px-5 py-2.5 rounded-xl">
+                <Save className="w-3.5 h-3.5" /> {saving ? "Saving…" : "Calculate & Save"}
+              </button>
+            </div>
           </div>
+        </div>
+      )}
 
-          <div className="p-4 bg-green-50 border border-green-200 rounded-xl">
-            <p className="font-semibold text-green-800">Marginal Tax Savings: {fmt$(result.marginalTaxSavings)}</p>
-            <p className="text-sm text-green-700 mt-1">Effective After-Tax Cost: {fmt$(result.effectiveCost)}</p>
-          </div>
-
-          <div className="border border-border rounded-xl p-4">
-            <p className="text-sm font-semibold mb-2">Catch-Up Strategy</p>
-            <ul className="text-sm space-y-1 text-muted-foreground">
-              <li>Years to max out: {result.catchUpStrategy.yearsToMaxOut}</li>
-              <li>Annual contribution needed: {fmt$(result.catchUpStrategy.annualContributionNeeded)}</li>
-              <li>Projected refund per year: {fmt$(result.catchUpStrategy.projectedRefundPerYear)}</li>
-            </ul>
-          </div>
+      {loading ? <div className="text-center py-8 text-gray-400 text-sm">Loading…</div>
+      : analyses.length === 0 ? (
+        <div className="text-center py-12 border-2 border-dashed border-gray-200 rounded-2xl">
+          <p className="text-gray-500 font-semibold">No RRSP analyses yet for {personLabel}</p>
+          <p className="text-sm text-gray-400 mt-1">Click New Analysis to calculate contribution room</p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {analyses.map((a: any) => {
+            const r = a.resultData;
+            return (
+              <div key={a.id} className="bg-white border border-gray-200 rounded-xl p-5">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h3 className="font-bold text-gray-900">{a.label || "RRSP Analysis"}</h3>
+                    <p className="text-xs text-gray-400 mt-0.5">{new Date(a.createdAt).toLocaleDateString("en-CA")}</p>
+                  </div>
+                  <div className="flex gap-1">
+                    <button onClick={() => openEdit(a)} className="p-1.5 text-gray-300 hover:text-blue-500"><Pencil className="w-3.5 h-3.5" /></button>
+                    <button onClick={() => del(a.id)} className="p-1.5 text-gray-300 hover:text-red-500"><Trash2 className="w-3.5 h-3.5" /></button>
+                  </div>
+                </div>
+                {r && (
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    {[
+                      { label: "Available Room", value: r.summary?.totalAvailableRoom, color: "blue" },
+                      { label: "Tax Savings", value: r.marginalTaxSavings, color: "green" },
+                      { label: "Annual to Catch Up", value: r.catchUpStrategy?.annualContributionNeeded, color: "amber" },
+                      { label: "Refund / Year", value: r.catchUpStrategy?.projectedRefundPerYear, color: "purple" },
+                    ].map(c => (
+                      <div key={c.label} className={`bg-${c.color}-50 rounded-xl p-3`}>
+                        <p className={`text-[10px] font-bold text-${c.color}-600 uppercase`}>{c.label}</p>
+                        <p className={`text-lg font-bold text-${c.color}-700`}>${Math.round(c.value ?? 0).toLocaleString("en-CA")}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
     </div>
@@ -1474,122 +1498,169 @@ function RrspRoomPanel({ clientId, prefill, personLabel }: { clientId: number; p
 // PANEL: TFSA Room Calculator
 // ============================================================================
 
-function TfsaRoomPanel({ clientId, prefill, personLabel }: { clientId: number; prefill?: any; personLabel?: string }) {
-  const tfsaRoom = useTfsaRoom(clientId);
-  const [result, setResult] = useState<TfsaRoomResult | null>(null);
-  const fmt$ = (n: number) => `$${n.toLocaleString()}`;
+function TfsaRoomPanel({ clientId, prefill, person = "primary", primaryLabel = "Primary", spouseLabel = "Spouse" }: {
+  clientId: number; prefill?: any; person?: string; primaryLabel?: string; spouseLabel?: string;
+}) {
+  const owner = person === "spouse" ? "spouse" : "primary";
+  const personLabel = person === "spouse" ? spouseLabel : primaryLabel;
+  const [analyses, setAnalyses] = useState<any[]>([]);
+  const [loading, setLoading]   = useState(true);
+  const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [saving, setSaving]     = useState(false);
   const [form, setForm] = useState({
-    birthYear: "1985",
-    priorYearClosingRoom: "20000",
-    contributionsMadeThisYear: "0",
-    withdrawalsLastYear: "0",
-    currentTfsaBalance: "50000",
-    annualContribution: "7000",
-    portfolioReturn: "0.06",
+    label: "", birthYear: "", priorYearClosingRoom: "0",
+    contributionsMadeThisYear: "0", withdrawalsLastYear: "0",
+    currentTfsaBalance: "0", annualContribution: "7000", portfolioReturn: "0.06",
   });
 
-  const loadFromClient = () => {
-    if (!prefill) return;
-    setForm(f => ({
-      ...f,
-      birthYear:          prefill.birthYear              ?? f.birthYear,
-      currentTfsaBalance: prefill.tfsaBalance             ?? f.currentTfsaBalance,
-      annualContribution: prefill.annualTfsaContribution  ?? f.annualContribution,
-    }));
-    setResult(null);
+  const load = async () => {
+    setLoading(true);
+    try {
+      const data = await api.get<any[]>(`/api/tax/${clientId}/analyses?type=tfsa`);
+      setAnalyses(data.filter((a: any) => a.owner === owner));
+    } catch { setAnalyses([]); }
+    finally { setLoading(false); }
   };
 
-  useEffect(() => { loadFromClient(); }, [prefill]);
+  useEffect(() => { load(); }, [clientId, owner]);
 
-  const handleCalc = () => {
-    const input: Record<string, unknown> = {};
-    for (const [k, v] of Object.entries(form)) {
-      input[k] = Number(v);
-    }
-    tfsaRoom.mutate(input, { onSuccess: (data) => setResult(data) });
+  const openNew = () => {
+    setEditingId(null);
+    const birthYear = prefill?.birthYear ?? String(new Date().getFullYear() - 35);
+    setForm({
+      label: `TFSA Analysis ${new Date().getFullYear()} — ${personLabel}`,
+      birthYear, priorYearClosingRoom: "0", contributionsMadeThisYear: "0",
+      withdrawalsLastYear: "0", currentTfsaBalance: prefill?.tfsaBalance ?? "0",
+      annualContribution: "7000", portfolioReturn: "0.06",
+    });
+    setShowForm(true);
+  };
+
+  const openEdit = (a: any) => {
+    setEditingId(a.id);
+    setForm({ label: a.label ?? "", ...a.inputData });
+    setShowForm(true);
+  };
+
+  const save = async () => {
+    setSaving(true);
+    try {
+      const input: Record<string, unknown> = {};
+      for (const [k, v] of Object.entries(form)) {
+        if (k === "label") continue;
+        input[k] = Number(v);
+      }
+      const result = await api.post(`/api/tax/${clientId}/tfsa-room`, input);
+      const payload = { type: "tfsa", owner, label: form.label, inputData: form, resultData: result };
+      if (editingId) await api.patch(`/api/tax/analyses/${editingId}`, payload);
+      else await api.post(`/api/tax/${clientId}/analyses`, payload);
+      setShowForm(false);
+      await load();
+    } catch (e: any) { alert(e.message); }
+    finally { setSaving(false); }
+  };
+
+  const del = async (id: number) => {
+    if (!confirm("Delete this analysis?")) return;
+    await api.delete(`/api/tax/analyses/${id}`);
+    await load();
   };
 
   return (
     <div className="space-y-5">
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex items-start justify-between gap-4">
         <div className="flex-1 p-4 bg-teal-50 border border-teal-200 rounded-xl text-sm text-teal-800">
-          <strong>TFSA Room Tracker</strong> — Tracks cumulative TFSA contribution room since 2009 with annual limit history.
+          <strong>TFSA Room Tracker</strong> — Calculates available TFSA contribution room and projects tax-free growth advantage.
         </div>
+        <button onClick={openNew}
+          className="flex items-center gap-1.5 text-sm font-semibold text-white bg-[#0c1e3a] hover:bg-[#0e2a4a] px-4 py-2 rounded-xl whitespace-nowrap">
+          <Plus className="w-4 h-4" /> New Analysis
+        </button>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div>
-          <label className="text-sm font-semibold">Birth Year</label>
-          <input type="number" value={form.birthYear} onChange={(e) => setForm((f) => ({ ...f, birthYear: e.target.value }))} className="w-full px-3 py-2 rounded-xl border mt-1 text-sm" />
-        </div>
-        <div>
-          <label className="text-sm font-semibold">Prior Year Closing Room</label>
-          <input type="number" value={form.priorYearClosingRoom} onChange={(e) => setForm((f) => ({ ...f, priorYearClosingRoom: e.target.value }))} className="w-full px-3 py-2 rounded-xl border mt-1 text-sm" />
-        </div>
-        <div>
-          <label className="text-sm font-semibold">Contributions Made This Year</label>
-          <input type="number" value={form.contributionsMadeThisYear} onChange={(e) => setForm((f) => ({ ...f, contributionsMadeThisYear: e.target.value }))} className="w-full px-3 py-2 rounded-xl border mt-1 text-sm" />
-        </div>
-        <div>
-          <label className="text-sm font-semibold">Withdrawals Last Year</label>
-          <input type="number" value={form.withdrawalsLastYear} onChange={(e) => setForm((f) => ({ ...f, withdrawalsLastYear: e.target.value }))} className="w-full px-3 py-2 rounded-xl border mt-1 text-sm" />
-        </div>
-        <div>
-          <label className="text-sm font-semibold">Current TFSA Balance</label>
-          <input type="number" value={form.currentTfsaBalance} onChange={(e) => setForm((f) => ({ ...f, currentTfsaBalance: e.target.value }))} className="w-full px-3 py-2 rounded-xl border mt-1 text-sm" />
-        </div>
-        <div>
-          <label className="text-sm font-semibold">Annual Contribution</label>
-          <input type="number" value={form.annualContribution} onChange={(e) => setForm((f) => ({ ...f, annualContribution: e.target.value }))} className="w-full px-3 py-2 rounded-xl border mt-1 text-sm" />
-        </div>
-        <div>
-          <label className="text-sm font-semibold">Portfolio Return (decimal)</label>
-          <input type="number" step="0.01" value={form.portfolioReturn} onChange={(e) => setForm((f) => ({ ...f, portfolioReturn: e.target.value }))} className="w-full px-3 py-2 rounded-xl border mt-1 text-sm" />
-        </div>
-      </div>
-
-      <button onClick={handleCalc} disabled={tfsaRoom.isPending}
-        className="flex items-center space-x-2 px-4 py-2 bg-primary text-primary-foreground rounded-xl font-semibold hover:bg-primary/90 disabled:opacity-50">
-        <Calculator className="w-4 h-4" />
-        <span>{tfsaRoom.isPending ? "Calculating..." : "Calculate Room"}</span>
-      </button>
-
-      {result && (
-        <div className="space-y-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {[
-              { label: "Annual Limit This Year",  value: fmt$(result.summary.annualLimitThisYear),  color: "text-green-600" },
-              { label: "Cumulative Room (2009+)", value: fmt$(result.cumulativeRoomSince2009),       color: "text-blue-600"  },
-              { label: "Total Available Room",    value: fmt$(result.summary.totalAvailableRoom),    color: "text-teal-600"  },
-              { label: "Closing Room",            value: fmt$(result.summary.closingRoom),           color: "text-primary"   },
-            ].map((card) => (
-              <div key={card.label} className="border border-border rounded-xl p-4">
-                <p className="text-xs text-muted-foreground uppercase">{card.label}</p>
-                <p className={`text-xl font-bold mt-1 ${card.color}`}>{card.value}</p>
+      {showForm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg">
+            <div className="flex items-center justify-between p-5 border-b border-gray-100">
+              <h3 className="text-lg font-bold text-gray-900">{editingId ? "Edit" : "New"} TFSA Analysis — {personLabel}</h3>
+              <button onClick={() => setShowForm(false)} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
+            </div>
+            <div className="p-5 space-y-4">
+              <div>
+                <label className="text-xs font-semibold text-gray-500 block mb-1">Label</label>
+                <input value={form.label} onChange={e => setForm(f => ({ ...f, label: e.target.value }))}
+                  className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm" />
               </div>
-            ))}
+              <div className="grid grid-cols-2 gap-3">
+                {[
+                  ["Birth Year", "birthYear"],
+                  ["Prior Year Closing Room ($)", "priorYearClosingRoom"],
+                  ["Contributions This Year ($)", "contributionsMadeThisYear"],
+                  ["Withdrawals Last Year ($)", "withdrawalsLastYear"],
+                  ["Current TFSA Balance ($)", "currentTfsaBalance"],
+                  ["Annual Contribution ($)", "annualContribution"],
+                  ["Expected Return (e.g. 0.06)", "portfolioReturn"],
+                ].map(([label, key]) => (
+                  <div key={key}>
+                    <label className="text-xs font-semibold text-gray-500 block mb-1">{label}</label>
+                    <input type="number" step="any" value={(form as any)[key]}
+                      onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
+                      className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm" placeholder="0" />
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="flex gap-3 justify-end p-5 border-t border-gray-100">
+              <button onClick={() => setShowForm(false)} className="text-sm text-gray-500 px-4 py-2">Cancel</button>
+              <button onClick={save} disabled={saving}
+                className="flex items-center gap-1.5 bg-[#0c1e3a] hover:bg-[#0e2a4a] disabled:opacity-50 text-white text-sm font-semibold px-5 py-2.5 rounded-xl">
+                <Save className="w-3.5 h-3.5" /> {saving ? "Saving…" : "Calculate & Save"}
+              </button>
+            </div>
           </div>
+        </div>
+      )}
 
-          <div className="border border-border rounded-xl p-4">
-            <p className="text-sm font-semibold mb-3">Future Annual TFSA Limits</p>
-            <div className="grid grid-cols-5 gap-2">
-              {result.futureLimits.map((fl) => (
-                <div key={fl.year} className="text-center p-2 bg-muted/50 rounded-lg">
-                  <p className="text-xs text-muted-foreground">{fl.year}</p>
-                  <p className="text-sm font-bold">{fmt$(fl.limit)}</p>
+      {loading ? <div className="text-center py-8 text-gray-400 text-sm">Loading…</div>
+      : analyses.length === 0 ? (
+        <div className="text-center py-12 border-2 border-dashed border-gray-200 rounded-2xl">
+          <p className="text-gray-500 font-semibold">No TFSA analyses yet for {personLabel}</p>
+          <p className="text-sm text-gray-400 mt-1">Click New Analysis to calculate contribution room</p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {analyses.map((a: any) => {
+            const r = a.resultData;
+            return (
+              <div key={a.id} className="bg-white border border-gray-200 rounded-xl p-5">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h3 className="font-bold text-gray-900">{a.label || "TFSA Analysis"}</h3>
+                    <p className="text-xs text-gray-400 mt-0.5">{new Date(a.createdAt).toLocaleDateString("en-CA")}</p>
+                  </div>
+                  <div className="flex gap-1">
+                    <button onClick={() => openEdit(a)} className="p-1.5 text-gray-300 hover:text-blue-500"><Pencil className="w-3.5 h-3.5" /></button>
+                    <button onClick={() => del(a.id)} className="p-1.5 text-gray-300 hover:text-red-500"><Trash2 className="w-3.5 h-3.5" /></button>
+                  </div>
                 </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="p-4 bg-teal-50 border border-teal-200 rounded-xl">
-            <p className="font-semibold text-teal-800">30-Year TFSA vs Taxable Projection</p>
-            <div className="grid grid-cols-3 gap-3 mt-2 text-sm">
-              <div><p className="text-teal-700">TFSA Final Balance</p><p className="font-bold text-teal-900">{fmt$(result.thirtyYearProjection.tfsaBalanceFinal)}</p></div>
-              <div><p className="text-teal-700">Taxable Final Balance</p><p className="font-bold text-teal-900">{fmt$(result.thirtyYearProjection.taxableBalanceFinal)}</p></div>
-              <div><p className="text-teal-700">TFSA Advantage</p><p className="font-bold text-green-700">{fmt$(result.thirtyYearProjection.tfsaAdvantage)}</p></div>
-            </div>
-          </div>
+                {r && (
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    {[
+                      { label: "Available Room", value: r.summary?.totalAvailableRoom, color: "teal" },
+                      { label: "30yr TFSA Value", value: r.thirtyYearProjection?.tfsaBalanceFinal, color: "green" },
+                      { label: "TFSA Advantage", value: r.thirtyYearProjection?.tfsaAdvantage, color: "blue" },
+                    ].map(c => (
+                      <div key={c.label} className={`bg-${c.color}-50 rounded-xl p-3`}>
+                        <p className={`text-[10px] font-bold text-${c.color}-600 uppercase`}>{c.label}</p>
+                        <p className={`text-lg font-bold text-${c.color}-700`}>${Math.round(c.value ?? 0).toLocaleString("en-CA")}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
     </div>
@@ -1599,392 +1670,276 @@ function TfsaRoomPanel({ clientId, prefill, personLabel }: { clientId: number; p
 // PANEL: Tax Projection
 // ============================================================================
 
-function TaxProjectionPanel({ clientId, prefillPrimary, prefillSpouse, person, primaryLabel, spouseLabel }: {
-  clientId: number;
-  prefillPrimary?: any;
-  prefillSpouse?: any;
-  person?: "primary" | "spouse" | "both";
-  primaryLabel?: string;
-  spouseLabel?: string;
+function TaxProjectionPanel({ clientId, prefillPrimary, prefillSpouse, person = "primary", primaryLabel = "Primary", spouseLabel = "Spouse" }: {
+  clientId: number; prefillPrimary?: any; prefillSpouse?: any;
+  person?: string; primaryLabel?: string; spouseLabel?: string;
 }) {
-  const fmt$ = (n: number) => `$${n.toLocaleString()}`;
-  const fmtPct = (n: number) => `${(n * 100).toFixed(2)}%`;
-  const taxProjection = useTaxProjection(clientId);
-  const [result, setResult] = useState<TaxProjectionResult | null>(null);
-  const [resultSpouse, setResultSpouse] = useState<TaxProjectionResult | null>(null);
-  const [loadingBoth, setLoadingBoth] = useState(false);
-  const [showTable, setShowTable] = useState(false);
- useEffect(() => { 
-    if (person !== "both") applyPrefill(person === "spouse" ? prefillSpouse : prefillPrimary); 
-  }, [prefillPrimary, prefillSpouse, person]);
-
+  const owner = person === "spouse" ? "spouse" : person === "both" ? "joint" : "primary";
+  const personLabel = person === "spouse" ? spouseLabel : person === "both" ? "Combined" : primaryLabel;
+  const activePrefill = person === "spouse" ? prefillSpouse : prefillPrimary;
+  const [analyses, setAnalyses] = useState<any[]>([]);
+  const [loading, setLoading]   = useState(true);
+  const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [saving, setSaving]     = useState(false);
+  const [showTable, setShowTable] = useState<number | null>(null);
+  const provinces = ["ON","BC","AB","QC","MB","SK","NS","NB","PE","NL","YT","NT","NU"];
   const [form, setForm] = useState({
-    currentAge: "40",
-    retirementAge: "65",
-    planToAge: "90",
-    province: "ON",
-    employmentIncome: "120000",
-    selfEmploymentIncome: "0",
-    otherIncome: "0",
-    incomeGrowthRate: "0.03",
-    rrspBalance: "200000",
-    rrspContributionRoom: "50000",
-    rrspAnnualContribution: "18000",
-    tfsaBalance: "80000",
-    tfsaContributionRoom: "20000",
-    tfsaAnnualContribution: "7000",
-    nonRegBalance: "50000",
-    nonRegAcb: "40000",
-    nonRegAnnualContrib: "5000",
-    portfolioYield: "0.06",
-    desiredRetirementIncome: "80000",
-    pensionIncome: "0",
-    cppStartAge: "65",
-    oasStartAge: "65",
+    label: "", currentAge: "40", retirementAge: "65", planToAge: "90",
+    province: "ON", employmentIncome: "0", selfEmploymentIncome: "0",
+    otherIncome: "0", incomeGrowthRate: "0.03", rrspBalance: "0",
+    rrspContributionRoom: "0", rrspAnnualContribution: "0", tfsaBalance: "0",
+    tfsaContributionRoom: "0", tfsaAnnualContribution: "0", nonRegBalance: "0",
+    nonRegAcb: "0", nonRegAnnualContrib: "0", portfolioYield: "0.06",
+    desiredRetirementIncome: "0", pensionIncome: "0", cppStartAge: "65", oasStartAge: "65",
   });
 
-  const provinces = ["ON", "BC", "AB", "QC", "MB", "SK", "NS", "NB", "PE", "NL", "YT", "NT", "NU"];
-
-  const applyPrefill = (pf: any) => {
-    if (!pf) return;
-    setForm(f => ({
-      ...f,
-      currentAge:              pf.currentAge              ?? f.currentAge,
-      retirementAge:           pf.retirementAge           ?? f.retirementAge,
-      planToAge:               pf.planToAge               ?? f.planToAge,
-      province:                pf.province                ?? f.province,
-      employmentIncome:        pf.employmentIncome        ?? f.employmentIncome,
-      rrspBalance:             pf.rrspBalance             ?? f.rrspBalance,
-      tfsaBalance:             pf.tfsaBalance             ?? f.tfsaBalance,
-      nonRegBalance:           pf.nonRegBalance           ?? f.nonRegBalance,
-      rrspAnnualContribution:  pf.rrspAnnualContribution  ?? f.rrspAnnualContribution,
-      tfsaAnnualContribution:  pf.annualTfsaContribution  ?? f.tfsaAnnualContribution,
-      desiredRetirementIncome: pf.desiredRetirementIncome ?? f.desiredRetirementIncome,
-      cppStartAge:             pf.cppStartAge             ?? f.cppStartAge,
-      oasStartAge:             pf.oasStartAge             ?? f.oasStartAge,
-    }));
-    setResult(null);
-    setResultSpouse(null);
-  };
-
-  const buildInput = (pf?: any) => {
-    const base: Record<string, unknown> = {};
-    for (const [k, v] of Object.entries(pf ? { ...form, ...{
-      currentAge: pf.currentAge, retirementAge: pf.retirementAge,
-      planToAge: pf.planToAge, province: pf.province,
-      employmentIncome: pf.employmentIncome, rrspBalance: pf.rrspBalance,
-      tfsaBalance: pf.tfsaBalance, nonRegBalance: pf.nonRegBalance,
-      rrspAnnualContribution: pf.rrspAnnualContribution,
-      tfsaAnnualContribution: pf.annualTfsaContribution,
-      desiredRetirementIncome: pf.desiredRetirementIncome,
-      cppStartAge: pf.cppStartAge, oasStartAge: pf.oasStartAge,
-    }} : form)) {
-      base[k] = isNaN(Number(v)) ? v : Number(v);
-    }
-    return base;
-  };
-
-  const handleCalc = () => {
-    taxProjection.mutate(buildInput(), { onSuccess: (data) => setResult(data) });
-  };
-
-  const handleCalcBoth = async () => {
-    if (!prefillPrimary || !prefillSpouse) return;
-    setLoadingBoth(true);
-    setResult(null);
-    setResultSpouse(null);
+  const load = async () => {
+    setLoading(true);
     try {
-      const token = localStorage.getItem("fp_token") ?? "";
-      const headers = { Authorization: `Bearer ${token}`, "Content-Type": "application/json" };
-      const [r1, r2] = await Promise.all([
-        fetch(`/api/tax/${clientId}/projection`, { method: "POST", headers, body: JSON.stringify(buildInput(prefillPrimary)) }).then(r => r.json()),
-        fetch(`/api/tax/${clientId}/projection`, { method: "POST", headers, body: JSON.stringify(buildInput(prefillSpouse)) }).then(r => r.json()),
-      ]);
-      setResult(r1);
-      setResultSpouse(r2);
-    } catch (e) { console.error("[calcBoth]", e); }
-    finally { setLoadingBoth(false); }
+      const data = await api.get<any[]>(`/api/tax/${clientId}/analyses?type=projection`);
+      setAnalyses(data.filter((a: any) => a.owner === owner));
+    } catch { setAnalyses([]); }
+    finally { setLoading(false); }
   };
 
+  useEffect(() => { load(); }, [clientId, owner]);
+
+  const openNew = () => {
+    setEditingId(null);
+    const pf = activePrefill;
+    setForm({
+      label: `Tax Projection ${new Date().getFullYear()} — ${personLabel}`,
+      currentAge: pf?.currentAge ?? "40", retirementAge: pf?.retirementAge ?? "65",
+      planToAge: pf?.planToAge ?? "90", province: pf?.province ?? "ON",
+      employmentIncome: pf?.employmentIncome ?? "0", selfEmploymentIncome: "0",
+      otherIncome: "0", incomeGrowthRate: "0.03",
+      rrspBalance: pf?.rrspBalance ?? "0", rrspContributionRoom: "0",
+      rrspAnnualContribution: pf?.rrspAnnualContribution ?? "0",
+      tfsaBalance: pf?.tfsaBalance ?? "0", tfsaContributionRoom: "0",
+      tfsaAnnualContribution: pf?.annualTfsaContribution ?? "0",
+      nonRegBalance: pf?.nonRegBalance ?? "0", nonRegAcb: "0", nonRegAnnualContrib: "0",
+      portfolioYield: "0.06", desiredRetirementIncome: pf?.desiredRetirementIncome ?? "0",
+      pensionIncome: "0", cppStartAge: pf?.cppStartAge ?? "65", oasStartAge: pf?.oasStartAge ?? "65",
+    });
+    setShowForm(true);
+  };
+
+  const openEdit = (a: any) => {
+    setEditingId(a.id);
+    setForm({ label: a.label ?? "", ...a.inputData });
+    setShowForm(true);
+  };
+
+  const save = async () => {
+    setSaving(true);
+    try {
+      const input: Record<string, unknown> = {};
+      for (const [k, v] of Object.entries(form)) {
+        if (k === "label") continue;
+        input[k] = isNaN(Number(v)) ? v : Number(v);
+      }
+      const result = await api.post(`/api/tax/${clientId}/projection`, input);
+      const payload = { type: "projection", owner, label: form.label, inputData: form, resultData: result };
+      if (editingId) await api.patch(`/api/tax/analyses/${editingId}`, payload);
+      else await api.post(`/api/tax/${clientId}/analyses`, payload);
+      setShowForm(false);
+      await load();
+    } catch (e: any) { alert(e.message); }
+    finally { setSaving(false); }
+  };
+
+  const del = async (id: number) => {
+    if (!confirm("Delete this projection?")) return;
+    await api.delete(`/api/tax/analyses/${id}`);
+    await load();
+  };
+
+  const fmt$ = (n: number) => `$${Math.round(n).toLocaleString("en-CA")}`;
+  const fmtPct = (n: number) => `${(n * 100).toFixed(1)}%`;
 
   return (
     <div className="space-y-5">
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex items-start justify-between gap-4">
         <div className="flex-1 p-4 bg-purple-50 border border-purple-200 rounded-xl text-sm text-purple-800">
-          <strong>Tax Projection</strong>
+          <strong>Tax Projection</strong> — Year-by-year tax, wealth, and retirement income projection with RRSP/TFSA drawdown strategy.
         </div>
-        <div className="flex gap-2 flex-shrink-0">
-       </div>
-      </div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div>
-          <label className="text-sm font-semibold">Current Age</label>
-          <input
-            type="number"
-            value={form.currentAge}
-            onChange={(e) => setForm((f) => ({ ...f, currentAge: e.target.value }))}
-            className="w-full px-3 py-2 rounded-xl border mt-1 text-sm"
-          />
-        </div>
-        <div>
-          <label className="text-sm font-semibold">Retirement Age</label>
-          <input
-            type="number"
-            value={form.retirementAge}
-            onChange={(e) => setForm((f) => ({ ...f, retirementAge: e.target.value }))}
-            className="w-full px-3 py-2 rounded-xl border mt-1 text-sm"
-          />
-        </div>
-        <div>
-          <label className="text-sm font-semibold">Plan To Age</label>
-          <input
-            type="number"
-            value={form.planToAge}
-            onChange={(e) => setForm((f) => ({ ...f, planToAge: e.target.value }))}
-            className="w-full px-3 py-2 rounded-xl border mt-1 text-sm"
-          />
-        </div>
-        <div>
-          <label className="text-sm font-semibold">Province</label>
-          <select
-            value={form.province}
-            onChange={(e) => setForm((f) => ({ ...f, province: e.target.value }))}
-            className="w-full px-3 py-2 rounded-xl border mt-1 text-sm"
-          >
-            {provinces.map((p) => (
-              <option key={p} value={p}>
-                {p}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label className="text-sm font-semibold">Employment Income</label>
-          <input
-            type="number"
-            value={form.employmentIncome}
-            onChange={(e) => setForm((f) => ({ ...f, employmentIncome: e.target.value }))}
-            className="w-full px-3 py-2 rounded-xl border mt-1 text-sm"
-          />
-        </div>
-        <div>
-          <label className="text-sm font-semibold">Self-Employment Income</label>
-          <input
-            type="number"
-            value={form.selfEmploymentIncome}
-            onChange={(e) => setForm((f) => ({ ...f, selfEmploymentIncome: e.target.value }))}
-            className="w-full px-3 py-2 rounded-xl border mt-1 text-sm"
-          />
-        </div>
-        <div>
-          <label className="text-sm font-semibold">Other Income</label>
-          <input
-            type="number"
-            value={form.otherIncome}
-            onChange={(e) => setForm((f) => ({ ...f, otherIncome: e.target.value }))}
-            className="w-full px-3 py-2 rounded-xl border mt-1 text-sm"
-          />
-        </div>
-        <div>
-          <label className="text-sm font-semibold">Income Growth Rate</label>
-          <input
-            type="number"
-            step="0.01"
-            value={form.incomeGrowthRate}
-            onChange={(e) => setForm((f) => ({ ...f, incomeGrowthRate: e.target.value }))}
-            className="w-full px-3 py-2 rounded-xl border mt-1 text-sm"
-          />
-        </div>
-        <div>
-          <label className="text-sm font-semibold">RRSP Balance</label>
-          <input
-            type="number"
-            value={form.rrspBalance}
-            onChange={(e) => setForm((f) => ({ ...f, rrspBalance: e.target.value }))}
-            className="w-full px-3 py-2 rounded-xl border mt-1 text-sm"
-          />
-        </div>
-        <div>
-          <label className="text-sm font-semibold">RRSP Room</label>
-          <input
-            type="number"
-            value={form.rrspContributionRoom}
-            onChange={(e) => setForm((f) => ({ ...f, rrspContributionRoom: e.target.value }))}
-            className="w-full px-3 py-2 rounded-xl border mt-1 text-sm"
-          />
-        </div>
-        <div>
-          <label className="text-sm font-semibold">RRSP Annual Contribution</label>
-          <input
-            type="number"
-            value={form.rrspAnnualContribution}
-            onChange={(e) => setForm((f) => ({ ...f, rrspAnnualContribution: e.target.value }))}
-            className="w-full px-3 py-2 rounded-xl border mt-1 text-sm"
-          />
-        </div>
-        <div>
-          <label className="text-sm font-semibold">TFSA Balance</label>
-          <input
-            type="number"
-            value={form.tfsaBalance}
-            onChange={(e) => setForm((f) => ({ ...f, tfsaBalance: e.target.value }))}
-            className="w-full px-3 py-2 rounded-xl border mt-1 text-sm"
-          />
-        </div>
-        <div>
-          <label className="text-sm font-semibold">TFSA Room</label>
-          <input
-            type="number"
-            value={form.tfsaContributionRoom}
-            onChange={(e) => setForm((f) => ({ ...f, tfsaContributionRoom: e.target.value }))}
-            className="w-full px-3 py-2 rounded-xl border mt-1 text-sm"
-          />
-        </div>
-        <div>
-          <label className="text-sm font-semibold">TFSA Annual Contribution</label>
-          <input
-            type="number"
-            value={form.tfsaAnnualContribution}
-            onChange={(e) => setForm((f) => ({ ...f, tfsaAnnualContribution: e.target.value }))}
-            className="w-full px-3 py-2 rounded-xl border mt-1 text-sm"
-          />
-        </div>
-        <div>
-          <label className="text-sm font-semibold">Non-Reg Balance</label>
-          <input
-            type="number"
-            value={form.nonRegBalance}
-            onChange={(e) => setForm((f) => ({ ...f, nonRegBalance: e.target.value }))}
-            className="w-full px-3 py-2 rounded-xl border mt-1 text-sm"
-          />
-        </div>
-        <div>
-          <label className="text-sm font-semibold">Non-Reg ACB</label>
-          <input
-            type="number"
-            value={form.nonRegAcb}
-            onChange={(e) => setForm((f) => ({ ...f, nonRegAcb: e.target.value }))}
-            className="w-full px-3 py-2 rounded-xl border mt-1 text-sm"
-          />
-        </div>
-        <div>
-          <label className="text-sm font-semibold">Portfolio Yield</label>
-          <input
-            type="number"
-            step="0.01"
-            value={form.portfolioYield}
-            onChange={(e) => setForm((f) => ({ ...f, portfolioYield: e.target.value }))}
-            className="w-full px-3 py-2 rounded-xl border mt-1 text-sm"
-          />
-        </div>
-        <div>
-          <label className="text-sm font-semibold">Desired Retirement Income</label>
-          <input
-            type="number"
-            value={form.desiredRetirementIncome}
-            onChange={(e) => setForm((f) => ({ ...f, desiredRetirementIncome: e.target.value }))}
-            className="w-full px-3 py-2 rounded-xl border mt-1 text-sm"
-          />
-        </div>
-        <div>
-          <label className="text-sm font-semibold">Pension Income</label>
-          <input
-            type="number"
-            value={form.pensionIncome}
-            onChange={(e) => setForm((f) => ({ ...f, pensionIncome: e.target.value }))}
-            className="w-full px-3 py-2 rounded-xl border mt-1 text-sm"
-          />
-        </div>
-        <div>
-          <label className="text-sm font-semibold">CPP Start Age</label>
-          <input
-            type="number"
-            value={form.cppStartAge}
-            onChange={(e) => setForm((f) => ({ ...f, cppStartAge: e.target.value }))}
-            className="w-full px-3 py-2 rounded-xl border mt-1 text-sm"
-          />
-        </div>
-        <div>
-          <label className="text-sm font-semibold">OAS Start Age</label>
-          <input
-            type="number"
-            value={form.oasStartAge}
-            onChange={(e) => setForm((f) => ({ ...f, oasStartAge: e.target.value }))}
-            className="w-full px-3 py-2 rounded-xl border mt-1 text-sm"
-          />
-        </div>
+        <button onClick={openNew}
+          className="flex items-center gap-1.5 text-sm font-semibold text-white bg-[#0c1e3a] hover:bg-[#0e2a4a] px-4 py-2 rounded-xl whitespace-nowrap">
+          <Plus className="w-4 h-4" /> New Projection
+        </button>
       </div>
 
-      <button
-        onClick={handleCalc}
-        disabled={taxProjection.isPending}
-        className="flex items-center space-x-2 px-4 py-2 bg-primary text-primary-foreground rounded-xl font-semibold hover:bg-primary/90 disabled:opacity-50"
-      >
-        <TrendingUp className="w-4 h-4" />
-        <span>{taxProjection.isPending ? "Projecting..." : "Run Projection"}</span>
-      </button>
-
-      {result && (
-        <div className="space-y-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {[
-              { label: "Total Lifetime Tax", value: fmt$(result.summary.totalLifetimeTax), color: "text-red-600" },
-              { label: "Average Effective Rate", value: fmtPct(result.summary.averageEffectiveRate), color: "text-orange-600" },
-              { label: "Final Wealth", value: fmt$(result.summary.projectedFinalWealth), color: "text-green-600" },
-              {
-                label: "Success Probability",
-                value: fmtPct(result.summary.successProbability),
-                color: "text-blue-600",
-              },
-            ].map((card) => (
-              <div key={card.label} className="border border-border rounded-xl p-4">
-                <p className="text-xs text-muted-foreground uppercase">{card.label}</p>
-                <p className={`text-xl font-bold mt-1 ${card.color}`}>{card.value}</p>
-              </div>
-            ))}
-          </div>
-
-          <button
-            onClick={() => setShowTable(!showTable)}
-            className="text-sm font-semibold text-primary hover:underline"
-          >
-            {showTable ? "Hide" : "Show"} Year-by-Year Table
-          </button>
-
-          {showTable && (
-            <div className="overflow-x-auto border border-border rounded-xl">
-              <table className="w-full text-xs">
-                <thead className="bg-muted/50">
-                  <tr>
-                    <th className="px-3 py-2 text-left">Year</th>
-                    <th className="px-3 py-2 text-left">Age</th>
-                    <th className="px-3 py-2 text-left">Phase</th>
-                    <th className="px-3 py-2 text-right">Total Income</th>
-                    <th className="px-3 py-2 text-right">Federal Tax</th>
-                    <th className="px-3 py-2 text-right">Provincial Tax</th>
-                    <th className="px-3 py-2 text-right">Total Tax</th>
-                    <th className="px-3 py-2 text-right">After-Tax</th>
-                    <th className="px-3 py-2 text-right">Total Wealth</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {(result.projections as any[]).map((proj, idx) => (
-                    <tr key={idx} className="border-t border-border hover:bg-muted/20">
-                      <td className="px-3 py-2">{proj.year}</td>
-                      <td className="px-3 py-2">{proj.age}</td>
-                      <td className="px-3 py-2 capitalize">{proj.phase}</td>
-                      <td className="px-3 py-2 text-right">{fmt$(proj.totalGrossIncome)}</td>
-                      <td className="px-3 py-2 text-right">{fmt$(proj.federalTax)}</td>
-                      <td className="px-3 py-2 text-right">{fmt$(proj.provincialTax)}</td>
-                      <td className="px-3 py-2 text-right">{fmt$(proj.totalTax)}</td>
-                      <td className="px-3 py-2 text-right">{fmt$(proj.netIncome)}</td>
-                      <td className="px-3 py-2 text-right font-semibold">{fmt$(proj.totalWealth)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+      {showForm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-5 border-b border-gray-100">
+              <h3 className="text-lg font-bold text-gray-900">{editingId ? "Edit" : "New"} Tax Projection — {personLabel}</h3>
+              <button onClick={() => setShowForm(false)} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
             </div>
-          )}
+            <div className="p-5 space-y-4">
+              <div>
+                <label className="text-xs font-semibold text-gray-500 block mb-1">Label</label>
+                <input value={form.label} onChange={e => setForm(f => ({ ...f, label: e.target.value }))}
+                  className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm" />
+              </div>
+              <div className="grid grid-cols-4 gap-3">
+                {[
+                  ["Current Age", "currentAge"], ["Retirement Age", "retirementAge"],
+                  ["Plan To Age", "planToAge"],
+                ].map(([label, key]) => (
+                  <div key={key}>
+                    <label className="text-xs font-semibold text-gray-500 block mb-1">{label}</label>
+                    <input type="number" value={(form as any)[key]}
+                      onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
+                      className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm" />
+                  </div>
+                ))}
+                <div>
+                  <label className="text-xs font-semibold text-gray-500 block mb-1">Province</label>
+                  <select value={form.province} onChange={e => setForm(f => ({ ...f, province: e.target.value }))}
+                    className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm">
+                    {provinces.map(p => <option key={p} value={p}>{p}</option>)}
+                  </select>
+                </div>
+              </div>
+              <div className="border-t border-gray-100 pt-3">
+                <p className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">Income</p>
+                <div className="grid grid-cols-3 gap-3">
+                  {[
+                    ["Employment Income ($)", "employmentIncome"],
+                    ["Self-Employment ($)", "selfEmploymentIncome"],
+                    ["Other Income ($)", "otherIncome"],
+                    ["Income Growth Rate", "incomeGrowthRate"],
+                    ["Desired Retirement Income ($)", "desiredRetirementIncome"],
+                    ["Pension Income ($)", "pensionIncome"],
+                    ["CPP Start Age", "cppStartAge"],
+                    ["OAS Start Age", "oasStartAge"],
+                  ].map(([label, key]) => (
+                    <div key={key}>
+                      <label className="text-xs font-semibold text-gray-500 block mb-1">{label}</label>
+                      <input type="number" step="any" value={(form as any)[key]}
+                        onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
+                        className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="border-t border-gray-100 pt-3">
+                <p className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">Assets</p>
+                <div className="grid grid-cols-3 gap-3">
+                  {[
+                    ["RRSP Balance ($)", "rrspBalance"],
+                    ["RRSP Room ($)", "rrspContributionRoom"],
+                    ["RRSP Annual Contribution ($)", "rrspAnnualContribution"],
+                    ["TFSA Balance ($)", "tfsaBalance"],
+                    ["TFSA Room ($)", "tfsaContributionRoom"],
+                    ["TFSA Annual Contribution ($)", "tfsaAnnualContribution"],
+                    ["Non-Reg Balance ($)", "nonRegBalance"],
+                    ["Non-Reg ACB ($)", "nonRegAcb"],
+                    ["Portfolio Yield", "portfolioYield"],
+                  ].map(([label, key]) => (
+                    <div key={key}>
+                      <label className="text-xs font-semibold text-gray-500 block mb-1">{label}</label>
+                      <input type="number" step="any" value={(form as any)[key]}
+                        onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
+                        className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <div className="flex gap-3 justify-end p-5 border-t border-gray-100">
+              <button onClick={() => setShowForm(false)} className="text-sm text-gray-500 px-4 py-2">Cancel</button>
+              <button onClick={save} disabled={saving}
+                className="flex items-center gap-1.5 bg-[#0c1e3a] hover:bg-[#0e2a4a] disabled:opacity-50 text-white text-sm font-semibold px-5 py-2.5 rounded-xl">
+                <Save className="w-3.5 h-3.5" /> {saving ? "Saving…" : "Calculate & Save"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {loading ? <div className="text-center py-8 text-gray-400 text-sm">Loading…</div>
+      : analyses.length === 0 ? (
+        <div className="text-center py-12 border-2 border-dashed border-gray-200 rounded-2xl">
+          <p className="text-gray-500 font-semibold">No tax projections yet for {personLabel}</p>
+          <p className="text-sm text-gray-400 mt-1">Click New Projection to model lifetime tax and wealth</p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {analyses.map((a: any) => {
+            const r = a.resultData;
+            const s = r?.summary;
+            return (
+              <div key={a.id} className="bg-white border border-gray-200 rounded-xl p-5">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h3 className="font-bold text-gray-900">{a.label || "Tax Projection"}</h3>
+                    <p className="text-xs text-gray-400 mt-0.5">{new Date(a.createdAt).toLocaleDateString("en-CA")}</p>
+                  </div>
+                  <div className="flex gap-1">
+                    <button onClick={() => openEdit(a)} className="p-1.5 text-gray-300 hover:text-blue-500"><Pencil className="w-3.5 h-3.5" /></button>
+                    <button onClick={() => del(a.id)} className="p-1.5 text-gray-300 hover:text-red-500"><Trash2 className="w-3.5 h-3.5" /></button>
+                  </div>
+                </div>
+                {s && (
+                  <>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
+                      <div className="bg-red-50 rounded-xl p-3">
+                        <p className="text-[10px] font-bold text-red-600 uppercase">Total Lifetime Tax</p>
+                        <p className="text-lg font-bold text-red-700">{fmt$(s.totalLifetimeTax)}</p>
+                      </div>
+                      <div className="bg-orange-50 rounded-xl p-3">
+                        <p className="text-[10px] font-bold text-orange-600 uppercase">Avg Effective Rate</p>
+                        <p className="text-lg font-bold text-orange-700">{fmtPct(s.averageEffectiveRate)}</p>
+                      </div>
+                      <div className="bg-green-50 rounded-xl p-3">
+                        <p className="text-[10px] font-bold text-green-600 uppercase">Final Wealth</p>
+                        <p className="text-lg font-bold text-green-700">{fmt$(s.projectedFinalWealth)}</p>
+                      </div>
+                      <div className="bg-blue-50 rounded-xl p-3">
+                        <p className="text-[10px] font-bold text-blue-600 uppercase">Success Probability</p>
+                        <p className="text-lg font-bold text-blue-700">{fmtPct(s.successProbability)}</p>
+                      </div>
+                    </div>
+                    <button onClick={() => setShowTable(showTable === a.id ? null : a.id)}
+                      className="text-xs font-semibold text-purple-600 hover:underline">
+                      {showTable === a.id ? "Hide" : "Show"} Year-by-Year Table
+                    </button>
+                    {showTable === a.id && r.projections && (
+                      <div className="mt-3 overflow-x-auto border border-gray-200 rounded-xl">
+                        <table className="w-full text-xs">
+                          <thead className="bg-gray-50">
+                            <tr>
+                              {["Year","Age","Phase","Total Income","Fed Tax","Prov Tax","Total Tax","After-Tax","Total Wealth"].map(h => (
+                                <th key={h} className="px-3 py-2 text-left font-semibold text-gray-500">{h}</th>
+                              ))}
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {(r.projections as any[]).map((p: any, i: number) => (
+                              <tr key={i} className="border-t border-gray-100 hover:bg-gray-50">
+                                <td className="px-3 py-1.5">{p.year}</td>
+                                <td className="px-3 py-1.5">{p.age}</td>
+                                <td className="px-3 py-1.5 capitalize">{p.phase}</td>
+                                <td className="px-3 py-1.5">{fmt$(p.totalGrossIncome)}</td>
+                                <td className="px-3 py-1.5">{fmt$(p.federalTax)}</td>
+                                <td className="px-3 py-1.5">{fmt$(p.provincialTax)}</td>
+                                <td className="px-3 py-1.5">{fmt$(p.totalTax)}</td>
+                                <td className="px-3 py-1.5">{fmt$(p.netIncome)}</td>
+                                <td className="px-3 py-1.5 font-semibold">{fmt$(p.totalWealth)}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
     </div>
@@ -2277,145 +2232,196 @@ function CapitalGainsPanel({ clientId, client }: { clientId: number; client?: an
 // PANEL: Income Splitting Optimizer
 // ============================================================================
 
-function IncomeSplittingPanel({ clientId, prefill }: { clientId: number; prefill?: any }) {
-  const incomeSplit = useIncomeSplit(clientId);
-  const [result, setResult] = useState<IncomeSplitResult | null>(null);
+function IncomeSplittingPanel({ clientId, prefill, person = "primary", primaryLabel = "Primary", spouseLabel = "Spouse" }: {
+  clientId: number; prefill?: any; person?: string; primaryLabel?: string; spouseLabel?: string;
+}) {
+  const [analyses, setAnalyses] = useState<any[]>([]);
+  const [loading, setLoading]   = useState(true);
+  const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [saving, setSaving]     = useState(false);
+  const provinces = ["ON","BC","AB","QC","MB","SK","NS","NB","PE","NL","YT","NT","NU"];
   const [form, setForm] = useState({
-    higherIncome: "150000",
-    lowerIncome: "40000",
-    pensionIncome: "0",
-    age: "65",
-    province: "ON",
+    label: "", higherIncome: "0", lowerIncome: "0",
+    pensionIncome: "0", age: "65", province: "ON",
   });
 
-  const provinces = ["ON", "BC", "AB", "QC", "MB", "SK", "NS", "NB", "PE", "NL", "YT", "NT", "NU"];
-
-  const loadFromClient = () => {
-    if (!prefill) return;
-    setForm(f => ({
-      ...f,
-      higherIncome: prefill.higherIncome ?? f.higherIncome,
-      lowerIncome:  prefill.lowerIncome  ?? f.lowerIncome,
-      province:     prefill.province     ?? f.province,
-      age:          prefill.age          ?? f.age,
-    }));
-    setResult(null);
+  const load = async () => {
+    setLoading(true);
+    try {
+      const data = await api.get<any[]>(`/api/tax/${clientId}/analyses?type=splitting`);
+      setAnalyses(data);
+    } catch { setAnalyses([]); }
+    finally { setLoading(false); }
   };
 
-  useEffect(() => { loadFromClient(); }, [prefill]);
+  useEffect(() => { load(); }, [clientId]);
 
-  const handleCalc = () => {
-    const input: Record<string, unknown> = {};
-    for (const [k, v] of Object.entries(form)) {
-      input[k] = isNaN(Number(v)) ? v : Number(v);
-    }
-    incomeSplit.mutate(input, {
-      onSuccess: (data) => setResult(data),
+  const openNew = () => {
+    setEditingId(null);
+    setForm({
+      label: `Income Splitting Analysis ${new Date().getFullYear()}`,
+      higherIncome: prefill?.higherIncome ?? "0",
+      lowerIncome:  prefill?.lowerIncome  ?? "0",
+      pensionIncome: "0",
+      age: prefill?.age ?? "65",
+      province: prefill?.province ?? "ON",
     });
+    setShowForm(true);
   };
+
+  const openEdit = (a: any) => {
+    setEditingId(a.id);
+    setForm({ label: a.label ?? "", ...a.inputData });
+    setShowForm(true);
+  };
+
+  const save = async () => {
+    setSaving(true);
+    try {
+      const input: Record<string, unknown> = {};
+      for (const [k, v] of Object.entries(form)) {
+        if (k === "label") continue;
+        input[k] = isNaN(Number(v)) ? v : Number(v);
+      }
+      const result = await api.post(`/api/tax/${clientId}/income-splitting`, input);
+      const payload = { type: "splitting", owner: "joint", label: form.label, inputData: form, resultData: result };
+      if (editingId) await api.patch(`/api/tax/analyses/${editingId}`, payload);
+      else await api.post(`/api/tax/${clientId}/analyses`, payload);
+      setShowForm(false);
+      await load();
+    } catch (e: any) { alert(e.message); }
+    finally { setSaving(false); }
+  };
+
+  const del = async (id: number) => {
+    if (!confirm("Delete this analysis?")) return;
+    await api.delete(`/api/tax/analyses/${id}`);
+    await load();
+  };
+
+  const fmt$ = (n: number) => `$${Math.round(n).toLocaleString("en-CA")}`;
 
   return (
     <div className="space-y-5">
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex items-start justify-between gap-4">
         <div className="flex-1 p-4 bg-indigo-50 border border-indigo-200 rounded-xl text-sm text-indigo-800">
-          <strong>Income Splitting Optimizer</strong>
+          <strong>Income Splitting Optimizer</strong> — Finds the best strategy: pension split (T1032), spousal RRSP, CPP sharing, or prescribed rate loan.
         </div>
-       </div>
-      <div className="p-4 bg-indigo-50 border border-indigo-200 rounded-xl text-sm text-indigo-800">
-        <strong>Income Splitting Optimizer</strong> Finds the best strategy: pension split (T1032), spousal RRSP, CPP sharing,
-        or prescribed rate loan.
+        <button onClick={openNew}
+          className="flex items-center gap-1.5 text-sm font-semibold text-white bg-[#0c1e3a] hover:bg-[#0e2a4a] px-4 py-2 rounded-xl whitespace-nowrap">
+          <Plus className="w-4 h-4" /> New Analysis
+        </button>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-        <div>
-          <label className="text-sm font-semibold">Higher Income</label>
-          <input
-            type="number"
-            value={form.higherIncome}
-            onChange={(e) => setForm((f) => ({ ...f, higherIncome: e.target.value }))}
-            className="w-full px-3 py-2 rounded-xl border mt-1 text-sm"
-          />
-        </div>
-        <div>
-          <label className="text-sm font-semibold">Lower Income</label>
-          <input
-            type="number"
-            value={form.lowerIncome}
-            onChange={(e) => setForm((f) => ({ ...f, lowerIncome: e.target.value }))}
-            className="w-full px-3 py-2 rounded-xl border mt-1 text-sm"
-          />
-        </div>
-        <div>
-          <label className="text-sm font-semibold">Pension Income</label>
-          <input
-            type="number"
-            value={form.pensionIncome}
-            onChange={(e) => setForm((f) => ({ ...f, pensionIncome: e.target.value }))}
-            className="w-full px-3 py-2 rounded-xl border mt-1 text-sm"
-          />
-        </div>
-        <div>
-          <label className="text-sm font-semibold">Age</label>
-          <input
-            type="number"
-            value={form.age}
-            onChange={(e) => setForm((f) => ({ ...f, age: e.target.value }))}
-            className="w-full px-3 py-2 rounded-xl border mt-1 text-sm"
-          />
-        </div>
-        <div>
-          <label className="text-sm font-semibold">Province</label>
-          <select
-            value={form.province}
-            onChange={(e) => setForm((f) => ({ ...f, province: e.target.value }))}
-            className="w-full px-3 py-2 rounded-xl border mt-1 text-sm"
-          >
-            {provinces.map((p) => (
-              <option key={p} value={p}>
-                {p}
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
-
-      <button
-        onClick={handleCalc}
-        disabled={incomeSplit.isPending}
-        className="flex items-center space-x-2 px-4 py-2 bg-primary text-primary-foreground rounded-xl font-semibold hover:bg-primary/90 disabled:opacity-50"
-      >
-        <Receipt className="w-4 h-4" />
-        <span>{incomeSplit.isPending ? "Analyzing..." : "Analyze Income Splitting"}</span>
-      </button>
-
-      {result && (
-        <div className="space-y-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {[
-              { label: "Strategy", value: result.strategy.replace(/_/g, " ").toUpperCase(), color: "text-indigo-600" },
-              { label: "Current Combined Tax", value: fmt$(result.currentCombinedTax), color: "text-red-600" },
-              { label: "Optimized Combined Tax", value: fmt$(result.optimizedCombinedTax), color: "text-green-600" },
-              { label: "Annual Tax Savings", value: fmt$(result.annualTaxSavings), color: "text-green-700" },
-            ].map((card) => (
-              <div key={card.label} className="border border-border rounded-xl p-4">
-                <p className="text-xs text-muted-foreground uppercase">{card.label}</p>
-                <p className={`text-lg font-bold mt-1 ${card.color}`}>{card.value}</p>
+      {showForm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg">
+            <div className="flex items-center justify-between p-5 border-b border-gray-100">
+              <h3 className="text-lg font-bold text-gray-900">{editingId ? "Edit" : "New"} Income Splitting Analysis</h3>
+              <button onClick={() => setShowForm(false)} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
+            </div>
+            <div className="p-5 space-y-4">
+              <div>
+                <label className="text-xs font-semibold text-gray-500 block mb-1">Label</label>
+                <input value={form.label} onChange={e => setForm(f => ({ ...f, label: e.target.value }))}
+                  className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm" />
               </div>
-            ))}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-semibold text-gray-500 block mb-1">{primaryLabel} Income ($)</label>
+                  <input type="number" value={form.higherIncome}
+                    onChange={e => setForm(f => ({ ...f, higherIncome: e.target.value }))}
+                    className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm" placeholder="0" />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-gray-500 block mb-1">{spouseLabel} Income ($)</label>
+                  <input type="number" value={form.lowerIncome}
+                    onChange={e => setForm(f => ({ ...f, lowerIncome: e.target.value }))}
+                    className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm" placeholder="0" />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-gray-500 block mb-1">Eligible Pension Income ($)</label>
+                  <input type="number" value={form.pensionIncome}
+                    onChange={e => setForm(f => ({ ...f, pensionIncome: e.target.value }))}
+                    className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm" placeholder="0" />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-gray-500 block mb-1">Age (older spouse)</label>
+                  <input type="number" value={form.age}
+                    onChange={e => setForm(f => ({ ...f, age: e.target.value }))}
+                    className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm" />
+                </div>
+                <div className="col-span-2">
+                  <label className="text-xs font-semibold text-gray-500 block mb-1">Province</label>
+                  <select value={form.province} onChange={e => setForm(f => ({ ...f, province: e.target.value }))}
+                    className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm">
+                    {provinces.map(p => <option key={p} value={p}>{p}</option>)}
+                  </select>
+                </div>
+              </div>
+            </div>
+            <div className="flex gap-3 justify-end p-5 border-t border-gray-100">
+              <button onClick={() => setShowForm(false)} className="text-sm text-gray-500 px-4 py-2">Cancel</button>
+              <button onClick={save} disabled={saving}
+                className="flex items-center gap-1.5 bg-[#0c1e3a] hover:bg-[#0e2a4a] disabled:opacity-50 text-white text-sm font-semibold px-5 py-2.5 rounded-xl">
+                <Save className="w-3.5 h-3.5" /> {saving ? "Saving…" : "Calculate & Save"}
+              </button>
+            </div>
           </div>
+        </div>
+      )}
 
-          {result.lifetimeTaxSavings > 0 && (
-            <div className="p-4 bg-green-50 border border-green-200 rounded-xl">
-              <p className="font-semibold text-green-800">Estimated Lifetime Savings: {fmt$(result.lifetimeTaxSavings)}</p>
-              <p className="text-sm text-green-700 mt-2">{result.details}</p>
-            </div>
-          )}
-
-          {result.lifetimeTaxSavings === 0 && (
-            <div className="p-4 bg-muted/50 border border-border rounded-xl">
-              <p className="text-sm text-muted-foreground">{result.details}</p>
-            </div>
-          )}
+      {loading ? <div className="text-center py-8 text-gray-400 text-sm">Loading…</div>
+      : analyses.length === 0 ? (
+        <div className="text-center py-12 border-2 border-dashed border-gray-200 rounded-2xl">
+          <p className="text-gray-500 font-semibold">No income splitting analyses yet</p>
+          <p className="text-sm text-gray-400 mt-1">Click New Analysis to find the optimal strategy</p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {analyses.map((a: any) => {
+            const r = a.resultData;
+            return (
+              <div key={a.id} className="bg-white border border-gray-200 rounded-xl p-5">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h3 className="font-bold text-gray-900">{a.label || "Income Splitting"}</h3>
+                    <p className="text-xs text-gray-400 mt-0.5">{new Date(a.createdAt).toLocaleDateString("en-CA")}</p>
+                  </div>
+                  <div className="flex gap-1">
+                    <button onClick={() => openEdit(a)} className="p-1.5 text-gray-300 hover:text-blue-500"><Pencil className="w-3.5 h-3.5" /></button>
+                    <button onClick={() => del(a.id)} className="p-1.5 text-gray-300 hover:text-red-500"><Trash2 className="w-3.5 h-3.5" /></button>
+                  </div>
+                </div>
+                {r && (
+                  <>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
+                      <div className="bg-indigo-50 rounded-xl p-3">
+                        <p className="text-[10px] font-bold text-indigo-600 uppercase">Strategy</p>
+                        <p className="text-sm font-bold text-indigo-700">{r.strategy?.replace(/_/g, " ").toUpperCase()}</p>
+                      </div>
+                      <div className="bg-red-50 rounded-xl p-3">
+                        <p className="text-[10px] font-bold text-red-600 uppercase">Current Tax</p>
+                        <p className="text-lg font-bold text-red-700">{fmt$(r.currentCombinedTax ?? 0)}</p>
+                      </div>
+                      <div className="bg-green-50 rounded-xl p-3">
+                        <p className="text-[10px] font-bold text-green-600 uppercase">Optimized Tax</p>
+                        <p className="text-lg font-bold text-green-700">{fmt$(r.optimizedCombinedTax ?? 0)}</p>
+                      </div>
+                      <div className="bg-emerald-50 rounded-xl p-3">
+                        <p className="text-[10px] font-bold text-emerald-600 uppercase">Annual Savings</p>
+                        <p className="text-lg font-bold text-emerald-700">{fmt$(r.annualTaxSavings ?? 0)}</p>
+                      </div>
+                    </div>
+                    {r.details && (
+                      <p className="text-xs text-gray-500 bg-gray-50 rounded-lg p-3">{r.details}</p>
+                    )}
+                  </>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
     </div>
@@ -2494,11 +2500,11 @@ export function TaxTab({ clientId, client, person: personProp = "primary" }: { c
 
       <div className="animate-in fade-in duration-200">
         {activeSubTab === "notes"      && <TaxNotesPanel        clientId={clientId} />}
-        {activeSubTab === "rrsp"       && <RrspRoomPanel        clientId={clientId} prefill={activePrefill} personLabel={person === "spouse" ? spouseLabel : primaryLabel} />}
-        {activeSubTab === "tfsa"       && <TfsaRoomPanel        clientId={clientId} prefill={activePrefill} personLabel={person === "spouse" ? spouseLabel : primaryLabel} />}
+        {activeSubTab === "rrsp"       && <RrspRoomPanel        clientId={clientId} prefill={activePrefill} person={person} primaryLabel={primaryLabel} spouseLabel={spouseLabel} />}
+        {activeSubTab === "tfsa"       && <TfsaRoomPanel        clientId={clientId} prefill={activePrefill} person={person} primaryLabel={primaryLabel} spouseLabel={spouseLabel} />}
         {activeSubTab === "projection" && <TaxProjectionPanel   clientId={clientId} prefillPrimary={prefillPrimary} prefillSpouse={hasSpouse ? prefillSpouse : undefined} person={person} primaryLabel={primaryLabel} spouseLabel={spouseLabel} />}
-        {activeSubTab === "capgains"   && <CapitalGainsPanel    clientId={clientId} client={client} />}
-        {activeSubTab === "splitting"  && <IncomeSplittingPanel clientId={clientId} prefill={activePrefill} />}
+        {activeSubTab === "capgains"   && <CapitalGainsPanel    clientId={clientId} client={client} person={person} />}
+        {activeSubTab === "splitting"  && <IncomeSplittingPanel clientId={clientId} prefill={activePrefill} person={person} primaryLabel={primaryLabel} spouseLabel={spouseLabel} />}
       </div>
     </div>
   );

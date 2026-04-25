@@ -14,6 +14,7 @@ import type {
 import { db } from "../db/index.js";
 import { capitalGainsPositions } from "../../shared/schema.js";
 import { eq } from "drizzle-orm";
+import { taxAnalyses } from "../../shared/schema.js";
 
 export const taxRouter = Router();
 
@@ -316,5 +317,43 @@ taxRouter.delete("/capital-gains-positions/:id", async (req, res) => {
     console.error("[cg positions delete]", error);
     res.status(500).json({ error: "Failed to delete position" });
   }
+});
+// ── Tax Analyses (RRSP / TFSA / Projection / Splitting) ─────────────────────
+
+
+taxRouter.get("/:clientId/analyses", async (req, res) => {
+  try {
+    const clientId = parseInt(req.params.clientId);
+    const { type } = req.query;
+    let query = db.select().from(taxAnalyses).where(eq(taxAnalyses.clientId, clientId));
+    const rows = await query;
+    res.json(type ? rows.filter((r: any) => r.type === type) : rows);
+  } catch (e) { res.status(500).json({ error: "Failed" }); }
+});
+
+taxRouter.post("/:clientId/analyses", async (req, res) => {
+  try {
+    const clientId = parseInt(req.params.clientId);
+    const { id, createdAt, updatedAt, ...body } = req.body;
+    const [row] = await db.insert(taxAnalyses).values({ clientId, ...body }).returning();
+    res.json(row);
+  } catch (e) { res.status(500).json({ error: "Failed" }); }
+});
+
+taxRouter.patch("/analyses/:id", async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const { id: _id, clientId: _cid, createdAt, updatedAt, ...body } = req.body;
+    const [row] = await db.update(taxAnalyses).set({ ...body, updatedAt: new Date() })
+      .where(eq(taxAnalyses.id, id)).returning();
+    res.json(row);
+  } catch (e) { res.status(500).json({ error: "Failed" }); }
+});
+
+taxRouter.delete("/analyses/:id", async (req, res) => {
+  try {
+    await db.delete(taxAnalyses).where(eq(taxAnalyses.id, parseInt(req.params.id)));
+    res.json({ ok: true });
+  } catch (e) { res.status(500).json({ error: "Failed" }); }
 });
 });

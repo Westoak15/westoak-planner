@@ -403,3 +403,23 @@ export type InsertEducationSaving = any;
 export type InsertDebtEntry = any;
 export type InsertTaxPlanningNote = any;
 export type InsertEstatePlanningNote = any;
+
+//── Capital Gains Positions ──────────────────────────────────────────────────────────────
+export const capitalGainsPositions = pgTable("capital_gains_positions", {
+  id:              serial("id").primaryKey(),
+  clientId:        integer("client_id").notNull().references(() => clients.id, { onDelete: "cascade" }),
+  owner:           text("owner").notNull().default("primary"),   // primary | spouse | joint
+  type:            text("type").notNull().default("stock"),
+  symbol:          text("symbol"),
+  acb:             decimal("acb", { precision: 15, scale: 2 }).default("0"),
+  fmv:             decimal("fmv", { precision: 15, scale: 2 }).default("0"),
+  lcgeEligible:    boolean("lcge_eligible").default(false),
+  notes:           text("notes"),
+  province:        text("province"),
+  marginalRate:    decimal("marginal_rate", { precision: 5, scale: 2 }),
+  carryForwardLoss: decimal("carry_forward_loss", { precision: 15, scale: 2 }).default("0"),
+  createdAt:       timestamp("created_at").defaultNow().notNull(),
+  updatedAt:       timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertCapitalGainsPositionSchema = createInsertSchema(capitalGainsPositions).omit({ id: true, createdAt: true, updatedAt: true });

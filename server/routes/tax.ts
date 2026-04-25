@@ -11,6 +11,9 @@ import type {
   RrspRoomInput,
   TfsaRoomInput,
 } from "../engine/tax/types.js";
+import { db } from "../db/index.js";
+import { capitalGainsPositions } from "../../shared/schema.js";
+import { eq } from "drizzle-orm";
 
 export const taxRouter = Router();
 
@@ -259,4 +262,59 @@ taxRouter.post("/:clientId/income-splitting", async (req, res) => {
     console.error("[income splitting error]", error);
     res.status(500).json({ error: "Failed to analyze income splitting" });
   }
+
+  // ── Capital Gains Positions (persistence) ────────────────────────────────────
+
+
+taxRouter.get("/:clientId/capital-gains-positions", async (req, res) => {
+  try {
+    const clientId = parseInt(req.params.clientId);
+    const rows = await db.select().from(capitalGainsPositions)
+      .where(eq(capitalGainsPositions.clientId, clientId));
+    res.json(rows);
+  } catch (error) {
+    console.error("[cg positions get]", error);
+    res.status(500).json({ error: "Failed to load positions" });
+  }
+});
+
+taxRouter.post("/:clientId/capital-gains-positions", async (req, res) => {
+  try {
+    const clientId = parseInt(req.params.clientId);
+    const { id, createdAt, updatedAt, ...body } = req.body;
+    const [row] = await db.insert(capitalGainsPositions)
+      .values({ clientId, ...body })
+      .returning();
+    res.json(row);
+  } catch (error) {
+    console.error("[cg positions post]", error);
+    res.status(500).json({ error: "Failed to save position" });
+  }
+});
+
+taxRouter.patch("/capital-gains-positions/:id", async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const { id: _id, clientId: _cid, createdAt, updatedAt, ...body } = req.body;
+    const [row] = await db.update(capitalGainsPositions)
+      .set({ ...body, updatedAt: new Date() })
+      .where(eq(capitalGainsPositions.id, id))
+      .returning();
+    res.json(row);
+  } catch (error) {
+    console.error("[cg positions patch]", error);
+    res.status(500).json({ error: "Failed to update position" });
+  }
+});
+
+taxRouter.delete("/capital-gains-positions/:id", async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    await db.delete(capitalGainsPositions).where(eq(capitalGainsPositions.id, id));
+    res.json({ ok: true });
+  } catch (error) {
+    console.error("[cg positions delete]", error);
+    res.status(500).json({ error: "Failed to delete position" });
+  }
+});
 });

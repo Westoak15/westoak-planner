@@ -83,6 +83,12 @@ export function PensionTab({ clientId, client }: { clientId: number; client?: an
   const [editingId, setEditingId] = useState<number | null>(null);
   const [form, setForm]         = useState<any>(emptyPlan());
   const [busy, setBusy]         = useState(false);
+  const [activePerson, setActivePerson] = useState<"primary" | "spouse">("primary");
+  const hasSpouse  = !!client?.spouseFirstName;
+  const clientName = client?.firstName ?? "Client";
+  const spouseName = client?.spouseFirstName
+    ? `${client.spouseFirstName} ${client.spouseLastName ?? ""}`.trim()
+    : "Spouse";
 
   const load = () => api.get<PensionPlan[]>(`/api/clients/${clientId}/pensions`).then(setPlans).catch(() => {});
   useEffect(() => { load(); }, [clientId]);
@@ -165,8 +171,26 @@ function prefillFromOwner(owner: string) {
   const isDBPP = form.pensionType === "dbpp";
   const isDCPP = ["dcpp","group_rrsp","dpsp"].includes(form.pensionType);
 
+  const filteredPlans = plans.filter(p =>
+    activePerson === "primary" ? p.subscriberOwner !== "spouse" : p.subscriberOwner === "spouse"
+  );
+
   return (
     <div className="p-6 max-w-5xl mx-auto">
+      {hasSpouse && (
+        <div className="flex justify-end mb-4">
+          <div className="flex gap-1 bg-gray-100 rounded-xl p-1 border border-gray-200">
+            <button onClick={() => setActivePerson("primary")}
+              className={`px-4 py-1.5 rounded-lg text-sm font-semibold transition-colors ${activePerson === "primary" ? "bg-white shadow text-[#0c1e3a] border border-gray-200" : "text-gray-500 hover:text-gray-800"}`}>
+              {clientName}
+            </button>
+            <button onClick={() => setActivePerson("spouse")}
+              className={`px-4 py-1.5 rounded-lg text-sm font-semibold transition-colors ${activePerson === "spouse" ? "bg-white shadow text-purple-700 border border-gray-200" : "text-gray-500 hover:text-gray-800"}`}>
+              {spouseName}
+            </button>
+          </div>
+        </div>
+      )}
       <div className="flex items-center justify-between mb-6">
         <div>
           <h2 className="text-xl font-bold text-gray-900">Pension Plans</h2>
@@ -364,7 +388,7 @@ function prefillFromOwner(owner: string) {
       )}
 
       {/* Pension Cards */}
-      {plans.length === 0 ? (
+      {filteredPlans.length === 0 ? (
         <div className="bg-white border border-gray-200 rounded-xl p-12 text-center">
           <Building2 className="w-10 h-10 text-gray-200 mx-auto mb-3" />
           <p className="text-sm font-semibold text-gray-500">No pension plans yet</p>
@@ -372,7 +396,7 @@ function prefillFromOwner(owner: string) {
         </div>
       ) : (
         <div className="space-y-4">
-          {plans.map(p => {
+          {filteredPlans.map(p => {
             const typeInfo = PENSION_TYPES.find(t => t.key === p.pensionType) ?? PENSION_TYPES[0];
             const isDB = p.pensionType === "dbpp";
             const annualPension = isDB ? calcDBPPAnnual(p) : 0;
@@ -462,11 +486,11 @@ function prefillFromOwner(owner: string) {
           })}
 
           {/* Summary */}
-          {plans.filter(p => p.pensionType === "dbpp").length > 0 && (
+          {filteredPlans.filter(p => p.pensionType === "dbpp").length > 0 && (
             <div className="bg-[#0c1e3a] text-white rounded-xl p-4">
               <p className="text-xs font-bold uppercase tracking-wide text-white/60 mb-2">Total Estimated Annual Pension Income at Retirement</p>
               <p className="text-2xl font-bold">
-                {fmt$(plans.filter(p => p.pensionType === "dbpp").reduce((s, p) => s + calcDBPPAnnual(p), 0))}
+                {fmt$(filteredPlans.filter(p => p.pensionType === "dbpp").reduce((s, p) => s + calcDBPPAnnual(p), 0))}
               </p>
               <p className="text-xs text-white/50 mt-1">DBPP plans only — feed this into your retirement projections as pension income</p>
             </div>

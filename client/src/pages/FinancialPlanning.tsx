@@ -1364,9 +1364,6 @@ function RrspRoomPanel({ clientId, prefill, personLabel }: { clientId: number; p
         <div className="flex-1 p-4 bg-blue-50 border border-blue-200 rounded-xl text-sm text-blue-800">
           <strong>RRSP Room Tracker</strong> — Calculates your available RRSP contribution room using the CRA 18% formula with carry-forward.
         </div>
-        {prefill && (
-          <span className="text-xs text-blue-600 font-semibold">Auto-loaded: {personLabel ?? "Client"}</span>
-        )}
       </div>
 
        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
@@ -1518,7 +1515,6 @@ function TfsaRoomPanel({ clientId, prefill, personLabel }: { clientId: number; p
         <div className="flex-1 p-4 bg-teal-50 border border-teal-200 rounded-xl text-sm text-teal-800">
           <strong>TFSA Room Tracker</strong> — Tracks cumulative TFSA contribution room since 2009 with annual limit history.
         </div>
-        {prefill && <span className="text-xs text-blue-600 font-semibold px-2">↻ {personLabel ?? "Client"}</span>}
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -1718,10 +1714,7 @@ function TaxProjectionPanel({ clientId, prefillPrimary, prefillSpouse, person, p
           <strong>Tax Projection</strong>
         </div>
         <div className="flex gap-2 flex-shrink-0">
-          {prefillPrimary && person !== "both" && (
-            <span className="text-xs text-purple-600 font-semibold px-2">↻ {person === "spouse" ? (spouseLabel ?? "Spouse") : (primaryLabel ?? "Primary")}</span>
-          )}
-        </div>
+       </div>
       </div>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div>

@@ -650,9 +650,9 @@ export function RetirementTab({ clientId, client, person = "primary" }: { client
   // Group by retirementAge + desiredRetirementIncome
   const groups: RetirementProj[][] = [];
   const used = new Set<number>();
-  for (const p of rows) {
+  for (const p of filteredRows) {
     if (used.has(p.id)) continue;
-    const siblings = rows.filter(r => !used.has(r.id) && r.retirementAge === p.retirementAge && r.desiredRetirementIncome === p.desiredRetirementIncome && r.id !== p.id);
+    const siblings = filteredRows.filter(r => !used.has(r.id) && r.retirementAge === p.retirementAge && r.desiredRetirementIncome === p.desiredRetirementIncome && r.id !== p.id);
     const group = [p, ...siblings];
     group.forEach(r => used.add(r.id));
     groups.push(group);
@@ -729,7 +729,7 @@ export function RetirementTab({ clientId, client, person = "primary" }: { client
           </div>
         </div>
       )}
-      {rows.length === 0 && drafts.length === 0 && (
+      {filteredRows.length === 0 && drafts.length === 0 && (
         <Card className="p-8 text-center text-gray-400">No projections yet. Click Add Projection to create one.</Card>
       )}
       <div className="space-y-4">

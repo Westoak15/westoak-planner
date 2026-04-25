@@ -2316,9 +2316,10 @@ function IncomeSplittingPanel({ clientId, prefill }: { clientId: number; prefill
 // MAIN TAX TAB COMPONENT
 // ============================================================================
 
-export function TaxTab({ clientId, client, person: personProp }: { clientId: number; client?: any; person?: string }) {
+export function TaxTab({ clientId, client }: { clientId: number; client?: any }) {
   const [activeSubTab, setActiveSubTab] = useState<TaxSubTab>("projection");
-  const person = (personProp === "spouse" ? "spouse" : personProp === "combined" ? "both" : "primary") as "primary" | "spouse" | "both";
+  const [personSel, setPersonSel] = useState<"primary" | "spouse" | "both">("primary");
+  const person = personSel;
   const { data: projections = [] } = useRetirementProjections(clientId);
   const ret = (projections as any[])[0] ?? null;
 
@@ -2364,9 +2365,24 @@ export function TaxTab({ clientId, client, person: personProp }: { clientId: num
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300 px-1">
-      <div className="flex items-center justify-between flex-wrap gap-2">
+      <div className="flex items-center justify-between flex-wrap gap-2 mb-1">
         <h2 className="text-xl font-display font-bold">Tax Planning</h2>
-        {/* Person selection moved to top-level tabs */}
+        {hasSpouse && (
+          <div className="flex gap-1 bg-gray-100 rounded-xl p-1 border border-gray-200">
+            <button onClick={() => setPersonSel("primary")}
+              className={`px-4 py-1.5 rounded-lg text-sm font-semibold transition-colors ${personSel === "primary" ? "bg-white shadow text-[#0c1e3a] border border-gray-200" : "text-gray-500 hover:text-gray-800"}`}>
+              {primaryLabel}
+            </button>
+            <button onClick={() => setPersonSel("spouse")}
+              className={`px-4 py-1.5 rounded-lg text-sm font-semibold transition-colors ${personSel === "spouse" ? "bg-white shadow text-purple-700 border border-gray-200" : "text-gray-500 hover:text-gray-800"}`}>
+              {spouseLabel}
+            </button>
+            <button onClick={() => setPersonSel("both")}
+              className={`px-4 py-1.5 rounded-lg text-sm font-semibold transition-colors ${personSel === "both" ? "bg-white shadow text-blue-700 border border-gray-200" : "text-gray-500 hover:text-gray-800"}`}>
+              Combined
+            </button>
+          </div>
+        )}
       </div>
 
       <div className="flex gap-1 p-1 bg-muted/50 rounded-xl overflow-x-auto flex-wrap">
@@ -2669,7 +2685,7 @@ const { data: plans = [] } = useClientPlans(selectedClientId ?? 0);
             {activeTab === "insurance"  && <InsuranceTab     clientId={selectedClientId} planId={activePlanId} client={selectedClient} />}
             {activeTab === "resp"       && <RESPTab          clientId={selectedClientId} planId={activePlanId} />}
             {activeTab === "debt"       && <DebtTab          clientId={selectedClientId} planId={activePlanId} />}
-            {activeTab === "tax" && <TaxTab clientId={selectedClientId} client={selectedClient} person={person} />}
+            {activeTab === "tax"        && <TaxTab           clientId={selectedClientId} client={selectedClient} />}
             {activeTab === "estate"     && <EstateNotesTab   clientId={selectedClientId} planId={activePlanId} />}
             {activeTab === "ai"         && <AITab            clientId={selectedClientId} />}
           </>

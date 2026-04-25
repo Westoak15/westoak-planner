@@ -84,7 +84,7 @@ async function openReport(clientId: number, type: "comprehensive" | "retirement"
 
 // ── Overview Tab ──────────────────────────────────────────────────────────────
 
-function OverviewTab({ clientId }: { clientId: number }) {
+function OverviewTab({ clientId, onTabChange }: { clientId: number; onTabChange?: (t: TabKey) => void }) {
   const { data: overview, isLoading } = useFinancialPlanningOverview(clientId);
   const { data: reports } = useAvailableReports(clientId);
   const [generatingReport, setGeneratingReport] = useState<string | null>(null);
@@ -104,14 +104,14 @@ function OverviewTab({ clientId }: { clientId: number }) {
     { label: "Total Assets",         value: `$${Number(overview.totalAssets).toLocaleString()}`,        icon: TrendingUp,  color: "text-green-600", bg: "bg-green-50" },
     { label: "Total Liabilities",    value: `$${Number(overview.totalLiabilities).toLocaleString()}`,   icon: TrendingDown, color: "text-red-500",  bg: "bg-red-50" },
     { label: "Total Debt",           value: `$${Number(overview.totalDebt).toLocaleString()}`,          icon: CreditCard,  color: "text-orange-600", bg: "bg-orange-50" },
-    { label: "Financial Goals",      value: overview.goals,                                              icon: Target,      color: "text-primary", bg: "bg-primary/5" },
-    { label: "Retirement Plans",     value: overview.retirementProjections,                              icon: PiggyBank,   color: "text-blue-600", bg: "bg-blue-50" },
-    { label: "Insurance Analyses",   value: overview.insuranceAnalyses,                                  icon: Shield,      color: "text-purple-600", bg: "bg-purple-50" },
-    { label: "Education Plans",      value: overview.educationPlans,                                     icon: GraduationCap, color: "text-teal-600", bg: "bg-teal-50" },
-    { label: "Tax Notes",            value: overview.taxNotes,                                           icon: Receipt,     color: "text-amber-600", bg: "bg-amber-50" },
-    { label: "Estate Notes",         value: overview.estateNotes,                                        icon: ScrollText,  color: "text-indigo-600", bg: "bg-indigo-50" },
-    { label: "AI Recommendations",   value: overview.aiRecommendations,                                  icon: Brain,       color: "text-pink-600", bg: "bg-pink-50" },
-    { label: "Pending Actions",      value: overview.pendingRecommendations,                             icon: Clock,       color: "text-yellow-600", bg: "bg-yellow-50" },
+    { label: "Financial Goals",      value: overview.goals,                    icon: Target,        color: "text-primary",    bg: "bg-primary/5",   tab: "dashboard" },
+    { label: "Retirement Plans",     value: overview.retirementProjections,    icon: PiggyBank,     color: "text-blue-600",   bg: "bg-blue-50",     tab: "retirement" },
+    { label: "Insurance Analyses",   value: overview.insuranceAnalyses,        icon: Shield,        color: "text-purple-600", bg: "bg-purple-50",   tab: "insurance" },
+    { label: "Education Plans",      value: overview.educationPlans,           icon: GraduationCap, color: "text-teal-600",   bg: "bg-teal-50",     tab: "resp" },
+    { label: "Tax Notes",            value: overview.taxNotes,                 icon: Receipt,       color: "text-amber-600",  bg: "bg-amber-50",    tab: "tax" },
+    { label: "Estate Notes",         value: overview.estateNotes,              icon: ScrollText,    color: "text-indigo-600", bg: "bg-indigo-50",   tab: "estate" },
+    { label: "AI Recommendations",   value: overview.aiRecommendations,        icon: Brain,         color: "text-pink-600",   bg: "bg-pink-50",     tab: "ai" },
+    { label: "Pending Actions",      value: overview.pendingRecommendations,   icon: Clock,         color: "text-yellow-600", bg: "bg-yellow-50",   tab: "ai" },
   ];
 
   const reportButtons: Array<{ type: "comprehensive" | "retirement" | "insurance" | "net-worth"; label: string; available: boolean; icon: typeof FileText }> = [
@@ -145,7 +145,8 @@ function OverviewTab({ clientId }: { clientId: number }) {
 
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
         {cards.map(card => (
-          <div key={card.label} className={`border border-border rounded-2xl p-5 ${card.bg}`}>
+          <div key={card.label} onClick={() => (card as any).tab && onTabChange?.((card as any).tab)}
+            className={`border border-border rounded-2xl p-5 ${card.bg} ${(card as any).tab ? "cursor-pointer hover:opacity-80 transition-opacity" : ""}`}>
             <div className="flex items-center space-x-2 mb-2">
               <card.icon className={`w-4 h-4 ${card.color}`} />
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{card.label}</p>
@@ -1364,9 +1365,7 @@ function RrspRoomPanel({ clientId, prefill, personLabel }: { clientId: number; p
           <strong>RRSP Room Tracker</strong> — Calculates your available RRSP contribution room using the CRA 18% formula with carry-forward.
         </div>
         {prefill && (
-          <button onClick={loadFromClient} className="flex-shrink-0 px-3 py-2 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 transition-colors">
-            Load {personLabel ?? "Client"}
-          </button>
+          <span className="text-xs text-blue-600 font-semibold">Auto-loaded: {personLabel ?? "Client"}</span>
         )}
       </div>
 
@@ -1519,11 +1518,7 @@ function TfsaRoomPanel({ clientId, prefill, personLabel }: { clientId: number; p
         <div className="flex-1 p-4 bg-teal-50 border border-teal-200 rounded-xl text-sm text-teal-800">
           <strong>TFSA Room Tracker</strong> — Tracks cumulative TFSA contribution room since 2009 with annual limit history.
         </div>
-        {prefill && (
-          <button onClick={loadFromClient} className="flex-shrink-0 px-3 py-2 bg-teal-600 text-white text-sm font-semibold rounded-xl hover:bg-teal-700 transition-colors">
-            Load {personLabel ?? "Client"}
-          </button>
-        )}
+        {prefill && <span className="text-xs text-blue-600 font-semibold px-2">↻ {personLabel ?? "Client"}</span>}
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -1724,10 +1719,7 @@ function TaxProjectionPanel({ clientId, prefillPrimary, prefillSpouse, person, p
         </div>
         <div className="flex gap-2 flex-shrink-0">
           {prefillPrimary && person !== "both" && (
-            <button onClick={() => applyPrefill(person === "spouse" ? prefillSpouse : prefillPrimary)}
-              className="px-3 py-2 bg-purple-600 text-white text-sm font-semibold rounded-xl hover:bg-purple-700 transition-colors">
-              Load {person === "spouse" ? (spouseLabel ?? "Spouse") : (primaryLabel ?? "Primary")}
-            </button>
+            <span className="text-xs text-purple-600 font-semibold px-2">↻ {person === "spouse" ? (spouseLabel ?? "Spouse") : (primaryLabel ?? "Primary")}</span>
           )}
         </div>
       </div>
@@ -2217,11 +2209,7 @@ function IncomeSplittingPanel({ clientId, prefill }: { clientId: number; prefill
         <div className="flex-1 p-4 bg-indigo-50 border border-indigo-200 rounded-xl text-sm text-indigo-800">
           <strong>Income Splitting Optimizer</strong>
         </div>
-        {prefill && (
-          <button onClick={loadFromClient} className="flex-shrink-0 px-3 py-2 bg-indigo-600 text-white text-sm font-semibold rounded-xl hover:bg-indigo-700 transition-colors">
-            Load Client
-          </button>
-        )}
+        {prefill && <span className="text-xs text-indigo-600 font-semibold">↻ Auto-loaded</span>}
       </div>
       <div className="p-4 bg-indigo-50 border border-indigo-200 rounded-xl text-sm text-indigo-800">
         <strong>Income Splitting Optimizer</strong> � Finds the best strategy: pension split (T1032), spousal RRSP, CPP sharing,
@@ -2667,7 +2655,7 @@ const { data: plans = [] } = useClientPlans(selectedClientId ?? 0);
                 )}
               </div>
             )}
-            {activeTab === "overview"   && <OverviewTab      clientId={selectedClientId} />}
+            {activeTab === "overview"   && <OverviewTab      clientId={selectedClientId} onTabChange={setActiveTab} />}
             {activeTab === "dashboard"  && activePlanId && <SimulationDashboard planId={activePlanId} />}
             {activeTab === "dashboard"  && !activePlanId && (
               <div className="border border-dashed border-border rounded-2xl p-8 text-center text-muted-foreground">

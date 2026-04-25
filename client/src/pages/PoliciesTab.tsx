@@ -38,14 +38,14 @@ function fmt$(val: string | null): string {
   return `$${n.toLocaleString("en-CA", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
 }
 
-export function PoliciesTab({ clientId, client }: { clientId: number; client?: any }) {
+export function PoliciesTab({ clientId, client, person = "primary" }: { clientId: number; client?: any; person?: string }) {
   const [policies, setPolicies] = useState<Policy[]>([]);
   const [loading, setLoading]   = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editId, setEditId]     = useState<number | null>(null);
   const [draft, setDraft]       = useState<PolicyDraft>(emptyDraft());
   const [saving, setSaving]     = useState(false);
-  const [activePerson, setActivePerson] = useState<"primary"|"spouse">("primary");
+  const activePerson = person === "spouse" ? "spouse" : "primary";
   const hasSpouse = !!client?.spouseFirstName;
   const spouseName = client?.spouseFirstName
     ? `${client.spouseFirstName} ${client.spouseLastName ?? ""}`.trim()
@@ -129,19 +129,7 @@ export function PoliciesTab({ clientId, client }: { clientId: number; client?: a
           <Plus className="w-4 h-4" /> Add Policy
         </button>
       </div>
-      {hasSpouse && (
-        <div className="flex gap-1 mb-5 bg-gray-100 rounded-xl p-1 w-fit border border-gray-200">
-          <button onClick={() => setActivePerson("primary")}
-            className={`px-4 py-1.5 rounded-lg text-sm font-semibold transition-colors ${activePerson === "primary" ? "bg-white shadow text-[#0c1e3a] border border-gray-200" : "text-gray-500 hover:text-gray-800"}`}>
-            {clientName}
-          </button>
-          <button onClick={() => setActivePerson("spouse")}
-            className={`px-4 py-1.5 rounded-lg text-sm font-semibold transition-colors ${activePerson === "spouse" ? "bg-white shadow text-purple-700 border border-gray-200" : "text-gray-500 hover:text-gray-800"}`}>
-            {spouseName}
-          </button>
-        </div>
-      )}
-
+      
       {loading ? (
         <div className="text-center py-16 text-gray-400">Loading…</div>
       ) : policies.length === 0 ? (

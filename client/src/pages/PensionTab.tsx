@@ -77,14 +77,13 @@ const emptyPlan = (): Partial<PensionPlan> => ({
   notes: "",
 });
 
-export function PensionTab({ clientId, client }: { clientId: number; client?: any }) {
+export function PensionTab({ clientId, client, person = "primary" }: { clientId: number; client?: any; person?: string }) {
   const [plans, setPlans]       = useState<PensionPlan[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [form, setForm]         = useState<any>(emptyPlan());
   const [busy, setBusy]         = useState(false);
-  const [activePerson, setActivePerson] = useState<"primary" | "spouse">("primary");
-  const hasSpouse  = !!client?.spouseFirstName;
+  const activePerson = person === "spouse" ? "spouse" : "primary";
   const clientName = client?.firstName ?? "Client";
   const spouseName = client?.spouseFirstName ?? "Spouse";
 
@@ -169,26 +168,12 @@ function prefillFromOwner(owner: string) {
   const isDBPP = form.pensionType === "dbpp";
   const isDCPP = ["dcpp","group_rrsp","dpsp"].includes(form.pensionType);
 
-  const filteredPlans = plans.filter(p =>
+ const filteredPlans = plans.filter(p =>
     activePerson === "primary" ? p.subscriberOwner !== "spouse" : p.subscriberOwner === "spouse"
   );
 
   return (
     <div className="p-6 max-w-5xl mx-auto">
-      {hasSpouse && (
-        <div className="flex justify-end mb-4">
-          <div className="flex gap-1 bg-gray-100 rounded-xl p-1 border border-gray-200">
-            <button onClick={() => setActivePerson("primary")}
-              className={`px-4 py-1.5 rounded-lg text-sm font-semibold transition-colors ${activePerson === "primary" ? "bg-white shadow text-[#0c1e3a] border border-gray-200" : "text-gray-500 hover:text-gray-800"}`}>
-              {clientName}
-            </button>
-            <button onClick={() => setActivePerson("spouse")}
-              className={`px-4 py-1.5 rounded-lg text-sm font-semibold transition-colors ${activePerson === "spouse" ? "bg-white shadow text-purple-700 border border-gray-200" : "text-gray-500 hover:text-gray-800"}`}>
-              {spouseName}
-            </button>
-          </div>
-        </div>
-      )}
       <div className="flex items-center justify-between mb-6">
         <div>
           <h2 className="text-xl font-bold text-gray-900">Pension Plans</h2>

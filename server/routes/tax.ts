@@ -263,8 +263,9 @@ taxRouter.post("/:clientId/income-splitting", async (req, res) => {
     console.error("[income splitting error]", error);
     res.status(500).json({ error: "Failed to analyze income splitting" });
   }
+});
 
-  // ── Capital Gains Positions (persistence) ────────────────────────────────────
+// ── Capital Gains Positions (persistence) ────────────────────────────────────
 
 
 taxRouter.get("/:clientId/capital-gains-positions", async (req, res) => {
@@ -355,5 +356,4 @@ taxRouter.delete("/tax-analyses/:id", async (req, res) => {
     await db.delete(taxAnalyses).where(eq(taxAnalyses.id, parseInt(req.params.id)));
     res.json({ ok: true });
   } catch (e) { res.status(500).json({ error: "Failed" }); }
-});
 });

@@ -321,7 +321,7 @@ taxRouter.delete("/capital-gains-positions/:id", async (req, res) => {
 // ── Tax Analyses (RRSP / TFSA / Projection / Splitting) ─────────────────────
 
 
-taxRouter.get("/:clientId/analyses", async (req, res) => {
+taxRouter.get("/client/:clientId/analyses", async (req, res) => {
   try {
     const clientId = parseInt(req.params.clientId);
     const { type } = req.query;
@@ -331,7 +331,7 @@ taxRouter.get("/:clientId/analyses", async (req, res) => {
   } catch (e) { res.status(500).json({ error: "Failed" }); }
 });
 
-taxRouter.post("/:clientId/analyses", async (req, res) => {
+taxRouter.post("/client/:clientId/analyses", async (req, res) => {
   try {
     const clientId = parseInt(req.params.clientId);
     const { id, createdAt, updatedAt, ...body } = req.body;

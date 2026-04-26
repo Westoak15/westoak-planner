@@ -276,13 +276,24 @@ export function PensionTab({ clientId, client, person = "primary" }: {
                 <div className="bg-blue-50 border border-blue-100 rounded-xl p-5 space-y-4">
                   <div className="flex items-center justify-between">
                     <p className="text-xs font-bold text-blue-700 uppercase tracking-wide">Defined Benefit Formula</p>
-                    {projection && (
-                      <button onClick={() => setShowProjection(v => !v)}
-                        className="flex items-center gap-1 text-xs font-semibold text-blue-600 hover:underline">
-                        <TrendingUp className="w-3.5 h-3.5" />
-                        {showProjection ? "Hide" : "Show"} Income Projection
-                      </button>
-                    )}
+                    <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-1.5">
+                        <label className="text-xs text-gray-500 font-semibold">Income Growth:</label>
+                        <select value={growthRate} onChange={e => setGrowthRate(Number(e.target.value))}
+                          className="border border-gray-200 rounded-lg px-2 py-1 text-xs bg-white">
+                          {GROWTH_RATES.map(r => (
+                            <option key={r} value={r}>{(r * 100).toFixed(1)}%</option>
+                          ))}
+                        </select>
+                      </div>
+                      {projection && (
+                        <button onClick={() => setShowProjection(v => !v)}
+                          className="flex items-center gap-1 text-xs font-semibold text-blue-600 hover:underline">
+                          <TrendingUp className="w-3.5 h-3.5" />
+                          {showProjection ? "Hide" : "Show"} Income Projection
+                        </button>
+                      )}
+                    </div>
                   </div>
 
                   {/* Income context bar */}

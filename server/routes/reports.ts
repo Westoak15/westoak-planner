@@ -1,6 +1,6 @@
 import { Router, Response } from "express";
 import { db } from "../db/index.js";
-import { clients, netWorthEntries, insuranceAnalyses, debtEntries, educationSavings, users, retirementProjections, taxPlanningNotes, estatePlanningNotes, householdExpenses } from "../../shared/schema.js";
+import { clients, netWorthEntries, insuranceAnalyses, debtEntries, educationSavings, users, retirementProjections, taxPlanningNotes, estatePlanningNotes, householdExpenses, pensionPlans } from "../../shared/schema.js";
 import { eq, and, inArray } from "drizzle-orm";
 import { isAuthenticated, type AuthRequest } from "../auth/index.js";
 import { generateFnaReport, generateNetWorthReport, generateComprehensiveReport, generateRetirementReport, generateInsuranceReport, generateCashFlowReport, generateAssetAllocationReport, generateRetirementReadinessReport, generateGoalStatusReport, generateInsuranceAuditReport, generateEstateSummaryReport, generateTaxStrategyReport, generateOnePagePlan } from "../services/reportGenerator.js";
@@ -15,6 +15,11 @@ r.use((req: any, res: any, next: any) => {
 });
 
 async function accessibleUserIds(userId: number): Promise<number[]> {
+  const [me] = await db.select({ role: users.role }).from(users).where(eq(users.id, userId)).limit(1);
+  if (me?.role === "ga") {
+    const fas = await db.select({ id: users.id }).from(users).where(eq(users.gaId, userId));
+    return [userId, ...fas.map(f => f.id)];
+  }
   return [userId];
 }
 
@@ -125,7 +130,6 @@ r.get("/:clientId/retirement", async (req: AuthRequest, res: Response) => {
     // Run live Monte Carlo so report reflects current data
     let simulation = null;
     try {
-      const { pensionPlans } = await import("../../shared/schema.js");
       const plans = await db.select().from(pensionPlans).where(eq(pensionPlans.clientId, +req.params.clientId));
       const pensionIncome = plans.reduce((sum: number, p: any) => {
         if (p.pensionType === "dbpp" && p.accrualRate && p.projectedYearsAtRetirement && p.bestAverageEarnings)

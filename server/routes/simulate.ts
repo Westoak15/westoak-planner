@@ -1,7 +1,6 @@
 import { Router, Response } from "express";
 import { db } from "../db/index.js";
 import { clients, retirementProjections } from "../../shared/schema.js";
-export async function runMonteCarlo({ client, projection, assumptions, simulations }: any) { return null; }
 import { isAuthenticated, type AuthRequest } from "../auth/index.js";
 import { eq, and } from "drizzle-orm";
 import { ownsClient } from "../fpUtils.js";
@@ -38,7 +37,7 @@ r.post("/clients/:id/simulate", async (req: AuthRequest, res: Response) => {
   // Build profile from client + projection data
   const currentAge    = proj?.currentAge    ?? (new Date().getFullYear() - new Date(client.dateOfBirth ?? "1970-01-01").getFullYear());
   const retirementAge = proj?.retirementAge ?? client.retirementAge ?? 65;
-  const rrsp          = Number(proj?.rrspBalance    ?? client.annualIncome ?? 0) * 10;
+  const rrsp          = Number(proj?.rrspBalance    ?? 0);
   const tfsa          = Number(proj?.tfsaBalance    ?? 0);
   const nonReg        = Number(proj?.nonRegBalance  ?? 0);
   const annualContrib = Number(proj?.annualContribution ?? 0);
@@ -109,11 +108,9 @@ r.post("/clients/:id/simulate", async (req: AuthRequest, res: Response) => {
         // Guardrail check vs glide path
         if (glidePathBalance > 0) {
           const ratio = balance / glidePathBalance;
-          if (ratio < guardrailFloor && sim < 5) {
-            // Only record first few sim guardrail events
-            const cut = spending * spendingFlexDown;
-            guardrailEvents.push({ sim, year: yr, type: "reduce", adjustment: -cut });
+          if (ratio < guardrailFloor) {
             spending = Math.max(spending * (1 - spendingFlexDown), desiredIncome * 0.75);
+            guardrailEvents.push({ sim, year: yr, type: "reduce", adjustment: -(spending * spendingFlexDown) });
           } else if (ratio > guardrailCeiling) {
             spending = Math.min(spending * (1 + spendingFlexUp), desiredIncome * 1.25);
           }

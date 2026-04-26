@@ -33,7 +33,7 @@ const simulationSchema = z.object({
 });
 
 r.post(
-  "/api/simulation/:clientId/montecarlo",
+  "/simulation/:clientId/montecarlo",
   isAuthenticated,
   async (req: AuthRequest, res: Response) => {
     try {
@@ -72,11 +72,13 @@ r.post(
       
       const [saved] = await (db.insert(simulations) as any).values({
         clientId,
-        simulationType: "montecarlo",
-        parameters: params,
-        results: result,
-        probabilityOfSuccess: result.probabilityOfSuccess,
-        createdAt: new Date(),
+        successRate:   String((result.probabilityOfSuccess * 100).toFixed(2)),
+        medianOutcome: String(result.percentiles?.p50 ?? 0),
+        worstCase:     String(result.percentiles?.p10 ?? 0),
+        bestCase:      String(result.percentiles?.p90 ?? 0),
+        parameters:    params,
+        results:       result,
+        createdAt:     new Date(),
       }).returning();
       
       res.json({
@@ -122,7 +124,7 @@ const guardrailSchema = z.object({
 });
 
 r.post(
-  "/api/simulation/:clientId/guardrail",
+  "/simulation/:clientId/guardrail",
   isAuthenticated,
   async (req: AuthRequest, res: Response) => {
     try {
@@ -164,11 +166,11 @@ r.post(
       
       await (db.insert(simulations) as any).values({
         clientId,
-        simulationType: "guardrail",
-        parameters: input,
-        results: result,
-        probabilityOfSuccess: result.probabilityOfSuccess,
-        createdAt: new Date(),
+        successRate:   String((result.probabilityOfSuccess * 100).toFixed(2)),
+        medianOutcome: String(result.currentWealth ?? 0),
+        parameters:    input,
+        results:       result,
+        createdAt:     new Date(),
       });
       
       res.json(result);
@@ -183,7 +185,7 @@ r.post(
 );
 
 r.get(
-  "/api/simulation/:clientId/history",
+  "/simulation/:clientId/history",
   isAuthenticated,
   async (req: AuthRequest, res: Response) => {
     try {
@@ -214,7 +216,7 @@ r.get(
 );
 
 r.get(
-  "/api/simulation/:clientId/status",
+  "/simulation/:clientId/status",
   isAuthenticated,
   async (req: AuthRequest, res: Response) => {
     try {
@@ -241,14 +243,14 @@ r.get(
         return res.json({ status: "no_data", message: "No simulations run yet" });
       }
       
-      const result = latest.results as any;
-      
+      const result = (latest.results ?? {}) as any;
+
       res.json({
-        health: result.health,
-        probabilityOfSuccess: latest.successRate,
-        lastChecked: latest.createdAt,
-        issues: result.issues,
-        recommendations: result.recommendations,
+        health:               result.health ?? "unknown",
+        probabilityOfSuccess: latest.successRate ? Number(latest.successRate) / 100 : null,
+        lastChecked:          latest.createdAt,
+        issues:               result.issues ?? [],
+        recommendations:      result.recommendations ?? [],
       });
     } catch (err: any) {
       console.error("[guardrail status]", err);

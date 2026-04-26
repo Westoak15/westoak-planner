@@ -88,7 +88,7 @@ r.get("/:id/plans", async (req: AuthRequest, res: Response) => {
 r.post("/:id/plans", async (req: AuthRequest, res: Response) => {
   const ok = await canAccessClient(req.userId!, +req.params.id);
   if (!ok) return res.status(404).json({ message: "Not found" });
-  const [p] = await (db.insert(plans) as any).values({ clientId: +req.params.id, userId: req.userId!, name: req.body.name ?? "Financial Plan" }).returning();
+  const [p] = await (db.insert(plans) as any).values({ clientId: +req.params.id, userId: req.userId!, title: req.body.name ?? req.body.title ?? "Financial Plan" }).returning();
   res.status(201).json(p);
 });
 

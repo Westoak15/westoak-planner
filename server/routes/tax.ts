@@ -13,10 +13,13 @@ import type {
 } from "../engine/tax/types.js";
 import { db } from "../db/index.js";
 import { capitalGainsPositions } from "../../shared/schema.js";
-import { eq } from "drizzle-orm";
-import { taxAnalyses } from "../../shared/schema.js";
+import { eq, and } from "drizzle-orm";
+import { taxAnalyses, clients } from "../../shared/schema.js";
+import { isAuthenticated, type AuthRequest } from "../auth/index.js";
+import { ownsClient } from "../fpUtils.js";
 
 export const taxRouter = Router();
+taxRouter.use(isAuthenticated);
 
 // ── Tax Projection ──────────────────────────────────────────────────────────
 
@@ -268,9 +271,10 @@ taxRouter.post("/:clientId/income-splitting", async (req, res) => {
 // ── Capital Gains Positions (persistence) ────────────────────────────────────
 
 
-taxRouter.get("/:clientId/capital-gains-positions", async (req, res) => {
+taxRouter.get("/:clientId/capital-gains-positions", async (req: AuthRequest, res) => {
   try {
     const clientId = parseInt(req.params.clientId);
+    if (!await ownsClient(clientId, req.userId!)) return res.status(404).json({ error: "Not found" });
     const rows = await db.select().from(capitalGainsPositions)
       .where(eq(capitalGainsPositions.clientId, clientId));
     res.json(rows);
@@ -280,9 +284,10 @@ taxRouter.get("/:clientId/capital-gains-positions", async (req, res) => {
   }
 });
 
-taxRouter.post("/:clientId/capital-gains-positions", async (req, res) => {
+taxRouter.post("/:clientId/capital-gains-positions", async (req: AuthRequest, res) => {
   try {
     const clientId = parseInt(req.params.clientId);
+    if (!await ownsClient(clientId, req.userId!)) return res.status(404).json({ error: "Not found" });
     const { id, createdAt, updatedAt, ...body } = req.body;
     const [row] = await db.insert(capitalGainsPositions)
       .values({ clientId, ...body })

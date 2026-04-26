@@ -37,7 +37,7 @@ const INDEXING_TYPES = [
   { key: "fixed",   label: "Fixed Rate" },
 ];
 
-const GROWTH_RATE = 0.035; // 3.5% annual income growth assumption
+const GROWTH_RATES = [0.01, 0.015, 0.02, 0.025, 0.03, 0.035];
 
 const fmt$ = (v: string | number | null) => {
   if (!v) return "—";
@@ -107,6 +107,7 @@ export function PensionTab({ clientId, client, person = "primary" }: {
   const [form, setForm]           = useState<any>(emptyPlan());
   const [busy, setBusy]           = useState(false);
   const [showProjection, setShowProjection] = useState(false);
+  const [growthRate, setGrowthRate] = useState(0.035);
 
   const activePerson = person === "spouse" ? "spouse" : "primary";
   const clientName   = client?.firstName ?? "Client";
@@ -137,7 +138,7 @@ export function PensionTab({ clientId, client, person = "primary" }: {
   const formAge       = formDob ? Math.floor((Date.now() - new Date(formDob).getTime()) / (365.25 * 24 * 60 * 60 * 1000)) : null;
   const formIncome    = Number(formIsPrimary ? client?.annualIncome : client?.spouseAnnualIncome) || 0;
   const formRetAge    = Number(form.retirementAge) || 65;
-  const projection    = formAge && formIncome ? calcBest5YearAverage(formIncome, formAge, formRetAge) : null;
+  const projection    = formAge && formIncome ? calcBest5YearAverage(formIncome, formAge, formRetAge, growthRate) : null;
 
   function prefillFromOwner(owner: string) {
     const isPrimary = owner === "primary";
@@ -153,7 +154,7 @@ export function PensionTab({ clientId, client, person = "primary" }: {
     // Calculate best 5yr average from current income
     const currentIncome = Number(salary) || 0;
     const best5Avg = (age && currentIncome && retAge)
-      ? calcBest5YearAverage(currentIncome, age, retAge).best5Avg
+      ? calcBest5YearAverage(currentIncome, age, retAge, growthRate).best5Avg
       : currentIncome;
 
     upd("subscriberOwner", owner);
@@ -177,7 +178,7 @@ export function PensionTab({ clientId, client, person = "primary" }: {
     const projYears = (age && retAge) ? String(currentService + (retAge - age)) : "";
     const currentIncome = Number(salary) || 0;
     const best5Avg  = (age && currentIncome && retAge)
-      ? calcBest5YearAverage(currentIncome, age, retAge).best5Avg
+      ? calcBest5YearAverage(currentIncome, age, retAge, growthRate).best5Avg
       : currentIncome;
     setForm({
       ...base,
@@ -510,7 +511,7 @@ export function PensionTab({ clientId, client, person = "primary" }: {
             const cardAge       = cardDob ? Math.floor((Date.now() - new Date(cardDob).getTime()) / (365.25 * 24 * 60 * 60 * 1000)) : null;
             const cardIncome    = Number(cardOwner ? client?.spouseAnnualIncome : client?.annualIncome) || 0;
             const cardRetAge    = p.retirementAge ?? 65;
-            const cardProj      = cardAge && cardIncome ? calcBest5YearAverage(cardIncome, cardAge, cardRetAge) : null;
+            const cardProj      = cardAge && cardIncome ? calcBest5YearAverage(cardIncome, cardAge, cardRetAge, growthRate) : null;
 
             return (
               <div key={p.id} className="bg-white border border-gray-200 rounded-xl p-5">

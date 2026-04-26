@@ -41,4 +41,39 @@ r.delete("/goals/:id", async (req: AuthRequest, res: Response) => {
   res.json({ ok: true });
 });
 
+// ── Goal Check-ins ────────────────────────────────────────────────────────────
+import { goalCheckIns } from "../../shared/schema.js";
+
+r.get("/goals/:id/check-ins", async (req: AuthRequest, res: Response) => {
+  const [goal] = await db.select({ id: financialGoals.id, clientId: financialGoals.clientId })
+    .from(financialGoals).where(eq(financialGoals.id, +req.params.id));
+  if (!goal || !await ownsClient(goal.clientId, req.userId!)) return res.status(404).json({ message: "Not found" });
+  const rows = await db.select().from(goalCheckIns)
+    .where(eq(goalCheckIns.goalId, goal.id));
+  res.json(rows);
+});
+
+r.post("/goals/:id/check-ins", async (req: AuthRequest, res: Response) => {
+  const [goal] = await db.select({ id: financialGoals.id, clientId: financialGoals.clientId })
+    .from(financialGoals).where(eq(financialGoals.id, +req.params.id));
+  if (!goal || !await ownsClient(goal.clientId, req.userId!)) return res.status(404).json({ message: "Not found" });
+  const { currentAmount, notes, checkInDate } = req.body;
+  const [row] = await (db.insert(goalCheckIns) as any).values({
+    goalId: goal.id,
+    currentAmount: currentAmount ?? "0",
+    notes: notes ?? null,
+    checkInDate: checkInDate ?? new Date().toISOString().split("T")[0],
+  }).returning();
+  // Update the goal's currentAmount to latest check-in
+  await db.update(financialGoals)
+    .set({ currentAmount, updatedAt: new Date() } as any)
+    .where(eq(financialGoals.id, goal.id));
+  res.status(201).json(row);
+});
+
+r.delete("/goal-check-ins/:id", async (req: AuthRequest, res: Response) => {
+  await db.delete(goalCheckIns).where(eq(goalCheckIns.id, +req.params.id));
+  res.json({ ok: true });
+});
+
 export { r as goalsRouter };

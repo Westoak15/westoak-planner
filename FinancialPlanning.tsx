@@ -115,11 +115,11 @@ function OverviewTab({ clientId, onTabChange }: { clientId: number; onTabChange?
     { label: "Pending Actions",      value: overview.pendingRecommendations,   icon: Clock,         color: "text-yellow-600", bg: "bg-yellow-50",   tab: "ai" },
   ];
 
-  const reportButtons = [
-    { type: "comprehensive", label: "Full Plan",   available: true,                   icon: FileText,  tab: null },
-    { type: "retirement",    label: "Retirement",  available: !!reports?.retirement,  icon: PiggyBank, tab: "retirement" as TabKey },
-    { type: "insurance",     label: "Insurance",   available: !!reports?.insurance,   icon: Shield,    tab: "insurance" as TabKey },
-    { type: "net-worth",     label: "Net Worth",   available: !!reports?.netWorth,    icon: DollarSign, tab: "networth" as TabKey },
+  const reportButtons: Array<{ type: "comprehensive" | "retirement" | "insurance" | "net-worth"; label: string; available: boolean; icon: typeof FileText }> = [
+    { type: "comprehensive", label: "Full Plan",       available: true,                        icon: FileText },
+    { type: "retirement",    label: "Retirement",      available: !!reports?.retirement,        icon: PiggyBank },
+    { type: "insurance",     label: "Insurance",       available: !!reports?.insurance,         icon: Shield },
+    { type: "net-worth",     label: "Net Worth",       available: !!reports?.netWorth,          icon: DollarSign },
   ];
 
   return (
@@ -130,7 +130,7 @@ function OverviewTab({ clientId, onTabChange }: { clientId: number; onTabChange?
           {reportButtons.map(btn => (
             <button
               key={btn.type}
-              onClick={() => btn.tab ? onTabChange?.(btn.tab) : handleReport(btn.type)}
+              onClick={() => handleReport(btn.type)}
               disabled={!btn.available || generatingReport === btn.type}
               data-testid={`button-report-${btn.type}`}
               className="flex items-center space-x-1.5 px-3 py-2 bg-primary text-primary-foreground text-sm rounded-xl hover:bg-primary/90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
@@ -1956,322 +1956,272 @@ const PROVINCE_RATES: Record<string, number> = {
   YT: 48.00, NT: 47.05, NU: 44.50,
 };
 
-function CapitalGainsPanel({ clientId, client, person = "primary" }: {
-  clientId: number; client?: any; person?: string;
-}) {
+function CapitalGainsPanel({ clientId, client, person = "primary" }: { clientId: number; client?: any; person?: string }) {
   const capGains = useCapitalGains(clientId);
-  const owner = person === "combined" ? "joint" : person === "spouse" ? "spouse" : "primary";
-  const personLabel = person === "combined" ? "Joint" : person === "spouse" ? (client?.spouseFirstName ?? "Spouse") : (client?.firstName ?? "Primary");
-  const [analyses, setAnalyses] = useState<any[]>([]);
-  const [loading, setLoading]   = useState(true);
-  const [showForm, setShowForm] = useState(false);
-  const [editingId, setEditingId] = useState<number | null>(null);
-  const [saving, setSaving]     = useState(false);
-  const [result, setResult]     = useState<any>(null);
-  const [showResult, setShowResult] = useState<number | null>(null);
+  const [result, setResult] = useState<CapitalGainsResult | null>(null);
+  const [province, setProvince]         = useState<string>(client?.province ?? "ON");
+  const [marginalRate, setMarginalRate] = useState<string>(
+    String((PROVINCE_RATES[client?.province ?? "ON"] ?? 53.53).toFixed(2))
+  );
+  const [carryForwardLoss, setCarryForwardLoss] = useState("0");
+  const [positions, setPositions] = useState([
+    { type: "stock", symbol: "", acb: "", fmv: "", lcgeEligible: false },
+  ]);
 
   const provinces = ["ON","BC","AB","QC","MB","SK","NS","NB","PE","NL","YT","NT","NU"];
   const ASSET_TYPES = [
-    { key: "stock",      label: "Stock / ETF" },
+    { key: "stock",    label: "Stock / ETF" },
     { key: "realestate", label: "Real Estate" },
-    { key: "smallbiz",   label: "Small Business Shares" },
-    { key: "farmfish",   label: "Farm / Fishing Property" },
-    { key: "other",      label: "Other" },
+    { key: "smallbiz", label: "Small Business Shares" },
+    { key: "farmfish", label: "Farm / Fishing Property" },
+    { key: "other",    label: "Other" },
   ];
   const LCGE_TYPES = ["smallbiz", "farmfish"];
   const LCGE_LIMIT = 1250000;
 
-  const emptyForm = () => ({
-    label: `Capital Gains — ${personLabel} — ${new Date().getFullYear()}`,
-    province: client?.province ?? "ON",
-    marginalRate: String((PROVINCE_RATES[client?.province ?? "ON"] ?? 53.53).toFixed(2)),
-    carryForwardLoss: "0",
-    positions: [{ type: "stock", symbol: "", acb: "", fmv: "", lcgeEligible: false }],
-  });
-
-  const [form, setForm] = useState(emptyForm());
-
-  const load = async () => {
-    setLoading(true);
-    try {
-      const data = await api.get<any[]>(`/api/tax/client/${clientId}/analyses?type=capgains`);
-      setAnalyses(data.filter((a: any) => a.owner === owner));
-    } catch { setAnalyses([]); }
-    finally { setLoading(false); }
-  };
-
-  useEffect(() => { load(); }, [clientId, owner]);
-
-  const openNew = () => {
-    setEditingId(null);
-    setForm(emptyForm());
-    setResult(null);
-    setShowForm(true);
-  };
-
-  const openEdit = (a: any) => {
-    setEditingId(a.id);
-    setForm({ label: a.label ?? "", ...a.inputData });
-    setResult(a.resultData ?? null);
-    setShowForm(true);
-  };
-
   const addPosition = () =>
-    setForm(f => ({ ...f, positions: [...f.positions, { type: "stock", symbol: "", acb: "", fmv: "", lcgeEligible: false }] }));
+    setPositions(p => [...p, { type: "stock", symbol: "", acb: "", fmv: "", lcgeEligible: false }]);
 
   const removePosition = (i: number) =>
-    setForm(f => ({ ...f, positions: f.positions.filter((_, idx) => idx !== i) }));
+    setPositions(p => p.filter((_, idx) => idx !== i));
 
   const updatePos = (i: number, k: string, v: any) =>
-    setForm(f => ({
-      ...f,
-      positions: f.positions.map((x, idx) => {
-        if (idx !== i) return x;
-        const u = { ...x, [k]: v };
-        if (k === "type") u.lcgeEligible = LCGE_TYPES.includes(v);
-        return u;
-      }),
+    setPositions(p => p.map((x, idx) => {
+      if (idx !== i) return x;
+      const updated = { ...x, [k]: v };
+      if (k === "type") updated.lcgeEligible = LCGE_TYPES.includes(v);
+      return updated;
     }));
 
-  // Live preview
-  const preview = form.positions.map(p => ({ ...p, gain: Number(p.fmv || 0) - Number(p.acb || 0) }));
-  const totalGain     = preview.reduce((s, p) => s + Math.max(0, p.gain), 0);
-  const totalLoss     = preview.reduce((s, p) => s + Math.abs(Math.min(0, p.gain)), 0);
-  const lcgeGains     = preview.filter(p => p.lcgeEligible).reduce((s, p) => s + Math.max(0, p.gain), 0);
-  const lcgeSheltered = Math.min(lcgeGains, LCGE_LIMIT);
-  const netGain       = Math.max(0, totalGain - totalLoss - Number(form.carryForwardLoss || 0) - lcgeSheltered);
-  const taxableGain   = netGain * 0.5;
-  const estTax        = taxableGain * (Number(form.marginalRate) / 100);
+  // Live client-side preview
+  const preview = positions.map(p => {
+    const acb = Number(p.acb || 0);
+    const fmv = Number(p.fmv || 0);
+    const gain = fmv - acb;
+    return { ...p, gain };
+  });
+  const totalGain      = preview.reduce((s, p) => s + Math.max(0, p.gain), 0);
+  const totalLoss      = preview.reduce((s, p) => s + Math.abs(Math.min(0, p.gain)), 0);
+  const lcgeGains      = preview.filter(p => p.lcgeEligible).reduce((s, p) => s + Math.max(0, p.gain), 0);
+  const lcgeSheltered  = Math.min(lcgeGains, LCGE_LIMIT);
+  const netGain        = Math.max(0, totalGain - totalLoss - Number(carryForwardLoss || 0) - lcgeSheltered);
+  const taxableGain    = netGain * 0.5;
+  const estTax         = taxableGain * (Number(marginalRate) / 100);
 
-  const save = async () => {
-    setSaving(true);
-    try {
-      const input = {
-        positions: form.positions.map(p => ({
-          symbol: p.symbol || p.type,
-          acb: Number(p.acb), fmv: Number(p.fmv),
-          lcgeEligible: p.lcgeEligible,
-        })),
-        marginalTaxRate: Number(form.marginalRate) / 100,
-        carryForwardLoss: Number(form.carryForwardLoss || 0),
-        province: form.province,
-      };
-      const calcResult = await new Promise<any>((resolve) =>
-        capGains.mutate(input, { onSuccess: resolve, onError: () => resolve(null) })
-      );
-      const payload = {
-        type: "capgains", owner, label: form.label,
-        inputData: { province: form.province, marginalRate: form.marginalRate, carryForwardLoss: form.carryForwardLoss, positions: form.positions },
-        resultData: calcResult,
-      };
-      if (editingId) await api.patch(`/api/tax/tax-analyses/${editingId}`, payload);
-      else await api.post(`/api/tax/client/${clientId}/analyses`, payload);
-      setShowForm(false);
-      await load();
-    } catch (e: any) { alert(e.message); }
-    finally { setSaving(false); }
+  const handleCalc = () => {
+    const input = {
+      positions: positions.map(p => ({
+        symbol: p.symbol || p.type,
+        acb: Number(p.acb),
+        fmv: Number(p.fmv),
+        lcgeEligible: p.lcgeEligible,
+      })),
+      marginalTaxRate: Number(marginalRate) / 100,
+      carryForwardLoss: Number(carryForwardLoss || 0),
+      province,
+    };
+    capGains.mutate(input, { onSuccess: data => setResult(data) });
   };
-
-  const del = async (id: number) => {
-    if (!confirm("Delete this analysis?")) return;
-    await api.delete(`/api/tax/tax-analyses/${id}`);
-    await load();
-  };
-
-  const fmt$ = (n: number) => `$${Math.round(n).toLocaleString("en-CA")}`;
 
   return (
     <div className="space-y-5">
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex-1 p-4 bg-amber-50 border border-amber-200 rounded-xl text-sm text-amber-900">
-          <strong>Capital Gains Analyser</strong> — 50% inclusion rate · LCGE $1.25M · Losses carry forward indefinitely
-          <span className="ml-2 text-xs bg-green-100 text-green-700 font-semibold px-2 py-0.5 rounded-full">Rate increase cancelled Mar 21, 2025</span>
+      {/* Header */}
+      <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl">
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <div>
+            <p className="font-semibold text-amber-900 text-sm">Capital Gains Analyser — 2025</p>
+            <p className="text-xs text-amber-700 mt-0.5">50% inclusion rate · LCGE $1.25M · Losses carry forward indefinitely</p>
+          </div>
+          <span className="text-xs bg-green-100 text-green-700 font-semibold px-3 py-1 rounded-full">
+            Rate increase cancelled Mar 21, 2025
+          </span>
         </div>
-        <button onClick={openNew}
-          className="flex items-center gap-1.5 text-sm font-semibold text-white bg-[#0c1e3a] hover:bg-[#0e2a4a] px-4 py-2 rounded-xl whitespace-nowrap">
-          <Plus className="w-4 h-4" /> New Analysis
-        </button>
       </div>
 
-      {showForm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between p-5 border-b border-gray-100">
-              <h3 className="text-lg font-bold text-gray-900">{editingId ? "Edit" : "New"} Capital Gains Analysis — {personLabel}</h3>
-              <button onClick={() => setShowForm(false)} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
-            </div>
-            <div className="p-5 space-y-4">
-              <div>
-                <label className="text-xs font-semibold text-gray-500 block mb-1">Label</label>
-                <input value={form.label} onChange={e => setForm(f => ({ ...f, label: e.target.value }))}
-                  className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm" />
-              </div>
-              <div className="grid grid-cols-3 gap-3">
-                <div>
-                  <label className="text-xs font-semibold text-gray-500 block mb-1">Province</label>
-                  <select value={form.province}
-                    onChange={e => setForm(f => ({ ...f, province: e.target.value, marginalRate: String((PROVINCE_RATES[e.target.value] ?? 53.53).toFixed(2)) }))}
-                    className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm">
-                    {provinces.map(p => <option key={p} value={p}>{p}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label className="text-xs font-semibold text-gray-500 block mb-1">Marginal Tax Rate (%)</label>
-                  <input type="number" step="0.1" value={form.marginalRate}
-                    onChange={e => setForm(f => ({ ...f, marginalRate: e.target.value }))}
-                    className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm" />
-                </div>
-                <div>
-                  <label className="text-xs font-semibold text-gray-500 block mb-1">Prior Year Losses ($)</label>
-                  <input type="number" value={form.carryForwardLoss}
-                    onChange={e => setForm(f => ({ ...f, carryForwardLoss: e.target.value }))}
-                    className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm" placeholder="0" />
-                </div>
-              </div>
+      {/* Tax Settings */}
+      <div className="grid grid-cols-3 gap-4">
+        <div>
+          <label className="text-sm font-semibold">Province</label>
+          <select value={province}
+            onChange={e => { setProvince(e.target.value); setMarginalRate(String((PROVINCE_RATES[e.target.value] ?? 53.53).toFixed(2))); }}
+            className="w-full px-3 py-2 rounded-xl border mt-1 text-sm">
+            {provinces.map(p => <option key={p} value={p}>{p}</option>)}
+          </select>
+        </div>
+        <div>
+          <label className="text-sm font-semibold">Marginal Tax Rate (%)</label>
+          <input type="number" step="0.1" value={marginalRate}
+            onChange={e => setMarginalRate(e.target.value)}
+            className="w-full px-3 py-2 rounded-xl border mt-1 text-sm" />
+          <p className="text-[10px] text-gray-400 mt-0.5">Combined fed + prov on regular income</p>
+        </div>
+        <div>
+          <label className="text-sm font-semibold">Prior Year Losses Carry-Forward ($)</label>
+          <input type="number" value={carryForwardLoss}
+            onChange={e => setCarryForwardLoss(e.target.value)}
+            className="w-full px-3 py-2 rounded-xl border mt-1 text-sm" placeholder="0" />
+          <p className="text-[10px] text-gray-400 mt-0.5">Carries forward indefinitely (T1A)</p>
+        </div>
+      </div>
 
-              {/* Positions table */}
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Positions</label>
-                  <button onClick={addPosition} className="flex items-center gap-1 text-xs font-semibold text-[#0c1e3a] hover:underline">
-                    <Plus className="w-3.5 h-3.5" /> Add Position
-                  </button>
-                </div>
-                <div className="border border-gray-200 rounded-xl overflow-hidden">
-                  <table className="w-full text-sm">
-                    <thead className="bg-gray-50 border-b border-gray-200">
-                      <tr>
-                        <th className="px-3 py-2 text-left text-xs font-semibold text-gray-500">Type</th>
-                        <th className="px-3 py-2 text-left text-xs font-semibold text-gray-500">Symbol</th>
-                        <th className="px-3 py-2 text-right text-xs font-semibold text-gray-500">ACB ($)</th>
-                        <th className="px-3 py-2 text-right text-xs font-semibold text-gray-500">FMV ($)</th>
-                        <th className="px-3 py-2 text-right text-xs font-semibold text-gray-500">Gain/Loss</th>
-                        <th className="px-3 py-2 text-center text-xs font-semibold text-gray-500">LCGE</th>
-                        <th className="px-3 py-2"></th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-100">
-                      {form.positions.map((pos, i) => {
-                        const gain = Number(pos.fmv || 0) - Number(pos.acb || 0);
-                        return (
-                          <tr key={i} className="hover:bg-gray-50">
-                            <td className="px-3 py-2">
-                              <select value={pos.type} onChange={e => updatePos(i, "type", e.target.value)}
-                                className="border border-gray-200 rounded-lg px-2 py-1.5 text-xs w-full">
-                                {ASSET_TYPES.map(t => <option key={t.key} value={t.key}>{t.label}</option>)}
-                              </select>
-                            </td>
-                            <td className="px-3 py-2">
-                              <input value={pos.symbol} onChange={e => updatePos(i, "symbol", e.target.value)}
-                                className="border border-gray-200 rounded-lg px-2 py-1.5 text-xs w-full" placeholder="e.g. XIC.TO" />
-                            </td>
-                            <td className="px-3 py-2">
-                              <input type="number" value={pos.acb} onChange={e => updatePos(i, "acb", e.target.value)}
-                                className="border border-gray-200 rounded-lg px-2 py-1.5 text-xs w-full text-right" placeholder="0" />
-                            </td>
-                            <td className="px-3 py-2">
-                              <input type="number" value={pos.fmv} onChange={e => updatePos(i, "fmv", e.target.value)}
-                                className="border border-gray-200 rounded-lg px-2 py-1.5 text-xs w-full text-right" placeholder="0" />
-                            </td>
-                            <td className="px-3 py-2 text-right">
-                              {(pos.acb || pos.fmv) && (
-                                <span className={`text-xs font-bold ${gain >= 0 ? "text-green-600" : "text-red-600"}`}>
-                                  {gain >= 0 ? "+" : "−"}${Math.abs(gain).toLocaleString("en-CA", { maximumFractionDigits: 0 })}
-                                </span>
-                              )}
-                            </td>
-                            <td className="px-3 py-2 text-center">
-                              <input type="checkbox" checked={pos.lcgeEligible}
-                                onChange={e => updatePos(i, "lcgeEligible", e.target.checked)}
-                                disabled={!LCGE_TYPES.includes(pos.type)}
-                                className="w-4 h-4 rounded" />
-                            </td>
-                            <td className="px-3 py-2">
-                              <button onClick={() => removePosition(i)} className="text-gray-300 hover:text-red-500">
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
+      {/* Positions */}
+      <div>
+        <div className="flex items-center justify-between mb-2">
+          <label className="text-sm font-semibold">Positions</label>
+          <button onClick={addPosition}
+            className="flex items-center gap-1 text-xs font-semibold text-[#0c1e3a] hover:underline">
+            <Plus className="w-3.5 h-3.5" /> Add Position
+          </button>
+        </div>
+        <div className="border border-gray-200 rounded-xl overflow-hidden">
+          <table className="w-full text-sm">
+            <thead className="bg-gray-50 border-b border-gray-200">
+              <tr>
+                <th className="px-3 py-2 text-left text-xs font-semibold text-gray-500">Asset Type</th>
+                <th className="px-3 py-2 text-left text-xs font-semibold text-gray-500">Name / Symbol</th>
+                <th className="px-3 py-2 text-right text-xs font-semibold text-gray-500">ACB ($)</th>
+                <th className="px-3 py-2 text-right text-xs font-semibold text-gray-500">FMV ($)</th>
+                <th className="px-3 py-2 text-right text-xs font-semibold text-gray-500">Gain / Loss</th>
+                <th className="px-3 py-2 text-center text-xs font-semibold text-gray-500">LCGE</th>
+                <th className="px-3 py-2"></th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {positions.map((pos, i) => {
+                const gain = Number(pos.fmv || 0) - Number(pos.acb || 0);
+                const hasValues = pos.acb && pos.fmv;
+                return (
+                  <tr key={i} className="hover:bg-gray-50">
+                    <td className="px-3 py-2">
+                      <select value={pos.type} onChange={e => updatePos(i, "type", e.target.value)}
+                        className="border border-gray-200 rounded-lg px-2 py-1.5 text-xs w-full">
+                        {ASSET_TYPES.map(t => <option key={t.key} value={t.key}>{t.label}</option>)}
+                      </select>
+                    </td>
+                    <td className="px-3 py-2">
+                      <input value={pos.symbol} onChange={e => updatePos(i, "symbol", e.target.value)}
+                        className="border border-gray-200 rounded-lg px-2 py-1.5 text-xs w-full" placeholder="e.g. XIC.TO" />
+                    </td>
+                    <td className="px-3 py-2">
+                      <input type="number" value={pos.acb} onChange={e => updatePos(i, "acb", e.target.value)}
+                        className="border border-gray-200 rounded-lg px-2 py-1.5 text-xs w-full text-right" placeholder="0" />
+                    </td>
+                    <td className="px-3 py-2">
+                      <input type="number" value={pos.fmv} onChange={e => updatePos(i, "fmv", e.target.value)}
+                        className="border border-gray-200 rounded-lg px-2 py-1.5 text-xs w-full text-right" placeholder="0" />
+                    </td>
+                    <td className="px-3 py-2 text-right">
+                      {hasValues && (
+                        <span className={`text-xs font-bold ${gain >= 0 ? "text-green-600" : "text-red-600"}`}>
+                          {gain >= 0 ? "+" : ""}${Math.abs(gain).toLocaleString("en-CA", { maximumFractionDigits: 0 })}
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-3 py-2 text-center">
+                      <input type="checkbox" checked={pos.lcgeEligible}
+                        onChange={e => updatePos(i, "lcgeEligible", e.target.checked)}
+                        disabled={!LCGE_TYPES.includes(pos.type)}
+                        className="w-4 h-4 rounded"
+                        title={LCGE_TYPES.includes(pos.type) ? "Eligible for $1.25M LCGE" : "Only for small business shares or farm/fishing property"} />
+                    </td>
+                    <td className="px-3 py-2">
+                      <button onClick={() => removePosition(i)} className="text-gray-300 hover:text-red-500">
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
 
-              {/* Live preview */}
-              {(totalGain > 0 || totalLoss > 0) && (
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  {[
-                    { label: "Gross Gains",        value: totalGain,    color: "text-green-700",  bg: "bg-green-50" },
-                    { label: "Losses + Carry-Fwd", value: totalLoss + Number(form.carryForwardLoss || 0), color: "text-red-600", bg: "bg-red-50" },
-                    { label: "LCGE Sheltered",     value: lcgeSheltered, color: "text-blue-700",  bg: "bg-blue-50" },
-                    { label: "Est. Tax Owing",     value: estTax,       color: "text-orange-700", bg: "bg-orange-50" },
-                  ].map(c => (
-                    <div key={c.label} className={`${c.bg} rounded-xl p-3`}>
-                      <p className="text-[10px] font-bold text-gray-500 uppercase">{c.label}</p>
-                      <p className={`text-base font-bold ${c.color}`}>{fmt$(c.value)}</p>
-                    </div>
-                  ))}
-                </div>
-              )}
+      {/* Live Summary */}
+      {(totalGain > 0 || totalLoss > 0) && (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {[
+            { label: "Gross Gains",       value: totalGain,    color: "text-green-700",  bg: "bg-green-50"  },
+            { label: "Losses + Carry-Fwd", value: totalLoss + Number(carryForwardLoss || 0), color: "text-red-600", bg: "bg-red-50" },
+            { label: "LCGE Sheltered",    value: lcgeSheltered, color: "text-blue-700",   bg: "bg-blue-50"   },
+            { label: "Est. Tax Owing",    value: estTax,       color: "text-orange-700", bg: "bg-orange-50" },
+          ].map(c => (
+            <div key={c.label} className={`${c.bg} rounded-xl p-3`}>
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">{c.label}</p>
+              <p className={`text-lg font-bold ${c.color}`}>
+                ${Math.round(c.value).toLocaleString("en-CA")}
+              </p>
             </div>
-            <div className="flex gap-3 justify-end p-5 border-t border-gray-100">
-              <button onClick={() => setShowForm(false)} className="text-sm text-gray-500 px-4 py-2">Cancel</button>
-              <button onClick={save} disabled={saving}
-                className="flex items-center gap-1.5 bg-[#0c1e3a] hover:bg-[#0e2a4a] disabled:opacity-50 text-white text-sm font-semibold px-5 py-2.5 rounded-xl">
-                <Save className="w-3.5 h-3.5" /> {saving ? "Saving…" : "Calculate & Save"}
-              </button>
-            </div>
-          </div>
+          ))}
         </div>
       )}
 
-      {loading ? <div className="text-center py-8 text-gray-400 text-sm">Loading…</div>
-      : analyses.length === 0 ? (
-        <div className="text-center py-12 border-2 border-dashed border-gray-200 rounded-2xl">
-          <p className="text-gray-500 font-semibold">No capital gains analyses yet for {personLabel}</p>
-          <p className="text-sm text-gray-400 mt-1">Click New Analysis to calculate gains, losses and LCGE</p>
+      {(totalGain > 0 || totalLoss > 0) && (
+        <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 text-sm space-y-1.5">
+          <div className="flex justify-between"><span className="text-gray-600">Net capital gain</span><span className="font-semibold">${Math.round(netGain).toLocaleString("en-CA")}</span></div>
+          <div className="flex justify-between"><span className="text-gray-600">Taxable gain (50% inclusion)</span><span className="font-semibold">${Math.round(taxableGain).toLocaleString("en-CA")}</span></div>
+          <div className="flex justify-between"><span className="text-gray-600">Marginal rate applied</span><span className="font-semibold">{marginalRate}%</span></div>
+          <div className="flex justify-between border-t border-gray-200 pt-1.5 mt-1.5">
+            <span className="font-bold text-gray-800">Estimated tax</span>
+            <span className="font-bold text-orange-700">${Math.round(estTax).toLocaleString("en-CA")}</span>
+          </div>
+          {lcgeSheltered > 0 && (
+            <div className="flex justify-between text-blue-700">
+              <span className="font-semibold">LCGE tax saving</span>
+              <span className="font-semibold">${Math.round(lcgeSheltered * 0.5 * Number(marginalRate) / 100).toLocaleString("en-CA")}</span>
+            </div>
+          )}
         </div>
-      ) : (
-        <div className="space-y-3">
-          {analyses.map((a: any) => {
-            const inp = a.inputData;
-            const r = a.resultData;
-            const positions = inp?.positions ?? [];
-            const gains = positions.reduce((s: number, p: any) => s + Math.max(0, Number(p.fmv||0) - Number(p.acb||0)), 0);
-            const losses = positions.reduce((s: number, p: any) => s + Math.abs(Math.min(0, Number(p.fmv||0) - Number(p.acb||0))), 0);
-            const lcge = Math.min(positions.filter((p: any) => p.lcgeEligible).reduce((s: number, p: any) => s + Math.max(0, Number(p.fmv||0) - Number(p.acb||0)), 0), LCGE_LIMIT);
-            const net = Math.max(0, gains - losses - Number(inp?.carryForwardLoss || 0) - lcge);
-            const tax = net * 0.5 * (Number(inp?.marginalRate || 53.53) / 100);
-            return (
-              <div key={a.id} className="bg-white border border-gray-200 rounded-xl p-5">
-                <div className="flex items-center justify-between mb-4">
-                  <div>
-                    <h3 className="font-bold text-gray-900">{a.label || "Capital Gains Analysis"}</h3>
-                    <p className="text-xs text-gray-400 mt-0.5">{positions.length} position{positions.length !== 1 ? "s" : ""} · {inp?.province ?? "ON"} · {new Date(a.createdAt).toLocaleDateString("en-CA")}</p>
-                  </div>
-                  <div className="flex gap-1">
-                    <button onClick={() => openEdit(a)} className="p-1.5 text-gray-300 hover:text-blue-500"><Pencil className="w-3.5 h-3.5" /></button>
-                    <button onClick={() => del(a.id)} className="p-1.5 text-gray-300 hover:text-red-500"><Trash2 className="w-3.5 h-3.5" /></button>
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  {[
-                    { label: "Gross Gains",    value: gains, color: "text-green-700",  bg: "bg-green-50" },
-                    { label: "Net Losses",     value: losses, color: "text-red-600",   bg: "bg-red-50" },
-                    { label: "LCGE Sheltered", value: lcge,  color: "text-blue-700",   bg: "bg-blue-50" },
-                    { label: "Est. Tax",       value: tax,   color: "text-orange-700", bg: "bg-orange-50" },
-                  ].map(c => (
-                    <div key={c.label} className={`${c.bg} rounded-xl p-3`}>
-                      <p className="text-[10px] font-bold text-gray-500 uppercase">{c.label}</p>
-                      <p className={`text-lg font-bold ${c.color}`}>{fmt$(c.value)}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            );
-          })}
+      )}
+
+      <button onClick={handleCalc} disabled={capGains.isPending}
+        className="flex items-center space-x-2 px-4 py-2 bg-primary text-primary-foreground rounded-xl font-semibold hover:bg-primary/90 disabled:opacity-50">
+        <Calculator className="w-4 h-4" />
+        <span>{capGains.isPending ? "Analysing…" : "Run Full Analysis"}</span>
+      </button>
+
+      {result && (
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="border border-border rounded-xl p-4">
+              <p className="text-xs text-muted-foreground uppercase">Total Unrealized Gain</p>
+              <p className="text-2xl font-bold mt-1 text-green-600">${Math.round(result.totalUnrealizedGain).toLocaleString("en-CA")}</p>
+            </div>
+            <div className="border border-border rounded-xl p-4">
+              <p className="text-xs text-muted-foreground uppercase">Loss Harvesting Opportunity</p>
+              <p className="text-2xl font-bold mt-1 text-orange-600">${Math.round(result.lossHarvestingOpportunity).toLocaleString("en-CA")}</p>
+            </div>
+          </div>
+          <div className="border border-border rounded-xl overflow-hidden">
+            <table className="w-full text-sm">
+              <thead className="bg-muted/50">
+                <tr>
+                  <th className="px-3 py-2 text-left">Position</th>
+                  <th className="px-3 py-2 text-right">ACB</th>
+                  <th className="px-3 py-2 text-right">FMV</th>
+                  <th className="px-3 py-2 text-right">Unrealized Gain</th>
+                  <th className="px-3 py-2 text-right">Taxable (50%)</th>
+                  <th className="px-3 py-2 text-right">Est. Tax</th>
+                </tr>
+              </thead>
+              <tbody>
+                {result.positions.map((pos: any, idx: number) => (
+                  <tr key={idx} className="border-t border-border hover:bg-muted/20">
+                    <td className="px-3 py-2 font-semibold">{pos.symbol}</td>
+                    <td className="px-3 py-2 text-right">${Math.round(pos.acb).toLocaleString("en-CA")}</td>
+                    <td className="px-3 py-2 text-right">${Math.round(pos.fmv).toLocaleString("en-CA")}</td>
+                    <td className={`px-3 py-2 text-right font-bold ${pos.unrealizedGain >= 0 ? "text-green-600" : "text-red-600"}`}>
+                      ${Math.round(Math.abs(pos.unrealizedGain)).toLocaleString("en-CA")}
+                    </td>
+                    <td className="px-3 py-2 text-right">${Math.round(pos.unrealizedGain * 0.5).toLocaleString("en-CA")}</td>
+                    <td className="px-3 py-2 text-right font-semibold text-orange-700">
+                      ${Math.round(pos.unrealizedGain * 0.5 * Number(marginalRate) / 100).toLocaleString("en-CA")}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
     </div>

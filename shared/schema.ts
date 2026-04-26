@@ -1,4 +1,4 @@
-import { pgTable, serial, text, integer, boolean, timestamp, jsonb, decimal, real } from "drizzle-orm/pg-core";
+import { pgTable, serial, text, integer, boolean, timestamp, jsonb, decimal, real, date } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -434,4 +434,13 @@ export const taxAnalyses = pgTable("tax_analyses", {
   resultData: jsonb("result_data"),
   createdAt:  timestamp("created_at").defaultNow().notNull(),
   updatedAt:  timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const goalCheckIns = pgTable("goal_check_ins", {
+  id:            serial("id").primaryKey(),
+  goalId:        integer("goal_id").notNull().references(() => financialGoals.id, { onDelete: "cascade" }),
+  checkInDate:   date("check_in_date").notNull().defaultNow(),
+  currentAmount: decimal("current_amount", { precision: 15, scale: 2 }).default("0"),
+  notes:         text("notes"),
+  createdAt:     timestamp("created_at").defaultNow().notNull(),
 });

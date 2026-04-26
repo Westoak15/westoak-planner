@@ -52,18 +52,8 @@ r.delete("/plans/:id", async (req: AuthRequest, res: Response) => {
 // /retirement-projections paths were unused by the frontend.
 // Canonical retirement CRUD is in fp.ts at /clients/:id/retirement.
 
-// ── Insurance ─────────────────────────────────────────────────────────────────
-r.get("/clients/:clientId/insurance-analyses", async (req: AuthRequest, res: Response) => {
-  const cid = +req.params.clientId;
-  if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
-  res.json(await db.select().from(insuranceAnalyses).where(eq(insuranceAnalyses.clientId, cid)));
-});
-r.post("/clients/:clientId/insurance-analyses", async (req: AuthRequest, res: Response) => {
-  const cid = +req.params.clientId;
-  if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
-  const [row] = await (db.insert(insuranceAnalyses) as any).values({ clientId: cid, ...safe(req.body.data ?? req.body) }).returning();
-  res.status(201).json(row);
-});
+// ── Insurance Worksheet (unique to fp-full) ───────────────────────────────────
+// insurance-analyses GET / POST / DELETE are handled by fpAliasesRouter (mounted first)
 r.post("/clients/:clientId/insurance-worksheet", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.clientId;
   if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
@@ -85,68 +75,9 @@ r.post("/clients/:clientId/insurance-worksheet", async (req: AuthRequest, res: R
     res.status(500).json({ message: "Failed to save" });
   }
 });
-r.delete("/insurance-analyses/:id", async (req: AuthRequest, res: Response) => {
-  const [ex] = await db.select({ id: insuranceAnalyses.id, clientId: insuranceAnalyses.clientId })
-    .from(insuranceAnalyses).where(eq(insuranceAnalyses.id, +req.params.id));
-  if (!ex || !await ownsClient(ex.clientId, req.userId!)) return res.status(404).json({ message: "Not found" });
-  await db.delete(insuranceAnalyses).where(eq(insuranceAnalyses.id, ex.id));
-  res.json({ ok: true });
-});
 
-// ── Education Savings ─────────────────────────────────────────────────────────
-r.get("/clients/:clientId/education-savings", async (req: AuthRequest, res: Response) => {
-  const cid = +req.params.clientId;
-  if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
-  res.json(await db.select().from(educationSavings).where(eq(educationSavings.clientId, cid)));
-});
-r.post("/clients/:clientId/education-savings", async (req: AuthRequest, res: Response) => {
-  const cid = +req.params.clientId;
-  if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
-  const data = safe(req.body.data ?? req.body);
-  const [row] = await (db.insert(educationSavings) as any).values({ clientId: cid, childAge: (data as any).childAge || 0, ...data }).returning();
-  res.status(201).json(row);
-});
-r.put("/education-savings/:id", async (req: AuthRequest, res: Response) => {
-  const [ex] = await db.select({ id: educationSavings.id, clientId: educationSavings.clientId })
-    .from(educationSavings).where(eq(educationSavings.id, +req.params.id));
-  if (!ex || !await ownsClient(ex.clientId, req.userId!)) return res.status(404).json({ message: "Not found" });
-  const [u] = await db.update(educationSavings).set(safe(req.body)).where(eq(educationSavings.id, ex.id)).returning();
-  res.json(u);
-});
-r.delete("/education-savings/:id", async (req: AuthRequest, res: Response) => {
-  const [ex] = await db.select({ id: educationSavings.id, clientId: educationSavings.clientId })
-    .from(educationSavings).where(eq(educationSavings.id, +req.params.id));
-  if (!ex || !await ownsClient(ex.clientId, req.userId!)) return res.status(404).json({ message: "Not found" });
-  await db.delete(educationSavings).where(eq(educationSavings.id, ex.id));
-  res.json({ ok: true });
-});
-
-// ── Debt Entries ──────────────────────────────────────────────────────────────
-r.get("/clients/:clientId/debt-entries", async (req: AuthRequest, res: Response) => {
-  const cid = +req.params.clientId;
-  if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
-  res.json(await db.select().from(debtEntries).where(eq(debtEntries.clientId, cid)));
-});
-r.post("/clients/:clientId/debt-entries", async (req: AuthRequest, res: Response) => {
-  const cid = +req.params.clientId;
-  if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
-  const [row] = await (db.insert(debtEntries) as any).values({ clientId: cid, ...safe(req.body.data ?? req.body) }).returning();
-  res.status(201).json(row);
-});
-r.put("/debt-entries/:id", async (req: AuthRequest, res: Response) => {
-  const [ex] = await db.select({ id: debtEntries.id, clientId: debtEntries.clientId })
-    .from(debtEntries).where(eq(debtEntries.id, +req.params.id));
-  if (!ex || !await ownsClient(ex.clientId, req.userId!)) return res.status(404).json({ message: "Not found" });
-  const [u] = await db.update(debtEntries).set(safe(req.body)).where(eq(debtEntries.id, ex.id)).returning();
-  res.json(u);
-});
-r.delete("/debt-entries/:id", async (req: AuthRequest, res: Response) => {
-  const [ex] = await db.select({ id: debtEntries.id, clientId: debtEntries.clientId })
-    .from(debtEntries).where(eq(debtEntries.id, +req.params.id));
-  if (!ex || !await ownsClient(ex.clientId, req.userId!)) return res.status(404).json({ message: "Not found" });
-  await db.delete(debtEntries).where(eq(debtEntries.id, ex.id));
-  res.json({ ok: true });
-});
+// education-savings, debt-entries, ai-recommendations GET/POST/PUT/DELETE
+// are handled by fpAliasesRouter (mounted first) — removed from here to avoid dead code
 
 // ── Tax Planning Notes ────────────────────────────────────────────────────────
 r.get("/clients/:clientId/tax-planning-notes", async (req: AuthRequest, res: Response) => {
@@ -201,39 +132,6 @@ r.delete("/estate-planning-notes/:id", async (req: AuthRequest, res: Response) =
     .from(estatePlanningNotes).where(eq(estatePlanningNotes.id, +req.params.id));
   if (!ex || !await ownsClient(ex.clientId, req.userId!)) return res.status(404).json({ message: "Not found" });
   await db.delete(estatePlanningNotes).where(eq(estatePlanningNotes.id, ex.id));
-  res.json({ ok: true });
-});
-
-// ── AI Recommendations ────────────────────────────────────────────────────────
-r.get("/clients/:clientId/ai-recommendations", async (req: AuthRequest, res: Response) => {
-  const cid = +req.params.clientId;
-  if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
-  res.json(await db.select().from(aiRecommendations).where(eq(aiRecommendations.clientId, cid)));
-});
-r.post("/clients/:clientId/ai-recommendations/generate", async (req: AuthRequest, res: Response) => {
-  const cid = +req.params.clientId;
-  if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
-  const recs = [
-    { clientId: cid, category: "retirement", priority: "high",   title: "Review Retirement Projections", content: "Ensure CPP/OAS timing and RRSP/TFSA drawdown strategy are optimized for your province." },
-    { clientId: cid, category: "tax",        priority: "medium", title: "Annual RRSP/TFSA Review",       content: "Review contribution room and optimize between RRSP and TFSA based on marginal rates." },
-    { clientId: cid, category: "insurance",  priority: "medium", title: "Insurance Needs Analysis",      content: "Conduct annual review of life, disability, and critical illness coverage gaps." },
-    { clientId: cid, category: "estate",     priority: "low",    title: "Estate Document Review",        content: "Verify will, POA, and healthcare directive are current and reflect your wishes." },
-  ];
-  const inserted = await Promise.all(recs.map(rec => (db.insert(aiRecommendations) as any).values(rec).returning().then(([x]: any) => x)));
-  res.json(inserted);
-});
-r.put("/ai-recommendations/:id", async (req: AuthRequest, res: Response) => {
-  const [ex] = await db.select({ id: aiRecommendations.id, clientId: aiRecommendations.clientId })
-    .from(aiRecommendations).where(eq(aiRecommendations.id, +req.params.id));
-  if (!ex || !await ownsClient(ex.clientId, req.userId!)) return res.status(404).json({ message: "Not found" });
-  const [u] = await db.update(aiRecommendations).set(safe(req.body)).where(eq(aiRecommendations.id, ex.id)).returning();
-  res.json(u);
-});
-r.delete("/ai-recommendations/:id", async (req: AuthRequest, res: Response) => {
-  const [ex] = await db.select({ id: aiRecommendations.id, clientId: aiRecommendations.clientId })
-    .from(aiRecommendations).where(eq(aiRecommendations.id, +req.params.id));
-  if (!ex || !await ownsClient(ex.clientId, req.userId!)) return res.status(404).json({ message: "Not found" });
-  await db.delete(aiRecommendations).where(eq(aiRecommendations.id, ex.id));
   res.json({ ok: true });
 });
 
@@ -358,7 +256,11 @@ r.put("/action-items/:id", async (req: AuthRequest, res: Response) => {
   res.json(u);
 });
 r.delete("/action-items/:id", async (req: AuthRequest, res: Response) => {
-  await db.delete(planActionItems).where(eq(planActionItems.id, +req.params.id));
+  const [ex] = await db.select({ id: planActionItems.id, planId: planActionItems.planId })
+    .from(planActionItems).where(eq(planActionItems.id, +req.params.id));
+  if (!ex) return res.status(404).json({ message: "Not found" });
+  if (!await ownsPlan(ex.planId, req.userId!)) return res.status(404).json({ message: "Not found" });
+  await db.delete(planActionItems).where(eq(planActionItems.id, ex.id));
   res.json({ ok: true });
 });
 

@@ -56,7 +56,7 @@ function calcDBPPAnnual(plan: PensionPlan): number {
 }
 
 /** Project income at 3.5%/yr and return the average of the best 5 years before retirement */
-function calcBest5YearAverage(currentIncome: number, currentAge: number, retirementAge: number): {
+function calcBest5YearAverage(currentIncome: number, currentAge: number, retirementAge: number, growthRate = 0.035): {
   best5Avg: number;
   projectedAtRetirement: number;
   yearlyProjections: { age: number; income: number }[];
@@ -66,7 +66,7 @@ function calcBest5YearAverage(currentIncome: number, currentAge: number, retirem
   for (let y = 0; y <= yearsToRet; y++) {
     yearlyProjections.push({
       age: currentAge + y,
-      income: Math.round(currentIncome * Math.pow(1 + GROWTH_RATE, y)),
+      income: Math.round(currentIncome * Math.pow(1 + growthRate, y)),
     });
   }
   const projectedAtRetirement = yearlyProjections[yearlyProjections.length - 1]?.income ?? currentIncome;

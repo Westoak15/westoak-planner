@@ -279,12 +279,18 @@ export function PensionTab({ clientId, client, person = "primary" }: {
                     <div className="flex items-center gap-3">
                       <div className="flex items-center gap-1.5">
                         <label className="text-xs text-gray-500 font-semibold">Income Growth:</label>
-                        <select value={growthRate} onChange={e => setGrowthRate(Number(e.target.value))}
-                          className="border border-gray-200 rounded-lg px-2 py-1 text-xs bg-white">
-                          {GROWTH_RATES.map(r => (
-                            <option key={r} value={r}>{(r * 100).toFixed(1)}%</option>
-                          ))}
-                        </select>
+                        <select value={growthRate} onChange={e => {
+          const newRate = Number(e.target.value);
+          setGrowthRate(newRate);
+          if (formAge && formIncome && formRetAge) {
+            const newProj = calcBest5YearAverage(formIncome, formAge, formRetAge, newRate);
+            upd("bestAverageEarnings", String(newProj.best5Avg));
+          }
+        }} className="border border-gray-200 rounded-lg px-2 py-1 text-xs bg-white">
+          {GROWTH_RATES.map(r => (
+            <option key={r} value={r}>{(r * 100).toFixed(1)}%</option>
+          ))}
+        </select>
                       </div>
                       {projection && (
                         <button onClick={() => setShowProjection(v => !v)}

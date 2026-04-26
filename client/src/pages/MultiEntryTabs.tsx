@@ -445,6 +445,36 @@ async function saveAll() {
 }
 
 // ── RETIREMENT TAB ─────────────────────────────────────────────────────────────
+
+// CPP adjustment: -0.6%/month before 65, +0.7%/month after 65
+function adjustCPP(monthlyBase: number, startAge: number): number {
+  const monthsDiff = (startAge - 65) * 12;
+  const factor = monthsDiff < 0
+    ? 1 + monthsDiff * 0.006
+    : 1 + monthsDiff * 0.007;
+  return Math.round(monthlyBase * Math.max(factor, 0.36));
+}
+
+// OAS adjustment: +0.6%/month after 65 (max at 70 = +36%)
+function adjustOAS(monthlyBase: number, startAge: number): number {
+  const monthsDiff = Math.max(0, (startAge - 65) * 12);
+  return Math.round(monthlyBase * (1 + monthsDiff * 0.006));
+}
+
+// Portfolio drawdown: project balance then apply 4% rule
+function projectedAnnualDrawdown(
+  currentBalance: number,
+  annualContrib: number,
+  expectedReturn: number,
+  yearsToRetirement: number
+): number {
+  let bal = currentBalance;
+  for (let i = 0; i < yearsToRetirement; i++) {
+    bal = (bal + annualContrib) * (1 + expectedReturn);
+  }
+  return Math.round(bal * 0.04);
+}
+
 interface RetirementProj { 
   id: number; label: string | null; currentAge: number|null; retirementAge: number|null; 
   rrspBalance: string|null; tfsaBalance: string|null; nonRegBalance: string|null; 
@@ -707,7 +737,7 @@ export function RetirementTab({ clientId, client, person = "primary" }: { client
                   ["Client","label","text"],["Current Age","currentAge","number"],["Retirement Age","retirementAge","number"],
                   ["RRSP Balance","rrspBalance","number"],["TFSA Balance","tfsaBalance","number"],["Non-Reg Balance","nonRegBalance","number"],
                   ["Annual Contribution","annualContribution","number"],["Expected Return %","expectedReturn","number"],["Desired Income","desiredRetirementIncome","number"],
-                  ["CPP Monthly","cppMonthly","number"],["CPP Start Age","cppStartAge","number"],["OAS Monthly","oasMonthly","number"],
+                  ["CPP Monthly","cppMonthly","number"],["OAS Monthly","oasMonthly","number"],
                 ] as [string,string,string][]).map(([l, k, t]) => (
                   <div key={k}>
                     <label className="text-xs font-semibold text-gray-500 mb-1 block">{l}</label>
@@ -716,6 +746,30 @@ export function RetirementTab({ clientId, client, person = "primary" }: { client
                       className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm" />
                   </div>
                 ))}
+                <div>
+                  <label className="text-xs font-semibold text-gray-500 mb-1 block">CPP Start Age</label>
+                  <select value={(d as any).cppStartAge}
+                    onChange={e => setDrafts(x => x.map((x2, idx) => idx === i2 ? { ...x2, cppStartAge: e.target.value } : x2))}
+                    className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm bg-white">
+                    {[60,61,62,63,64,65,66,67,68,69,70,71].map(age => {
+                      const monthsDiff = (age - 65) * 12;
+                      const pct = monthsDiff < 0 ? monthsDiff * 0.6 : monthsDiff * 0.7;
+                      const label = age < 65 ? `reduced ${pct.toFixed(0)}%` : age === 65 ? "standard" : `+${pct.toFixed(0)}% enhanced`;
+                      return <option key={age} value={age}>{age} — {label}</option>;
+                    })}
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-gray-500 mb-1 block">OAS Start Age</label>
+                  <select value={(d as any).oasStartAge}
+                    onChange={e => setDrafts(x => x.map((x2, idx) => idx === i2 ? { ...x2, oasStartAge: e.target.value } : x2))}
+                    className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm bg-white">
+                    {[65,66,67,68,69,70].map(age => {
+                      const pct = (age - 65) * 7.2;
+                      return <option key={age} value={age}>{age} — {pct > 0 ? `+${pct.toFixed(0)}% enhanced` : "standard"}</option>;
+                    })}
+                  </select>
+                </div>
               </div>
             </Card>
             );
@@ -737,25 +791,124 @@ export function RetirementTab({ clientId, client, person = "primary" }: { client
           const main = group.find(p => p.label?.includes("&")) ?? group[0];
           return (
             <Card key={gi} className="p-5">
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="font-bold text-gray-900">Retirement Plan - Target Age {main.retirementAge}</h3>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-bold text-gray-900">Retirement Plan — Target Age {main.retirementAge}</h3>
                 <span className="text-xs text-gray-400">{main.createdAt ? new Date(main.createdAt).toLocaleDateString() : ""}</span>
               </div>
-              <div className="divide-y divide-gray-100">
-                {group.map(p => (
-                  <div key={p.id} className="flex items-center gap-4 py-2">
-                    <span className={`text-xs font-bold w-36 flex-shrink-0 ${labelColor(p.label)}`}>{p.label ?? clientName}</span>
-                    <span className="text-xs text-gray-500">Age {p.currentAge} - {p.retirementAge}</span>
-                    <span className="text-xs text-gray-500">RRSP {fmt$(p.rrspBalance)}</span>
-                    <span className="text-xs text-gray-500">TFSA {fmt$(p.tfsaBalance)}</span>
-                    <span className="text-xs text-gray-500">Income {fmt$(p.desiredRetirementIncome)}</span>
-                    {p.successRate && <span className={`text-xs font-bold ml-auto ${Number(p.successRate) >= 85 ? "text-emerald-600" : Number(p.successRate) >= 70 ? "text-amber-600" : "text-red-600"}`}>{p.successRate}%</span>}
-                    <div className="flex gap-1 flex-shrink-0">
-                      <button onClick={() => startEdit(p)} className="p-1 text-gray-300 hover:text-[#0c1e3a]"><Pencil className="w-3.5 h-3.5" /></button>
-                      <button onClick={() => del(p.id)} className="p-1 text-gray-300 hover:text-red-500"><Trash2 className="w-3.5 h-3.5" /></button>
+              <div className="space-y-4">
+                {group.map(p => {
+                  const cppBase   = Number(p.cppMonthly || 900);
+                  const cppAge    = Number(p.cppStartAge || 65);
+                  const oasBase   = Number(p.oasMonthly || 700);
+                  const oasAge    = Number(p.oasStartAge || 65);
+                  const adjCPP    = adjustCPP(cppBase, cppAge);
+                  const adjOAS    = adjustOAS(oasBase, oasAge);
+                  const annualCPP = adjCPP * 12;
+                  const annualOAS = adjOAS * 12;
+                  const totalBal  = Number(p.rrspBalance || 0) + Number(p.tfsaBalance || 0) + Number(p.nonRegBalance || 0);
+                  const yrs       = Math.max(0, (p.retirementAge ?? 65) - (p.currentAge ?? 45));
+                  const ret       = Number(p.expectedReturn || 0.06);
+                  const contrib   = Number(p.annualContribution || 0);
+                  const drawdown  = projectedAnnualDrawdown(totalBal, contrib, ret, yrs);
+                  const projIncome = annualCPP + annualOAS + drawdown;
+                  const desired   = Number(p.desiredRetirementIncome || 0);
+                  const gap       = projIncome - desired;
+                  const hasDesired = desired > 0;
+
+                  return (
+                    <div key={p.id} className="border border-gray-100 rounded-xl p-4">
+                      {/* Header */}
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className={`text-sm font-bold ${labelColor(p.label)}`}>{p.label ?? clientName}</span>
+                          <span className="text-xs text-gray-400">Age {p.currentAge} → {p.retirementAge}</span>
+                          {p.successRate && (
+                            <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${Number(p.successRate) >= 85 ? "bg-emerald-100 text-emerald-700" : Number(p.successRate) >= 70 ? "bg-amber-100 text-amber-700" : "bg-red-100 text-red-600"}`}>
+                              {p.successRate}% success
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex gap-1">
+                          <button onClick={() => startEdit(p)} className="p-1 text-gray-300 hover:text-[#0c1e3a]"><Pencil className="w-3.5 h-3.5" /></button>
+                          <button onClick={() => del(p.id)} className="p-1 text-gray-300 hover:text-red-500"><Trash2 className="w-3.5 h-3.5" /></button>
+                        </div>
+                      </div>
+
+                      {/* Income summary row */}
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
+                        <div className="bg-blue-50 rounded-xl p-3">
+                          <p className="text-[10px] font-bold text-blue-600 uppercase">Projected Income</p>
+                          <p className="text-lg font-bold text-blue-700">{fmt$(projIncome)}/yr</p>
+                          <p className="text-[10px] text-blue-400 mt-0.5">CPP + OAS + portfolio</p>
+                        </div>
+                        <div className="bg-purple-50 rounded-xl p-3">
+                          <p className="text-[10px] font-bold text-purple-600 uppercase">Desired Income</p>
+                          <p className="text-lg font-bold text-purple-700">{hasDesired ? `${fmt$(desired)}/yr` : "—"}</p>
+                          <p className="text-[10px] text-purple-400 mt-0.5">retirement target</p>
+                        </div>
+                        <div className={`rounded-xl p-3 ${!hasDesired ? "bg-gray-50" : gap >= 0 ? "bg-emerald-50" : "bg-red-50"}`}>
+                          <p className={`text-[10px] font-bold uppercase ${!hasDesired ? "text-gray-400" : gap >= 0 ? "text-emerald-600" : "text-red-600"}`}>
+                            {!hasDesired ? "Shortfall" : gap >= 0 ? "Surplus" : "Shortfall"}
+                          </p>
+                          <p className={`text-lg font-bold ${!hasDesired ? "text-gray-400" : gap >= 0 ? "text-emerald-700" : "text-red-700"}`}>
+                            {!hasDesired ? "—" : `${gap >= 0 ? "+" : ""}${fmt$(gap)}/yr`}
+                          </p>
+                          <p className={`text-[10px] mt-0.5 ${!hasDesired ? "text-gray-300" : gap >= 0 ? "text-emerald-400" : "text-red-400"}`}>
+                            {!hasDesired ? "set desired income" : "per year"}
+                          </p>
+                        </div>
+                        <div className="bg-gray-50 rounded-xl p-3">
+                          <p className="text-[10px] font-bold text-gray-500 uppercase">Portfolio Drawdown</p>
+                          <p className="text-lg font-bold text-gray-700">{fmt$(drawdown)}/yr</p>
+                          <p className="text-[10px] text-gray-400 mt-0.5">4% rule on projected balance</p>
+                        </div>
+                      </div>
+
+                      {/* CPP / OAS / Assets row */}
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        <div className="bg-amber-50 rounded-xl p-3">
+                          <p className="text-[10px] font-bold text-amber-600 uppercase">CPP (start age {cppAge})</p>
+                          <p className="text-base font-bold text-amber-700">{fmt$(annualCPP)}/yr</p>
+                          <p className="text-[10px] text-amber-500 mt-0.5">
+                            {fmt$(adjCPP)}/mo
+                            {cppAge !== 65 && (
+                              <span className="ml-1">
+                                ({cppAge < 65
+                                  ? `-${Math.round((1 - adjCPP / cppBase) * 100)}%`
+                                  : `+${Math.round((adjCPP / cppBase - 1) * 100)}%`} vs age 65)
+                              </span>
+                            )}
+                          </p>
+                        </div>
+                        <div className="bg-teal-50 rounded-xl p-3">
+                          <p className="text-[10px] font-bold text-teal-600 uppercase">OAS (start age {oasAge})</p>
+                          <p className="text-base font-bold text-teal-700">{fmt$(annualOAS)}/yr</p>
+                          <p className="text-[10px] text-teal-500 mt-0.5">
+                            {fmt$(adjOAS)}/mo
+                            {oasAge > 65 && <span className="ml-1">(+{((oasAge - 65) * 7.2).toFixed(0)}% enhanced)</span>}
+                          </p>
+                        </div>
+                        <div className="col-span-2 bg-gray-50 rounded-xl p-3">
+                          <p className="text-[10px] font-bold text-gray-500 uppercase mb-1.5">Current Portfolio</p>
+                          <div className="grid grid-cols-3 gap-2">
+                            <div>
+                              <p className="text-[10px] text-gray-400">RRSP</p>
+                              <p className="text-sm font-semibold text-gray-700">{fmt$(p.rrspBalance)}</p>
+                            </div>
+                            <div>
+                              <p className="text-[10px] text-gray-400">TFSA</p>
+                              <p className="text-sm font-semibold text-gray-700">{fmt$(p.tfsaBalance)}</p>
+                            </div>
+                            <div>
+                              <p className="text-[10px] text-gray-400">Non-Reg</p>
+                              <p className="text-sm font-semibold text-gray-700">{fmt$(p.nonRegBalance)}</p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </Card>
           );

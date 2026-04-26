@@ -1491,9 +1491,12 @@ export default function App() {
                 <div className={`w-6 h-6 rounded-full ${avatarBg(client.firstName+client.lastName)} flex items-center justify-center text-white text-[10px] font-bold`}>
                   {initials(client.firstName, client.lastName)}
                 </div>
-                <span className="text-sm font-semibold text-gray-800">
+                <button
+                  onClick={() => { setTab("clients"); setShowClientDetail(true); }}
+                  className="text-sm font-semibold text-gray-800 hover:text-[#0c1e3a] hover:underline transition-colors"
+                  title="Edit client">
                   {client.spouseFirstName ? `${client.lastName} Family` : `${client.firstName} ${client.lastName}`}
-                </span>
+                </button>
                 {plan && <><span className="text-gray-300">·</span><span className="text-sm text-gray-500">{plan.name}</span></>}
               </>
             )}

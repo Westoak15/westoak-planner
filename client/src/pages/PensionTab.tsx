@@ -193,7 +193,9 @@ export function PensionTab({ clientId, client, person = "primary" }: {
 
   function openEdit(p: PensionPlan) {
     setEditingId(p.id);
-    setForm({ ...p, accrualRate: p.accrualRate ?? "0.02", survivorBenefitPct: p.survivorBenefitPct ?? "0.60" });
+    const validTypes = ["dbpp","dcpp","group_rrsp","dpsp"];
+    const pensionType = validTypes.includes(p.pensionType) ? p.pensionType : "dbpp";
+    setForm({ ...p, pensionType, accrualRate: p.accrualRate ?? "0.02", survivorBenefitPct: p.survivorBenefitPct ?? "0.60" });
     setShowProjection(false);
     setShowForm(true);
   }
@@ -213,8 +215,9 @@ export function PensionTab({ clientId, client, person = "primary" }: {
     await api.delete(`/api/pensions/${id}`); await load();
   }
 
-  const isDBPP = form.pensionType === "dbpp";
-  const isDCPP = ["dcpp", "group_rrsp", "dpsp"].includes(form.pensionType);
+  const resolvedType = ["dbpp","dcpp","group_rrsp","dpsp"].includes(form.pensionType) ? form.pensionType : "dbpp";
+  const isDBPP = resolvedType === "dbpp";
+  const isDCPP = ["dcpp","group_rrsp","dpsp"].includes(resolvedType);
 
   const filteredPlans = plans.filter(p =>
     activePerson === "primary" ? p.subscriberOwner !== "spouse" : p.subscriberOwner === "spouse"

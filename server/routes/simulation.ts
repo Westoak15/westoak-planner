@@ -167,7 +167,6 @@ r.post(
       await (db.insert(simulations) as any).values({
         clientId,
         successRate:   String((result.probabilityOfSuccess * 100).toFixed(2)),
-        medianOutcome: String(result.currentWealth ?? 0),
         parameters:    input,
         results:       result,
         createdAt:     new Date(),

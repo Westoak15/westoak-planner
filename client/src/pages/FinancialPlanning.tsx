@@ -8,6 +8,7 @@ class ErrorBoundary extends Component<{children:ReactNode;fallback?:ReactNode},{
   render() { return this.state.error ? (this.props.fallback ?? null) : this.props.children; }
 }
 import { useQuery } from "@tanstack/react-query";
+import { RetirementTab } from "@/components/planning/RetirementProjectionForm";
 import {
   useClientPlans, useNetWorthEntries, useCreateNetWorthEntry, useDeleteNetWorthEntry,
   useRetirementProjections, useCreateRetirementProjection, useDeleteRetirementProjection,
@@ -92,7 +93,7 @@ function OverviewTab({ clientId, onTabChange }: { clientId: number; onTabChange?
 
   const handleReport = async (type: "comprehensive" | "retirement" | "insurance" | "net-worth") => {
     setGeneratingReport(type);
-    try { await openReport(clientId, type); }
+    try { await openReport(clientId, type as any); }
     catch (err) { console.error("Report error:", err); }
     finally { setGeneratingReport(null); }
   };
@@ -130,7 +131,7 @@ function OverviewTab({ clientId, onTabChange }: { clientId: number; onTabChange?
           {reportButtons.map(btn => (
             <button
               key={btn.type}
-              onClick={() => btn.tab ? onTabChange?.(btn.tab) : handleReport(btn.type)}
+              onClick={() => btn.tab ? onTabChange?.(btn.tab) : handleReport(btn.type as any)}
               disabled={!btn.available || generatingReport === btn.type}
               data-testid={`button-report-${btn.type}`}
               className="flex items-center space-x-1.5 px-3 py-2 bg-primary text-primary-foreground text-sm rounded-xl hover:bg-primary/90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
@@ -305,239 +306,6 @@ function ModuleScenarioPreview({ planId, module }: { planId: number | null; modu
           );
         })}
       </div>
-    </div>
-  );
-}
-
-// ── Retirement Tab ────────────────────────────────────────────────────────────
-
-function RetirementTab({ clientId, planId, person, client: clientProp }: { clientId: number; planId: number | null; person?: string; client?: any }) {
-  const { data: projections = [] } = useRetirementProjections(clientId);
-  const createProjection = useCreateRetirementProjection();
-  const { data: assumptions = [] } = usePlanAssumptions(planId);
-  const { data: pensionPlans = [] } = useQuery<any[]>({ queryKey: ["/api/clients", clientId, "pensions"], queryFn: () => api.get(`/api/clients/${clientId}/pensions`) });
-  const client = clientProp;
-  const [showCalc, setShowCalc] = useState(false);
-
-  // Calculate total annual DBPP pension income from all plans
-  const totalPensionIncome = useMemo(() => {
-    return pensionPlans.reduce((sum: number, p: any) => {
-      if (p.pensionType === "dbpp" && p.accrualRate && p.projectedYearsAtRetirement && p.bestAverageEarnings) {
-        return sum + (Number(p.accrualRate) * Number(p.projectedYearsAtRetirement) * Number(p.bestAverageEarnings));
-      }
-      if (p.pensionType === "dcpp" && p.currentBalance) {
-        // Rough annuity estimate: 4% of DCPP balance
-        return sum + (Number(p.currentBalance) * 0.04);
-      }
-      return sum;
-    }, 0);
-  }, [pensionPlans]);
-
-  const [form, setForm] = useState({
-    householdType: "individual",
-    currentAge: "35", retirementAge: "65", lifeExpectancy: "90",
-    currentSavings: "100000", annualContribution: "12000",
-    expectedReturn: "7", inflationRate: "2",
-    desiredRetirementIncome: "60000", pensionIncome: "0", cppStartAge: "65",
-    // Spouse fields
-    spouseAge: "35", spouseRetirementAge: "65", spouseLifeExpectancy: "90",
-    spouseSavings: "0", spouseContribution: "0",
-    spousePensionIncome: "0", spouseCppStartAge: "65",
-    // Combined household desired income
-    householdDesiredIncome: "80000",
-  });
-
-  // Auto-populate from client record when client data loads
-  useEffect(() => {
-    if (!client) return;
-    const isPrimary = person !== "spouse";
-    const isCouple  = person === "combined";
-    const dob = isPrimary ? client.dateOfBirth : client.spouseDateOfBirth;
-    const age = dob ? Math.floor((Date.now() - new Date(dob).getTime()) / (365.25*24*60*60*1000)) : null;
-    const spouseDob = client.spouseDateOfBirth;
-    const spouseAge = spouseDob ? Math.floor((Date.now() - new Date(spouseDob).getTime()) / (365.25*24*60*60*1000)) : null;
-    setForm(f => ({
-      ...f,
-      householdType: isCouple ? "couple" : "individual",
-      currentAge:    age ? String(age) : f.currentAge,
-      retirementAge: isPrimary
-        ? (client.retirementAge        ? String(client.retirementAge)        : f.retirementAge)
-        : (client.spouseRetirementAge  ? String(client.spouseRetirementAge)  : f.retirementAge),
-      desiredRetirementIncome: isPrimary
-        ? (client.desiredRetirementIncome        ?? f.desiredRetirementIncome)
-        : (client.spouseDesiredRetirementIncome  ?? f.desiredRetirementIncome),
-      spouseAge:            spouseAge ? String(spouseAge) : f.spouseAge,
-      spouseRetirementAge:  client.spouseRetirementAge ? String(client.spouseRetirementAge) : f.spouseRetirementAge,
-      householdDesiredIncome: (client.desiredRetirementIncome && client.spouseDesiredRetirementIncome)
-        ? String(Number(client.desiredRetirementIncome) + Number(client.spouseDesiredRetirementIncome))
-        : (client.desiredRetirementIncome ?? f.householdDesiredIncome),
-    }));
-  }, [client, person]);
-
-  // Auto-update pensionIncome when pension plans load
-  useEffect(() => {
-    if (totalPensionIncome > 0) {
-      setForm(f => ({ ...f, pensionIncome: String(Math.round(totalPensionIncome)) }));
-    }
-  }, [totalPensionIncome]);
-
-  // Auto-update spouse pension income
-  useEffect(() => {
-    const spousePension = pensionPlans
-      .filter((p: any) => p.subscriberOwner === "spouse")
-      .reduce((sum: number, p: any) => {
-        if (p.pensionType === "dbpp" && p.accrualRate && p.projectedYearsAtRetirement && p.bestAverageEarnings)
-          return sum + (Number(p.accrualRate) * Number(p.projectedYearsAtRetirement) * Number(p.bestAverageEarnings));
-        if (p.pensionType === "dcpp" && p.currentBalance)
-          return sum + (Number(p.currentBalance) * 0.04);
-        return sum;
-      }, 0);
-    if (spousePension > 0) setForm(f => ({ ...f, spousePensionIncome: String(Math.round(spousePension)) }));
-  }, [pensionPlans]);
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const isCouple = form.householdType === "couple";
-    createProjection.mutate({ clientId, data: {
-      currentAge: parseInt(form.currentAge), retirementAge: parseInt(form.retirementAge),
-      lifeExpectancy: parseInt(form.lifeExpectancy), currentSavings: form.currentSavings,
-      annualContribution: form.annualContribution, expectedReturn: form.expectedReturn,
-      inflationRate: form.inflationRate, cppStartAge: form.cppStartAge,
-      desiredRetirementIncome: isCouple ? form.householdDesiredIncome : form.desiredRetirementIncome,
-      pensionIncome: form.pensionIncome,
-      householdType: form.householdType,
-      ...(isCouple ? {
-        spouseAge: parseInt(form.spouseAge),
-        spouseRetirementAge: parseInt(form.spouseRetirementAge),
-        spouseLifeExpectancy: parseInt(form.spouseLifeExpectancy),
-        spouseSavings: form.spouseSavings,
-        spouseContribution: form.spouseContribution,
-        spousePensionIncome: form.spousePensionIncome,
-        spouseCppStartAge: form.spouseCppStartAge,
-      } : {}),
-    }}, { onSuccess: () => setShowCalc(false) });
-  };
-
-  return (
-    <div className="space-y-6 animate-in fade-in duration-300">
-      <div className="flex justify-between items-center">
-        <h2 className="text-xl font-display font-bold">Retirement Planning</h2>
-        <button onClick={() => setShowCalc(true)} data-testid="button-fp-add-retirement" className="flex items-center space-x-2 px-4 py-2 bg-secondary text-secondary-foreground font-semibold rounded-xl hover:bg-secondary/90 transition-colors shadow-sm">
-          <Plus className="w-4 h-4" /><span>New Projection</span>
-        </button>
-      </div>
-
-      {projections.map((proj: { id: number; currentAge: number; retirementAge: number; lifeExpectancy: number; currentSavings: string; annualContribution: string; expectedReturn: string; projectedBalance: string | null; shortfallSurplus: string | null }) => (
-        <div key={proj.id} className="border border-border rounded-2xl p-6" data-testid={`card-fp-retirement-${proj.id}`}>
-          <div className="flex justify-between items-start">
-            <div>
-              <h3 className="text-lg font-bold">Retirement at Age {proj.retirementAge}</h3>
-              <p className="text-sm text-muted-foreground">Current age: {proj.currentAge} | Life expectancy: {proj.lifeExpectancy}</p>
-            </div>
-          </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
-            <div><p className="text-xs text-muted-foreground uppercase">Current Savings</p><p className="text-lg font-bold">{fmt$(parseFloat(proj.currentSavings))}</p></div>
-            <div><p className="text-xs text-muted-foreground uppercase">Annual Contribution</p><p className="text-lg font-bold">{fmt$(parseFloat(proj.annualContribution))}</p></div>
-            <div><p className="text-xs text-muted-foreground uppercase">Projected Balance</p><p className="text-lg font-bold text-primary">{fmt$(parseFloat(proj.projectedBalance || "0"))}</p></div>
-            <div>
-              <p className="text-xs text-muted-foreground uppercase">Shortfall / Surplus</p>
-              <p className={`text-lg font-bold ${parseFloat(proj.shortfallSurplus || "0") >= 0 ? "text-green-600" : "text-red-600"}`}>
-                {fmt$(parseFloat(proj.shortfallSurplus || "0"))}
-              </p>
-            </div>
-          </div>
-        </div>
-      ))}
-
-      {projections.length === 0 && (
-        <div className="text-center py-12 text-muted-foreground border border-dashed border-border rounded-2xl">
-          No retirement projections yet. Create one to see your client's retirement outlook.
-        </div>
-      )}
-
-      <ErrorBoundary><ModuleScenarioPreview planId={planId} module="retirement" /></ErrorBoundary>
-      <ErrorBoundary><CppOasTimingView assumptions={assumptions} /></ErrorBoundary>
-
-      {showCalc && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl w-full max-w-lg shadow-2xl p-6">
-            <h2 className="text-2xl font-display font-bold mb-4">Retirement Projection</h2>
-            <div className="flex gap-2 mb-3">
-              {["individual","couple"].map(t => (
-                <button key={t} type="button"
-                  onClick={() => setForm(f => ({ ...f, householdType: t }))}
-                  className={`flex-1 py-2 rounded-xl text-sm font-semibold border transition-colors ${form.householdType === t ? "bg-[#0c1e3a] text-white border-[#0c1e3a]" : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50"}`}>
-                  {t === "individual" ? "Individual" : "Couple (Combined)"}
-                </button>
-              ))}
-            </div>
-            <form onSubmit={handleSubmit} className="space-y-4" data-testid="form-fp-retirement">
-              {/* Primary client */}
-              <div className="rounded-xl p-3 border-l-4 border-teal-500 bg-teal-50">
-                <p className="text-xs font-bold text-teal-700 uppercase mb-2">{form.householdType === "couple" ? "Primary Client" : "Client"}</p>
-                <div className="grid grid-cols-3 gap-3">
-                  <div><label className="text-xs font-semibold">Current Age</label><input type="number" required value={form.currentAge} onChange={e => setForm({ ...form, currentAge: e.target.value })} className="w-full px-3 py-2 rounded-xl border mt-1 text-sm" /></div>
-                  <div><label className="text-xs font-semibold">Retirement Age</label><input type="number" required value={form.retirementAge} onChange={e => setForm({ ...form, retirementAge: e.target.value })} className="w-full px-3 py-2 rounded-xl border mt-1 text-sm" /></div>
-                  <div><label className="text-xs font-semibold">Life Expectancy</label><input type="number" required value={form.lifeExpectancy} onChange={e => setForm({ ...form, lifeExpectancy: e.target.value })} className="w-full px-3 py-2 rounded-xl border mt-1 text-sm" /></div>
-                </div>
-                <div className="grid grid-cols-2 gap-3 mt-2">
-                  <div><label className="text-xs font-semibold">Current Savings ($)</label><input type="number" required value={form.currentSavings} onChange={e => setForm({ ...form, currentSavings: e.target.value })} className="w-full px-3 py-2 rounded-xl border mt-1 text-sm" /></div>
-                  <div><label className="text-xs font-semibold">Annual Contribution ($)</label><input type="number" required value={form.annualContribution} onChange={e => setForm({ ...form, annualContribution: e.target.value })} className="w-full px-3 py-2 rounded-xl border mt-1 text-sm" /></div>
-                </div>
-                <div className="grid grid-cols-3 gap-3 mt-2">
-                  <div><label className="text-xs font-semibold">Expected Return (%)</label><input type="number" step="0.1" required value={form.expectedReturn} onChange={e => setForm({ ...form, expectedReturn: e.target.value })} className="w-full px-3 py-2 rounded-xl border mt-1 text-sm" /></div>
-                  <div><label className="text-xs font-semibold">Inflation (%)</label><input type="number" step="0.1" required value={form.inflationRate} onChange={e => setForm({ ...form, inflationRate: e.target.value })} className="w-full px-3 py-2 rounded-xl border mt-1 text-sm" /></div>
-                  <div><label className="text-xs font-semibold">CPP Start Age</label><input type="number" value={form.cppStartAge} onChange={e => setForm({ ...form, cppStartAge: e.target.value })} className="w-full px-3 py-2 rounded-xl border mt-1 text-sm" /></div>
-                </div>
-                <div className="mt-2">
-                  <label className="text-xs font-semibold">Pension Income ($){totalPensionIncome > 0 && <span className="ml-2 text-xs text-emerald-600 font-normal">auto-filled from pension plans</span>}</label>
-                  <input type="number" value={form.pensionIncome} onChange={e => setForm({ ...form, pensionIncome: e.target.value })} className="w-full px-3 py-2 rounded-xl border mt-1 text-sm" />
-                </div>
-                {form.householdType !== "couple" && (
-                  <div className="mt-2">
-                    <label className="text-xs font-semibold">Desired Retirement Income ($)</label>
-                    <input type="number" required value={form.desiredRetirementIncome} onChange={e => setForm({ ...form, desiredRetirementIncome: e.target.value })} className="w-full px-3 py-2 rounded-xl border mt-1 text-sm" />
-                  </div>
-                )}
-              </div>
-
-              {/* Spouse */}
-              {form.householdType === "couple" && (
-                <div className="rounded-xl p-3 border-l-4 border-purple-500 bg-purple-50">
-                  <p className="text-xs font-bold text-purple-700 uppercase mb-2">Spouse / Partner</p>
-                  <div className="grid grid-cols-3 gap-3">
-                    <div><label className="text-xs font-semibold">Current Age</label><input type="number" value={form.spouseAge} onChange={e => setForm({ ...form, spouseAge: e.target.value })} className="w-full px-3 py-2 rounded-xl border mt-1 text-sm" /></div>
-                    <div><label className="text-xs font-semibold">Retirement Age</label><input type="number" value={form.spouseRetirementAge} onChange={e => setForm({ ...form, spouseRetirementAge: e.target.value })} className="w-full px-3 py-2 rounded-xl border mt-1 text-sm" /></div>
-                    <div><label className="text-xs font-semibold">Life Expectancy</label><input type="number" value={form.spouseLifeExpectancy} onChange={e => setForm({ ...form, spouseLifeExpectancy: e.target.value })} className="w-full px-3 py-2 rounded-xl border mt-1 text-sm" /></div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-3 mt-2">
-                    <div><label className="text-xs font-semibold">Current Savings ($)</label><input type="number" value={form.spouseSavings} onChange={e => setForm({ ...form, spouseSavings: e.target.value })} className="w-full px-3 py-2 rounded-xl border mt-1 text-sm" /></div>
-                    <div><label className="text-xs font-semibold">Annual Contribution ($)</label><input type="number" value={form.spouseContribution} onChange={e => setForm({ ...form, spouseContribution: e.target.value })} className="w-full px-3 py-2 rounded-xl border mt-1 text-sm" /></div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-3 mt-2">
-                    <div><label className="text-xs font-semibold">Pension Income ($)</label><input type="number" value={form.spousePensionIncome} onChange={e => setForm({ ...form, spousePensionIncome: e.target.value })} className="w-full px-3 py-2 rounded-xl border mt-1 text-sm" /></div>
-                    <div><label className="text-xs font-semibold">CPP Start Age</label><input type="number" value={form.spouseCppStartAge} onChange={e => setForm({ ...form, spouseCppStartAge: e.target.value })} className="w-full px-3 py-2 rounded-xl border mt-1 text-sm" /></div>
-                  </div>
-                </div>
-              )}
-
-              {/* Combined household income — couple only */}
-              {form.householdType === "couple" && (
-                <div className="rounded-xl p-3 bg-blue-50 border border-blue-200">
-                  <label className="text-xs font-bold text-blue-800 uppercase">Combined Household Desired Income ($)</label>
-                  <input type="number" required value={form.householdDesiredIncome} onChange={e => setForm({ ...form, householdDesiredIncome: e.target.value })} className="w-full px-3 py-2 rounded-xl border mt-1 text-sm" />
-                  <p className="text-xs text-blue-600 mt-1">Total household expenses shared between both partners</p>
-                </div>
-              )}
-
-              <div className="pt-2 flex justify-end space-x-3">
-                <button type="button" onClick={() => setShowCalc(false)} className="px-6 py-3 rounded-xl font-semibold text-muted-foreground hover:bg-muted">Cancel</button>
-                <button type="submit" disabled={createProjection.isPending} data-testid="button-fp-submit-retirement" className="px-6 py-3 rounded-xl font-semibold bg-primary text-primary-foreground">{createProjection.isPending ? "Calculating..." : "Calculate"}</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
@@ -2830,7 +2598,7 @@ const { data: plans = [] } = useClientPlans(selectedClientId ?? 0);
               </div>
             )}
             {activeTab === "networth"   && <NetWorthTab      clientId={selectedClientId} />}
-            {activeTab === "retirement" && <RetirementTab    clientId={selectedClientId} planId={activePlanId} person={person} client={selectedClient} />}
+            {activeTab === "retirement" && <RetirementTab clientId={selectedClientId} clientName={(selectedClient as any)?.firstName} />}
             {activeTab === "insurance"  && <InsuranceTab     clientId={selectedClientId} planId={activePlanId} client={selectedClient} />}
             {activeTab === "resp"       && <RESPTab          clientId={selectedClientId} planId={activePlanId} />}
             {activeTab === "debt"       && <DebtTab          clientId={selectedClientId} planId={activePlanId} />}

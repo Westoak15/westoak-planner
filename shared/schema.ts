@@ -398,11 +398,11 @@ export const reasonWhyLetters = pgTable("reason_why_letters", {
 });
 
 // ── Insert types ──────────────────────────────────────────────────────────────
-export type InsertFinancialPlan = typeof financialPlans.$inferInsert;
-export type InsertEducationSaving = any;
-export type InsertDebtEntry = any;
-export type InsertTaxPlanningNote = any;
-export type InsertEstatePlanningNote = any;
+export type InsertFinancialPlan       = typeof financialPlans.$inferInsert;
+export type InsertEducationSaving     = typeof educationSavings.$inferInsert;
+export type InsertDebtEntry           = typeof debtEntries.$inferInsert;
+export type InsertTaxPlanningNote     = typeof taxPlanningNotes.$inferInsert;
+export type InsertEstatePlanningNote  = typeof estatePlanningNotes.$inferInsert;
 
 //── Capital Gains Positions ──────────────────────────────────────────────────────────────
 export const capitalGainsPositions = pgTable("capital_gains_positions", {

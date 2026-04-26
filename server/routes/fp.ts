@@ -408,6 +408,7 @@ r.delete("/clients/:id/expenses/:eid", async (req: AuthRequest, res: Response) =
   res.json({ ok: true });
 });
 
+// POST — manual override (all fields supplied by caller)
 r.post("/clients/:clientId/drawdown", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.clientId;
   if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
@@ -415,6 +416,90 @@ r.post("/clients/:clientId/drawdown", async (req: AuthRequest, res: Response) =>
     const results = runDrawdownStrategies(req.body as DrawdownInput);
     res.json(results);
   } catch (e: any) { res.status(500).json({ message: e.message }); }
+});
+
+// GET — auto-assembled from stored projection + client + pension data (no re-entry needed)
+r.get("/clients/:clientId/drawdown", async (req: AuthRequest, res: Response) => {
+  const cid = +req.params.clientId;
+  if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
+  try {
+    const { pensionPlans } = await import("../../shared/schema.js");
+
+    const [[client], projRows, pensions] = await Promise.all([
+      db.select().from(clients).where(eq(clients.id, cid)).limit(1),
+      db.select().from(retirementProjections).where(eq(retirementProjections.clientId, cid)).limit(1),
+      db.select().from(pensionPlans).where(eq(pensionPlans.clientId, cid)),
+    ]);
+
+    if (!client) return res.status(404).json({ message: "Client not found" });
+
+    const proj = projRows[0] ?? null;
+
+    // Derive age from DOB if not stored on projection
+    const dobYear   = new Date(client.dateOfBirth ?? "1970-01-01").getFullYear();
+    const currentAge     = proj?.currentAge    ?? (new Date().getFullYear() - dobYear);
+    const retirementAge  = proj?.retirementAge ?? Number(client.retirementAge ?? 65);
+    const lifeExpectancy = proj?.lifeExpectancy ?? 90;
+
+    // Account balances — use projectedBalance split proportionally if available,
+    // otherwise fall back to stored individual balances
+    const rawRrsp   = Number(proj?.rrspBalance    ?? 0);
+    const rawTfsa   = Number(proj?.tfsaBalance    ?? 0);
+    const rawNonReg = Number(proj?.nonRegBalance  ?? 0);
+    const rawTotal  = rawRrsp + rawTfsa + rawNonReg;
+
+    const projectedTotal = Number(proj?.projectedBalance ?? 0);
+    const useProjected   = projectedTotal > 0 && rawTotal > 0;
+
+    // If we have a Monte Carlo projected balance, scale balances proportionally
+    const scale      = useProjected ? projectedTotal / rawTotal : 1;
+    const rrspBalance   = Math.round(rawRrsp   * scale);
+    const tfsaBalance   = Math.round(rawTfsa   * scale);
+    const nonRegBalance = Math.round(rawNonReg * scale);
+
+    // Pension income from stored pension plans
+    const pensionIncome = pensions.reduce((sum, p) => {
+      if (p.pensionType === "dbpp" && p.accrualRate && p.projectedYearsAtRetirement && p.bestAverageEarnings)
+        return sum + (Number(p.accrualRate) * Number(p.projectedYearsAtRetirement) * Number(p.bestAverageEarnings));
+      if (p.pensionType === "dcpp" && p.currentBalance)
+        return sum + Number(p.currentBalance) * 0.04;
+      return sum;
+    }, 0);
+
+    const inp: DrawdownInput = {
+      currentAge,
+      retirementAge,
+      lifeExpectancy,
+      province:          client.province ?? "ON",
+      rrspBalance,
+      tfsaBalance,
+      nonRegBalance,
+      nonRegAcb:         Math.round(nonRegBalance * 0.5),  // conservative ACB estimate
+      desiredAnnualIncome: Number(proj?.desiredRetirementIncome ?? client.desiredRetirementIncome ?? 50000),
+      cppAnnual:         Number(proj?.cppMonthly  ?? 900)  * 12,
+      oasAnnual:         Number(proj?.oasMonthly  ?? 700)  * 12,
+      cppStartAge:       proj?.cppStartAge ?? 65,
+      oasStartAge:       proj?.oasStartAge ?? 65,
+      pensionIncome:     Math.round(pensionIncome + Number(proj?.pensionIncome ?? 0)),
+      expectedReturn:    Number(proj?.expectedReturn  ?? 6) / 100,
+      inflationRate:     Number(proj?.inflationRate   ?? 2) / 100,
+      bpa:               16129,  // 2025 federal Basic Personal Amount
+    };
+
+    const results = runDrawdownStrategies(inp);
+
+    res.json({
+      inputs: inp,
+      useProjected,
+      projectedTotal,
+      nonregFirst: results.nonregFirst,
+      meltdown:    results.meltdown,
+      blended:     results.blended,
+    });
+  } catch (e: any) {
+    console.error("[drawdown GET]", e.message);
+    res.status(500).json({ message: e.message });
+  }
 });
 
 export { r as fpRouter };

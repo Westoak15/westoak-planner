@@ -24,7 +24,7 @@ export function useClientPlans(clientId: number) {
 export function useCreatePlan() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ clientId, data }: { clientId: number; data: Omit<InsertFinancialPlan, "clientId"> }) => {
+    mutationFn: async ({ clientId, data }: { clientId: number; data: Omit<InsertFinancialPlan, "clientId"> & Record<string, unknown> & Record<string, unknown> }) => {
       const url = buildUrl(api.plans.create.path, { clientId });
       const res = await fetch(url, {
         method: api.plans.create.method,
@@ -223,7 +223,7 @@ export function useEducationSavings(clientId: number) {
 export function useCreateEducationSaving() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ clientId, data }: { clientId: number; data: Omit<InsertEducationSaving, "clientId"> }) => {
+    mutationFn: async ({ clientId, data }: { clientId: number; data: Omit<InsertEducationSaving, "clientId"> & Record<string, unknown> & Record<string, unknown> }) => {
       const res = await apiRequest("POST", `/api/clients/${clientId}/education-savings`, data);
       return res.json();
     },
@@ -275,7 +275,7 @@ export function useDebtEntries(clientId: number) {
 export function useCreateDebtEntry() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ clientId, data }: { clientId: number; data: Omit<InsertDebtEntry, "clientId"> }) => {
+    mutationFn: async ({ clientId, data }: { clientId: number; data: Omit<InsertDebtEntry, "clientId"> & Record<string, unknown> & Record<string, unknown> }) => {
       const res = await apiRequest("POST", `/api/clients/${clientId}/debt-entries`, data);
       return res.json();
     },
@@ -327,7 +327,7 @@ export function useTaxPlanningNotes(clientId: number) {
 export function useCreateTaxPlanningNote() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ clientId, data }: { clientId: number; data: Omit<InsertTaxPlanningNote, "clientId"> }) => {
+    mutationFn: async ({ clientId, data }: { clientId: number; data: Omit<InsertTaxPlanningNote, "clientId"> & Record<string, unknown> & Record<string, unknown> }) => {
       const res = await apiRequest("POST", `/api/clients/${clientId}/tax-planning-notes`, data);
       return res.json();
     },
@@ -559,7 +559,7 @@ export function useEstatePlanningNotes(clientId: number) {
 export function useCreateEstatePlanningNote() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ clientId, data }: { clientId: number; data: Omit<InsertEstatePlanningNote, "clientId"> }) => {
+    mutationFn: async ({ clientId, data }: { clientId: number; data: Omit<InsertEstatePlanningNote, "clientId"> & Record<string, unknown> & Record<string, unknown> }) => {
       const res = await apiRequest("POST", `/api/clients/${clientId}/estate-planning-notes`, data);
       return res.json();
     },
@@ -945,3 +945,5 @@ export interface PlanSnapshot {
   createdBy:    number | null;
   createdAt:    string | null;
 }
+
+

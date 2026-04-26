@@ -146,8 +146,8 @@ r.get("/clients/:id/insurance-analyses", async (req: AuthRequest, res: Response)
 r.post("/clients/:id/insurance-analyses", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.id;
   if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
-  const [row] = await (db.insert(insuranceAnalyses) as any).values({ clientId: cid, ...safe(req.body) }).returning();
-  res.json(row);
+  const [row] = await (db.insert(insuranceAnalyses) as any).values({ clientId: cid, ...safe(req.body.data ?? req.body) }).returning();
+  res.status(201).json(row);
 });
 r.delete("/insurance-analyses/:id", async (req: AuthRequest, res: Response) => {
   const [ex] = await db.select({ id: insuranceAnalyses.id, clientId: insuranceAnalyses.clientId }).from(insuranceAnalyses).where(eq(insuranceAnalyses.id, +req.params.id));
@@ -165,8 +165,9 @@ r.get("/clients/:id/education-savings", async (req: AuthRequest, res: Response) 
 r.post("/clients/:id/education-savings", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.id;
   if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
-  const [row] = await (db.insert(educationPlans) as any).values({ clientId: cid, ...safe(req.body) }).returning();
-  res.json(row);
+  const data = safe(req.body.data ?? req.body) as any;
+  const [row] = await (db.insert(educationPlans) as any).values({ clientId: cid, childAge: data.childAge || 0, ...data }).returning();
+  res.status(201).json(row);
 });
 r.put("/education-savings/:id", async (req: AuthRequest, res: Response) => {
   const [ex] = await db.select({ id: educationPlans.id, clientId: educationPlans.clientId }).from(educationPlans).where(eq(educationPlans.id, +req.params.id));
@@ -190,8 +191,8 @@ r.get("/clients/:id/debt-entries", async (req: AuthRequest, res: Response) => {
 r.post("/clients/:id/debt-entries", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.id;
   if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
-  const [row] = await (db.insert(debtEntries) as any).values({ clientId: cid, ...safe(req.body) }).returning();
-  res.json(row);
+  const [row] = await (db.insert(debtEntries) as any).values({ clientId: cid, ...safe(req.body.data ?? req.body) }).returning();
+  res.status(201).json(row);
 });
 r.put("/debt-entries/:id", async (req: AuthRequest, res: Response) => {
   const [ex] = await db.select({ id: debtEntries.id, clientId: debtEntries.clientId }).from(debtEntries).where(eq(debtEntries.id, +req.params.id));

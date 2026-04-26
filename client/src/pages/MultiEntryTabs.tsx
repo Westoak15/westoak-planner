@@ -536,6 +536,22 @@ export function RetirementTab({ clientId, client, person = "primary" }: { client
     api.get<any[]>(`/api/clients/${clientId}/pensions`).then(setPensions);
   }, [clientId]);
 
+  // When client retirement age changes, patch affected projections
+  useEffect(() => {
+    if (!rows.length || !client) return;
+    const updates: Promise<any>[] = [];
+    rows.forEach(r => {
+      const isSpouseRow = r.label === client.spouseFirstName || r.label === "Spouse";
+      const correctRetAge = isSpouseRow
+        ? (client.spouseRetirementAge ?? 65)
+        : (client.retirementAge ?? 65);
+      if (r.retirementAge !== correctRetAge) {
+        updates.push(api.patch(`/api/retirement/${r.id}`, { retirementAge: correctRetAge }));
+      }
+    });
+    if (updates.length > 0) Promise.all(updates).then(load);
+  }, [client?.retirementAge, client?.spouseRetirementAge]);
+
   const fmt$ = (v: any) => { const n = parseFloat(v ?? "0"); if (!n) return "-"; return "$" + n.toLocaleString("en-CA", { maximumFractionDigits: 0 }); };
   const fmtPct = (v: any) => { const n = parseFloat(v ?? "0"); if (!n) return "-"; return n + "%"; };
 

@@ -116,6 +116,24 @@ export function PensionTab({ clientId, client, person = "primary" }: {
   const load = () => api.get<PensionPlan[]>(`/api/clients/${clientId}/pensions`).then(setPlans).catch(() => {});
   useEffect(() => { load(); }, [clientId]);
 
+  // When client retirement age changes, recalculate projected years for existing plans
+  useEffect(() => {
+    if (!plans.length || !client) return;
+    const updates: Promise<any>[] = [];
+    plans.forEach(p => {
+      const isPrimary = p.subscriberOwner !== "spouse";
+      const dob     = isPrimary ? client.dateOfBirth : client.spouseDateOfBirth;
+      const retAge  = isPrimary ? (client.retirementAge ?? 65) : (client.spouseRetirementAge ?? 65);
+      const age     = dob ? Math.floor((Date.now() - new Date(dob).getTime()) / (365.25 * 24 * 60 * 60 * 1000)) : null;
+      if (!age || !p.yearsOfService) return;
+      const newProj = String(Number(p.yearsOfService) + (retAge - age));
+      if (newProj !== p.projectedYearsAtRetirement) {
+        updates.push(api.patch(`/api/pensions/${p.id}`, { projectedYearsAtRetirement: newProj }));
+      }
+    });
+    if (updates.length > 0) Promise.all(updates).then(load);
+  }, [client?.retirementAge, client?.spouseRetirementAge]);
+
   const upd = (k: string, v: any) => setForm((f: any) => ({ ...f, [k]: v }));
 
   // Auto-calculate projected years when service years change

@@ -72,9 +72,9 @@ const DEFAULTS = {
   inflationRate: "2.0",
   desiredRetirementIncome: "",
   pensionIncome: "0",
-  cppMonthly: "900",
+  cppMonthly: "1364",
   cppStartAge: 65,
-  oasMonthly: "700",
+  oasMonthly: "713",
   oasStartAge: 65,
   notes: "",
 };
@@ -111,9 +111,12 @@ function calcProjection(f: FormState) {
     pTfsa   = (pTfsa   + tfsaC)  * (1 + rate);
     pNonReg =  pNonReg            * (1 + rate);
   }
-  const projTotal = Math.round(pRrsp + pTfsa + pNonReg);
+  const projRrsp   = Math.round(pRrsp);
+  const projTfsa   = Math.round(pTfsa);
+  const projNonReg = Math.round(pNonReg);
+  const projTotal  = projRrsp + projTfsa + projNonReg;
 
-  // Guaranteed income at retirement (in today's dollars for simplicity)
+  // CPP/OAS adjusted amounts (what they'll actually receive when they start)
   // CPP: -0.6%/month before 65, +0.7%/month after 65
   const cppFactor = cppAge <= 65
     ? 1 - 0.006 * (65 - cppAge) * 12
@@ -121,14 +124,24 @@ function calcProjection(f: FormState) {
   // OAS: +0.6%/month after 65 (max defer to 70)
   const oasFactor = oasAge <= 65 ? 1 : 1 + 0.006 * (oasAge - 65) * 12;
 
-  const cppAnnual = ret >= cppAge ? cpp * 12 * cppFactor : 0;
-  const oasAnnual = ret >= oasAge ? oas * 12 * oasFactor : 0;
-  const govIncome = cppAnnual + oasAnnual + pension;
+  const cppMonthlyAdjusted = Math.round(cpp * cppFactor);
+  const oasMonthlyAdjusted = Math.round(oas * oasFactor);
 
-  // Desired income inflation-adjusted to retirement year
-  const desiredAtRet = desired > 0 ? desired * Math.pow(1 + infl, yToRet) : 0;
+  // Annual amounts — only count if started by retirement age
+  const cppAnnual = ret >= cppAge ? cppMonthlyAdjusted * 12 : 0;
+  const oasAnnual = ret >= oasAge ? oasMonthlyAdjusted * 12 : 0;
 
-  // Withdrawal needed from portfolio per year
+  // Future value of gov income at retirement (inflation-adjusted from today)
+  const cppAnnualAtRet = cppAnnual > 0 ? cppAnnual * Math.pow(1 + infl, yToRet) : 0;
+  const oasAnnualAtRet = oasAnnual > 0 ? oasAnnual * Math.pow(1 + infl, yToRet) : 0;
+  const pensionAtRet   = pension   > 0 ? pension   * Math.pow(1 + infl, yToRet) : 0;
+  const govIncome      = cppAnnualAtRet + oasAnnualAtRet + pensionAtRet;
+
+  // Desired income — today's dollars and inflation-adjusted at retirement
+  const desiredToday  = desired;
+  const desiredAtRet  = desired > 0 ? Math.round(desired * Math.pow(1 + infl, yToRet)) : 0;
+
+  // Withdrawal needed from portfolio per year (in retirement dollars)
   const withdrawal = Math.max(0, desiredAtRet - govIncome);
 
   // Sustainable withdrawal (real-rate annuity)
@@ -137,11 +150,21 @@ function calcProjection(f: FormState) {
     ? projTotal * realRate / (1 - Math.pow(1 + realRate, -yInRet))
     : projTotal / Math.max(1, yInRet);
 
-  const surplus   = Math.round(swr - withdrawal);
-  const funded    = desiredAtRet > 0 ? Math.min(100, Math.round((swr / desiredAtRet) * 100)) : 100;
-  const shortfall = surplus < 0 ? Math.abs(surplus) : 0;
+  const surplus  = Math.round(swr - withdrawal);
+  const funded   = desiredAtRet > 0 ? Math.min(100, Math.round((swr / desiredAtRet) * 100)) : 100;
 
-  return { projTotal, govIncome, withdrawal: Math.round(withdrawal), surplus, funded, shortfall, desiredAtRet: Math.round(desiredAtRet), cppAdjusted: Math.round(cppAnnual), oasAdjusted: Math.round(oasAnnual) };
+  return {
+    projTotal, projRrsp, projTfsa, projNonReg,
+    govIncome: Math.round(govIncome),
+    cppAdjusted: Math.round(cppAnnualAtRet),
+    oasAdjusted: Math.round(oasAnnualAtRet),
+    pensionAdjusted: Math.round(pensionAtRet),
+    cppMonthlyAdjusted, oasMonthlyAdjusted,
+    withdrawal: Math.round(withdrawal),
+    surplus, funded,
+    desiredToday: Math.round(desiredToday),
+    desiredAtRet,
+  };
 }
 
 function fmt(n: number) {
@@ -228,11 +251,37 @@ export function RetirementProjectionForm({ clientId, clientName, projection, onS
   const barColor   = calc.funded >= 90 ? "#16a34a" : calc.funded >= 70 ? "#d97706" : "#dc2626";
   const surplusCol = calc.surplus >= 0 ? "#16a34a" : "#dc2626";
 
+  const cppNotStarted = +f.retirementAge < +f.cppStartAge;
+  const oasNotStarted = +f.retirementAge < +f.oasStartAge;
+
   // ── Metric cards ────────────────────────────────────────────────────────────
   const metrics = [
-    { label: `Projected portfolio at ${f.retirementAge}`, value: fmt(calc.projTotal),    sub: "RRSP · TFSA · Non-Reg" },
-    { label: "Guaranteed income / yr",                    value: fmt(calc.govIncome),    sub: `CPP ${fmt(calc.cppAdjusted)}/yr · OAS ${fmt(calc.oasAdjusted)}/yr · Pension` },
-    { label: "Portfolio withdrawal / yr",                  value: fmt(calc.withdrawal),   sub: "needed from investments" },
+    {
+      label: `Projected portfolio at ${f.retirementAge}`,
+      value: fmt(calc.projTotal),
+      sub: `RRSP ${fmt(calc.projRrsp)} · TFSA ${fmt(calc.projTfsa)} · Non-Reg ${fmt(calc.projNonReg)}`,
+    },
+    {
+      label: "Guaranteed income / yr at retirement",
+      value: calc.govIncome > 0 ? fmt(calc.govIncome) : "—",
+      sub: [
+        cppNotStarted
+          ? `CPP starts age ${f.cppStartAge} (${fmt(calc.cppMonthlyAdjusted)}/mo)`
+          : calc.cppAdjusted > 0 ? `CPP ${fmt(calc.cppAdjusted)}/yr` : null,
+        oasNotStarted
+          ? `OAS starts age ${f.oasStartAge}`
+          : calc.oasAdjusted > 0 ? `OAS ${fmt(calc.oasAdjusted)}/yr` : null,
+        calc.pensionAdjusted > 0 ? `Pension ${fmt(calc.pensionAdjusted)}/yr` : null,
+      ].filter(Boolean).join(' · ') || "No income starts by retirement age",
+      warn: cppNotStarted || oasNotStarted,
+    },
+    {
+      label: "Desired income",
+      value: fmt(calc.desiredToday),
+      sub: calc.desiredAtRet > 0
+        ? `Today · inflation-adjusted ${fmt(calc.desiredAtRet)}/yr at age ${f.retirementAge}`
+        : "Enter desired income above",
+    },
     {
       label: calc.surplus >= 0 ? "Surplus / yr" : "Shortfall / yr",
       value: fmt(Math.abs(calc.surplus)),
@@ -338,8 +387,11 @@ export function RetirementProjectionForm({ clientId, clientName, projection, onS
         </div>
         <div className="grid grid-cols-4 gap-3">
           <div>
-            <label className="block text-xs text-gray-500 mb-1">CPP monthly at 65 ($)</label>
+            <label className="block text-xs text-gray-500 mb-1">CPP monthly at 65 ($) <span className="text-gray-400">· 2026 max $1,364</span></label>
             <input type="number" value={f.cppMonthly} onChange={set("cppMonthly")} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400" />
+            {calc.cppMonthlyAdjusted !== +f.cppMonthly && (
+              <p className="text-xs text-blue-500 mt-1">Adjusted at age {f.cppStartAge}: ${calc.cppMonthlyAdjusted}/mo</p>
+            )}
           </div>
           <div>
             <label className="block text-xs text-gray-500 mb-1">CPP start age</label>
@@ -358,8 +410,11 @@ export function RetirementProjectionForm({ clientId, clientName, projection, onS
             </select>
           </div>
           <div>
-            <label className="block text-xs text-gray-500 mb-1">OAS monthly at 65 ($)</label>
+            <label className="block text-xs text-gray-500 mb-1">OAS monthly at 65 ($) <span className="text-gray-400">· 2026 max $713</span></label>
             <input type="number" value={f.oasMonthly} onChange={set("oasMonthly")} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400" />
+            {calc.oasMonthlyAdjusted !== +f.oasMonthly && (
+              <p className="text-xs text-blue-500 mt-1">Adjusted at age {f.oasStartAge}: ${calc.oasMonthlyAdjusted}/mo</p>
+            )}
           </div>
           <div>
             <label className="block text-xs text-gray-500 mb-1">OAS start age</label>
@@ -385,7 +440,7 @@ export function RetirementProjectionForm({ clientId, clientName, projection, onS
             <div key={i} className="bg-gray-50 rounded-lg px-4 py-3">
               <p className="text-xs text-gray-500 leading-snug mb-1">{m.label}</p>
               <p className="text-xl font-semibold" style={{ color: m.color ?? "#111827" }}>{m.value}</p>
-              <p className="text-xs text-gray-400 mt-0.5">{m.sub}</p>
+              <p className={`text-xs mt-0.5 ${(m as any).warn ? "text-amber-500" : "text-gray-400"}`}>{m.sub}</p>
             </div>
           ))}
         </div>

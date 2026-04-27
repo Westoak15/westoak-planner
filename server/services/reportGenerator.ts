@@ -13,6 +13,8 @@ function fmt(n: number, d = 0): string {
 function fmtCad(n: number): string { return `$${fmt(n)}`; }
 function v(s: any): number { return parseFloat(String(s ?? "0")) || 0; }
 
+const DEFAULT_FIRM = "Knights of Columbus";
+
 function htmlShell(title: string, body: string): string {
   return `<!DOCTYPE html>
 <html lang="en">
@@ -369,7 +371,7 @@ export function generateFnaReport(data: { client: any; analysis: any; advisor?: 
   ].filter(s => s.value > 0);
 
   const cover = `
-${reportOpener({ reportTitle: "Family Needs Analysis", reportSubtitle: "Life Insurance Needs Worksheet", clientName: name, clientFirstName: client.firstName ?? name.split(" ")[0], advisorName, dateStr })}`;
+${reportOpener({ reportTitle: "Family Needs Analysis", reportSubtitle: "Life Insurance Needs Worksheet", clientName: name, clientFirstName: name.split(" ")[0], advisorName, dateStr })}`;
 
   const summarySection = `
 <div class="section">
@@ -988,7 +990,7 @@ export function generateCashFlowReport(data: {
   const retirementGap = retDesiredIncome - retirementMonthly * 12;
 
   const body = `
-${reportOpener({ reportTitle: "Cash Flow Statement", reportSubtitle: "Detailed Household Budget", clientName: name, clientFirstName: client.firstName ?? name.split(" ")[0], advisorName, dateStr })}
+${reportOpener({ reportTitle: "Cash Flow Statement", reportSubtitle: "Detailed Household Budget", clientName: name, clientFirstName: name.split(" ")[0], advisorName, dateStr })}
 <div class="section">
   <h2 class="section-title">Summary</h2>
   <div class="summary-grid" style="grid-template-columns:repeat(4,1fr)">
@@ -1070,7 +1072,7 @@ export function generateAssetAllocationReport(data: {
     .map(([k]) => `<div class="callout warn"><strong>Concentration Risk:</strong> Over 50% of investments are in ${esc(k)} accounts. Consider diversifying across account types.</div>`).join("");
 
   const body = `
-${reportOpener({ reportTitle: "Asset Allocation & Mix", reportSubtitle: "Investment Portfolio Review", clientName: name, clientFirstName: client.firstName ?? name.split(" ")[0], advisorName, dateStr })}
+${reportOpener({ reportTitle: "Asset Allocation & Mix", reportSubtitle: "Investment Portfolio Review", clientName: name, clientFirstName: name.split(" ")[0], advisorName, dateStr })}
 <div class="section">
   <h2 class="section-title">Allocation by Account Type</h2>
   ${warnings}
@@ -1148,7 +1150,7 @@ export function generateRetirementReadinessReport(data: {
 </div>` : "";
 
   const body = `
-${reportOpener({ reportTitle: "Retirement Readiness", reportSubtitle: "Decumulation Projection", clientName: name, clientFirstName: client.firstName ?? name.split(" ")[0], advisorName, dateStr })}
+${reportOpener({ reportTitle: "Retirement Readiness", reportSubtitle: "Decumulation Projection", clientName: name, clientFirstName: name.split(" ")[0], advisorName, dateStr })}
 <div class="section">
   <h2 class="section-title">Readiness Score</h2>
   <div style="display:flex;align-items:center;gap:32px;margin-bottom:20px">
@@ -1235,7 +1237,7 @@ export function generateGoalStatusReport(data: {
   const retirementProgress = needed > 0 ? Math.min(100, Math.round(projBalance / needed * 100)) : 0;
 
   const body = `
-${reportOpener({ reportTitle: "Goal Status Report", reportSubtitle: "Progress Dashboard", clientName: name, clientFirstName: client.firstName ?? name.split(" ")[0], advisorName, dateStr })}
+${reportOpener({ reportTitle: "Goal Status Report", reportSubtitle: "Progress Dashboard", clientName: name, clientFirstName: name.split(" ")[0], advisorName, dateStr })}
 <div class="section">
   <h2 class="section-title">Retirement Goal</h2>
   ${r ? `<div class="summary-grid" style="grid-template-columns:repeat(3,1fr)">
@@ -1295,7 +1297,7 @@ export function generateInsuranceAuditReport(data: {
     </tr>`).join("");
 
   const body = `
-${reportOpener({ reportTitle: "Risk Management & Insurance Audit", reportSubtitle: "Coverage Review", clientName: name, clientFirstName: client.firstName ?? name.split(" ")[0], advisorName, dateStr })}
+${reportOpener({ reportTitle: "Risk Management & Insurance Audit", reportSubtitle: "Coverage Review", clientName: name, clientFirstName: name.split(" ")[0], advisorName, dateStr })}
 <div class="section">
   <h2 class="section-title">Coverage Summary</h2>
   <div class="summary-grid" style="grid-template-columns:repeat(4,1fr)">
@@ -1372,7 +1374,7 @@ export function generateEstateSummaryReport(data: {
     </tr>`).join("");
 
   const body = `
-${reportOpener({ reportTitle: "Estate & Beneficiary Summary", reportSubtitle: "Estate Distribution Review", clientName: name, clientFirstName: client.firstName ?? name.split(" ")[0], advisorName, dateStr })}
+${reportOpener({ reportTitle: "Estate & Beneficiary Summary", reportSubtitle: "Estate Distribution Review", clientName: name, clientFirstName: name.split(" ")[0], advisorName, dateStr })}
 <div class="section">
   <h2 class="section-title">Estate Checklist</h2>
   <table>
@@ -1423,7 +1425,7 @@ export function generateTaxStrategyReport(data: {
     </tr>`).join("");
 
   const body = `
-${reportOpener({ reportTitle: "Tax Efficiency Strategy", reportSubtitle: "Annual Tax Review", clientName: name, clientFirstName: client.firstName ?? name.split(" ")[0], advisorName, dateStr })}
+${reportOpener({ reportTitle: "Tax Efficiency Strategy", reportSubtitle: "Annual Tax Review", clientName: name, clientFirstName: name.split(" ")[0], advisorName, dateStr })}
 <div class="section">
   <h2 class="section-title">Account Structure Overview</h2>
   <div class="summary-grid">

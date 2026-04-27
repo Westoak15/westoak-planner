@@ -2406,7 +2406,7 @@ export function AITab({ clientId }: { clientId: number }) {
   const sessions = (() => {
     const groups = new Map<string, any[]>();
     for (const rec of (recommendations as any[])) {
-      const key = rec.runId ?? rec.createdAt?.split("T")[0] ?? "legacy";
+      const key = rec.runId ?? "legacy";
       if (!groups.has(key)) groups.set(key, []);
       groups.get(key)!.push(rec);
     }

@@ -1,6 +1,6 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { api } from "../lib/api";
-import { useState, useMemo, useEffect, Component, type ReactNode } from "react";
+import React, { useState, useMemo, useEffect, useRef, Component, type ReactNode } from "react";
 // trying to force build this file
 class ErrorBoundary extends Component<{children:ReactNode;fallback?:ReactNode},{error:boolean}> {
   state = { error: false };
@@ -2396,11 +2396,11 @@ export function EstateNotesTab({ clientId, planId, client }: { clientId: number;
 // ── AI Tab ────────────────────────────────────────────────────────────────────
 
 export function AITab({ clientId }: { clientId: number }) {
+  const qc = useQueryClient();
   const { data: recommendations = [] } = useAiRecommendations(clientId);
   const generateRecs  = useGenerateAiRecommendations();
   const updateRec     = useUpdateAiRecommendation(clientId);
   const deleteRec     = useDeleteAiRecommendation(clientId);
-  const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
   // Group by runId — fall back to createdAt date for legacy recs with no runId
   const sessions = (() => {
@@ -2410,21 +2410,44 @@ export function AITab({ clientId }: { clientId: number }) {
       if (!groups.has(key)) groups.set(key, []);
       groups.get(key)!.push(rec);
     }
-    // Sort sessions newest first
     return Array.from(groups.entries())
       .sort(([a], [b]) => b.localeCompare(a))
       .map(([runId, recs]) => ({ runId, recs, date: new Date(runId) }));
   })();
 
-  // Expand the most recent session by default
-  const mostRecent = sessions[0]?.runId;
-  const isExpanded = (runId: string) => expanded.has(runId) || (expanded.size === 0 && runId === mostRecent);
+  // Initialize with most recent session open
+  const [expanded, setExpanded] = useState<Set<string>>(() =>
+    new Set(sessions.length > 0 ? [sessions[0].runId] : [])
+  );
+
+  // Keep most recent open when new sessions load
+  const prevMostRecent = useRef<string | null>(null);
+  useEffect(() => {
+    const newest = sessions[0]?.runId;
+    if (newest && newest !== prevMostRecent.current) {
+      setExpanded(prev => new Set([...prev, newest]));
+      prevMostRecent.current = newest;
+    }
+  }, [sessions[0]?.runId]);
+
   const toggleExpanded = (runId: string) =>
     setExpanded(prev => {
       const next = new Set(prev);
       next.has(runId) ? next.delete(runId) : next.add(runId);
       return next;
     });
+
+  const deleteSession = async (runId: string) => {
+    if (!confirm("Delete all recommendations in this session?")) return;
+    if (runId === "legacy") {
+      // Legacy recs have no runId — delete individually
+      const legacyRecs = (recommendations as any[]).filter((r: any) => !r.runId);
+      await Promise.all(legacyRecs.map((r: any) => deleteRec.mutateAsync(r.id)));
+    } else {
+      await api.delete(`/api/clients/${clientId}/ai/session/${encodeURIComponent(runId)}`);
+      qc.invalidateQueries({ queryKey: [`/api/clients/${clientId}/ai-recommendations`] });
+    }
+  };
 
   const priorityOrder: Record<string, number> = { high: 0, medium: 1, low: 2 };
 
@@ -2494,26 +2517,34 @@ export function AITab({ clientId }: { clientId: number }) {
         return (
           <div key={runId} className="border border-border rounded-2xl overflow-hidden">
             {/* Session header — always visible, 2-3 lines high */}
-            <button
-              onClick={() => toggleExpanded(runId)}
-              className="w-full text-left px-5 py-4 bg-muted/30 hover:bg-muted/50 transition-colors flex items-start justify-between gap-4"
-              data-testid={`session-header-${runId}`}
-            >
-              <div className="flex-1 min-w-0">
+            <div className="px-5 py-4 bg-muted/30 flex items-start justify-between gap-4">
+              <button
+                onClick={() => toggleExpanded(runId)}
+                className="flex-1 min-w-0 text-left"
+                data-testid={`session-header-${runId}`}
+              >
                 <div className="flex items-center gap-2 mb-1">
                   <Sparkles className="w-3.5 h-3.5 text-purple-500 shrink-0" />
                   <span className="text-sm font-semibold text-gray-900">{dateStr}</span>
+                  <ChevronDown className={`w-4 h-4 text-muted-foreground shrink-0 transition-transform ${open ? "rotate-180" : ""}`} />
                 </div>
                 <div className="flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
                   <span>{recs.length} recommendation{recs.length !== 1 ? "s" : ""}</span>
                   {summary.high    > 0 && <span className="text-red-600 font-medium">{summary.high} high priority</span>}
                   {summary.medium  > 0 && <span className="text-yellow-600">{summary.medium} medium</span>}
                   {summary.low     > 0 && <span className="text-green-600">{summary.low} low</span>}
-                  {summary.completed > 0 && <span className="text-gray-400 line-through">{summary.completed} completed</span>}
+                  {summary.completed > 0 && <span className="text-gray-400">{summary.completed} completed</span>}
                 </div>
-              </div>
-              <ChevronDown className={`w-4 h-4 text-muted-foreground shrink-0 mt-0.5 transition-transform ${open ? "rotate-180" : ""}`} />
-            </button>
+              </button>
+              <button
+                onClick={() => deleteSession(runId)}
+                className="p-1.5 hover:bg-red-50 rounded-lg shrink-0 mt-0.5"
+                title="Delete this session"
+                data-testid={`button-delete-session-${runId}`}
+              >
+                <Trash2 className="w-4 h-4 text-red-400" />
+              </button>
+            </div>
 
             {/* Recommendations — shown when expanded */}
             {open && (

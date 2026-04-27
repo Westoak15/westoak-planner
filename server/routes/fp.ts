@@ -352,6 +352,16 @@ r.patch("/ai/:id", async (req: AuthRequest, res: Response) => {
   res.json(u);
 });
 
+r.delete("/clients/:id/ai/session/:runId", async (req: AuthRequest, res: Response) => {
+  const cid = +req.params.id;
+  if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
+  const runId = decodeURIComponent(req.params.runId);
+  await db.delete(aiRecommendations).where(
+    and(eq(aiRecommendations.clientId, cid), eq(aiRecommendations.runId, runId))
+  );
+  res.json({ ok: true });
+});
+
 r.delete("/ai/:id", async (req: AuthRequest, res: Response) => {
   const [ex] = await db.select({ id: aiRecommendations.id, clientId: aiRecommendations.clientId })
     .from(aiRecommendations).where(eq(aiRecommendations.id, +req.params.id));

@@ -27,8 +27,8 @@ const PORT = parseInt(process.env.PORT ?? "8080", 10);
 // ── Startup migrations (idempotent) ───────────────────────────────────────────
 async function runMigrations() {
   const migrations = [
-    // 001 — person column on retirement_projections
     `ALTER TABLE retirement_projections ADD COLUMN IF NOT EXISTS person TEXT DEFAULT 'primary'`,
+    `ALTER TABLE ai_recommendations ADD COLUMN IF NOT EXISTS run_id TEXT`,
   ];
   for (const sql of migrations) {
     try { await pool.query(sql); }

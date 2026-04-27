@@ -237,7 +237,8 @@ export const estateNotes = estatePlanningNotes; // legacy alias
 export const aiRecommendations = pgTable("ai_recommendations", {
   id:          serial("id").primaryKey(),
   clientId:    integer("client_id").notNull().references(() => clients.id, { onDelete: "cascade" }),
-  planId: integer("plan_id"),
+  planId:      integer("plan_id"),
+  runId:       text("run_id"),       // ISO timestamp — groups all recs from one generate call
   category:    text("category").notNull(),
   priority:    text("priority").notNull().default("medium"),
   title:       text("title").notNull(),

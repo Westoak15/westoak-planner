@@ -327,13 +327,18 @@ r.post("/clients/:id/ai/generate", async (req: AuthRequest, res: Response) => {
   ]);
   const assets    = nw.filter(e => e.type === "asset").reduce((s, e) => s + Number(e.value), 0);
   const totalDebt = debt.reduce((s, d) => s + Number(d.balance), 0);
+
+  // Every generate call gets a unique runId — ISO timestamp groups the session
+  const runId = new Date().toISOString();
   const recs = [];
 
-  if (!client.retirementAge)  recs.push({ clientId: cid, category: "retirement", priority: "high",   title: "Set Retirement Target Age",  content: "Define a target retirement age to enable accurate projections and CPP/OAS timing optimization." });
-if (assets < 50000)         recs.push({ clientId: cid, category: "savings",    priority: "high",   title: "Build Emergency Fund",        content: "Recommend building 3-6 months of expenses in liquid savings before aggressive investing." });
-if (totalDebt > 50000)      recs.push({ clientId: cid, category: "debt",       priority: "high",   title: "Debt Reduction Strategy",     content: `Total debt of $${totalDebt.toLocaleString()} is significant. Review avalanche vs snowball strategy.` });
-recs.push({ clientId: cid, category: "tax",       priority: "medium", title: "Annual RRSP/TFSA Review",    content: "Review contribution room and optimize between RRSP and TFSA based on current and expected future marginal tax rates." });
-recs.push({ clientId: cid, category: "insurance", priority: "medium", title: "Insurance Needs Review",     content: "Conduct annual review of life, disability, and critical illness coverage gaps." });
+  if (!client.retirementAge)  recs.push({ clientId: cid, runId, category: "retirement", priority: "high",   title: "Set Retirement Target Age",  content: "Define a target retirement age to enable accurate projections and CPP/OAS timing optimization." });
+  if (assets < 50000)         recs.push({ clientId: cid, runId, category: "savings",    priority: "high",   title: "Build Emergency Fund",        content: "Recommend building 3-6 months of expenses in liquid savings before aggressive investing." });
+  if (totalDebt > 50000)      recs.push({ clientId: cid, runId, category: "debt",       priority: "high",   title: "Debt Reduction Strategy",     content: `Total debt of $${totalDebt.toLocaleString()} is significant. Review avalanche vs snowball strategy.` });
+  recs.push({ clientId: cid, runId, category: "tax",       priority: "medium", title: "Annual RRSP/TFSA Review",    content: "Review contribution room and optimize between RRSP and TFSA based on current and expected future marginal tax rates." });
+  recs.push({ clientId: cid, runId, category: "insurance", priority: "medium", title: "Insurance Needs Review",     content: "Conduct annual review of life, disability, and critical illness coverage gaps." });
+  if (!client.retirementAge || assets > 100000) recs.push({ clientId: cid, runId, category: "retirement", priority: "medium", title: "Review CPP/OAS Timing",      content: "Model the impact of deferring CPP to age 70 (+42%) and OAS to age 70 (+36%) versus taking at 65. Break-even typically age 82-85." });
+  if (assets > 0 && totalDebt === 0)            recs.push({ clientId: cid, runId, category: "tax",       priority: "low",    title: "Estate & Tax Efficiency",    content: "Review beneficiary designations, TFSA maximization, and potential for spousal RRSP income splitting in retirement." });
 
   const inserted = await Promise.all(recs.map(rec => (db.insert(aiRecommendations) as any).values(rec).returning().then(([x]: any) => x)));
   res.status(201).json(inserted);

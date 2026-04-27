@@ -67,25 +67,59 @@ function htmlShell(title: string, body: string): string {
   }
 </style>
 <style>
-  @media print { .print-btn { display:none !important; } }
-  .print-btn {
-    position:fixed; bottom:24px; right:24px; z-index:999;
-    background:#1B3A5C; color:white; border:none; border-radius:8px;
-    padding:10px 20px; font-size:11pt; font-weight:600; cursor:pointer;
-    box-shadow:0 4px 12px rgba(0,0,0,0.25); display:flex; align-items:center; gap:8px;
+  @media print {
+    .report-toolbar { display:none !important; }
+    body { padding-top:0 !important; }
+    /* Running header on pages 2+ */
+    .page-header { display:block !important; }
   }
-  .print-btn:hover { background:#0F766E; }
-  .print-btn svg { width:16px; height:16px; }
+  @media screen {
+    .page-header { display:none; }
+    body { padding-top:48px; }
+  }
+  .report-toolbar {
+    position:fixed; top:0; left:0; right:0; z-index:999;
+    background:white; border-bottom:1px solid #E2E8F0;
+    height:44px; display:flex; align-items:center;
+    justify-content:space-between; padding:0 32px;
+  }
+  .report-toolbar .toolbar-title { font-size:9.5pt; color:#475569; font-weight:600; }
+  .report-toolbar .toolbar-right { display:flex; align-items:center; gap:8px; }
+  .print-btn {
+    display:flex; align-items:center; gap:5px;
+    padding:5px 12px; font-size:9pt; font-weight:500;
+    background:white; color:#1B3A5C;
+    border:1px solid #CBD5E1; border-radius:6px; cursor:pointer;
+  }
+  .print-btn:hover { background:#F8FAFC; border-color:#94A3B8; }
+  .print-btn svg { width:13px; height:13px; }
+  .page-header {
+    border-bottom:1px solid #E2E8F0; padding:8px 48px;
+    display:flex; justify-content:space-between; align-items:center;
+    font-size:8pt; color:#94A3B8;
+  }
 </style>
 </head>
 <body>
-<button class="print-btn" onclick="window.print()">
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-    <path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
-    <rect x="6" y="14" width="12" height="8"/>
-  </svg>
-  Print / Save PDF
-</button>
+<div class="report-toolbar">
+  <span class="toolbar-title" id="toolbar-title">Financial Plan</span>
+  <div class="toolbar-right">
+    <button class="print-btn" onclick="window.print()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+        <rect x="6" y="14" width="12" height="8"/>
+      </svg>
+      Print / Save PDF
+    </button>
+  </div>
+</div>
+<script>
+  // Set toolbar title from page <title>
+  document.addEventListener('DOMContentLoaded', function() {
+    var t = document.getElementById('toolbar-title');
+    if (t) t.textContent = document.title.replace(/ [-–] .*$/, '');
+  });
+</script>
 ${body}</body>
 </html>`;
 }
@@ -143,6 +177,10 @@ function svgNeedBreakdown(sections: { label: string; value: number; color: strin
 </svg>`;
 }
 
+
+/** Configurable firm name used across all reports. Override by passing firmName in report data. */
+const DEFAULT_FIRM = "Financial Planning Suite";
+
 function buildCoverSheet(opts: {
   reportTitle:   string;
   reportSubtitle?: string;
@@ -155,7 +193,7 @@ function buildCoverSheet(opts: {
   province?:     string;
   dateStr:       string;
 }): string {
-  const firm = opts.firmName ?? "Knights of Columbus";
+  const firm = opts.firmName ?? DEFAULT_FIRM;
   return `
 <div style="min-height:100vh;display:flex;flex-direction:column;justify-content:space-between;background:white;page-break-after:always;">
 
@@ -204,6 +242,7 @@ function buildCoverSheet(opts: {
       The information contained herein is based on data provided and is subject to change.
       This document does not constitute financial, legal, or tax advice.
       Please consult qualified professionals before making financial decisions.
+      Prepared by ${esc(firm)}.
     </p>
   </div>
 
@@ -211,12 +250,13 @@ function buildCoverSheet(opts: {
 }
 
 
-export function generateFnaReport(data: { client: any; analysis: any; advisor?: any; }): string {
+export function generateFnaReport(data: { client: any; analysis: any; advisor?: any; firmName?: string; }): string {
   const { client, analysis } = data;
   const ws = analysis.worksheetData ?? {};
   const name = `${client.firstName} ${client.lastName}`;
   const dateStr = new Date().toLocaleDateString("en-CA", { year: "numeric", month: "long", day: "numeric" });
   const advisorName = data.advisor ? `${data.advisor.firstName} ${data.advisor.lastName}` : "Your Advisor";
+  const firm = data.firmName ?? DEFAULT_FIRM;
 
   const primaryName = ws.primaryName || analysis.primaryName || name;
   const spouseName  = ws.spouseName  || analysis.spouseName  || (client.spouseFirstName ? `${client.spouseFirstName} ${client.spouseLastName ?? ""}`.trim() : "");
@@ -274,23 +314,7 @@ export function generateFnaReport(data: { client: any; analysis: any; advisor?: 
     { label: "Income (D)",      value: Math.max(0, subtotalD), color: "#7C3AED" },
   ].filter(s => s.value > 0);
 
-  const cover = `
-<div class="cover">
-  <div style="font-size:10pt;letter-spacing:0.1em;text-transform:uppercase;opacity:0.7;margin-bottom:12px;">Knights of Columbus - Financial Planning Suite</div>
-  <h1>Family Needs Analysis</h1>
-  <h2>Life Insurance Needs Worksheet - ${dateStr}</h2>
-  <div style="height:2px;background:var(--teal);margin:12px 0;"></div>
-  <div class="cover-meta">
-    <div class="label">Prepared for</div>
-    <div class="value">${esc(name)}${spouseName ? ` &amp; ${esc(spouseName)}` : ""}</div>
-    <div class="label">Advisor</div><div class="value">${esc(advisorName)}</div>
-    <div class="label">Date</div><div class="value">${esc(dateStr)}</div>
-    <div class="label">Province</div><div class="value">${esc(client.province ?? "Canada")}</div>
-  </div>
-  <div style="margin-top:12px;font-size:8pt;color:var(--gray)">
-    This analysis is prepared for discussion purposes only. Life insurance needs are estimates based on information provided. This does not constitute financial, legal, or tax advice.
-  </div>
-</div>`;
+  const cover = buildCoverSheet({ reportTitle: "Family Needs Analysis", reportSubtitle: "Life Insurance Needs Worksheet", clientName: `${name}${spouseName ? ` & ${spouseName}` : ""}`, advisorName, firmName: firm, province: client.province ?? undefined, dateStr });
 
   const summarySection = `
 <div class="section">
@@ -485,7 +509,7 @@ export function generateFnaReport(data: { client: any; analysis: any; advisor?: 
 
   const body = [cover, summarySection, clientSection, needSection, totalSection, decisionSection,
     `<div style="padding:16px 48px;color:#94A3B8;font-size:8.5pt;border-top:1px solid #E2E8F0;margin-top:16px;page-break-before:avoid">
-      Report generated ${dateStr} - Knights of Columbus Financial Planning Suite - Confidential - prepared solely for ${esc(name)}.
+      Report generated ${dateStr} - ${esc(firm)} - Confidential - prepared solely for ${esc(name)}.
     </div>`].join("\n");
 
   return htmlShell(`Family Needs Analysis - ${name}`, body);
@@ -528,18 +552,19 @@ export function generateNetWorthReport(data: { client: any; netWorth: any[] }): 
   return htmlShell(`Net Worth Statement - ${name}`, body);
 }
 
-export function generateComprehensiveReport(data: { client: any; advisor?: any; netWorth: any[]; insurance: any | null; debts: any[]; education: any[]; }): string {
+export function generateComprehensiveReport(data: { client: any; advisor?: any; firmName?: string; netWorth: any[]; insurance: any | null; debts: any[]; education: any[]; }): string {
   const { client } = data;
   const name = `${client.firstName} ${client.lastName}`;
   const dateStr = new Date().toLocaleDateString("en-CA", { year: "numeric", month: "long", day: "numeric" });
   const advisorName = data.advisor ? `${data.advisor.firstName} ${data.advisor.lastName}` : "Your Advisor";
+  const firm = data.firmName ?? DEFAULT_FIRM;
   const assets = data.netWorth.filter(e => e.type === "asset");
   const liabs  = data.netWorth.filter(e => e.type === "liability");
   const totalA = assets.reduce((s, e) => s + v(e.value), 0);
   const totalL = liabs.reduce((s, e)  => s + v(e.value), 0);
   const ins = data.insurance;
   const spouseName = client.spouseFirstName ? `${client.spouseFirstName} ${client.spouseLastName ?? ""}`.trim() : undefined;
-  const cover = buildCoverSheet({ reportTitle: "Financial Plan", reportSubtitle: "Comprehensive Review", clientName: name, spouseName, advisorName, advisorEmail: data.advisor?.email, advisorPhone: data.advisor?.phone, province: client.province ?? undefined, dateStr });
+  const cover = buildCoverSheet({ reportTitle: "Financial Plan", reportSubtitle: "Comprehensive Review", clientName: name, spouseName, advisorName, advisorEmail: data.advisor?.email, advisorPhone: data.advisor?.phone, firmName: firm, province: client.province ?? undefined, dateStr });
   const body = cover + `
 <div class="section">
   <h2 class="section-title">Net Worth</h2>
@@ -570,7 +595,7 @@ ${data.education.length>0?`<div class="section"><h2 class="section-title">Educat
     ${data.education.map(e=>`<tr><td>${esc(e.childName)}</td><td>${esc(e.childBirthYear)}</td><td style="text-align:right">${fmtCad(v(e.currentBalance))}</td><td style="text-align:right">${fmtCad(v(e.annualContribution))}</td></tr>`).join("")}
   </tbody></table></div>`:""}
 <div style="padding:32px 48px;color:#94A3B8;font-size:8.5pt;border-top:1px solid #E2E8F0;margin-top:40px">
-  Report generated ${dateStr} - Knights of Columbus Financial Planning Suite - Confidential - prepared solely for ${esc(name)}.
+  Report generated ${dateStr} - ${esc(firm)} - Confidential - prepared solely for ${esc(name)}.
 </div>`;
   return htmlShell(`Financial Plan - ${name}`, body);
 }
@@ -716,10 +741,12 @@ export function generateRetirementReport(data: {
   retirement: Record<string, unknown> | null;
   taxYears?:  Record<string, unknown>[];
   sim?:       ReportSimulation;
+  firmName?:  string;
 }): string {
   const client = data.client as any; const retirement = data.retirement as any; const sim = data.sim as any;
   const name    = `${client.firstName} ${client.lastName}`;
   const dateStr = new Date().toLocaleDateString("en-CA", { year: "numeric", month: "long", day: "numeric" });
+  const firm    = data.firmName ?? DEFAULT_FIRM;
 
   const mcChart = sim ? svgMonteCarloChart(sim.percentileBands, sim.successRate) : "";
 
@@ -736,7 +763,7 @@ export function generateRetirementReport(data: {
     <td style="text-align:right">${fmtCad(Number(y.totalWealth))}</td>
   </tr>`).join("") ?? "";
 
-  const cover = buildCoverSheet({ reportTitle: "Retirement Income Projection", clientName: name, advisorName: "Your Advisor", dateStr });
+  const cover = buildCoverSheet({ reportTitle: "Retirement Income Projection", clientName: name, advisorName: "Your Advisor", firmName: firm, dateStr });
   const body = cover + `
 
 <div class="section">
@@ -786,16 +813,18 @@ export function generateInsuranceReport(data: {
   client:     ReportClient;
   insurance:  Record<string, unknown> | null;
   products:   ReportProduct[];
+  firmName?:  string;
 }): string {
   const client = data.client as any; const insurance = data.insurance as any; const products = (data.products ?? []) as any[];
   const name    = `${client.firstName} ${client.lastName}`;
   const dateStr = new Date().toLocaleDateString("en-CA", { year: "numeric", month: "long", day: "numeric" });
+  const firm    = data.firmName ?? DEFAULT_FIRM;
 
   const insProducts = products.filter(p =>
     p.type === "insurance" || p.type === "segregated_fund"
   );
 
-  const cover = buildCoverSheet({ reportTitle: "Insurance Needs Analysis", clientName: name, advisorName: "Your Advisor", dateStr });
+  const cover = buildCoverSheet({ reportTitle: "Insurance Needs Analysis", clientName: name, advisorName: "Your Advisor", firmName: firm, dateStr });
   const body = cover + `
 
 <div class="section">
@@ -864,12 +893,14 @@ export function generateCashFlowReport(data: {
   client: ReportClient;
   generatedAt: string;
   advisor?: { firstName?: string; lastName?: string } | null;
+  firmName?: string;
   expenses: Array<{ category: string; description?: string | null; monthlyAmount: string; isEssential: boolean; includeInRetirement: boolean; retirementAdjustmentPct?: number | null }>;
   retirement: Record<string, unknown> | null;
 }): string {
   const name = `${data.client.firstName} ${data.client.lastName}`;
   const dateStr = new Date(data.generatedAt).toLocaleDateString("en-CA", { year: "numeric", month: "long", day: "numeric" });
   const advisorName = data.advisor ? `${data.advisor.firstName} ${data.advisor.lastName}` : "Your Financial Advisor";
+  const firm = data.firmName ?? DEFAULT_FIRM;
 
   const totalMonthly = data.expenses.reduce((s, e) => s + parseFloat(e.monthlyAmount || "0"), 0);
   const totalAnnual = totalMonthly * 12;
@@ -908,19 +939,8 @@ export function generateCashFlowReport(data: {
   const retDesiredIncome = data.retirement ? parseFloat(String((data.retirement as any).desiredRetirementIncome || "0")) : 0;
   const retirementGap = retDesiredIncome - retirementMonthly * 12;
 
-  const body = `
-<div class="cover">
-  <div style="font-size:10pt;letter-spacing:0.1em;text-transform:uppercase;opacity:0.7;margin-bottom:12px">Knights of Columbus</div>
-  <h1>Cash Flow Statement</h1>
-  <h2>Detailed Household Budget  -  ${dateStr}</h2>
-  <div style="height:2px;background:rgba(255,255,255,0.3);margin:24px 0"></div>
-  <div class="cover-meta">
-    <div class="label">Prepared for</div><div class="value">${esc(name)}</div>
-    <div class="label">Advisor</div><div class="value">${esc(advisorName)}</div>
-    <div class="label">Date</div><div class="value">${esc(dateStr)}</div>
-    <div class="label">Currency</div><div class="value">CAD</div>
-  </div>
-</div>
+  const coverHtml = buildCoverSheet({ reportTitle: "Cash Flow Statement", reportSubtitle: "Detailed Household Budget", clientName: name, advisorName, firmName: firm, dateStr });
+  const body = coverHtml + `
 <div class="section">
   <h2 class="section-title">Summary</h2>
   <div class="summary-grid" style="grid-template-columns:repeat(4,1fr)">
@@ -946,7 +966,7 @@ export function generateCashFlowReport(data: {
     </tbody>
   </table>`}
 </div>
-<div class="footer"><span>Knights of Columbus  -  Confidential</span><span>${esc(name)}  -  Cash Flow Statement  -  ${esc(dateStr)}</span></div>`;
+<div class="footer"><span>${esc(firm)}  -  Confidential</span><span>${esc(name)}  -  Cash Flow Statement  -  ${esc(dateStr)}</span></div>`;
 
   return htmlShell(`Cash Flow Statement  -  ${name}`, body);
 }
@@ -956,11 +976,13 @@ export function generateAssetAllocationReport(data: {
   client: ReportClient;
   generatedAt: string;
   advisor?: { firstName?: string; lastName?: string } | null;
+  firmName?: string;
   netWorth: ReportNetWorthEntry[];
 }): string {
   const name = `${data.client.firstName} ${data.client.lastName}`;
   const dateStr = new Date(data.generatedAt).toLocaleDateString("en-CA", { year: "numeric", month: "long", day: "numeric" });
   const advisorName = data.advisor ? `${data.advisor.firstName} ${data.advisor.lastName}` : "Your Financial Advisor";
+  const firm = data.firmName ?? DEFAULT_FIRM;
 
   const investments = data.netWorth.filter(e => e.type === "asset" && e.category === "Investments");
   const totalInvested = investments.reduce((s, e) => s + parseFloat(String(e.value) || "0"), 0);
@@ -1001,19 +1023,7 @@ export function generateAssetAllocationReport(data: {
     .filter(([, v]) => totalInvested > 0 && v / totalInvested > 0.5)
     .map(([k]) => `<div class="callout warn"><strong>Concentration Risk:</strong> Over 50% of investments are in ${esc(k)} accounts. Consider diversifying across account types.</div>`).join("");
 
-  const body = `
-<div class="cover">
-  <div style="font-size:10pt;letter-spacing:0.1em;text-transform:uppercase;opacity:0.7;margin-bottom:12px">Knights of Columbus</div>
-  <h1>Asset Allocation & Mix</h1>
-  <h2>Investment Portfolio Review  -  ${dateStr}</h2>
-  <div style="height:2px;background:rgba(255,255,255,0.3);margin:24px 0"></div>
-  <div class="cover-meta">
-    <div class="label">Prepared for</div><div class="value">${esc(name)}</div>
-    <div class="label">Advisor</div><div class="value">${esc(advisorName)}</div>
-    <div class="label">Total Invested</div><div class="value">${fmtCad(totalInvested)}</div>
-    <div class="label">Holdings</div><div class="value">${investments.length}</div>
-  </div>
-</div>
+  const body = buildCoverSheet({ reportTitle: "Asset Allocation & Mix", reportSubtitle: "Investment Portfolio Review", clientName: name, advisorName, firmName: firm, dateStr }) + `
 <div class="section">
   <h2 class="section-title">Allocation by Account Type</h2>
   ${warnings}
@@ -1037,7 +1047,7 @@ export function generateAssetAllocationReport(data: {
     <tbody>${holdingRows}</tbody>
   </table>
 </div>
-<div class="footer"><span>Knights of Columbus  -  Confidential</span><span>${esc(name)}  -  Asset Allocation  -  ${esc(dateStr)}</span></div>`;
+<div class="footer"><span>${esc(firm)}  -  Confidential</span><span>${esc(name)}  -  Asset Allocation  -  ${esc(dateStr)}</span></div>`;
 
   return htmlShell(`Asset Allocation  -  ${name}`, body);
 }
@@ -1047,6 +1057,7 @@ export function generateRetirementReadinessReport(data: {
   client: ReportClient;
   generatedAt: string;
   advisor?: { firstName?: string; lastName?: string } | null;
+  firmName?: string;
   retirement: Record<string, unknown> | null;
   expenses: Array<{ monthlyAmount: string; includeInRetirement: boolean; retirementAdjustmentPct?: number | null }>;
   simulationResult?: ReportSimulation;
@@ -1055,6 +1066,7 @@ export function generateRetirementReadinessReport(data: {
   const name = `${data.client.firstName} ${data.client.lastName}`;
   const dateStr = new Date(data.generatedAt).toLocaleDateString("en-CA", { year: "numeric", month: "long", day: "numeric" });
   const advisorName = data.advisor ? `${data.advisor.firstName} ${data.advisor.lastName}` : "Your Financial Advisor";
+  const firm = data.firmName ?? DEFAULT_FIRM;
   const r = data.retirement as any;
 
   const retirementExpenses = data.expenses
@@ -1090,19 +1102,7 @@ export function generateRetirementReadinessReport(data: {
   ${svgMonteCarloChart(data.simulationResult.percentileBands, data.simulationResult.successRate)}
 </div>` : "";
 
-  const body = `
-<div class="cover">
-  <div style="font-size:10pt;letter-spacing:0.1em;text-transform:uppercase;opacity:0.7;margin-bottom:12px">Knights of Columbus</div>
-  <h1>Retirement Readiness</h1>
-  <h2>Decumulation Projection  -  ${dateStr}</h2>
-  <div style="height:2px;background:rgba(255,255,255,0.3);margin:24px 0"></div>
-  <div class="cover-meta">
-    <div class="label">Prepared for</div><div class="value">${esc(name)}</div>
-    <div class="label">Advisor</div><div class="value">${esc(advisorName)}</div>
-    <div class="label">Current Age</div><div class="value">${r ? esc(String(r.currentAge)) : " - "}</div>
-    <div class="label">Target Retirement</div><div class="value">Age ${r ? esc(String(r.retirementAge)) : " - "} (${yearsToRetirement} years)</div>
-  </div>
-</div>
+  const body = buildCoverSheet({ reportTitle: "Retirement Readiness", reportSubtitle: "Decumulation Projection", clientName: name, advisorName, firmName: firm, province: data.client.province ?? undefined, dateStr }) + `
 <div class="section">
   <h2 class="section-title">Readiness Score</h2>
   <div style="display:flex;align-items:center;gap:32px;margin-bottom:20px">
@@ -1131,7 +1131,7 @@ export function generateRetirementReadinessReport(data: {
   <div class="callout"><strong>Note:</strong> CPP and OAS estimates are simplified averages for planning purposes. Actual amounts depend on contribution history and election age. Consult Service Canada for personalized estimates.</div>
 </div>
 ${simSection}
-<div class="footer"><span>Knights of Columbus  -  Confidential</span><span>${esc(name)}  -  Retirement Readiness  -  ${esc(dateStr)}</span></div>`;
+<div class="footer"><span>${esc(firm)}  -  Confidential</span><span>${esc(name)}  -  Retirement Readiness  -  ${esc(dateStr)}</span></div>`;
 
   return htmlShell(`Retirement Readiness  -  ${name}`, body);
 }
@@ -1141,6 +1141,7 @@ export function generateGoalStatusReport(data: {
   client: ReportClient;
   generatedAt: string;
   advisor?: { firstName?: string; lastName?: string } | null;
+  firmName?: string;
   plans: Array<{ id: number; name?: string | null; status?: string | null; goalAmount?: string | null; targetDate?: string | null; riskTolerance?: string | null; createdAt?: string | Date | null }>;
   education: Array<{ childName?: string | null; targetAmount?: string | null; currentBalance?: string | null; targetAge?: number | null; childAge?: number | null }>;
   retirement: Record<string, unknown> | null;
@@ -1149,6 +1150,7 @@ export function generateGoalStatusReport(data: {
   const name = `${data.client.firstName} ${data.client.lastName}`;
   const dateStr = new Date(data.generatedAt).toLocaleDateString("en-CA", { year: "numeric", month: "long", day: "numeric" });
   const advisorName = data.advisor ? `${data.advisor.firstName} ${data.advisor.lastName}` : "Your Financial Advisor";
+  const firm = data.firmName ?? DEFAULT_FIRM;
 
   const totalAssets = data.netWorth.filter(e => e.type === "asset").reduce((s, e) => s + parseFloat(String(e.value) || "0"), 0);
   const totalLiabilities = data.netWorth.filter(e => e.type === "liability").reduce((s, e) => s + parseFloat(String(e.value) || "0"), 0);
@@ -1188,19 +1190,7 @@ export function generateGoalStatusReport(data: {
   const needed = r ? parseFloat(String(r.desiredRetirementIncome || "0")) / 0.04 : 0;
   const retirementProgress = needed > 0 ? Math.min(100, Math.round(projBalance / needed * 100)) : 0;
 
-  const body = `
-<div class="cover">
-  <div style="font-size:10pt;letter-spacing:0.1em;text-transform:uppercase;opacity:0.7;margin-bottom:12px">Knights of Columbus</div>
-  <h1>Goal Status Report</h1>
-  <h2>Progress Dashboard  -  ${dateStr}</h2>
-  <div style="height:2px;background:rgba(255,255,255,0.3);margin:24px 0"></div>
-  <div class="cover-meta">
-    <div class="label">Prepared for</div><div class="value">${esc(name)}</div>
-    <div class="label">Advisor</div><div class="value">${esc(advisorName)}</div>
-    <div class="label">Active Goals</div><div class="value">${data.plans.length + data.education.length + (r ? 1 : 0)}</div>
-    <div class="label">Date</div><div class="value">${esc(dateStr)}</div>
-  </div>
-</div>
+  const body = buildCoverSheet({ reportTitle: "Goal Status Report", reportSubtitle: "Progress Dashboard", clientName: name, advisorName, firmName: firm, dateStr }) + `
 <div class="section">
   <h2 class="section-title">Retirement Goal</h2>
   ${r ? `<div class="summary-grid" style="grid-template-columns:repeat(3,1fr)">
@@ -1224,7 +1214,7 @@ ${data.plans.length > 0 ? `<div class="section">
     <tbody>${planRows}</tbody>
   </table>
 </div>` : ""}
-<div class="footer"><span>Knights of Columbus  -  Confidential</span><span>${esc(name)}  -  Goal Status  -  ${esc(dateStr)}</span></div>`;
+<div class="footer"><span>${esc(firm)}  -  Confidential</span><span>${esc(name)}  -  Goal Status  -  ${esc(dateStr)}</span></div>`;
 
   return htmlShell(`Goal Status  -  ${name}`, body);
 }
@@ -1234,6 +1224,7 @@ export function generateInsuranceAuditReport(data: {
   client: ReportClient;
   generatedAt: string;
   advisor?: { firstName?: string; lastName?: string } | null;
+  firmName?: string;
   insurance: Record<string, unknown> | null;
   products: Array<{ productType?: string | null; productName?: string | null; coverageAmount?: string | null; premium?: string | null; status?: string | null }>;
   netWorth: ReportNetWorthEntry[];
@@ -1241,6 +1232,7 @@ export function generateInsuranceAuditReport(data: {
   const name = `${data.client.firstName} ${data.client.lastName}`;
   const dateStr = new Date(data.generatedAt).toLocaleDateString("en-CA", { year: "numeric", month: "long", day: "numeric" });
   const advisorName = data.advisor ? `${data.advisor.firstName} ${data.advisor.lastName}` : "Your Financial Advisor";
+  const firm = data.firmName ?? DEFAULT_FIRM;
 
   const ins = data.insurance as any;
   const totalCoverage = ins ? parseFloat(String(ins.primaryCoveragePurchased || "0")) + parseFloat(String(ins.spouseCoveragePurchased || "0")) : 0;
@@ -1259,19 +1251,7 @@ export function generateInsuranceAuditReport(data: {
       <td><span class="badge ${p.status === "active" ? "badge-green" : "badge-amber"}">${esc(p.status || "unknown")}</span></td>
     </tr>`).join("");
 
-  const body = `
-<div class="cover">
-  <div style="font-size:10pt;letter-spacing:0.1em;text-transform:uppercase;opacity:0.7;margin-bottom:12px">Knights of Columbus</div>
-  <h1>Risk Management & Insurance Audit</h1>
-  <h2>Coverage Review  -  ${dateStr}</h2>
-  <div style="height:2px;background:rgba(255,255,255,0.3);margin:24px 0"></div>
-  <div class="cover-meta">
-    <div class="label">Prepared for</div><div class="value">${esc(name)}</div>
-    <div class="label">Advisor</div><div class="value">${esc(advisorName)}</div>
-    <div class="label">Total Coverage</div><div class="value">${fmtCad(totalCoverage)}</div>
-    <div class="label">Monthly Premiums</div><div class="value">${fmtCad(totalPremiums)}/mo</div>
-  </div>
-</div>
+  const body = buildCoverSheet({ reportTitle: "Risk Management & Insurance Audit", reportSubtitle: "Coverage Review", clientName: name, advisorName, firmName: firm, dateStr }) + `
 <div class="section">
   <h2 class="section-title">Coverage Summary</h2>
   <div class="summary-grid" style="grid-template-columns:repeat(4,1fr)">
@@ -1298,7 +1278,7 @@ ${data.products.length > 0 ? `<div class="section">
     <tbody>${productRows}</tbody>
   </table>
 </div>` : ""}
-<div class="footer"><span>Knights of Columbus  -  Confidential</span><span>${esc(name)}  -  Insurance Audit  -  ${esc(dateStr)}</span></div>`;
+<div class="footer"><span>${esc(firm)}  -  Confidential</span><span>${esc(name)}  -  Insurance Audit  -  ${esc(dateStr)}</span></div>`;
 
   return htmlShell(`Insurance Audit  -  ${name}`, body);
 }
@@ -1308,6 +1288,7 @@ export function generateEstateSummaryReport(data: {
   client: ReportClient;
   generatedAt: string;
   advisor?: { firstName?: string; lastName?: string } | null;
+  firmName?: string;
   estateNotes: Array<{ category?: string | null; title?: string | null; content?: string | null }>;
   netWorth: ReportNetWorthEntry[];
   products: Array<{ productType?: string | null; productName?: string | null; coverageAmount?: string | null; beneficiary?: string | null }>;
@@ -1315,6 +1296,7 @@ export function generateEstateSummaryReport(data: {
   const name = `${data.client.firstName} ${data.client.lastName}`;
   const dateStr = new Date(data.generatedAt).toLocaleDateString("en-CA", { year: "numeric", month: "long", day: "numeric" });
   const advisorName = data.advisor ? `${data.advisor.firstName} ${data.advisor.lastName}` : "Your Financial Advisor";
+  const firm = data.firmName ?? DEFAULT_FIRM;
 
   const totalAssets = data.netWorth.filter(e => e.type === "asset").reduce((s, e) => s + parseFloat(String(e.value) || "0"), 0);
   const totalLiabilities = data.netWorth.filter(e => e.type === "liability").reduce((s, e) => s + parseFloat(String(e.value) || "0"), 0);
@@ -1347,19 +1329,7 @@ export function generateEstateSummaryReport(data: {
       <td>${(e as any).accountType || " - "}</td>
     </tr>`).join("");
 
-  const body = `
-<div class="cover">
-  <div style="font-size:10pt;letter-spacing:0.1em;text-transform:uppercase;opacity:0.7;margin-bottom:12px">Knights of Columbus</div>
-  <h1>Estate & Beneficiary Summary</h1>
-  <h2>Estate Distribution Review  -  ${dateStr}</h2>
-  <div style="height:2px;background:rgba(255,255,255,0.3);margin:24px 0"></div>
-  <div class="cover-meta">
-    <div class="label">Prepared for</div><div class="value">${esc(name)}</div>
-    <div class="label">Advisor</div><div class="value">${esc(advisorName)}</div>
-    <div class="label">Estimated Estate Value</div><div class="value">${fmtCad(estateValue)}</div>
-    <div class="label">Total Assets</div><div class="value">${fmtCad(totalAssets)}</div>
-  </div>
-</div>
+  const body = buildCoverSheet({ reportTitle: "Estate & Beneficiary Summary", reportSubtitle: "Estate Distribution Review", clientName: name, advisorName, firmName: firm, province: data.client.province ?? undefined, dateStr }) + `
 <div class="section">
   <h2 class="section-title">Estate Checklist</h2>
   <table>
@@ -1379,7 +1349,7 @@ export function generateEstateSummaryReport(data: {
     <tbody>${assetDistributionRows}</tbody>
   </table>
 </div>
-<div class="footer"><span>Knights of Columbus  -  Confidential</span><span>${esc(name)}  -  Estate Summary  -  ${esc(dateStr)}</span></div>`;
+<div class="footer"><span>${esc(firm)}  -  Confidential</span><span>${esc(name)}  -  Estate Summary  -  ${esc(dateStr)}</span></div>`;
 
   return htmlShell(`Estate Summary  -  ${name}`, body);
 }
@@ -1389,6 +1359,7 @@ export function generateTaxStrategyReport(data: {
   client: ReportClient;
   generatedAt: string;
   advisor?: { firstName?: string; lastName?: string } | null;
+  firmName?: string;
   taxNotes: Array<{ category?: string | null; title?: string | null; content?: string | null; taxYear?: number | string | null }>;
   netWorth: ReportNetWorthEntry[];
   retirement: Record<string, unknown> | null;
@@ -1396,6 +1367,7 @@ export function generateTaxStrategyReport(data: {
   const name = `${data.client.firstName} ${data.client.lastName}`;
   const dateStr = new Date(data.generatedAt).toLocaleDateString("en-CA", { year: "numeric", month: "long", day: "numeric" });
   const advisorName = data.advisor ? `${data.advisor.firstName} ${data.advisor.lastName}` : "Your Financial Advisor";
+  const firm = data.firmName ?? DEFAULT_FIRM;
 
   const rrspTotal = data.netWorth.filter(e => e.type === "asset" && ((e as any).accountType === "RRSP" || e.name?.toUpperCase().includes("RRSP"))).reduce((s, e) => s + parseFloat(String(e.value) || "0"), 0);
   const tfsaTotal = data.netWorth.filter(e => e.type === "asset" && ((e as any).accountType === "TFSA" || e.name?.toUpperCase().includes("TFSA"))).reduce((s, e) => s + parseFloat(String(e.value) || "0"), 0);
@@ -1409,19 +1381,7 @@ export function generateTaxStrategyReport(data: {
       <td style="font-size:9pt">${esc((n.content || "").substring(0, 120))}${(n.content || "").length > 120 ? "G - " : ""}</td>
     </tr>`).join("");
 
-  const body = `
-<div class="cover">
-  <div style="font-size:10pt;letter-spacing:0.1em;text-transform:uppercase;opacity:0.7;margin-bottom:12px">Knights of Columbus</div>
-  <h1>Tax Efficiency Strategy</h1>
-  <h2>Annual Tax Review  -  ${dateStr}</h2>
-  <div style="height:2px;background:rgba(255,255,255,0.3);margin:24px 0"></div>
-  <div class="cover-meta">
-    <div class="label">Prepared for</div><div class="value">${esc(name)}</div>
-    <div class="label">Advisor</div><div class="value">${esc(advisorName)}</div>
-    <div class="label">RRSP Balance</div><div class="value">${fmtCad(rrspTotal)}</div>
-    <div class="label">TFSA Balance</div><div class="value">${fmtCad(tfsaTotal)}</div>
-  </div>
-</div>
+  const body = buildCoverSheet({ reportTitle: "Tax Efficiency Strategy", reportSubtitle: "Annual Tax Review", clientName: name, advisorName, firmName: firm, province: data.client.province ?? undefined, dateStr }) + `
 <div class="section">
   <h2 class="section-title">Account Structure Overview</h2>
   <div class="summary-grid">
@@ -1451,7 +1411,7 @@ ${data.taxNotes.length > 0 ? `<div class="section">
   <h3>Income Splitting</h3>
   <p>Spousal RRSP, T1032 pension income splitting, and prescribed rate loans can significantly reduce household tax burden.</p>
 </div>
-<div class="footer"><span>Knights of Columbus  -  Confidential</span><span>${esc(name)}  -  Tax Strategy  -  ${esc(dateStr)}</span></div>`;
+<div class="footer"><span>${esc(firm)}  -  Confidential</span><span>${esc(name)}  -  Tax Strategy  -  ${esc(dateStr)}</span></div>`;
 
   return htmlShell(`Tax Strategy  -  ${name}`, body);
 }
@@ -1461,6 +1421,7 @@ export function generateOnePagePlan(data: {
   client: ReportClient;
   generatedAt: string;
   advisor?: { firstName?: string; lastName?: string; email?: string } | null;
+  firmName?: string;
   netWorth: ReportNetWorthEntry[];
   retirement: Record<string, unknown> | null;
   insurance: Record<string, unknown> | null;
@@ -1473,6 +1434,7 @@ export function generateOnePagePlan(data: {
   const name = `${data.client.firstName} ${data.client.lastName}`;
   const dateStr = new Date(data.generatedAt).toLocaleDateString("en-CA", { year: "numeric", month: "long", day: "numeric" });
   const advisorName = data.advisor ? `${data.advisor.firstName} ${data.advisor.lastName}` : "Your Financial Advisor";
+  const firm = data.firmName ?? DEFAULT_FIRM;
 
   const totalAssets = data.netWorth.filter(e => e.type === "asset").reduce((s, e) => s + parseFloat(String(e.value) || "0"), 0);
   const totalLiabilities = data.netWorth.filter(e => e.type === "liability").reduce((s, e) => s + parseFloat(String(e.value) || "0"), 0);
@@ -1518,7 +1480,7 @@ export function generateOnePagePlan(data: {
 <div class="one-page">
   <div class="op-header">
     <div>
-      <div class="op-logo">Knights of Columbus</div>
+      <div class="op-logo">${esc(firm)}</div>
       <div class="op-title">${esc(name)}</div>
       <div class="op-subtitle">One-Page Financial Plan - ${esc(dateStr)} - ${esc(advisorName)}</div>
     </div>
@@ -1566,7 +1528,7 @@ export function generateOnePagePlan(data: {
 
   <div class="op-footer">
     <span>This document is for discussion purposes only and does not constitute financial, tax, or legal advice.</span>
-    <span>Knights of Columbus - ${esc(advisorName)} - ${esc(dateStr)}</span>
+    <span>${esc(firm)} - ${esc(advisorName)} - ${esc(dateStr)}</span>
   </div>
 </div>`;
 

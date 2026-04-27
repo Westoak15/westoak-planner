@@ -141,7 +141,7 @@ function calcProjection(f: FormState) {
   const funded    = desiredAtRet > 0 ? Math.min(100, Math.round((swr / desiredAtRet) * 100)) : 100;
   const shortfall = surplus < 0 ? Math.abs(surplus) : 0;
 
-  return { projTotal, govIncome, withdrawal: Math.round(withdrawal), surplus, funded, shortfall, desiredAtRet: Math.round(desiredAtRet) };
+  return { projTotal, govIncome, withdrawal: Math.round(withdrawal), surplus, funded, shortfall, desiredAtRet: Math.round(desiredAtRet), cppAdjusted: Math.round(cppAnnual), oasAdjusted: Math.round(oasAnnual) };
 }
 
 function fmt(n: number) {
@@ -231,7 +231,7 @@ export function RetirementProjectionForm({ clientId, clientName, projection, onS
   // ── Metric cards ────────────────────────────────────────────────────────────
   const metrics = [
     { label: `Projected portfolio at ${f.retirementAge}`, value: fmt(calc.projTotal),    sub: "RRSP · TFSA · Non-Reg" },
-    { label: "Guaranteed income / yr",                    value: fmt(calc.govIncome),    sub: "CPP + OAS + Pension" },
+    { label: "Guaranteed income / yr",                    value: fmt(calc.govIncome),    sub: `CPP ${fmt(calc.cppAdjusted)}/yr · OAS ${fmt(calc.oasAdjusted)}/yr · Pension` },
     { label: "Portfolio withdrawal / yr",                  value: fmt(calc.withdrawal),   sub: "needed from investments" },
     {
       label: calc.surplus >= 0 ? "Surplus / yr" : "Shortfall / yr",
@@ -338,7 +338,7 @@ export function RetirementProjectionForm({ clientId, clientName, projection, onS
         </div>
         <div className="grid grid-cols-4 gap-3">
           <div>
-            <label className="block text-xs text-gray-500 mb-1">CPP monthly ($)</label>
+            <label className="block text-xs text-gray-500 mb-1">CPP monthly at 65 ($)</label>
             <input type="number" value={f.cppMonthly} onChange={set("cppMonthly")} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400" />
           </div>
           <div>
@@ -358,7 +358,7 @@ export function RetirementProjectionForm({ clientId, clientName, projection, onS
             </select>
           </div>
           <div>
-            <label className="block text-xs text-gray-500 mb-1">OAS monthly ($)</label>
+            <label className="block text-xs text-gray-500 mb-1">OAS monthly at 65 ($)</label>
             <input type="number" value={f.oasMonthly} onChange={set("oasMonthly")} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400" />
           </div>
           <div>

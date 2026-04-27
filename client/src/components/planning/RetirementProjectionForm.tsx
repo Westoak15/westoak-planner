@@ -150,8 +150,30 @@ function calcProjection(f: FormState) {
     ? projTotal * realRate / (1 - Math.pow(1 + realRate, -yInRet))
     : projTotal / Math.max(1, yInRet);
 
-  const surplus  = Math.round(swr - withdrawal);
-  const funded   = desiredAtRet > 0 ? Math.min(100, Math.round((swr / desiredAtRet) * 100)) : 100;
+  const surplus       = Math.round(swr - withdrawal);
+  const funded        = desiredAtRet > 0 ? Math.min(100, Math.round((swr / desiredAtRet) * 100)) : 100;
+  // Non-inflation-adjusted: compare swr against today's desired income
+  const fundedNominal = desired > 0 ? Math.min(100, Math.round((swr / desired) * 100)) : 100;
+
+  // RRIF: RRSP must convert by Dec 31 of the year client turns 71.
+  // Defer RRSP withdrawals — RRSP keeps growing tax-deferred to 71, then RRIF minimums apply.
+  const rrifAge = 71;
+  const yearsRrspGrows = Math.max(0, rrifAge - ret); // extra RRSP growth after retirement before RRIF
+  const rrspAtRrif = Math.round(projRrsp * Math.pow(1 + rate, yearsRrspGrows));
+
+  // RRIF minimum factors (CRA prescribed, age 71-95+)
+  const RRIF_FACTORS: Record<number, number> = {
+    71: 0.0528, 72: 0.0540, 73: 0.0553, 74: 0.0567, 75: 0.0582,
+    76: 0.0598, 77: 0.0617, 78: 0.0636, 79: 0.0658, 80: 0.0682,
+    81: 0.0708, 82: 0.0738, 83: 0.0771, 84: 0.0808, 85: 0.0851,
+    86: 0.0899, 87: 0.0955, 88: 0.1021, 89: 0.1099, 90: 0.1192,
+    91: 0.1306, 92: 0.1449, 93: 0.1634, 94: 0.1879,
+  };
+  const rrifMinAtAge = (age: number, bal: number) => {
+    if (age < 71) return bal / Math.max(1, 90 - age); // formula: 1/(90-age)
+    return bal * (RRIF_FACTORS[Math.min(age, 94)] ?? 0.20);
+  };
+  const rrifMinYear71 = Math.round(rrifMinAtAge(71, rrspAtRrif));
 
   return {
     projTotal, projRrsp, projTfsa, projNonReg,
@@ -161,9 +183,11 @@ function calcProjection(f: FormState) {
     pensionAdjusted: Math.round(pensionAtRet),
     cppMonthlyAdjusted, oasMonthlyAdjusted,
     withdrawal: Math.round(withdrawal),
-    surplus, funded,
+    surplus, funded, fundedNominal,
     desiredToday: Math.round(desiredToday),
     desiredAtRet,
+    rrspAtRrif,
+    rrifMinYear71,
   };
 }
 
@@ -445,23 +469,35 @@ export function RetirementProjectionForm({ clientId, clientName, projection, onS
           ))}
         </div>
 
-        {/* Funding bar */}
+        {/* Funding bars */}
         <div>
           <div className="flex justify-between items-center mb-1.5">
-            <span className="text-xs text-gray-500">Income coverage</span>
+            <span className="text-xs text-gray-500">Income coverage — inflation-adjusted</span>
             <span className="text-sm font-medium" style={{ color: barColor }}>{calc.funded}% funded</span>
           </div>
+          <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden mb-3">
+            <div className="h-full rounded-full transition-all duration-300" style={{ width: `${calc.funded}%`, backgroundColor: barColor }} />
+          </div>
+          <div className="flex justify-between items-center mb-1.5">
+            <span className="text-xs text-gray-500">Income coverage — today's dollars (non-adjusted)</span>
+            <span className="text-sm font-medium" style={{ color: calc.fundedNominal >= 90 ? \#16a34a\ : calc.fundedNominal >= 70 ? \#d97706\ : \#dc2626\ }}>{calc.fundedNominal}% funded</span>
+          </div>
           <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-            <div
-              className="h-full rounded-full transition-all duration-300"
-              style={{ width: `${calc.funded}%`, backgroundColor: barColor }}
-            />
+            <div className="h-full rounded-full transition-all duration-300" style={{ width: `${calc.fundedNominal}%`, backgroundColor: calc.fundedNominal >= 90 ? \#16a34a\ : calc.fundedNominal >= 70 ? \#d97706\ : \#dc2626\ }} />
           </div>
           {calc.desiredAtRet > 0 && (
-            <p className="text-xs text-gray-400 mt-1.5">
+            <p className="text-xs text-gray-400 mt-2">
               Based on {(+f.expectedReturn - +f.inflationRate).toFixed(1)}% real return over {Math.max(1, +f.lifeExpectancy - +f.retirementAge)}-year retirement
               {" · "}Desired income inflation-adjusted to {fmt(calc.desiredAtRet)}/yr at age {f.retirementAge}
             </p>
+          )}
+          {calc.rrspAtRrif > 0 && +f.retirementAge < 71 && (
+            <div className="mt-3 p-3 bg-blue-50 rounded-lg border border-blue-100">
+              <p className="text-xs text-blue-700 font-medium">RRIF conversion at age 71</p>
+              <p className="text-xs text-blue-600 mt-0.5">
+                RRSP grows to {fmt(calc.rrspAtRrif)} by age 71 (deferred {71 - +f.retirementAge} years) · First year minimum withdrawal: {fmt(calc.rrifMinYear71)}/yr (5.28%)
+              </p>
+            </div>
           )}
         </div>
       </div>

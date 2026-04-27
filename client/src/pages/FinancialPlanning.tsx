@@ -2412,7 +2412,11 @@ export function AITab({ clientId }: { clientId: number }) {
     }
     return Array.from(groups.entries())
       .sort(([a], [b]) => b.localeCompare(a))
-      .map(([runId, recs]) => ({ runId, recs, date: new Date(runId) }));
+      .map(([runId, recs]) => ({
+        runId,
+        recs,
+        date: runId !== "legacy" && !isNaN(Date.parse(runId)) ? new Date(runId) : null,
+      }));
   })();
 
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
@@ -2504,7 +2508,7 @@ export function AITab({ clientId }: { clientId: number }) {
         const summary = sessionSummary(recs);
         const sorted  = [...recs].sort((a, b) => (priorityOrder[a.priority] ?? 1) - (priorityOrder[b.priority] ?? 1));
         const isLegacy = runId === "legacy" || !recs[0]?.runId;
-        const dateStr = isLegacy
+        const dateStr = isLegacy || !date
           ? "Previous recommendations"
           : date.toLocaleDateString("en-CA", { weekday: "short", year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
 

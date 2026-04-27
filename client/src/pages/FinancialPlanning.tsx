@@ -1,4 +1,5 @@
 import { useQueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { queryClient } from "../lib/queryClient";
 import { api } from "../lib/api";
 import { useState, useMemo, useEffect, Component, type ReactNode } from "react";
 // trying to force build this file

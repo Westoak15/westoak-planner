@@ -67,24 +67,14 @@ function htmlShell(title: string, body: string): string {
   }
 </style>
 <style>
-  @media print {
-    .report-toolbar { display:none !important; }
-    body { padding-top:0 !important; }
-    /* Running header on pages 2+ */
-    .page-header { display:block !important; }
-  }
-  @media screen {
-    .page-header { display:none; }
-    body { padding-top:48px; }
-  }
+  @media print { .report-toolbar { display:none !important; } body { padding-top:0 !important; } }
+  @media screen { body { padding-top:46px; } }
   .report-toolbar {
     position:fixed; top:0; left:0; right:0; z-index:999;
-    background:white; border-bottom:1px solid #E2E8F0;
-    height:44px; display:flex; align-items:center;
-    justify-content:space-between; padding:0 32px;
+    background:white; border-bottom:1px solid #E2E8F0; height:46px;
+    display:flex; align-items:center; justify-content:space-between; padding:0 32px;
   }
-  .report-toolbar .toolbar-title { font-size:9.5pt; color:#475569; font-weight:600; }
-  .report-toolbar .toolbar-right { display:flex; align-items:center; gap:8px; }
+  .report-toolbar .tb-title { font-size:9.5pt; font-weight:600; color:#475569; }
   .print-btn {
     display:flex; align-items:center; gap:5px;
     padding:5px 12px; font-size:9pt; font-weight:500;
@@ -93,33 +83,20 @@ function htmlShell(title: string, body: string): string {
   }
   .print-btn:hover { background:#F8FAFC; border-color:#94A3B8; }
   .print-btn svg { width:13px; height:13px; }
-  .page-header {
-    border-bottom:1px solid #E2E8F0; padding:8px 48px;
-    display:flex; justify-content:space-between; align-items:center;
-    font-size:8pt; color:#94A3B8;
-  }
 </style>
 </head>
 <body>
 <div class="report-toolbar">
-  <span class="toolbar-title" id="toolbar-title">Financial Plan</span>
-  <div class="toolbar-right">
-    <button class="print-btn" onclick="window.print()">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
-        <rect x="6" y="14" width="12" height="8"/>
-      </svg>
-      Print / Save PDF
-    </button>
-  </div>
+  <span class="tb-title" id="tb-title">Financial Plan</span>
+  <button class="print-btn" onclick="window.print()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+      <rect x="6" y="14" width="12" height="8"/>
+    </svg>
+    Print / Save PDF
+  </button>
 </div>
-<script>
-  // Set toolbar title from page <title>
-  document.addEventListener('DOMContentLoaded', function() {
-    var t = document.getElementById('toolbar-title');
-    if (t) t.textContent = document.title.replace(/ [-–] .*$/, '');
-  });
-</script>
+<script>document.addEventListener('DOMContentLoaded',function(){var t=document.getElementById('tb-title');if(t)t.textContent=document.title.replace(/ [-–].*/,'');});</script>
 ${body}</body>
 </html>`;
 }
@@ -178,7 +155,6 @@ function svgNeedBreakdown(sections: { label: string; value: number; color: strin
 }
 
 
-/** Configurable firm name used across all reports. Override by passing firmName in report data. */
 const DEFAULT_FIRM = "Financial Planning Suite";
 
 function buildCoverSheet(opts: {
@@ -747,10 +723,10 @@ export function generateRetirementReport(data: {
   const name    = `${client.firstName} ${client.lastName}`;
   const dateStr = new Date().toLocaleDateString("en-CA", { year: "numeric", month: "long", day: "numeric" });
   const firm    = data.firmName ?? DEFAULT_FIRM;
+  const cover = buildCoverSheet({ reportTitle: "Retirement Income Projection", clientName: name, advisorName: "Your Advisor", firmName: firm, dateStr });
 
   const mcChart = sim ? svgMonteCarloChart(sim.percentileBands, sim.successRate) : "";
 
-  // Year-by-year income table (first 20 years of retirement if available)
   const taxRows = (data.taxYears as any[])?.slice(0, 25).map((y: any) => `
   <tr>
     <td>${y.year}</td><td>${y.age}</td>
@@ -762,8 +738,6 @@ export function generateRetirementReport(data: {
     <td style="text-align:right">${pct(Number(y.effectiveRate))}</td>
     <td style="text-align:right">${fmtCad(Number(y.totalWealth))}</td>
   </tr>`).join("") ?? "";
-
-  const cover = buildCoverSheet({ reportTitle: "Retirement Income Projection", clientName: name, advisorName: "Your Advisor", firmName: firm, dateStr });
   const body = cover + `
 
 <div class="section">
@@ -819,11 +793,7 @@ export function generateInsuranceReport(data: {
   const name    = `${client.firstName} ${client.lastName}`;
   const dateStr = new Date().toLocaleDateString("en-CA", { year: "numeric", month: "long", day: "numeric" });
   const firm    = data.firmName ?? DEFAULT_FIRM;
-
-  const insProducts = products.filter(p =>
-    p.type === "insurance" || p.type === "segregated_fund"
-  );
-
+  const insProducts = products.filter(p => p.type === "insurance" || p.type === "segregated_fund");
   const cover = buildCoverSheet({ reportTitle: "Insurance Needs Analysis", clientName: name, advisorName: "Your Advisor", firmName: firm, dateStr });
   const body = cover + `
 
@@ -890,8 +860,7 @@ export function generateInsuranceReport(data: {
 // G - G -  Net Worth Statement G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - 
 
 export function generateCashFlowReport(data: {
-  client: ReportClient;
-  generatedAt: string;
+  client: ReportClient; generatedAt: string;
   advisor?: { firstName?: string; lastName?: string } | null;
   firmName?: string;
   expenses: Array<{ category: string; description?: string | null; monthlyAmount: string; isEssential: boolean; includeInRetirement: boolean; retirementAdjustmentPct?: number | null }>;
@@ -939,8 +908,7 @@ export function generateCashFlowReport(data: {
   const retDesiredIncome = data.retirement ? parseFloat(String((data.retirement as any).desiredRetirementIncome || "0")) : 0;
   const retirementGap = retDesiredIncome - retirementMonthly * 12;
 
-  const coverHtml = buildCoverSheet({ reportTitle: "Cash Flow Statement", reportSubtitle: "Detailed Household Budget", clientName: name, advisorName, firmName: firm, dateStr });
-  const body = coverHtml + `
+  const body = buildCoverSheet({ reportTitle: "Cash Flow Statement", reportSubtitle: "Detailed Household Budget", clientName: name, advisorName, firmName: firm, dateStr }) + `
 <div class="section">
   <h2 class="section-title">Summary</h2>
   <div class="summary-grid" style="grid-template-columns:repeat(4,1fr)">
@@ -973,8 +941,7 @@ export function generateCashFlowReport(data: {
 
 // G - G -  Asset Allocation & Mix Report G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - 
 export function generateAssetAllocationReport(data: {
-  client: ReportClient;
-  generatedAt: string;
+  client: ReportClient; generatedAt: string;
   advisor?: { firstName?: string; lastName?: string } | null;
   firmName?: string;
   netWorth: ReportNetWorthEntry[];
@@ -1054,8 +1021,7 @@ export function generateAssetAllocationReport(data: {
 
 // G - G -  Retirement Readiness / Decumulation G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - 
 export function generateRetirementReadinessReport(data: {
-  client: ReportClient;
-  generatedAt: string;
+  client: ReportClient; generatedAt: string;
   advisor?: { firstName?: string; lastName?: string } | null;
   firmName?: string;
   retirement: Record<string, unknown> | null;
@@ -1138,8 +1104,7 @@ ${simSection}
 
 // G - G -  Goal Status Report G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - 
 export function generateGoalStatusReport(data: {
-  client: ReportClient;
-  generatedAt: string;
+  client: ReportClient; generatedAt: string;
   advisor?: { firstName?: string; lastName?: string } | null;
   firmName?: string;
   plans: Array<{ id: number; name?: string | null; status?: string | null; goalAmount?: string | null; targetDate?: string | null; riskTolerance?: string | null; createdAt?: string | Date | null }>;
@@ -1221,8 +1186,7 @@ ${data.plans.length > 0 ? `<div class="section">
 
 // G - G -  Risk Management & Insurance Audit G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - 
 export function generateInsuranceAuditReport(data: {
-  client: ReportClient;
-  generatedAt: string;
+  client: ReportClient; generatedAt: string;
   advisor?: { firstName?: string; lastName?: string } | null;
   firmName?: string;
   insurance: Record<string, unknown> | null;
@@ -1285,8 +1249,7 @@ ${data.products.length > 0 ? `<div class="section">
 
 // G - G -  Estate & Beneficiary Summary G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - 
 export function generateEstateSummaryReport(data: {
-  client: ReportClient;
-  generatedAt: string;
+  client: ReportClient; generatedAt: string;
   advisor?: { firstName?: string; lastName?: string } | null;
   firmName?: string;
   estateNotes: Array<{ category?: string | null; title?: string | null; content?: string | null }>;
@@ -1356,8 +1319,7 @@ export function generateEstateSummaryReport(data: {
 
 // G - G -  Tax Efficiency Strategy G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - 
 export function generateTaxStrategyReport(data: {
-  client: ReportClient;
-  generatedAt: string;
+  client: ReportClient; generatedAt: string;
   advisor?: { firstName?: string; lastName?: string } | null;
   firmName?: string;
   taxNotes: Array<{ category?: string | null; title?: string | null; content?: string | null; taxYear?: number | string | null }>;

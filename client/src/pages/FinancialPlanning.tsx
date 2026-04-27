@@ -2598,7 +2598,7 @@ const { data: plans = [] } = useClientPlans(selectedClientId ?? 0);
               </div>
             )}
             {activeTab === "networth"   && <NetWorthTab      clientId={selectedClientId} />}
-            {activeTab === "retirement" && <RetirementTab clientId={selectedClientId} clientName={(selectedClient as any)?.firstName} />}
+            {activeTab === "retirement" && selectedClientId && <RetirementTab clientId={selectedClientId} clientName={(selectedClient as any)?.firstName} />}
             {activeTab === "insurance"  && <InsuranceTab     clientId={selectedClientId} planId={activePlanId} client={selectedClient} />}
             {activeTab === "resp"       && <RESPTab          clientId={selectedClientId} planId={activePlanId} />}
             {activeTab === "debt"       && <DebtTab          clientId={selectedClientId} planId={activePlanId} />}

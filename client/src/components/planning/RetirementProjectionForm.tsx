@@ -443,7 +443,7 @@ export function RetirementTab({ clientId, clientName }: { clientId: number; clie
   const { data: projections = [], isLoading } = useQuery<RetirementProjection[]>({
     queryKey: [`/api/clients/${clientId}/retirement`],
     queryFn: () => apiFetch(`/api/clients/${clientId}/retirement`),
-    enabled: !!clientId,
+    enabled: !!clientId && clientId > 0,
   });
 
   const deleteMut = useMutation({

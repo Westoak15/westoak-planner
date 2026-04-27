@@ -2504,7 +2504,7 @@ export function AITab({ clientId }: { clientId: number }) {
 
       {/* Session cards */}
       {sessions.map(({ runId, recs, date }) => {
-        const open    = isExpanded(runId);
+        const open    = expanded.has(runId);
         const summary = sessionSummary(recs);
         const sorted  = [...recs].sort((a, b) => (priorityOrder[a.priority] ?? 1) - (priorityOrder[b.priority] ?? 1));
         const isLegacy = runId === "legacy" || !recs[0]?.runId;

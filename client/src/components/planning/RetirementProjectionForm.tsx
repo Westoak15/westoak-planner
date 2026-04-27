@@ -446,6 +446,61 @@ export function RetirementTab({ clientId, clientName }: { clientId: number; clie
     enabled: !!clientId && clientId > 0,
   });
 
+  // Fetch client profile, net worth entries and pension plans to seed new projections
+  const { data: clientData } = useQuery<any>({
+    queryKey: [`/api/clients/${clientId}`],
+    queryFn: () => apiFetch(`/api/clients/${clientId}`),
+    enabled: !!clientId && clientId > 0,
+  });
+
+  const { data: nwEntries = [] } = useQuery<any[]>({
+    queryKey: [`/api/clients/${clientId}/net-worth`],
+    queryFn: () => apiFetch(`/api/clients/${clientId}/net-worth`),
+    enabled: !!clientId && clientId > 0,
+  });
+
+  const { data: pensions = [] } = useQuery<any[]>({
+    queryKey: [`/api/clients/${clientId}/pensions`],
+    queryFn: () => apiFetch(`/api/clients/${clientId}/pensions`),
+    enabled: !!clientId && clientId > 0,
+  });
+
+  // Build seeded defaults from live data
+  const clientSeeds = (() => {
+    if (!clientData) return {};
+
+    const nwSum = (category: string, owner?: string) =>
+      nwEntries
+        .filter((e: any) => e.category === category && (!owner || e.owner === owner))
+        .reduce((s: number, e: any) => s + parseFloat(e.value || "0"), 0);
+
+    const rrsp   = nwSum("RRSP",           "primary") || nwSum("RRSP");
+    const tfsa   = nwSum("TFSA",           "primary") || nwSum("TFSA");
+    const nonReg = nwSum("Non-Registered", "primary") || nwSum("Non-Registered");
+
+    // DB pension annual income from pension tab
+    const pensionIncome = pensions.reduce((sum: number, p: any) => {
+      if (p.pensionType === "dbpp" && p.accrualRate && p.projectedYearsAtRetirement && p.bestAverageEarnings)
+        return sum + (Number(p.accrualRate) * Number(p.projectedYearsAtRetirement) * Number(p.bestAverageEarnings));
+      if (p.pensionType === "dcpp" && p.currentBalance)
+        return sum + Number(p.currentBalance) * 0.04;
+      return sum;
+    }, 0);
+
+    const dob = clientData.dateOfBirth ? new Date(clientData.dateOfBirth) : null;
+    const currentAge = dob ? new Date().getFullYear() - dob.getFullYear() : undefined;
+
+    return {
+      currentAge:              currentAge,
+      retirementAge:           clientData.retirementAge           ?? undefined,
+      desiredRetirementIncome: clientData.desiredRetirementIncome ?? undefined,
+      rrspBalance:             rrsp   > 0 ? String(Math.round(rrsp))   : undefined,
+      tfsaBalance:             tfsa   > 0 ? String(Math.round(tfsa))   : undefined,
+      nonRegBalance:           nonReg > 0 ? String(Math.round(nonReg)) : undefined,
+      pensionIncome:           pensionIncome > 0 ? String(Math.round(pensionIncome)) : undefined,
+    };
+  })();
+
   const deleteMut = useMutation({
     mutationFn: (id: number) => apiFetch(`/api/retirement/${id}`, { method: "DELETE" }),
     onSuccess: () => qc.invalidateQueries({ queryKey: [`/api/clients/${clientId}/retirement`] }),
@@ -456,7 +511,7 @@ export function RetirementTab({ clientId, clientName }: { clientId: number; clie
       <RetirementProjectionForm
         clientId={clientId}
         clientName={clientName}
-        projection={editing ?? undefined}
+        projection={editing ?? { ...clientSeeds } as any}
         onSaved={() => { setAdding(false); setEditing(null); }}
         onCancel={() => { setAdding(false); setEditing(null); }}
       />

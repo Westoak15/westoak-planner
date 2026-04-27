@@ -1374,7 +1374,7 @@ async function save() {
                   className={INPUT} />
                 <button type="button" onClick={() => setShowNew(s=>!s)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
-                  {showNew ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+          {tab === "retirement" && client && <RetirementTabNew clientId={client.id} clientName={client.firstName} />}
                 </button>
               </div>
               {/* Requirements */}

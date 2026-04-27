@@ -1188,9 +1188,7 @@ async function save() {
                   placeholder="Enter new password"
                   className={INPUT} />
                 <button type="button" onClick={() => setShowNew(s=>!s)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
-          {tab === "retirement" && client && (<QueryClientProvider client={queryClient}><RetirementTabNew clientId={client.id} clientName={client.firstName} /></QueryClientProvider>)}
-                </button>
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">                </button>
               </div>
               {/* Requirements */}
               {form.next && (
@@ -1375,7 +1373,8 @@ export default function App() {
           )}
 
           {tab === "networth"   && client && <NetWorthTabNew   clientId={client.id} client={client} />}
-          {tab === "retirement" && client && <RetirementTabNew clientId={client.id} clientName={client.firstName} />}
+          {tab === "retirement" && client && (<QueryClientProvider client={queryClient}><RetirementTabNew clientId={client.id} clientName={client.firstName} /></QueryClientProvider>)}
+          {tab === "retirement" && client && (<QueryClientProvider client={queryClient}><RetirementTabNew clientId={client.id} clientName={client.firstName} /></QueryClientProvider>)}
           {tab === "pension"    && client && <PensionTab clientId={client.id} client={client} person={person} />}
           {tab === "insurance" && client && <PoliciesTab clientId={client.id} client={client} person={person} />}
           {tab === "fna" && client && (
@@ -1416,6 +1415,7 @@ export default function App() {
     </div>
   );
 }
+
 
 
 

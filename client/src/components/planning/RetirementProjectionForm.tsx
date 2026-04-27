@@ -114,8 +114,15 @@ function calcProjection(f: FormState) {
   const projTotal = Math.round(pRrsp + pTfsa + pNonReg);
 
   // Guaranteed income at retirement (in today's dollars for simplicity)
-  const cppAnnual = ret >= cppAge ? cpp * 12 : 0;
-  const oasAnnual = ret >= oasAge ? oas * 12 : 0;
+  // CPP: -0.6%/month before 65, +0.7%/month after 65
+  const cppFactor = cppAge <= 65
+    ? 1 - 0.006 * (65 - cppAge) * 12
+    : 1 + 0.007 * (cppAge - 65) * 12;
+  // OAS: +0.6%/month after 65 (max defer to 70)
+  const oasFactor = oasAge <= 65 ? 1 : 1 + 0.006 * (oasAge - 65) * 12;
+
+  const cppAnnual = ret >= cppAge ? cpp * 12 * cppFactor : 0;
+  const oasAnnual = ret >= oasAge ? oas * 12 * oasFactor : 0;
   const govIncome = cppAnnual + oasAnnual + pension;
 
   // Desired income inflation-adjusted to retirement year
@@ -337,9 +344,17 @@ export function RetirementProjectionForm({ clientId, clientName, projection, onS
           <div>
             <label className="block text-xs text-gray-500 mb-1">CPP start age</label>
             <select value={f.cppStartAge} onChange={set("cppStartAge")} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400">
-              <option value={60}>60 — early (reduced)</option>
-              <option value={65}>65 — standard</option>
-              <option value={70}>70 — maximum</option>
+              <option value={60}>60 — reduced 36%</option>
+              <option value={61}>61 — reduced 30%</option>
+              <option value={62}>62 — reduced 24%</option>
+              <option value={63}>63 — reduced 18%</option>
+              <option value={64}>64 — reduced 12%</option>
+              <option value={65}>65 — standard (100%)</option>
+              <option value={66}>66 — enhanced 8.4%</option>
+              <option value={67}>67 — enhanced 16.8%</option>
+              <option value={68}>68 — enhanced 25.2%</option>
+              <option value={69}>69 — enhanced 33.6%</option>
+              <option value={70}>70 — maximum +42%</option>
             </select>
           </div>
           <div>
@@ -349,8 +364,12 @@ export function RetirementProjectionForm({ clientId, clientName, projection, onS
           <div>
             <label className="block text-xs text-gray-500 mb-1">OAS start age</label>
             <select value={f.oasStartAge} onChange={set("oasStartAge")} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400">
-              <option value={65}>65 — standard</option>
-              <option value={70}>70 — maximum</option>
+              <option value={65}>65 — standard (100%)</option>
+              <option value={66}>66 — enhanced 7.2%</option>
+              <option value={67}>67 — enhanced 14.4%</option>
+              <option value={68}>68 — enhanced 21.6%</option>
+              <option value={69}>69 — enhanced 28.8%</option>
+              <option value={70}>70 — maximum +36%</option>
             </select>
           </div>
         </div>

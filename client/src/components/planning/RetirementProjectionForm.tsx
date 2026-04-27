@@ -24,6 +24,7 @@ async function apiFetch(url: string, init?: RequestInit) {
 interface RetirementProjection {
   id?: number;
   clientId?: number;
+  person?: string;   // "primary" | "spouse"
   label?: string;
   currentAge?: number;
   retirementAge?: number;
@@ -237,6 +238,7 @@ export function RetirementProjectionForm({ clientId, clientName, projection, onS
   const saveMut = useMutation({
     mutationFn: async () => {
       const body: Record<string, unknown> = {
+        person:                  (projection as any)?.person ?? "primary",
         label:                   f.label || undefined,
         currentAge:              +f.currentAge,
         retirementAge:           +f.retirementAge,
@@ -547,48 +549,65 @@ export function RetirementProjectionForm({ clientId, clientName, projection, onS
 
 export function RetirementTab({ clientId, clientName }: { clientId: number; clientName?: string }) {
   const qc = useQueryClient();
+  const [view, setView] = useState<"primary" | "spouse" | "combined">("primary");
   const [adding, setAdding] = useState(false);
   const [editing, setEditing] = useState<RetirementProjection | null>(null);
 
-  const { data: projections = [], isLoading } = useQuery<RetirementProjection[]>({
+  // Fetch all projections for this client
+  const { data: allProjections = [], isLoading } = useQuery<RetirementProjection[]>({
     queryKey: [`/api/clients/${clientId}/retirement`],
     queryFn: () => apiFetch(`/api/clients/${clientId}/retirement`),
     enabled: !!clientId && clientId > 0,
   });
 
-  // Fetch client profile, net worth entries and pension plans to seed new projections
+  const primaryProjections = allProjections.filter(p => (p.person ?? "primary") === "primary");
+  const spouseProjections  = allProjections.filter(p => p.person === "spouse");
+
+  // Fetch supporting data for seeding new projections
   const { data: clientData } = useQuery<any>({
     queryKey: [`/api/clients/${clientId}`],
     queryFn: () => apiFetch(`/api/clients/${clientId}`),
     enabled: !!clientId && clientId > 0,
   });
-
   const { data: nwEntries = [] } = useQuery<any[]>({
     queryKey: [`/api/clients/${clientId}/net-worth`],
     queryFn: () => apiFetch(`/api/clients/${clientId}/net-worth`),
     enabled: !!clientId && clientId > 0,
   });
-
   const { data: pensions = [] } = useQuery<any[]>({
     queryKey: [`/api/clients/${clientId}/pensions`],
     queryFn: () => apiFetch(`/api/clients/${clientId}/pensions`),
     enabled: !!clientId && clientId > 0,
   });
 
-  // Build seeded defaults from live data
-  const clientSeeds = (() => {
+  const hasSpouse = !!(clientData?.spouseFirstName);
+
+  // Build seeded defaults for primary or spouse
+  const buildSeeds = (person: "primary" | "spouse") => {
     if (!clientData) return {};
-
     const nwSum = (category: string, owner?: string) =>
-      nwEntries
-        .filter((e: any) => e.category === category && (!owner || e.owner === owner))
-        .reduce((s: number, e: any) => s + parseFloat(e.value || "0"), 0);
+      nwEntries.filter((e: any) => e.category === category && (!owner || e.owner === owner))
+               .reduce((s: number, e: any) => s + parseFloat(e.value || "0"), 0);
 
-    const rrsp   = nwSum("RRSP",           "primary") || nwSum("RRSP");
-    const tfsa   = nwSum("TFSA",           "primary") || nwSum("TFSA");
+    if (person === "spouse") {
+      const rrsp   = nwSum("RRSP", "spouse");
+      const tfsa   = nwSum("TFSA", "spouse");
+      const nonReg = nwSum("Non-Registered", "spouse");
+      const dob    = clientData.spouseDateOfBirth ? new Date(clientData.spouseDateOfBirth) : null;
+      return {
+        person:                  "spouse",
+        currentAge:              dob ? new Date().getFullYear() - dob.getFullYear() : undefined,
+        retirementAge:           clientData.spouseRetirementAge ?? undefined,
+        desiredRetirementIncome: clientData.spouseDesiredRetirementIncome ?? undefined,
+        rrspBalance:             rrsp   > 0 ? String(Math.round(rrsp))   : undefined,
+        tfsaBalance:             tfsa   > 0 ? String(Math.round(tfsa))   : undefined,
+        nonRegBalance:           nonReg > 0 ? String(Math.round(nonReg)) : undefined,
+      };
+    }
+
+    const rrsp   = nwSum("RRSP", "primary")   || nwSum("RRSP");
+    const tfsa   = nwSum("TFSA", "primary")   || nwSum("TFSA");
     const nonReg = nwSum("Non-Registered", "primary") || nwSum("Non-Registered");
-
-    // DB pension annual income from pension tab
     const pensionIncome = pensions.reduce((sum: number, p: any) => {
       if (p.pensionType === "dbpp" && p.accrualRate && p.projectedYearsAtRetirement && p.bestAverageEarnings)
         return sum + (Number(p.accrualRate) * Number(p.projectedYearsAtRetirement) * Number(p.bestAverageEarnings));
@@ -596,20 +615,18 @@ export function RetirementTab({ clientId, clientName }: { clientId: number; clie
         return sum + Number(p.currentBalance) * 0.04;
       return sum;
     }, 0);
-
     const dob = clientData.dateOfBirth ? new Date(clientData.dateOfBirth) : null;
-    const currentAge = dob ? new Date().getFullYear() - dob.getFullYear() : undefined;
-
     return {
-      currentAge:              currentAge,
-      retirementAge:           clientData.retirementAge           ?? undefined,
+      person:                  "primary",
+      currentAge:              dob ? new Date().getFullYear() - dob.getFullYear() : undefined,
+      retirementAge:           clientData.retirementAge ?? undefined,
       desiredRetirementIncome: clientData.desiredRetirementIncome ?? undefined,
       rrspBalance:             rrsp   > 0 ? String(Math.round(rrsp))   : undefined,
       tfsaBalance:             tfsa   > 0 ? String(Math.round(tfsa))   : undefined,
       nonRegBalance:           nonReg > 0 ? String(Math.round(nonReg)) : undefined,
       pensionIncome:           pensionIncome > 0 ? String(Math.round(pensionIncome)) : undefined,
     };
-  })();
+  };
 
   const deleteMut = useMutation({
     mutationFn: (id: number) => apiFetch(`/api/retirement/${id}`, { method: "DELETE" }),
@@ -617,43 +634,97 @@ export function RetirementTab({ clientId, clientName }: { clientId: number; clie
   });
 
   if (adding || editing) {
+    const person = editing ? (editing.person as "primary" | "spouse" ?? "primary") : (view === "combined" ? "primary" : view);
     return (
       <RetirementProjectionForm
         clientId={clientId}
-        clientName={clientName}
-        projection={editing ?? { ...clientSeeds } as any}
+        clientName={person === "spouse" ? (clientData?.spouseFirstName ?? "Spouse") : clientName}
+        projection={editing ?? buildSeeds(person) as any}
         onSaved={() => { setAdding(false); setEditing(null); }}
         onCancel={() => { setAdding(false); setEditing(null); }}
       />
     );
   }
 
+  // ── Combined view calculation ────────────────────────────────────────────────
+  const combinedCalc = (() => {
+    const p = primaryProjections[0];
+    const s = spouseProjections[0];
+    if (!p && !s) return null;
+    const totalPortfolio   = Number(p?.projectedBalance ?? 0) + Number(s?.projectedBalance ?? 0);
+    const totalDesired     = Number(p?.desiredRetirementIncome ?? 0) + Number(s?.desiredRetirementIncome ?? 0);
+    const totalSurplus     = Number(p?.shortfallSurplus ?? 0) + Number(s?.shortfallSurplus ?? 0);
+    const avgSuccess       = (Number(p?.successRate ?? 0) + Number(s?.successRate ?? 0)) / (p && s ? 2 : 1);
+    return { totalPortfolio, totalDesired, totalSurplus, avgSuccess };
+  })();
+
+  const activeProjections = view === "primary" ? primaryProjections
+    : view === "spouse" ? spouseProjections
+    : allProjections;
+
   return (
     <div>
-      {/* Header row */}
+      {/* Header */}
       <div className="flex items-center justify-between mb-5">
         <h3 className="text-lg font-semibold text-gray-900">Retirement Projections</h3>
         <div className="flex gap-2">
-          <button
-            onClick={() => {/* trigger retirement checkup / simulate */}}
-            className="px-4 py-2 text-sm border border-gray-200 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
-          >
+          <button onClick={() => {}} className="px-4 py-2 text-sm border border-gray-200 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors">
             Retirement Checkup
           </button>
-          <button
-            onClick={() => setAdding(true)}
-            className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
-          >
+          <button onClick={() => setAdding(true)} className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium">
             + Add Projection
           </button>
         </div>
       </div>
 
-      {/* Empty state */}
+      {/* Person tabs */}
+      <div className="flex gap-1 mb-5 p-1 bg-gray-100 rounded-lg w-fit">
+        {[
+          { key: "primary" as const, label: clientName ?? "Primary" },
+          ...(hasSpouse ? [{ key: "spouse" as const, label: clientData?.spouseFirstName ?? "Spouse" }] : []),
+          ...(hasSpouse ? [{ key: "combined" as const, label: "Combined" }] : []),
+        ].map(tab => (
+          <button
+            key={tab.key}
+            onClick={() => setView(tab.key)}
+            className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
+              view === tab.key ? "bg-white shadow-sm text-gray-900" : "text-gray-500 hover:text-gray-700"
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Combined summary */}
+      {view === "combined" && combinedCalc && (
+        <div className="border border-blue-200 bg-blue-50 rounded-xl p-5 mb-5">
+          <p className="text-xs font-semibold tracking-widest text-blue-600 uppercase mb-3">Household Combined</p>
+          <div className="grid grid-cols-4 gap-3">
+            {[
+              { label: "Combined portfolio", value: "$" + Math.round(combinedCalc.totalPortfolio).toLocaleString() },
+              { label: "Combined desired income", value: "$" + Math.round(combinedCalc.totalDesired).toLocaleString() + "/yr" },
+              { label: combinedCalc.totalSurplus >= 0 ? "Combined surplus" : "Combined shortfall",
+                value: "$" + Math.abs(Math.round(combinedCalc.totalSurplus)).toLocaleString() + "/yr",
+                color: combinedCalc.totalSurplus >= 0 ? "#16a34a" : "#dc2626" },
+              { label: "Avg. funding rate", value: Math.round(combinedCalc.avgSuccess) + "%" },
+            ].map((m, i) => (
+              <div key={i} className="bg-white rounded-lg px-3 py-2.5">
+                <p className="text-xs text-gray-500 mb-0.5">{m.label}</p>
+                <p className="text-sm font-semibold" style={{ color: (m as any).color ?? "#111827" }}>{m.value}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Loading / empty */}
       {isLoading && <p className="text-sm text-gray-400 py-8 text-center">Loading…</p>}
-      {!isLoading && projections.length === 0 && (
+      {!isLoading && activeProjections.length === 0 && (
         <div className="border border-dashed border-gray-200 rounded-xl py-12 text-center">
-          <p className="text-gray-400 text-sm mb-3">No projections yet</p>
+          <p className="text-gray-400 text-sm mb-3">
+            No {view === "combined" ? "" : view + " "}projections yet
+          </p>
           <button onClick={() => setAdding(true)} className="text-sm text-blue-600 hover:underline">
             Create the first projection →
           </button>
@@ -662,58 +733,51 @@ export function RetirementTab({ clientId, clientName }: { clientId: number; clie
 
       {/* Projection cards */}
       <div className="space-y-4">
-        {projections.map((proj) => {
+        {activeProjections.map((proj) => {
           const funded   = proj.successRate ? +proj.successRate : null;
           const barColor = funded === null ? "#9ca3af" : funded >= 90 ? "#16a34a" : funded >= 70 ? "#d97706" : "#dc2626";
           const surplus  = proj.shortfallSurplus ? +proj.shortfallSurplus : null;
+          const isPerson = (proj.person ?? "primary") as "primary" | "spouse";
+          const personName = isPerson === "spouse" ? (clientData?.spouseFirstName ?? "Spouse") : (clientName ?? "Primary");
 
           return (
             <div key={proj.id} className="border border-gray-200 rounded-xl p-6 hover:border-gray-300 transition-colors">
               <div className="flex items-start justify-between mb-4">
                 <div>
-                  <h4 className="font-medium text-gray-900 text-base">
-                    {proj.label || (clientName ?? "Projection")}
-                  </h4>
+                  <div className="flex items-center gap-2">
+                    <h4 className="font-medium text-gray-900 text-base">
+                      {proj.label || personName}
+                    </h4>
+                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                      isPerson === "spouse" ? "bg-purple-100 text-purple-700" : "bg-blue-100 text-blue-700"
+                    }`}>
+                      {isPerson === "spouse" ? "Spouse" : "Primary"}
+                    </span>
+                  </div>
                   <p className="text-xs text-gray-400 mt-0.5">
                     Age {proj.currentAge} → {proj.retirementAge} · {proj.lifeExpectancy} yr plan
                   </p>
                 </div>
                 <div className="flex gap-2">
-                  <button
-                    onClick={() => setEditing(proj)}
-                    className="text-xs px-3 py-1.5 border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    onClick={() => proj.id && confirm("Delete this projection?") && deleteMut.mutate(proj.id)}
-                    className="text-xs px-3 py-1.5 border border-red-100 rounded-lg text-red-500 hover:bg-red-50"
-                  >
-                    Delete
-                  </button>
+                  <button onClick={() => setEditing(proj)} className="text-xs px-3 py-1.5 border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50">Edit</button>
+                  <button onClick={() => proj.id && confirm("Delete this projection?") && deleteMut.mutate(proj.id)} className="text-xs px-3 py-1.5 border border-red-100 rounded-lg text-red-500 hover:bg-red-50">Delete</button>
                 </div>
               </div>
-
-              {/* Summary grid */}
               <div className="grid grid-cols-4 gap-3 mb-4">
                 {[
-                  { label: "Projected balance", value: proj.projectedBalance ? "$" + Math.round(+proj.projectedBalance).toLocaleString() : "—" },
-                  { label: "CPP + OAS / mo",    value: proj.cppMonthly && proj.oasMonthly ? "$" + (Math.round(+proj.cppMonthly) + Math.round(+proj.oasMonthly)).toLocaleString() : "—" },
-                  { label: "Desired income",     value: proj.desiredRetirementIncome ? "$" + Math.round(+proj.desiredRetirementIncome).toLocaleString() + "/yr" : "—" },
-                  {
-                    label: surplus !== null && surplus >= 0 ? "Surplus / yr" : "Shortfall / yr",
+                  { label: "Projected balance",   value: proj.projectedBalance ? "$" + Math.round(+proj.projectedBalance).toLocaleString() : "—" },
+                  { label: "CPP + OAS / mo",       value: proj.cppMonthly && proj.oasMonthly ? "$" + (Math.round(+proj.cppMonthly) + Math.round(+proj.oasMonthly)).toLocaleString() : "—" },
+                  { label: "Desired income",       value: proj.desiredRetirementIncome ? "$" + Math.round(+proj.desiredRetirementIncome).toLocaleString() + "/yr" : "—" },
+                  { label: surplus !== null && surplus >= 0 ? "Surplus / yr" : "Shortfall / yr",
                     value: surplus !== null ? "$" + Math.abs(Math.round(surplus)).toLocaleString() : "—",
-                    color: surplus !== null ? (surplus >= 0 ? "#16a34a" : "#dc2626") : undefined,
-                  },
+                    color: surplus !== null ? (surplus >= 0 ? "#16a34a" : "#dc2626") : undefined },
                 ].map((m, i) => (
                   <div key={i} className="bg-gray-50 rounded-lg px-3 py-2.5">
                     <p className="text-xs text-gray-500 mb-0.5">{m.label}</p>
-                    <p className="text-sm font-semibold" style={{ color: m.color ?? "#111827" }}>{m.value}</p>
+                    <p className="text-sm font-semibold" style={{ color: (m as any).color ?? "#111827" }}>{m.value}</p>
                   </div>
                 ))}
               </div>
-
-              {/* Funding bar */}
               {funded !== null && (
                 <div>
                   <div className="flex justify-between items-center mb-1">

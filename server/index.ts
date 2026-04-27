@@ -7,6 +7,7 @@ process.on("uncaughtException",  (err)    => { console.error("[uncaughtException
 import cors from "cors";
 import path from "path";
 import { fileURLToPath } from "url";
+import { pool } from "./db/index.js";
 import { authRouter }       from "./routes/auth.js";
 import { clientsRouter }    from "./routes/clients.js";
 import { fpRouter } from "./routes/fp.js";
@@ -22,6 +23,19 @@ import { pensionRouter } from "./routes/pension.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = parseInt(process.env.PORT ?? "8080", 10);
+
+// ── Startup migrations (idempotent) ───────────────────────────────────────────
+async function runMigrations() {
+  const migrations = [
+    // 001 — person column on retirement_projections
+    `ALTER TABLE retirement_projections ADD COLUMN IF NOT EXISTS person TEXT DEFAULT 'primary'`,
+  ];
+  for (const sql of migrations) {
+    try { await pool.query(sql); }
+    catch (e: any) { console.error("[migration]", sql, e.message); }
+  }
+  console.log("[migrations] done");
+}
 
 const app = express();
 app.use(cors({
@@ -59,5 +73,7 @@ if (process.env.NODE_ENV === "production") {
 });
 }
 
-app.listen(PORT, "0.0.0.0", () => console.log(`✅ FP running on :${PORT}`));
+runMigrations().then(() => {
+  app.listen(PORT, "0.0.0.0", () => console.log(`✅ FP running on :${PORT}`));
+});
 export default app;

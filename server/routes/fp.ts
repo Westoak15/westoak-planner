@@ -95,17 +95,20 @@ r.delete("/net-worth/:id", async (req: AuthRequest, res: Response) => {
 });
 
 // ── Retirement ────────────────────────────────────────────────────────────────
-// Canonical retirement CRUD — fp-full.ts /retirement-projections removed (Item 2).
-// GET response normalised to add currentSavings alias and field defaults.
-// POST handles both flat and wrapped body, maps currentSavings → rrspBalance.
+// Canonical retirement CRUD — supports ?person=primary|spouse query param.
 
 r.get("/clients/:id/retirement", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.id;
   if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
-  const rows = await db.select().from(retirementProjections).where(eq(retirementProjections.clientId, cid));
-  res.json(rows.map(row => ({
+  const person = req.query.person as string | undefined;
+  let query = db.select().from(retirementProjections).where(eq(retirementProjections.clientId, cid));
+  const rows = await query;
+  const filtered = person
+    ? rows.filter(r => (r.person ?? "primary") === person)
+    : rows;
+  res.json(filtered.map(row => ({
     ...row,
-    // currentSavings alias — sum of account balances if not stored directly
+    person: row.person ?? "primary",
     currentSavings: row.currentSavings ?? String(
       (Number(row.rrspBalance ?? 0) + Number(row.tfsaBalance ?? 0) + Number(row.nonRegBalance ?? 0)) || 0
     ),
@@ -123,10 +126,10 @@ r.post("/clients/:id/retirement", async (req: AuthRequest, res: Response) => {
   if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
   try {
     const data = safe(req.body.data ?? req.body);
-    // Map currentSavings → rrspBalance if client sent the alias
     if (data.currentSavings && !data.rrspBalance) data.rrspBalance = data.currentSavings;
     const [row] = await (db.insert(retirementProjections) as any).values({
-      clientId: cid,
+      clientId:      cid,
+      person:        data.person ?? "primary",
       currentAge:    data.currentAge    || 35,
       retirementAge: data.retirementAge || 65,
       ...data,

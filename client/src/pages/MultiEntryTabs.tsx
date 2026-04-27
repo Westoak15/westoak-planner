@@ -7,7 +7,7 @@ import { useState, useEffect } from "react";
 import { api } from "../lib/api";
 import { fmt$, fmtPct, cn } from "../lib/utils";
 import { Plus, Trash2, Save, X, Pencil } from "lucide-react";
-import { DrawdownTab } from "./DrawdownTab";
+import { DrawdownTab } from "../components/planning/DrawdownTab";
 import { MonteCarloResults } from "../components/MonteCarloResults";
 
 // ── Shared mini components ────────────────────────────────────────────────────

@@ -5,10 +5,11 @@ import { api } from "../lib/api";
 import { Sidebar, type Tab } from "../components/Sidebar";
 import { LettersTab } from "./LettersTab";
 import { FinancialPlanningContent } from "./FinancialPlanning";
+import { RetirementTab as RetirementTabNew } from "@/components/planning/RetirementProjectionForm";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "../lib/queryClient";
 import { MonteCarloResults } from "../components/MonteCarloResults";
-import { NetWorthTab as NetWorthTabNew, RetirementTab as RetirementTabNew, RespTab as RespTabNew, InsuranceTab as InsuranceTabNew, DebtTab as DebtTabNew } from "./MultiEntryTabs";
+import { NetWorthTab as NetWorthTabNew, RetirementTab as RetirementTabNew_OLD, RespTab as RespTabNew, InsuranceTab as InsuranceTabNew, DebtTab as DebtTabNew } from "./MultiEntryTabs";
 import { InsuranceTab as FnaTabNew, TaxTab as TaxTabNew, EstateNotesTab as EstateTabNew, AITab } from "./FinancialPlanning";
 import { ReportsTab } from "./ReportsTab";
 import { AdminPanel } from "./AdminPanel"
@@ -1600,6 +1601,7 @@ export default function App() {
     </div>
   );
 }
+
 
 
 

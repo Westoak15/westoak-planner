@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { TrendingDown, DollarSign, Percent, ChevronDown, ChevronUp, Info } from "lucide-react";
-import { api } from "../lib/api";
+const apiFetch = async (url: string, init?: RequestInit) => { const res = await fetch(url, { ...init, headers: { "Content-Type": "application/json", Authorization: `Bearer ${localStorage.getItem("fp_token") ?? ""}`, ...(init?.headers ?? {}) } }); if (!res.ok) throw new Error(await res.text()); return res.json(); };
 
 interface DrawdownYear {
   age: number; year: number;
@@ -52,7 +52,7 @@ export function DrawdownTab({ clientId, client }: { clientId: number; client?: a
   });
   const [results, setResults] = useState<DrawdownResults | null>(null);
   useEffect(() => {
-    api.get<any[]>(`/api/clients/${clientId}/pensions`).then((pensions: any[]) => {
+    apiFetch(`/api/clients/${clientId}/pensions`).then((pensions: any[]) => {
       const dbppIncome = pensions
         .filter(p => p.pensionType === "dbpp")
         .reduce((s, p) => {
@@ -382,3 +382,4 @@ export function DrawdownTab({ clientId, client }: { clientId: number; client?: a
     </div>
   );
 }
+

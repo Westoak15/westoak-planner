@@ -552,6 +552,32 @@ export function RetirementTab({ clientId, clientName }: { clientId: number; clie
   const [view, setView] = useState<"primary" | "spouse" | "combined">("primary");
   const [adding, setAdding] = useState(false);
   const [editing, setEditing] = useState<RetirementProjection | null>(null);
+  const [checkupLoading, setCheckupLoading] = useState(false);
+  const [checkupError, setCheckupError] = useState<string | null>(null);
+
+  const runCheckup = async () => {
+    setCheckupLoading(true);
+    setCheckupError(null);
+    try {
+      // Run Monte Carlo simulation
+      await apiFetch(`/api/clients/${clientId}/simulate`, { method: "POST", body: JSON.stringify({}) });
+      // Invalidate projections so success rate updates
+      await qc.invalidateQueries({ queryKey: [`/api/clients/${clientId}/retirement`] });
+      // Open retirement report in new tab
+      const token = localStorage.getItem("fp_token") ?? "";
+      const res = await fetch(`/api/reports/${clientId}/retirement`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error("Report failed to generate");
+      const html = await res.text();
+      const win = window.open("", "_blank");
+      if (win) { win.document.write(html); win.document.close(); }
+    } catch (e: any) {
+      setCheckupError(e.message ?? "Checkup failed");
+    } finally {
+      setCheckupLoading(false);
+    }
+  };
 
   // Fetch all projections for this client
   const { data: allProjections = [], isLoading } = useQuery<RetirementProjection[]>({
@@ -667,9 +693,14 @@ export function RetirementTab({ clientId, clientName }: { clientId: number; clie
       {/* Header */}
       <div className="flex items-center justify-between mb-5">
         <h3 className="text-lg font-semibold text-gray-900">Retirement Projections</h3>
-        <div className="flex gap-2">
-          <button onClick={() => {}} className="px-4 py-2 text-sm border border-gray-200 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors">
-            Retirement Checkup
+        <div className="flex gap-2 items-center">
+          {checkupError && <span className="text-xs text-red-500">{checkupError}</span>}
+          <button
+            onClick={runCheckup}
+            disabled={checkupLoading}
+            className="px-4 py-2 text-sm border border-gray-200 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50"
+          >
+            {checkupLoading ? "Running…" : "Retirement Checkup"}
           </button>
           <button onClick={() => setAdding(true)} className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium">
             + Add Projection

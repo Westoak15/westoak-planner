@@ -6,6 +6,7 @@ import { Sidebar, type Tab } from "../components/Sidebar";
 import { LettersTab } from "./LettersTab";
 import { FinancialPlanningContent } from "./FinancialPlanning";
 import { RetirementTab as RetirementTabNew } from "@/components/planning/RetirementProjectionForm";
+
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "../lib/queryClient";
 import { MonteCarloResults } from "../components/MonteCarloResults";
@@ -1374,7 +1375,7 @@ export default function App() {
           )}
 
           {tab === "networth"   && client && <NetWorthTabNew   clientId={client.id} client={client} />}
-          {tab === "retirement" && client && <RetirementTabNew clientId={client.id} client={client} person={person} />}
+          {tab === "retirement" && client && <RetirementTabNew clientId={client.id} clientName={client.firstName} />}
           {tab === "pension"    && client && <PensionTab clientId={client.id} client={client} person={person} />}
           {tab === "insurance" && client && <PoliciesTab clientId={client.id} client={client} person={person} />}
           {tab === "fna" && client && (

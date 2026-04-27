@@ -13,6 +13,8 @@ function fmt(n: number, d = 0): string {
 function fmtCad(n: number): string { return `$${fmt(n)}`; }
 function v(s: any): number { return parseFloat(String(s ?? "0")) || 0; }
 
+const DEFAULT_FIRM = "Knights of Columbus";
+
 function htmlShell(title: string, body: string): string {
   return `<!DOCTYPE html>
 <html lang="en">
@@ -21,75 +23,133 @@ function htmlShell(title: string, body: string): string {
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${esc(title)}</title>
 <style>
-  :root { --navy:#1B3A5C; --teal:#0F766E; --blue:#2563EB; --amber:#D97706; --red:#DC2626; --green:#16A34A; --gray:#475569; --lgray:#F1F5F9; --mgray:#CBD5E1; }
-  * { box-sizing:border-box; margin:0; padding:0; }
-  body { font-family:"Segoe UI",Arial,sans-serif; font-size:11pt; color:#0F172A; background:white; padding:0 0 40px; }
-  .cover { background:white; color:var(--navy); padding:32px 48px 24px; border-bottom:4px solid var(--teal); }
-  .cover h1 { font-size:26pt; font-weight:700; margin-bottom:6px; color:var(--navy); }
-  .cover h2 { font-size:13pt; font-weight:400; color:var(--gray); margin-bottom:16px; }
-  .cover-meta { display:grid; grid-template-columns:1fr 1fr; gap:6px 24px; margin-top:16px; font-size:10pt; color:white; }
-  .cover-meta .label { color:var(--gray); font-size:9pt; } .cover-meta .value { font-weight:600; color:var(--navy); }
-  .section { padding:32px 48px 0; page-break-inside:avoid; }
-  h2.section-title { font-size:15pt; font-weight:700; color:var(--navy); border-bottom:3px solid var(--teal); padding-bottom:8px; margin-bottom:20px; margin-top:32px; }
-  h3 { font-size:11pt; font-weight:600; color:var(--navy); margin:16px 0 8px; }
-  p { margin-bottom:8px; line-height:1.5; }
-  table { width:100%; border-collapse:collapse; font-size:9.5pt; margin-bottom:16px; }
-  th { background:var(--navy); color:white; padding:6px 10px; text-align:left; font-weight:600; }
-  td { padding:5px 10px; border-bottom:1px solid var(--mgray); }
-  tr:nth-child(even) td { background:var(--lgray); }
-  tr.total td { font-weight:700; background:#EFF6FF; }
-  .summary-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:24px; }
-  .summary-card { background:var(--lgray); border-radius:8px; padding:14px 16px; border-left:4px solid var(--teal); }
-  .summary-card .label { font-size:8.5pt; color:var(--gray); text-transform:uppercase; letter-spacing:0.05em; }
-  .summary-card .value { font-size:15pt; font-weight:700; color:var(--navy); margin-top:4px; }
-  .summary-card .value.positive { color:var(--green); } .summary-card .value.negative { color:var(--red); } .summary-card .value.warn { color:var(--amber); }
-  .callout { background:#EFF6FF; border-left:4px solid var(--blue); border-radius:4px; padding:12px 16px; margin:12px 0; font-size:10pt; }
-  .callout.warn { background:#FFFBEB; border-color:var(--amber); } .callout.alert { background:#FEF2F2; border-color:var(--red); } .callout.good { background:#F0FDF4; border-color:var(--green); }
-  .two-col { display:grid; grid-template-columns:1fr 1fr; gap:24px; margin-bottom:16px; }
-  .person-card { border:1px solid var(--mgray); border-radius:8px; padding:16px; }
-  .person-card.primary { border-top:4px solid var(--teal); } .person-card.spouse { border-top:4px solid #7C3AED; }
-  .person-label { font-size:9pt; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:12px; }
-  .primary .person-label { color:var(--teal); } .spouse .person-label { color:#7C3AED; }
-  .sig-line { border-bottom:1px solid #94A3B8; height:28px; margin-bottom:4px; }
-  @media print {
-    .section { page-break-inside:avoid; }
-    body { padding-bottom:0; }
-    .cover { }
-    h2.section-title { margin-top:16px; }
-    .section { padding:16px 48px 0; }
-    .two-col { gap:16px; }
-    .summary-grid { gap:8px; margin-bottom:12px; }
-    table { font-size:8.5pt; }
-    td, th { padding:3px 8px; }
-    .summary-card { padding:8px 12px; }
-    .summary-card .value { font-size:12pt; }
-    p { margin-bottom:4px; }
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Georgia:ital@0;1&display=swap');
+  *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+  :root {
+    --navy:#0F2B4C; --blue:#1E5FA8; --light-blue:#E8F0FA;
+    --gold:#C9A84C; --green:#1A7A4A; --green-bg:#EAF5EE;
+    --red:#C0392B; --red-bg:#FDECEA; --amber:#D4860A; --amber-bg:#FEF4E2;
+    --gray-100:#F7F8FA; --gray-200:#EAECEF; --gray-400:#9BA3AF;
+    --gray-600:#4B5563; --gray-700:#374151; --gray-800:#1F2937;
+    --text:#1F2937; --border:#D1D5DB;
+    --teal:#1A7A4A; --mgray:#D1D5DB; --lgray:#F7F8FA; --gray:#4B5563;
   }
-</style>
-<style>
-  @media print { .report-toolbar { display:none !important; } body { padding-top:0 !important; } }
+  html { font-size:13px; }
+  body { font-family:'Inter',system-ui,sans-serif; color:var(--text); background:#F0F2F5; line-height:1.6; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  .page { width:794px; min-height:1123px; margin:0 auto 32px; background:white; padding:48px 56px; box-shadow:0 4px 24px rgba(0,0,0,.10); }
+  /* Cover */
+  .cover { display:flex; flex-direction:column; min-height:1060px; }
+  .cover-header { background:var(--navy); color:white; padding:40px 56px 32px; margin:-48px -56px 0; }
+  .cover-logo-row { display:flex; align-items:center; justify-content:space-between; margin-bottom:48px; }
+  .cover-firm-name { font-size:18px; font-weight:600; letter-spacing:.5px; }
+  .cover-date-top { font-size:12px; color:rgba(255,255,255,.65); }
+  .cover-label { font-size:11px; font-weight:600; letter-spacing:2px; text-transform:uppercase; color:var(--gold); margin-bottom:12px; }
+  .cover-main-title { font-family:Georgia,serif; font-size:34px; font-weight:normal; color:white; line-height:1.2; margin-bottom:12px; }
+  .cover-subtitle { font-size:16px; color:rgba(255,255,255,.75); margin-bottom:12px; }
+  .cover-client-name { font-size:20px; font-weight:500; color:rgba(255,255,255,.9); }
+  .cover-gold-bar { height:4px; background:linear-gradient(90deg,var(--gold),transparent); margin:28px 0 0; }
+  .cover-body { flex:1; padding:40px 0; display:grid; grid-template-columns:1fr 1fr; gap:28px; align-content:start; }
+  .cover-info-label { font-size:10px; font-weight:600; letter-spacing:1.5px; text-transform:uppercase; color:var(--gray-400); margin-bottom:5px; }
+  .cover-info-value { font-size:14px; font-weight:500; color:var(--gray-800); }
+  .cover-footer { margin-top:auto; padding-top:20px; border-top:1px solid var(--border); font-size:10px; color:var(--gray-400); line-height:1.5; }
+  /* Section headers */
+  .section-header { border-bottom:3px solid var(--navy); padding-bottom:14px; margin-bottom:24px; }
+  .section-eyebrow { font-size:10px; font-weight:600; letter-spacing:2px; text-transform:uppercase; color:var(--gold); margin-bottom:6px; }
+  .section-title-lg { font-family:Georgia,serif; font-size:24px; font-weight:normal; color:var(--navy); }
+  .section-subtitle { font-size:13px; color:var(--gray-600); margin-top:5px; }
+  h2.section-title { font-family:Georgia,serif; font-size:22px; font-weight:normal; color:var(--navy); border-bottom:3px solid var(--navy); padding-bottom:12px; margin:28px 0 20px; }
+  h3 { font-size:14px; font-weight:600; color:var(--navy); margin:20px 0 10px; }
+  p { margin-bottom:8px; line-height:1.6; font-size:13px; }
+  /* Metric cards */
+  .summary-grid { display:grid; gap:12px; margin-bottom:24px; grid-template-columns:repeat(3,1fr); }
+  .summary-card,.metric-card { padding:16px 20px; border-radius:8px; border:1px solid var(--border); background:white; }
+  .summary-card .label,.metric-label { font-size:11px; font-weight:600; letter-spacing:.5px; text-transform:uppercase; color:var(--gray-400); margin-bottom:6px; }
+  .summary-card .value,.metric-value { font-size:22px; font-weight:700; color:var(--gray-800); line-height:1.1; }
+  .summary-card .value.positive,.metric-card.green .metric-value { color:var(--green); }
+  .summary-card .value.negative,.metric-card.red .metric-value { color:var(--red); }
+  .summary-card .value.warn,.metric-card.amber .metric-value { color:var(--amber); }
+  .metric-sub { font-size:11px; color:var(--gray-400); margin-top:4px; }
+  .metric-card.navy { background:var(--navy); border-color:var(--navy); }
+  .metric-card.navy .metric-label { color:rgba(255,255,255,.6); }
+  .metric-card.navy .metric-value { color:white; }
+  .metric-card.navy .metric-sub { color:rgba(255,255,255,.5); }
+  .metric-card.blue { background:var(--light-blue); border-color:var(--blue); }
+  .metric-card.green { background:var(--green-bg); border-color:var(--green); }
+  .metric-card.amber { background:var(--amber-bg); border-color:var(--amber); }
+  .metric-card.red { background:var(--red-bg); border-color:var(--red); }
+  /* Tables */
+  table { width:100%; border-collapse:collapse; font-size:12px; margin-bottom:16px; }
+  thead tr { background:var(--navy); color:white; }
+  thead th { padding:10px 12px; text-align:left; font-weight:600; font-size:11px; letter-spacing:.3px; }
+  thead th[style*="text-align:right"],tbody td[style*="text-align:right"],tfoot td[style*="text-align:right"] {}
+  tbody tr:nth-child(even) { background:var(--gray-100); }
+  tbody td { padding:8px 12px; border-bottom:1px solid var(--gray-200); }
+  tr.total td { background:var(--navy); color:white; font-weight:700; }
+  tfoot tr { background:var(--navy); color:white; }
+  tfoot td { padding:10px 12px; font-weight:600; }
+  .table-container { overflow:hidden; border-radius:8px; border:1px solid var(--border); margin-bottom:24px; }
+  .table-title { font-size:13px; font-weight:600; color:var(--navy); padding:12px 16px; background:var(--gray-100); border-bottom:1px solid var(--border); }
+  /* Callouts */
+  .callout { padding:14px 18px; border-radius:8px; margin:12px 0; border:1px solid; font-size:12px; line-height:1.6; }
+  .callout,.callout.info { background:var(--light-blue); border-color:var(--blue); color:var(--navy); }
+  .callout.good,.callout.success { background:var(--green-bg); border-color:var(--green); }
+  .callout.warn,.callout.warning { background:var(--amber-bg); border-color:var(--amber); }
+  .callout.alert,.callout.danger { background:var(--red-bg); border-color:var(--red); }
+  .callout strong { font-weight:600; }
+  /* Layout */
+  .two-col { display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-bottom:16px; }
+  .section { width:794px; margin:0 auto 24px; background:white; padding:40px 56px; box-shadow:0 4px 24px rgba(0,0,0,.08); }
+  .person-card { border:1px solid var(--border); border-radius:8px; padding:16px; }
+  .person-card.primary { border-top:4px solid var(--teal); }
+  .person-card.spouse { border-top:4px solid #7C3AED; }
+  .person-label { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; margin-bottom:10px; }
+  .primary .person-label { color:var(--teal); } .spouse .person-label { color:#7C3AED; }
+  .sig-line { border-bottom:1px solid var(--border); height:28px; margin-bottom:4px; }
+  /* Badges */
+  .badge,.badge-green,.badge-red,.badge-amber,.badge-blue { display:inline-block; padding:2px 8px; border-radius:99px; font-size:10px; font-weight:600; }
+  .badge-green { background:var(--green-bg); color:var(--green); }
+  .badge-red { background:var(--red-bg); color:var(--red); }
+  .badge-amber { background:var(--amber-bg); color:var(--amber); }
+  .badge-blue { background:var(--light-blue); color:var(--blue); }
+  /* Footer */
+  .footer,.doc-footer { margin-top:28px; padding-top:12px; border-top:1px solid var(--border); display:flex; justify-content:space-between; font-size:10px; color:var(--gray-400); }
+  /* Chart */
+  .chart-container { margin:16px 0; padding:16px; border:1px solid var(--border); border-radius:8px; background:white; }
+  .chart-title { font-size:13px; font-weight:600; color:var(--navy); margin-bottom:10px; }
+  /* Page header */
+  .doc-header { display:flex; justify-content:space-between; align-items:center; padding-bottom:12px; margin-bottom:20px; border-bottom:1px solid var(--border); }
+  .doc-header-client { font-size:12px; font-weight:600; color:var(--navy); }
+  .doc-header-right { font-size:11px; color:var(--gray-400); text-align:right; }
+  .no-break { page-break-inside:avoid; }
+  .divider { height:1px; background:var(--border); margin:16px 0; }
   @media screen { body { padding-top:46px; } }
+  @media print {
+    body { background:white; padding-top:0 !important; }
+    .page { width:100%; margin:0; padding:18mm 20mm; box-shadow:none; page-break-after:always; }
+    .page:last-child { page-break-after:avoid; }
+    .report-toolbar { display:none !important; }
+    thead { display:table-header-group; }
+  }
+  @page { size:A4; margin:18mm 20mm; }
   .report-toolbar {
     position:fixed; top:0; left:0; right:0; z-index:999;
-    background:white; border-bottom:1px solid #E2E8F0; height:46px;
+    background:white; border-bottom:1px solid var(--border); height:46px;
     display:flex; align-items:center; justify-content:space-between; padding:0 32px;
   }
-  .report-toolbar .tb-title { font-size:9.5pt; font-weight:600; color:#475569; }
+  .report-toolbar .tb-title { font-size:12px; font-weight:600; color:var(--navy); }
   .print-btn {
-    display:flex; align-items:center; gap:5px;
-    padding:5px 12px; font-size:9pt; font-weight:500;
-    background:white; color:#1B3A5C;
-    border:1px solid #CBD5E1; border-radius:6px; cursor:pointer;
+    display:flex; align-items:center; gap:6px; padding:5px 14px;
+    font-size:12px; font-weight:500; background:white; color:var(--navy);
+    border:1px solid var(--border); border-radius:6px; cursor:pointer;
   }
-  .print-btn:hover { background:#F8FAFC; border-color:#94A3B8; }
-  .print-btn svg { width:13px; height:13px; }
+  .print-btn:hover { background:var(--gray-100); }
 </style>
 </head>
 <body>
 <div class="report-toolbar">
   <span class="tb-title" id="tb-title">Financial Plan</span>
   <button class="print-btn" onclick="window.print()">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
       <path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
       <rect x="6" y="14" width="12" height="8"/>
     </svg>
@@ -154,9 +214,6 @@ function svgNeedBreakdown(sections: { label: string; value: number; color: strin
 </svg>`;
 }
 
-
-const DEFAULT_FIRM = "Financial Planning Suite";
-
 function buildCoverSheet(opts: {
   reportTitle:   string;
   reportSubtitle?: string;
@@ -171,68 +228,42 @@ function buildCoverSheet(opts: {
 }): string {
   const firm = opts.firmName ?? DEFAULT_FIRM;
   return `
-<div style="min-height:100vh;display:flex;flex-direction:column;justify-content:space-between;background:white;page-break-after:always;">
-
-  <!-- Top band -->
-  <div style="background:var(--navy);padding:28px 56px 24px;color:white;">
-    <div style="font-size:9pt;letter-spacing:0.15em;text-transform:uppercase;opacity:0.7;margin-bottom:10px;">${esc(firm)} · Financial Planning</div>
-    <div style="font-size:28pt;font-weight:700;line-height:1.1;margin-bottom:6px;">${esc(opts.reportTitle)}</div>
-    ${opts.reportSubtitle?`<div style="font-size:13pt;opacity:0.8;margin-top:4px;">${esc(opts.reportSubtitle)}</div>`:""}
-    <div style="height:3px;background:var(--teal);border-radius:2px;margin-top:20px;"></div>
-  </div>
-
-  <!-- Main cover body -->
-  <div style="flex:1;padding:48px 56px;display:flex;flex-direction:column;justify-content:center;gap:40px;">
-
-    <!-- Prepared for -->
-    <div>
-      <div style="font-size:9pt;letter-spacing:0.1em;text-transform:uppercase;color:var(--gray);margin-bottom:8px;">Prepared for</div>
-      <div style="font-size:22pt;font-weight:700;color:var(--navy);">${esc(opts.clientName)}</div>
-      ${opts.spouseName?`<div style="font-size:15pt;color:var(--gray);margin-top:4px;">& ${esc(opts.spouseName)}</div>`:""}
+<div class="page cover">
+  <div class="cover-header">
+    <div class="cover-logo-row">
+      <div><div class="cover-firm-name">${esc(firm)}</div><div class="cover-date-top">Financial Planning</div></div>
+      <div class="cover-date-top">${esc(opts.dateStr)}</div>
     </div>
-
-    <!-- Divider -->
-    <div style="height:1px;background:var(--mgray);"></div>
-
-    <!-- Two-column: advisor + report details -->
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:40px;">
-      <div>
-        <div style="font-size:9pt;letter-spacing:0.1em;text-transform:uppercase;color:var(--gray);margin-bottom:10px;">Your Advisor</div>
-        <div style="font-size:14pt;font-weight:700;color:var(--navy);margin-bottom:4px;">${esc(opts.advisorName)}</div>
-        ${opts.advisorEmail?`<div style="font-size:10pt;color:var(--gray);margin-bottom:2px;">✉ ${esc(opts.advisorEmail)}</div>`:""}
-        ${opts.advisorPhone?`<div style="font-size:10pt;color:var(--gray);">✆ ${esc(opts.advisorPhone)}</div>`:""}
-      </div>
-      <div>
-        <div style="font-size:9pt;letter-spacing:0.1em;text-transform:uppercase;color:var(--gray);margin-bottom:10px;">Report Details</div>
-        <div style="font-size:10pt;color:var(--navy);margin-bottom:4px;"><span style="color:var(--gray);">Date prepared:</span> <strong>${esc(opts.dateStr)}</strong></div>
-        ${opts.province?`<div style="font-size:10pt;color:var(--navy);margin-bottom:4px;"><span style="color:var(--gray);">Province:</span> <strong>${esc(opts.province)}</strong></div>`:""}
-        <div style="font-size:10pt;color:var(--navy);"><span style="color:var(--gray);">Prepared by:</span> <strong>${esc(firm)}</strong></div>
-      </div>
+    <div style="padding:32px 0 24px">
+      <div class="cover-label">Confidential Financial Plan</div>
+      <div class="cover-main-title">${esc(opts.reportTitle)}</div>
+      ${opts.reportSubtitle ? `<div class="cover-subtitle">${esc(opts.reportSubtitle)}</div>` : ""}
+      <div class="cover-client-name">Prepared for ${esc(opts.clientName)}${opts.spouseName ? ` &amp; ${esc(opts.spouseName)}` : ""}</div>
     </div>
+    <div class="cover-gold-bar"></div>
   </div>
-
-  <!-- Footer disclaimer -->
-  <div style="background:var(--lgray);padding:16px 56px;border-top:1px solid var(--mgray);">
-    <p style="font-size:8pt;color:var(--gray);line-height:1.5;margin:0;">
-      <strong>Confidential:</strong> This report has been prepared solely for ${esc(opts.clientName)} and is intended for personal use only.
-      The information contained herein is based on data provided and is subject to change.
-      This document does not constitute financial, legal, or tax advice.
-      Please consult qualified professionals before making financial decisions.
-      Prepared by ${esc(firm)}.
-    </p>
+  <div class="cover-body">
+    <div><div class="cover-info-label">Client</div><div class="cover-info-value">${esc(opts.clientName)}</div>${opts.spouseName ? `<div class="cover-info-value" style="margin-top:3px">${esc(opts.spouseName)}</div>` : ""}</div>
+    <div><div class="cover-info-label">Advisor</div><div class="cover-info-value">${esc(opts.advisorName)}</div>${opts.advisorEmail ? `<div style="font-size:11px;color:var(--gray-400);margin-top:2px">${esc(opts.advisorEmail)}</div>` : ""}${opts.advisorPhone ? `<div style="font-size:11px;color:var(--gray-400)">${esc(opts.advisorPhone)}</div>` : ""}</div>
+    <div><div class="cover-info-label">Date Prepared</div><div class="cover-info-value">${esc(opts.dateStr)}</div></div>
+    ${opts.province ? `<div><div class="cover-info-label">Province</div><div class="cover-info-value">${esc(opts.province)}</div></div>` : ""}
+    <div><div class="cover-info-label">Prepared by</div><div class="cover-info-value">${esc(firm)}</div></div>
   </div>
-
+  <div class="cover-footer">
+    <strong>Confidential:</strong> This plan has been prepared solely for ${esc(opts.clientName)} by ${esc(opts.advisorName)} of ${esc(firm)}.
+    The information is based on data provided and is subject to change. This document does not constitute financial, legal, or tax advice.
+    Please consult qualified professionals before making financial decisions.
+  </div>
 </div>`;
 }
 
 
-export function generateFnaReport(data: { client: any; analysis: any; advisor?: any; firmName?: string; }): string {
+export function generateFnaReport(data: { client: any; analysis: any; advisor?: any; }): string {
   const { client, analysis } = data;
   const ws = analysis.worksheetData ?? {};
   const name = `${client.firstName} ${client.lastName}`;
   const dateStr = new Date().toLocaleDateString("en-CA", { year: "numeric", month: "long", day: "numeric" });
   const advisorName = data.advisor ? `${data.advisor.firstName} ${data.advisor.lastName}` : "Your Advisor";
-  const firm = data.firmName ?? DEFAULT_FIRM;
 
   const primaryName = ws.primaryName || analysis.primaryName || name;
   const spouseName  = ws.spouseName  || analysis.spouseName  || (client.spouseFirstName ? `${client.spouseFirstName} ${client.spouseLastName ?? ""}`.trim() : "");
@@ -290,7 +321,7 @@ export function generateFnaReport(data: { client: any; analysis: any; advisor?: 
     { label: "Income (D)",      value: Math.max(0, subtotalD), color: "#7C3AED" },
   ].filter(s => s.value > 0);
 
-  const cover = buildCoverSheet({ reportTitle: "Family Needs Analysis", reportSubtitle: "Life Insurance Needs Worksheet", clientName: `${name}${spouseName ? ` & ${spouseName}` : ""}`, advisorName, firmName: firm, province: client.province ?? undefined, dateStr });
+  const cover = buildCoverSheet({ reportTitle: "Family Needs Analysis", reportSubtitle: "Life Insurance Needs Worksheet", clientName: `${name}${spouseName ? ` & ${spouseName}` : ""}`, advisorName, firmName: DEFAULT_FIRM, province: client.province ?? undefined, dateStr });
 
   const summarySection = `
 <div class="section">
@@ -485,7 +516,7 @@ export function generateFnaReport(data: { client: any; analysis: any; advisor?: 
 
   const body = [cover, summarySection, clientSection, needSection, totalSection, decisionSection,
     `<div style="padding:16px 48px;color:#94A3B8;font-size:8.5pt;border-top:1px solid #E2E8F0;margin-top:16px;page-break-before:avoid">
-      Report generated ${dateStr} - ${esc(firm)} - Confidential - prepared solely for ${esc(name)}.
+      Report generated ${dateStr} - ${DEFAULT_FIRM} - Confidential - prepared solely for ${esc(name)}.
     </div>`].join("\n");
 
   return htmlShell(`Family Needs Analysis - ${name}`, body);
@@ -528,19 +559,18 @@ export function generateNetWorthReport(data: { client: any; netWorth: any[] }): 
   return htmlShell(`Net Worth Statement - ${name}`, body);
 }
 
-export function generateComprehensiveReport(data: { client: any; advisor?: any; firmName?: string; netWorth: any[]; insurance: any | null; debts: any[]; education: any[]; }): string {
+export function generateComprehensiveReport(data: { client: any; advisor?: any; netWorth: any[]; insurance: any | null; debts: any[]; education: any[]; }): string {
   const { client } = data;
   const name = `${client.firstName} ${client.lastName}`;
   const dateStr = new Date().toLocaleDateString("en-CA", { year: "numeric", month: "long", day: "numeric" });
   const advisorName = data.advisor ? `${data.advisor.firstName} ${data.advisor.lastName}` : "Your Advisor";
-  const firm = data.firmName ?? DEFAULT_FIRM;
   const assets = data.netWorth.filter(e => e.type === "asset");
   const liabs  = data.netWorth.filter(e => e.type === "liability");
   const totalA = assets.reduce((s, e) => s + v(e.value), 0);
   const totalL = liabs.reduce((s, e)  => s + v(e.value), 0);
   const ins = data.insurance;
   const spouseName = client.spouseFirstName ? `${client.spouseFirstName} ${client.spouseLastName ?? ""}`.trim() : undefined;
-  const cover = buildCoverSheet({ reportTitle: "Financial Plan", reportSubtitle: "Comprehensive Review", clientName: name, spouseName, advisorName, advisorEmail: data.advisor?.email, advisorPhone: data.advisor?.phone, firmName: firm, province: client.province ?? undefined, dateStr });
+  const cover = buildCoverSheet({ reportTitle: "Financial Plan", reportSubtitle: "Comprehensive Review", clientName: name, spouseName, advisorName, advisorEmail: data.advisor?.email, advisorPhone: data.advisor?.phone, province: client.province ?? undefined, dateStr });
   const body = cover + `
 <div class="section">
   <h2 class="section-title">Net Worth</h2>
@@ -571,7 +601,7 @@ ${data.education.length>0?`<div class="section"><h2 class="section-title">Educat
     ${data.education.map(e=>`<tr><td>${esc(e.childName)}</td><td>${esc(e.childBirthYear)}</td><td style="text-align:right">${fmtCad(v(e.currentBalance))}</td><td style="text-align:right">${fmtCad(v(e.annualContribution))}</td></tr>`).join("")}
   </tbody></table></div>`:""}
 <div style="padding:32px 48px;color:#94A3B8;font-size:8.5pt;border-top:1px solid #E2E8F0;margin-top:40px">
-  Report generated ${dateStr} - ${esc(firm)} - Confidential - prepared solely for ${esc(name)}.
+  Report generated ${dateStr} - ${DEFAULT_FIRM} - Confidential - prepared solely for ${esc(name)}.
 </div>`;
   return htmlShell(`Financial Plan - ${name}`, body);
 }
@@ -608,12 +638,14 @@ function svgMonteCarloChart(
   const H   = height - pad.top  - pad.bottom;
   const N   = bands.p50.length;
 
-  const allValues = [...bands.p10, ...bands.p90].filter(v => v >= 0);
-  const maxVal    = Math.max(...allValues) * 1.05;
-  const minVal    = Math.min(0, ...bands.p10);
+  const allValues = [...bands.p10, ...bands.p90].filter(v => typeof v === "number" && isFinite(v) && v >= 0);
+  if (!allValues.length || N === 0) return `<p style="color:var(--gray-400);font-size:12px;padding:16px">Simulation data not available.</p>`;
+  const maxVal    = Math.max(...allValues) * 1.05 || 1;
+  const minVal    = Math.min(0, ...bands.p10.filter(v => isFinite(v)));
+  const range     = maxVal - minVal || 1;
 
   const xScale = (i: number) => (i / Math.max(1, N - 1)) * W;
-  const yScale = (v: number) => H - ((v - minVal) / (maxVal - minVal)) * H;
+  const yScale = (v: number) => isFinite(v) ? H - ((v - minVal) / range) * H : H;
 
   const pointsStr = (arr: number[]) =>
     arr.map((v, i) => `${xScale(i).toFixed(1)},${yScale(v).toFixed(1)}`).join(" ");
@@ -638,7 +670,7 @@ function svgMonteCarloChart(
   // Y-axis labels
   const yTicks = 5;
   const yLabels = Array.from({ length: yTicks + 1 }, (_, i) => {
-    const val = minVal + (maxVal - minVal) * (i / yTicks);
+    const val = minVal + range * (i / yTicks);
     return { y: yScale(val), label: val >= 1_000_000 ? `$${(val / 1_000_000).toFixed(1)}M` : `$${(val / 1_000).toFixed(0)}k` };
   });
 
@@ -717,16 +749,14 @@ export function generateRetirementReport(data: {
   retirement: Record<string, unknown> | null;
   taxYears?:  Record<string, unknown>[];
   sim?:       ReportSimulation;
-  firmName?:  string;
 }): string {
   const client = data.client as any; const retirement = data.retirement as any; const sim = data.sim as any;
   const name    = `${client.firstName} ${client.lastName}`;
   const dateStr = new Date().toLocaleDateString("en-CA", { year: "numeric", month: "long", day: "numeric" });
-  const firm    = data.firmName ?? DEFAULT_FIRM;
-  const cover = buildCoverSheet({ reportTitle: "Retirement Income Projection", clientName: name, advisorName: "Your Advisor", firmName: firm, dateStr });
 
   const mcChart = sim ? svgMonteCarloChart(sim.percentileBands, sim.successRate) : "";
 
+  // Year-by-year income table (first 20 years of retirement if available)
   const taxRows = (data.taxYears as any[])?.slice(0, 25).map((y: any) => `
   <tr>
     <td>${y.year}</td><td>${y.age}</td>
@@ -738,6 +768,8 @@ export function generateRetirementReport(data: {
     <td style="text-align:right">${pct(Number(y.effectiveRate))}</td>
     <td style="text-align:right">${fmtCad(Number(y.totalWealth))}</td>
   </tr>`).join("") ?? "";
+
+  const cover = buildCoverSheet({ reportTitle: "Retirement Income Projection", clientName: name, advisorName: "Your Advisor", dateStr });
   const body = cover + `
 
 <div class="section">
@@ -787,14 +819,16 @@ export function generateInsuranceReport(data: {
   client:     ReportClient;
   insurance:  Record<string, unknown> | null;
   products:   ReportProduct[];
-  firmName?:  string;
 }): string {
   const client = data.client as any; const insurance = data.insurance as any; const products = (data.products ?? []) as any[];
   const name    = `${client.firstName} ${client.lastName}`;
   const dateStr = new Date().toLocaleDateString("en-CA", { year: "numeric", month: "long", day: "numeric" });
-  const firm    = data.firmName ?? DEFAULT_FIRM;
-  const insProducts = products.filter(p => p.type === "insurance" || p.type === "segregated_fund");
-  const cover = buildCoverSheet({ reportTitle: "Insurance Needs Analysis", clientName: name, advisorName: "Your Advisor", firmName: firm, dateStr });
+
+  const insProducts = products.filter(p =>
+    p.type === "insurance" || p.type === "segregated_fund"
+  );
+
+  const cover = buildCoverSheet({ reportTitle: "Insurance Needs Analysis", clientName: name, advisorName: "Your Advisor", dateStr });
   const body = cover + `
 
 <div class="section">
@@ -860,16 +894,15 @@ export function generateInsuranceReport(data: {
 // G - G -  Net Worth Statement G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - 
 
 export function generateCashFlowReport(data: {
-  client: ReportClient; generatedAt: string;
+  client: ReportClient;
+  generatedAt: string;
   advisor?: { firstName?: string; lastName?: string } | null;
-  firmName?: string;
   expenses: Array<{ category: string; description?: string | null; monthlyAmount: string; isEssential: boolean; includeInRetirement: boolean; retirementAdjustmentPct?: number | null }>;
   retirement: Record<string, unknown> | null;
 }): string {
   const name = `${data.client.firstName} ${data.client.lastName}`;
   const dateStr = new Date(data.generatedAt).toLocaleDateString("en-CA", { year: "numeric", month: "long", day: "numeric" });
   const advisorName = data.advisor ? `${data.advisor.firstName} ${data.advisor.lastName}` : "Your Financial Advisor";
-  const firm = data.firmName ?? DEFAULT_FIRM;
 
   const totalMonthly = data.expenses.reduce((s, e) => s + parseFloat(e.monthlyAmount || "0"), 0);
   const totalAnnual = totalMonthly * 12;
@@ -908,7 +941,7 @@ export function generateCashFlowReport(data: {
   const retDesiredIncome = data.retirement ? parseFloat(String((data.retirement as any).desiredRetirementIncome || "0")) : 0;
   const retirementGap = retDesiredIncome - retirementMonthly * 12;
 
-  const body = buildCoverSheet({ reportTitle: "Cash Flow Statement", reportSubtitle: "Detailed Household Budget", clientName: name, advisorName, firmName: firm, dateStr }) + `
+  const body = buildCoverSheet({ reportTitle: "Cash Flow Statement", reportSubtitle: "Detailed Household Budget", clientName: name, advisorName, dateStr }) + `
 <div class="section">
   <h2 class="section-title">Summary</h2>
   <div class="summary-grid" style="grid-template-columns:repeat(4,1fr)">
@@ -934,22 +967,21 @@ export function generateCashFlowReport(data: {
     </tbody>
   </table>`}
 </div>
-<div class="footer"><span>${esc(firm)}  -  Confidential</span><span>${esc(name)}  -  Cash Flow Statement  -  ${esc(dateStr)}</span></div>`;
+<div class="footer"><span>${DEFAULT_FIRM}  -  Confidential</span><span>${esc(name)}  -  Cash Flow Statement  -  ${esc(dateStr)}</span></div>`;
 
   return htmlShell(`Cash Flow Statement  -  ${name}`, body);
 }
 
 // G - G -  Asset Allocation & Mix Report G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - 
 export function generateAssetAllocationReport(data: {
-  client: ReportClient; generatedAt: string;
+  client: ReportClient;
+  generatedAt: string;
   advisor?: { firstName?: string; lastName?: string } | null;
-  firmName?: string;
   netWorth: ReportNetWorthEntry[];
 }): string {
   const name = `${data.client.firstName} ${data.client.lastName}`;
   const dateStr = new Date(data.generatedAt).toLocaleDateString("en-CA", { year: "numeric", month: "long", day: "numeric" });
   const advisorName = data.advisor ? `${data.advisor.firstName} ${data.advisor.lastName}` : "Your Financial Advisor";
-  const firm = data.firmName ?? DEFAULT_FIRM;
 
   const investments = data.netWorth.filter(e => e.type === "asset" && e.category === "Investments");
   const totalInvested = investments.reduce((s, e) => s + parseFloat(String(e.value) || "0"), 0);
@@ -990,7 +1022,8 @@ export function generateAssetAllocationReport(data: {
     .filter(([, v]) => totalInvested > 0 && v / totalInvested > 0.5)
     .map(([k]) => `<div class="callout warn"><strong>Concentration Risk:</strong> Over 50% of investments are in ${esc(k)} accounts. Consider diversifying across account types.</div>`).join("");
 
-  const body = buildCoverSheet({ reportTitle: "Asset Allocation & Mix", reportSubtitle: "Investment Portfolio Review", clientName: name, advisorName, firmName: firm, dateStr }) + `
+  const body = `
+${buildCoverSheet({ reportTitle: "Asset Allocation & Mix", reportSubtitle: "Investment Portfolio Review", clientName: name, advisorName, dateStr })}
 <div class="section">
   <h2 class="section-title">Allocation by Account Type</h2>
   ${warnings}
@@ -1014,16 +1047,16 @@ export function generateAssetAllocationReport(data: {
     <tbody>${holdingRows}</tbody>
   </table>
 </div>
-<div class="footer"><span>${esc(firm)}  -  Confidential</span><span>${esc(name)}  -  Asset Allocation  -  ${esc(dateStr)}</span></div>`;
+<div class="footer"><span>${DEFAULT_FIRM}  -  Confidential</span><span>${esc(name)}  -  Asset Allocation  -  ${esc(dateStr)}</span></div>`;
 
   return htmlShell(`Asset Allocation  -  ${name}`, body);
 }
 
 // G - G -  Retirement Readiness / Decumulation G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - 
 export function generateRetirementReadinessReport(data: {
-  client: ReportClient; generatedAt: string;
+  client: ReportClient;
+  generatedAt: string;
   advisor?: { firstName?: string; lastName?: string } | null;
-  firmName?: string;
   retirement: Record<string, unknown> | null;
   expenses: Array<{ monthlyAmount: string; includeInRetirement: boolean; retirementAdjustmentPct?: number | null }>;
   simulationResult?: ReportSimulation;
@@ -1032,7 +1065,6 @@ export function generateRetirementReadinessReport(data: {
   const name = `${data.client.firstName} ${data.client.lastName}`;
   const dateStr = new Date(data.generatedAt).toLocaleDateString("en-CA", { year: "numeric", month: "long", day: "numeric" });
   const advisorName = data.advisor ? `${data.advisor.firstName} ${data.advisor.lastName}` : "Your Financial Advisor";
-  const firm = data.firmName ?? DEFAULT_FIRM;
   const r = data.retirement as any;
 
   const retirementExpenses = data.expenses
@@ -1068,7 +1100,8 @@ export function generateRetirementReadinessReport(data: {
   ${svgMonteCarloChart(data.simulationResult.percentileBands, data.simulationResult.successRate)}
 </div>` : "";
 
-  const body = buildCoverSheet({ reportTitle: "Retirement Readiness", reportSubtitle: "Decumulation Projection", clientName: name, advisorName, firmName: firm, province: data.client.province ?? undefined, dateStr }) + `
+  const body = `
+${buildCoverSheet({ reportTitle: "Retirement Readiness", reportSubtitle: "Decumulation Projection", clientName: name, advisorName, dateStr })}
 <div class="section">
   <h2 class="section-title">Readiness Score</h2>
   <div style="display:flex;align-items:center;gap:32px;margin-bottom:20px">
@@ -1097,16 +1130,16 @@ export function generateRetirementReadinessReport(data: {
   <div class="callout"><strong>Note:</strong> CPP and OAS estimates are simplified averages for planning purposes. Actual amounts depend on contribution history and election age. Consult Service Canada for personalized estimates.</div>
 </div>
 ${simSection}
-<div class="footer"><span>${esc(firm)}  -  Confidential</span><span>${esc(name)}  -  Retirement Readiness  -  ${esc(dateStr)}</span></div>`;
+<div class="footer"><span>${DEFAULT_FIRM}  -  Confidential</span><span>${esc(name)}  -  Retirement Readiness  -  ${esc(dateStr)}</span></div>`;
 
   return htmlShell(`Retirement Readiness  -  ${name}`, body);
 }
 
 // G - G -  Goal Status Report G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - 
 export function generateGoalStatusReport(data: {
-  client: ReportClient; generatedAt: string;
+  client: ReportClient;
+  generatedAt: string;
   advisor?: { firstName?: string; lastName?: string } | null;
-  firmName?: string;
   plans: Array<{ id: number; name?: string | null; status?: string | null; goalAmount?: string | null; targetDate?: string | null; riskTolerance?: string | null; createdAt?: string | Date | null }>;
   education: Array<{ childName?: string | null; targetAmount?: string | null; currentBalance?: string | null; targetAge?: number | null; childAge?: number | null }>;
   retirement: Record<string, unknown> | null;
@@ -1115,7 +1148,6 @@ export function generateGoalStatusReport(data: {
   const name = `${data.client.firstName} ${data.client.lastName}`;
   const dateStr = new Date(data.generatedAt).toLocaleDateString("en-CA", { year: "numeric", month: "long", day: "numeric" });
   const advisorName = data.advisor ? `${data.advisor.firstName} ${data.advisor.lastName}` : "Your Financial Advisor";
-  const firm = data.firmName ?? DEFAULT_FIRM;
 
   const totalAssets = data.netWorth.filter(e => e.type === "asset").reduce((s, e) => s + parseFloat(String(e.value) || "0"), 0);
   const totalLiabilities = data.netWorth.filter(e => e.type === "liability").reduce((s, e) => s + parseFloat(String(e.value) || "0"), 0);
@@ -1155,7 +1187,8 @@ export function generateGoalStatusReport(data: {
   const needed = r ? parseFloat(String(r.desiredRetirementIncome || "0")) / 0.04 : 0;
   const retirementProgress = needed > 0 ? Math.min(100, Math.round(projBalance / needed * 100)) : 0;
 
-  const body = buildCoverSheet({ reportTitle: "Goal Status Report", reportSubtitle: "Progress Dashboard", clientName: name, advisorName, firmName: firm, dateStr }) + `
+  const body = `
+${buildCoverSheet({ reportTitle: "Goal Status Report", reportSubtitle: "Progress Dashboard", clientName: name, advisorName, dateStr })}
 <div class="section">
   <h2 class="section-title">Retirement Goal</h2>
   ${r ? `<div class="summary-grid" style="grid-template-columns:repeat(3,1fr)">
@@ -1179,16 +1212,16 @@ ${data.plans.length > 0 ? `<div class="section">
     <tbody>${planRows}</tbody>
   </table>
 </div>` : ""}
-<div class="footer"><span>${esc(firm)}  -  Confidential</span><span>${esc(name)}  -  Goal Status  -  ${esc(dateStr)}</span></div>`;
+<div class="footer"><span>${DEFAULT_FIRM}  -  Confidential</span><span>${esc(name)}  -  Goal Status  -  ${esc(dateStr)}</span></div>`;
 
   return htmlShell(`Goal Status  -  ${name}`, body);
 }
 
 // G - G -  Risk Management & Insurance Audit G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - 
 export function generateInsuranceAuditReport(data: {
-  client: ReportClient; generatedAt: string;
+  client: ReportClient;
+  generatedAt: string;
   advisor?: { firstName?: string; lastName?: string } | null;
-  firmName?: string;
   insurance: Record<string, unknown> | null;
   products: Array<{ productType?: string | null; productName?: string | null; coverageAmount?: string | null; premium?: string | null; status?: string | null }>;
   netWorth: ReportNetWorthEntry[];
@@ -1196,7 +1229,6 @@ export function generateInsuranceAuditReport(data: {
   const name = `${data.client.firstName} ${data.client.lastName}`;
   const dateStr = new Date(data.generatedAt).toLocaleDateString("en-CA", { year: "numeric", month: "long", day: "numeric" });
   const advisorName = data.advisor ? `${data.advisor.firstName} ${data.advisor.lastName}` : "Your Financial Advisor";
-  const firm = data.firmName ?? DEFAULT_FIRM;
 
   const ins = data.insurance as any;
   const totalCoverage = ins ? parseFloat(String(ins.primaryCoveragePurchased || "0")) + parseFloat(String(ins.spouseCoveragePurchased || "0")) : 0;
@@ -1215,7 +1247,8 @@ export function generateInsuranceAuditReport(data: {
       <td><span class="badge ${p.status === "active" ? "badge-green" : "badge-amber"}">${esc(p.status || "unknown")}</span></td>
     </tr>`).join("");
 
-  const body = buildCoverSheet({ reportTitle: "Risk Management & Insurance Audit", reportSubtitle: "Coverage Review", clientName: name, advisorName, firmName: firm, dateStr }) + `
+  const body = `
+${buildCoverSheet({ reportTitle: "Risk Management & Insurance Audit", reportSubtitle: "Coverage Review", clientName: name, advisorName, dateStr })}
 <div class="section">
   <h2 class="section-title">Coverage Summary</h2>
   <div class="summary-grid" style="grid-template-columns:repeat(4,1fr)">
@@ -1242,16 +1275,16 @@ ${data.products.length > 0 ? `<div class="section">
     <tbody>${productRows}</tbody>
   </table>
 </div>` : ""}
-<div class="footer"><span>${esc(firm)}  -  Confidential</span><span>${esc(name)}  -  Insurance Audit  -  ${esc(dateStr)}</span></div>`;
+<div class="footer"><span>${DEFAULT_FIRM}  -  Confidential</span><span>${esc(name)}  -  Insurance Audit  -  ${esc(dateStr)}</span></div>`;
 
   return htmlShell(`Insurance Audit  -  ${name}`, body);
 }
 
 // G - G -  Estate & Beneficiary Summary G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - 
 export function generateEstateSummaryReport(data: {
-  client: ReportClient; generatedAt: string;
+  client: ReportClient;
+  generatedAt: string;
   advisor?: { firstName?: string; lastName?: string } | null;
-  firmName?: string;
   estateNotes: Array<{ category?: string | null; title?: string | null; content?: string | null }>;
   netWorth: ReportNetWorthEntry[];
   products: Array<{ productType?: string | null; productName?: string | null; coverageAmount?: string | null; beneficiary?: string | null }>;
@@ -1259,7 +1292,6 @@ export function generateEstateSummaryReport(data: {
   const name = `${data.client.firstName} ${data.client.lastName}`;
   const dateStr = new Date(data.generatedAt).toLocaleDateString("en-CA", { year: "numeric", month: "long", day: "numeric" });
   const advisorName = data.advisor ? `${data.advisor.firstName} ${data.advisor.lastName}` : "Your Financial Advisor";
-  const firm = data.firmName ?? DEFAULT_FIRM;
 
   const totalAssets = data.netWorth.filter(e => e.type === "asset").reduce((s, e) => s + parseFloat(String(e.value) || "0"), 0);
   const totalLiabilities = data.netWorth.filter(e => e.type === "liability").reduce((s, e) => s + parseFloat(String(e.value) || "0"), 0);
@@ -1292,7 +1324,8 @@ export function generateEstateSummaryReport(data: {
       <td>${(e as any).accountType || " - "}</td>
     </tr>`).join("");
 
-  const body = buildCoverSheet({ reportTitle: "Estate & Beneficiary Summary", reportSubtitle: "Estate Distribution Review", clientName: name, advisorName, firmName: firm, province: data.client.province ?? undefined, dateStr }) + `
+  const body = `
+${buildCoverSheet({ reportTitle: "Estate & Beneficiary Summary", reportSubtitle: "Estate Distribution Review", clientName: name, advisorName, dateStr })}
 <div class="section">
   <h2 class="section-title">Estate Checklist</h2>
   <table>
@@ -1312,16 +1345,16 @@ export function generateEstateSummaryReport(data: {
     <tbody>${assetDistributionRows}</tbody>
   </table>
 </div>
-<div class="footer"><span>${esc(firm)}  -  Confidential</span><span>${esc(name)}  -  Estate Summary  -  ${esc(dateStr)}</span></div>`;
+<div class="footer"><span>${DEFAULT_FIRM}  -  Confidential</span><span>${esc(name)}  -  Estate Summary  -  ${esc(dateStr)}</span></div>`;
 
   return htmlShell(`Estate Summary  -  ${name}`, body);
 }
 
 // G - G -  Tax Efficiency Strategy G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - G - 
 export function generateTaxStrategyReport(data: {
-  client: ReportClient; generatedAt: string;
+  client: ReportClient;
+  generatedAt: string;
   advisor?: { firstName?: string; lastName?: string } | null;
-  firmName?: string;
   taxNotes: Array<{ category?: string | null; title?: string | null; content?: string | null; taxYear?: number | string | null }>;
   netWorth: ReportNetWorthEntry[];
   retirement: Record<string, unknown> | null;
@@ -1329,7 +1362,6 @@ export function generateTaxStrategyReport(data: {
   const name = `${data.client.firstName} ${data.client.lastName}`;
   const dateStr = new Date(data.generatedAt).toLocaleDateString("en-CA", { year: "numeric", month: "long", day: "numeric" });
   const advisorName = data.advisor ? `${data.advisor.firstName} ${data.advisor.lastName}` : "Your Financial Advisor";
-  const firm = data.firmName ?? DEFAULT_FIRM;
 
   const rrspTotal = data.netWorth.filter(e => e.type === "asset" && ((e as any).accountType === "RRSP" || e.name?.toUpperCase().includes("RRSP"))).reduce((s, e) => s + parseFloat(String(e.value) || "0"), 0);
   const tfsaTotal = data.netWorth.filter(e => e.type === "asset" && ((e as any).accountType === "TFSA" || e.name?.toUpperCase().includes("TFSA"))).reduce((s, e) => s + parseFloat(String(e.value) || "0"), 0);
@@ -1343,7 +1375,8 @@ export function generateTaxStrategyReport(data: {
       <td style="font-size:9pt">${esc((n.content || "").substring(0, 120))}${(n.content || "").length > 120 ? "G - " : ""}</td>
     </tr>`).join("");
 
-  const body = buildCoverSheet({ reportTitle: "Tax Efficiency Strategy", reportSubtitle: "Annual Tax Review", clientName: name, advisorName, firmName: firm, province: data.client.province ?? undefined, dateStr }) + `
+  const body = `
+${buildCoverSheet({ reportTitle: "Tax Efficiency Strategy", reportSubtitle: "Annual Tax Review", clientName: name, advisorName, dateStr })}
 <div class="section">
   <h2 class="section-title">Account Structure Overview</h2>
   <div class="summary-grid">
@@ -1373,7 +1406,7 @@ ${data.taxNotes.length > 0 ? `<div class="section">
   <h3>Income Splitting</h3>
   <p>Spousal RRSP, T1032 pension income splitting, and prescribed rate loans can significantly reduce household tax burden.</p>
 </div>
-<div class="footer"><span>${esc(firm)}  -  Confidential</span><span>${esc(name)}  -  Tax Strategy  -  ${esc(dateStr)}</span></div>`;
+<div class="footer"><span>${DEFAULT_FIRM}  -  Confidential</span><span>${esc(name)}  -  Tax Strategy  -  ${esc(dateStr)}</span></div>`;
 
   return htmlShell(`Tax Strategy  -  ${name}`, body);
 }
@@ -1383,7 +1416,6 @@ export function generateOnePagePlan(data: {
   client: ReportClient;
   generatedAt: string;
   advisor?: { firstName?: string; lastName?: string; email?: string } | null;
-  firmName?: string;
   netWorth: ReportNetWorthEntry[];
   retirement: Record<string, unknown> | null;
   insurance: Record<string, unknown> | null;
@@ -1396,7 +1428,6 @@ export function generateOnePagePlan(data: {
   const name = `${data.client.firstName} ${data.client.lastName}`;
   const dateStr = new Date(data.generatedAt).toLocaleDateString("en-CA", { year: "numeric", month: "long", day: "numeric" });
   const advisorName = data.advisor ? `${data.advisor.firstName} ${data.advisor.lastName}` : "Your Financial Advisor";
-  const firm = data.firmName ?? DEFAULT_FIRM;
 
   const totalAssets = data.netWorth.filter(e => e.type === "asset").reduce((s, e) => s + parseFloat(String(e.value) || "0"), 0);
   const totalLiabilities = data.netWorth.filter(e => e.type === "liability").reduce((s, e) => s + parseFloat(String(e.value) || "0"), 0);
@@ -1442,7 +1473,7 @@ export function generateOnePagePlan(data: {
 <div class="one-page">
   <div class="op-header">
     <div>
-      <div class="op-logo">${esc(firm)}</div>
+      <div class="op-logo">${DEFAULT_FIRM}</div>
       <div class="op-title">${esc(name)}</div>
       <div class="op-subtitle">One-Page Financial Plan - ${esc(dateStr)} - ${esc(advisorName)}</div>
     </div>
@@ -1490,7 +1521,7 @@ export function generateOnePagePlan(data: {
 
   <div class="op-footer">
     <span>This document is for discussion purposes only and does not constitute financial, tax, or legal advice.</span>
-    <span>${esc(firm)} - ${esc(advisorName)} - ${esc(dateStr)}</span>
+    <span>${DEFAULT_FIRM} - ${esc(advisorName)} - ${esc(dateStr)}</span>
   </div>
 </div>`;
 

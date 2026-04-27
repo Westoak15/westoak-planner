@@ -1373,7 +1373,7 @@ export default function App() {
           )}
 
           {tab === "networth"   && client && <NetWorthTabNew   clientId={client.id} client={client} />}
-          {tab === "retirement" && client && (<QueryClientProvider client={queryClient}><RetirementTabNew clientId={client.id} clientName={client.firstName} /></QueryClientProvider>)}
+
           {tab === "retirement" && client && (<QueryClientProvider client={queryClient}><RetirementTabNew clientId={client.id} clientName={client.firstName} /></QueryClientProvider>)}
           {tab === "pension"    && client && <PensionTab clientId={client.id} client={client} person={person} />}
           {tab === "insurance" && client && <PoliciesTab clientId={client.id} client={client} person={person} />}

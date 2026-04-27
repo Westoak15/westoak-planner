@@ -2415,20 +2415,12 @@ export function AITab({ clientId }: { clientId: number }) {
       .map(([runId, recs]) => ({ runId, recs, date: new Date(runId) }));
   })();
 
-  // Initialize with most recent session open
-  const [expanded, setExpanded] = useState<Set<string>>(() =>
-    new Set(sessions.length > 0 ? [sessions[0].runId] : [])
-  );
-
-  // Keep most recent open when new sessions load
-  const prevMostRecent = useRef<string | null>(null);
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  // Auto-expand most recent session whenever recommendations load
+  const newestRunId = sessions[0]?.runId ?? null;
   useEffect(() => {
-    const newest = sessions[0]?.runId;
-    if (newest && newest !== prevMostRecent.current) {
-      setExpanded(prev => new Set([...prev, newest]));
-      prevMostRecent.current = newest;
-    }
-  }, [sessions[0]?.runId]);
+    if (newestRunId) setExpanded(prev => new Set([...prev, newestRunId]));
+  }, [newestRunId]);
 
   const toggleExpanded = (runId: string) =>
     setExpanded(prev => {
@@ -2440,13 +2432,15 @@ export function AITab({ clientId }: { clientId: number }) {
   const deleteSession = async (runId: string) => {
     if (!confirm("Delete all recommendations in this session?")) return;
     if (runId === "legacy") {
-      // Legacy recs have no runId — delete individually
+      // Legacy recs have no runId — delete each individually via existing DELETE /ai/:id
       const legacyRecs = (recommendations as any[]).filter((r: any) => !r.runId);
-      await Promise.all(legacyRecs.map((r: any) => deleteRec.mutateAsync(r.id)));
+      await Promise.all(legacyRecs.map((r: any) =>
+        api.delete(`/api/ai/${r.id}`)
+      ));
     } else {
       await api.delete(`/api/clients/${clientId}/ai/session/${encodeURIComponent(runId)}`);
-      qc.invalidateQueries({ queryKey: [`/api/clients/${clientId}/ai-recommendations`] });
     }
+    qc.invalidateQueries({ queryKey: [`/api/clients/${clientId}/ai-recommendations`] });
   };
 
   const priorityOrder: Record<string, number> = { high: 0, medium: 1, low: 2 };

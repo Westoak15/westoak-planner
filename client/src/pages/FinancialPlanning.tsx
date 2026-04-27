@@ -2439,7 +2439,7 @@ export function AITab({ clientId }: { clientId: number }) {
       // Legacy recs have no runId — delete each individually via existing DELETE /ai/:id
       const legacyRecs = (recommendations as any[]).filter((r: any) => !r.runId);
       await Promise.all(legacyRecs.map((r: any) =>
-        api.delete(`/api/ai/${r.id}`)
+        api.delete(`/api/ai-recommendations/${r.id}`)
       ));
     } else {
       await api.delete(`/api/clients/${clientId}/ai/session/${encodeURIComponent(runId)}`);

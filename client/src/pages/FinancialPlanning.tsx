@@ -1,4 +1,4 @@
-import { useQueryClient } from "@tanstack/react-query";
+import { useQueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { api } from "../lib/api";
 import { useState, useMemo, useEffect, Component, type ReactNode } from "react";
 // trying to force build this file
@@ -2598,7 +2598,7 @@ const { data: plans = [] } = useClientPlans(selectedClientId ?? 0);
               </div>
             )}
             {activeTab === "networth"   && <NetWorthTab      clientId={selectedClientId} />}
-            {activeTab === "retirement" && selectedClientId && <RetirementTab clientId={selectedClientId} clientName={(selectedClient as any)?.firstName} />}
+            {activeTab === "retirement" && selectedClientId && (<QueryClientProvider client={queryClient}><RetirementTab clientId={selectedClientId} clientName={(selectedClient as any)?.firstName} /></QueryClientProvider>)}
             {activeTab === "insurance"  && <InsuranceTab     clientId={selectedClientId} planId={activePlanId} client={selectedClient} />}
             {activeTab === "resp"       && <RESPTab          clientId={selectedClientId} planId={activePlanId} />}
             {activeTab === "debt"       && <DebtTab          clientId={selectedClientId} planId={activePlanId} />}

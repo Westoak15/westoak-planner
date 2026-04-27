@@ -1189,7 +1189,7 @@ async function save() {
                   className={INPUT} />
                 <button type="button" onClick={() => setShowNew(s=>!s)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
-          {tab === "retirement" && client && <RetirementTabNew clientId={client.id} clientName={client.firstName} />}
+          {tab === "retirement" && client && (<QueryClientProvider client={queryClient}><RetirementTabNew clientId={client.id} clientName={client.firstName} /></QueryClientProvider>)}
                 </button>
               </div>
               {/* Requirements */}

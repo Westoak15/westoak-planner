@@ -480,10 +480,10 @@ export function RetirementProjectionForm({ clientId, clientName, projection, onS
           </div>
           <div className="flex justify-between items-center mb-1.5">
             <span className="text-xs text-gray-500">Income coverage — today's dollars (non-adjusted)</span>
-            <span className="text-sm font-medium" style={{ color: calc.fundedNominal >= 90 ? \#16a34a\ : calc.fundedNominal >= 70 ? \#d97706\ : \#dc2626\ }}>{calc.fundedNominal}% funded</span>
+            <span className="text-sm font-medium" style={{ color: calc.fundedNominal >= 90 ? "#16a34a" : calc.fundedNominal >= 70 ? "#d97706" : "#dc2626" }}>{calc.fundedNominal}% funded</span>
           </div>
           <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-            <div className="h-full rounded-full transition-all duration-300" style={{ width: `${calc.fundedNominal}%`, backgroundColor: calc.fundedNominal >= 90 ? \#16a34a\ : calc.fundedNominal >= 70 ? \#d97706\ : \#dc2626\ }} />
+            <div className="h-full rounded-full transition-all duration-300" style={{ width: `${calc.fundedNominal}%`, backgroundColor: calc.fundedNominal >= 90 ? "#16a34a" : calc.fundedNominal >= 70 ? "#d97706" : "#dc2626" }} />
           </div>
           {calc.desiredAtRet > 0 && (
             <p className="text-xs text-gray-400 mt-2">

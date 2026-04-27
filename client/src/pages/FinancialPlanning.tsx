@@ -75,7 +75,10 @@ function pct(n: number): string { return `${(n * 100).toFixed(1)}%`; }
 // ── Report helper — opens server-generated HTML report in new window ──────────
 
 async function openReport(clientId: number, type: "comprehensive" | "retirement" | "insurance" | "net-worth") {
-  const res = await fetch(`/api/reports/${clientId}/${type}`, { credentials: "include" });
+  const token = localStorage.getItem("fp_token");
+  const res = await fetch(`/api/reports/${clientId}/${type}`, {
+    headers: { Authorization: `Bearer ${token ?? ""}` },
+  });
   if (!res.ok) throw new Error("Failed to generate report");
   const html = await res.text();
   const win = window.open("", "_blank");

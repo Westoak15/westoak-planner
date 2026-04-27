@@ -66,8 +66,27 @@ function htmlShell(title: string, body: string): string {
     p { margin-bottom:4px; }
   }
 </style>
+<style>
+  @media print { .print-btn { display:none !important; } }
+  .print-btn {
+    position:fixed; bottom:24px; right:24px; z-index:999;
+    background:#1B3A5C; color:white; border:none; border-radius:8px;
+    padding:10px 20px; font-size:11pt; font-weight:600; cursor:pointer;
+    box-shadow:0 4px 12px rgba(0,0,0,0.25); display:flex; align-items:center; gap:8px;
+  }
+  .print-btn:hover { background:#0F766E; }
+  .print-btn svg { width:16px; height:16px; }
+</style>
 </head>
-<body>${body}</body>
+<body>
+<button class="print-btn" onclick="window.print()">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+    <rect x="6" y="14" width="12" height="8"/>
+  </svg>
+  Print / Save PDF
+</button>
+${body}</body>
 </html>`;
 }
 
@@ -123,6 +142,74 @@ function svgNeedBreakdown(sections: { label: string; value: number; color: strin
   <text x="${barX+barW/2}" y="${(20+barH+20).toFixed(1)}" text-anchor="middle" font-size="8" font-weight="700" fill="${netNeed>0?"#DC2626":"#16A34A"}">Net Need: ${fmtCad(netNeed)}</text>
 </svg>`;
 }
+
+function buildCoverSheet(opts: {
+  reportTitle:   string;
+  reportSubtitle?: string;
+  clientName:    string;
+  spouseName?:   string;
+  advisorName:   string;
+  advisorEmail?: string;
+  advisorPhone?: string;
+  firmName?:     string;
+  province?:     string;
+  dateStr:       string;
+}): string {
+  const firm = opts.firmName ?? "Knights of Columbus";
+  return `
+<div style="min-height:100vh;display:flex;flex-direction:column;justify-content:space-between;background:white;page-break-after:always;">
+
+  <!-- Top band -->
+  <div style="background:var(--navy);padding:28px 56px 24px;color:white;">
+    <div style="font-size:9pt;letter-spacing:0.15em;text-transform:uppercase;opacity:0.7;margin-bottom:10px;">${esc(firm)} · Financial Planning</div>
+    <div style="font-size:28pt;font-weight:700;line-height:1.1;margin-bottom:6px;">${esc(opts.reportTitle)}</div>
+    ${opts.reportSubtitle?`<div style="font-size:13pt;opacity:0.8;margin-top:4px;">${esc(opts.reportSubtitle)}</div>`:""}
+    <div style="height:3px;background:var(--teal);border-radius:2px;margin-top:20px;"></div>
+  </div>
+
+  <!-- Main cover body -->
+  <div style="flex:1;padding:48px 56px;display:flex;flex-direction:column;justify-content:center;gap:40px;">
+
+    <!-- Prepared for -->
+    <div>
+      <div style="font-size:9pt;letter-spacing:0.1em;text-transform:uppercase;color:var(--gray);margin-bottom:8px;">Prepared for</div>
+      <div style="font-size:22pt;font-weight:700;color:var(--navy);">${esc(opts.clientName)}</div>
+      ${opts.spouseName?`<div style="font-size:15pt;color:var(--gray);margin-top:4px;">& ${esc(opts.spouseName)}</div>`:""}
+    </div>
+
+    <!-- Divider -->
+    <div style="height:1px;background:var(--mgray);"></div>
+
+    <!-- Two-column: advisor + report details -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:40px;">
+      <div>
+        <div style="font-size:9pt;letter-spacing:0.1em;text-transform:uppercase;color:var(--gray);margin-bottom:10px;">Your Advisor</div>
+        <div style="font-size:14pt;font-weight:700;color:var(--navy);margin-bottom:4px;">${esc(opts.advisorName)}</div>
+        ${opts.advisorEmail?`<div style="font-size:10pt;color:var(--gray);margin-bottom:2px;">✉ ${esc(opts.advisorEmail)}</div>`:""}
+        ${opts.advisorPhone?`<div style="font-size:10pt;color:var(--gray);">✆ ${esc(opts.advisorPhone)}</div>`:""}
+      </div>
+      <div>
+        <div style="font-size:9pt;letter-spacing:0.1em;text-transform:uppercase;color:var(--gray);margin-bottom:10px;">Report Details</div>
+        <div style="font-size:10pt;color:var(--navy);margin-bottom:4px;"><span style="color:var(--gray);">Date prepared:</span> <strong>${esc(opts.dateStr)}</strong></div>
+        ${opts.province?`<div style="font-size:10pt;color:var(--navy);margin-bottom:4px;"><span style="color:var(--gray);">Province:</span> <strong>${esc(opts.province)}</strong></div>`:""}
+        <div style="font-size:10pt;color:var(--navy);"><span style="color:var(--gray);">Prepared by:</span> <strong>${esc(firm)}</strong></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer disclaimer -->
+  <div style="background:var(--lgray);padding:16px 56px;border-top:1px solid var(--mgray);">
+    <p style="font-size:8pt;color:var(--gray);line-height:1.5;margin:0;">
+      <strong>Confidential:</strong> This report has been prepared solely for ${esc(opts.clientName)} and is intended for personal use only.
+      The information contained herein is based on data provided and is subject to change.
+      This document does not constitute financial, legal, or tax advice.
+      Please consult qualified professionals before making financial decisions.
+    </p>
+  </div>
+
+</div>`;
+}
+
 
 export function generateFnaReport(data: { client: any; analysis: any; advisor?: any; }): string {
   const { client, analysis } = data;
@@ -413,12 +500,8 @@ export function generateNetWorthReport(data: { client: any; netWorth: any[] }): 
   const totalA = assets.reduce((s, e) => s + v(e.value), 0);
   const totalL = liabs.reduce((s, e)  => s + v(e.value), 0);
   const nw = totalA - totalL;
-  const body = `
-<div class="cover">
-  <div style="font-size:10pt;letter-spacing:0.1em;text-transform:uppercase;opacity:0.7;margin-bottom:12px;">Knights of Columbus - Financial Planning Suite</div>
-  <h1>Net Worth Statement</h1>
-  <h2>${esc(name)} - As at ${dateStr}</h2>
-</div>
+  const cover = buildCoverSheet({ reportTitle: "Net Worth Statement", reportSubtitle: `As at ${dateStr}`, clientName: name, advisorName: "Your Advisor", dateStr });
+  const body = cover + `
 <div class="section">
   <h2 class="section-title">Balance Sheet</h2>
   <div class="summary-grid">
@@ -455,19 +538,9 @@ export function generateComprehensiveReport(data: { client: any; advisor?: any; 
   const totalA = assets.reduce((s, e) => s + v(e.value), 0);
   const totalL = liabs.reduce((s, e)  => s + v(e.value), 0);
   const ins = data.insurance;
-  const body = `
-<div class="cover">
-  <div style="font-size:10pt;letter-spacing:0.1em;text-transform:uppercase;opacity:0.7;margin-bottom:12px;">Knights of Columbus - Financial Planning Suite</div>
-  <h1>Financial Plan</h1>
-  <h2>Comprehensive Review - ${dateStr}</h2>
-  <div style="height:2px;background:var(--teal);margin:12px 0;"></div>
-  <div class="cover-meta">
-    <div class="label">Prepared for</div><div class="value">${esc(name)}${client.spouseFirstName?` &amp; ${esc(client.spouseFirstName+" "+(client.spouseLastName??""))}`:""}</div>
-    <div class="label">Advisor</div><div class="value">${esc(advisorName)}</div>
-    <div class="label">Date</div><div class="value">${esc(dateStr)}</div>
-    <div class="label">Province</div><div class="value">${esc(client.province??"Canada")}</div>
-  </div>
-</div>
+  const spouseName = client.spouseFirstName ? `${client.spouseFirstName} ${client.spouseLastName ?? ""}`.trim() : undefined;
+  const cover = buildCoverSheet({ reportTitle: "Financial Plan", reportSubtitle: "Comprehensive Review", clientName: name, spouseName, advisorName, advisorEmail: data.advisor?.email, advisorPhone: data.advisor?.phone, province: client.province ?? undefined, dateStr });
+  const body = cover + `
 <div class="section">
   <h2 class="section-title">Net Worth</h2>
   <div class="summary-grid">
@@ -663,12 +736,8 @@ export function generateRetirementReport(data: {
     <td style="text-align:right">${fmtCad(Number(y.totalWealth))}</td>
   </tr>`).join("") ?? "";
 
-  const body = `
-<div class="cover">
-  <div style="font-size:10pt;letter-spacing:0.1em;text-transform:uppercase;opacity:0.7;margin-bottom:12px;">Knights of Columbus</div>
-  <h1>Retirement Income Projection</h1>
-  <h2>${esc(name)} - ${dateStr}</h2>
-</div>
+  const cover = buildCoverSheet({ reportTitle: "Retirement Income Projection", clientName: name, advisorName: "Your Advisor", dateStr });
+  const body = cover + `
 
 <div class="section">
   <h2 class="section-title">Retirement Overview</h2>
@@ -726,12 +795,8 @@ export function generateInsuranceReport(data: {
     p.type === "insurance" || p.type === "segregated_fund"
   );
 
-  const body = `
-<div class="cover">
-  <div style="font-size:10pt;letter-spacing:0.1em;text-transform:uppercase;opacity:0.7;margin-bottom:12px;">Knights of Columbus</div>
-  <h1>Insurance Needs Analysis</h1>
-  <h2>${esc(name)} - ${dateStr}</h2>
-</div>
+  const cover = buildCoverSheet({ reportTitle: "Insurance Needs Analysis", clientName: name, advisorName: "Your Advisor", dateStr });
+  const body = cover + `
 
 <div class="section">
   <h2 class="section-title">Coverage Summary</h2>

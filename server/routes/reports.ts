@@ -189,14 +189,11 @@ r.get("/:clientId/retirement", async (req: AuthRequest, res: Response) => {
       const p75  = yearlyBands.map(b => Math.round(pct(b, 0.75)));
       const p90  = yearlyBands.map(b => Math.round(pct(b, 0.9)));
       simulation = {
-        successRate: (successCount / simCount),   // decimal for report (0.0–1.0)
+        successRate: (successCount / simCount),
         simulationCount: simCount,
         yearsProjected: totalYears,
         pensionIncome: Math.round(pensionIncome),
-        percentileBands: yearlyBands.map((_, i) => ({
-          age: currentAge + i,
-          p10: p10[i], p25: p25[i], p50: p50[i], p75: p75[i], p90: p90[i],
-        })),
+        percentileBands: { p10, p25, p50, p75, p90 },
         finalBalancePercentiles: {
           p10: Math.round(pct(outcomes, 0.1)),
           p25: Math.round(pct(outcomes, 0.25)),

@@ -42,7 +42,7 @@ r.get("/:clientId/fna/:analysisId", async (req: AuthRequest, res: Response) => {
     const [advisor] = await db.select({ id: users.id, firstName: users.firstName, lastName: users.lastName })
       .from(users).where(eq(users.id, req.userId!)).limit(1);
 
-    const html = generateFnaReport({ client, analysis, advisor });
+    const html = generateFnaReport({ client, analysis, advisor, includeCover: req.query.cover === "true" });
     res.setHeader("Content-Type", "text/html; charset=utf-8");
     res.send(html);
   } catch (err) {
@@ -58,7 +58,7 @@ r.get("/:clientId/net-worth", async (req: AuthRequest, res: Response) => {
     if (!client) return res.status(404).json({ message: "Not found" });
 
     const netWorth = await db.select().from(netWorthEntries).where(eq(netWorthEntries.clientId, +req.params.clientId));
-    const html = generateNetWorthReport({ client, netWorth });
+    const html = generateNetWorthReport({ client, netWorth, includeCover: req.query.cover === "true" });
     res.setHeader("Content-Type", "text/html; charset=utf-8");
     res.send(html);
   } catch (err) {
@@ -206,7 +206,7 @@ r.get("/:clientId/retirement", async (req: AuthRequest, res: Response) => {
       console.error("[retirement report sim]", simErr);
     }
 
-    const html = generateRetirementReport({ client: d.client, retirement: d.retirement, sim: simulation, advisor: d.advisor, generatedAt: new Date().toISOString() } as any);
+    const html = generateRetirementReport({ client: d.client, retirement: d.retirement, sim: simulation, advisor: d.advisor, generatedAt: new Date().toISOString(), includeCover: req.query.cover === "true" } as any);
     res.setHeader("Content-Type", "text/html; charset=utf-8"); res.send(html);
   } catch (err) { console.error(err); res.status(500).json({ message: "Failed" }); }
 });
@@ -216,7 +216,7 @@ r.get("/:clientId/insurance", async (req: AuthRequest, res: Response) => {
   try {
     const d = await fetchClientFpData(+req.params.clientId, req.userId!);
     if (!d) return res.status(404).json({ message: "Not found" });
-    const html = generateInsuranceReport({ client: d.client, insurance: d.insurance, products: [] });
+    const html = generateInsuranceReport({ client: d.client, insurance: d.insurance, products: [], includeCover: req.query.cover === "true" });
     res.setHeader("Content-Type", "text/html; charset=utf-8"); res.send(html);
   } catch (err) { console.error(err); res.status(500).json({ message: "Failed" }); }
 });
@@ -226,7 +226,7 @@ r.get("/:clientId/cash-flow", async (req: AuthRequest, res: Response) => {
   try {
     const d = await fetchClientFpData(+req.params.clientId, req.userId!);
     if (!d) return res.status(404).json({ message: "Not found" });
-    const html = generateCashFlowReport({ client: d.client, expenses: d.expenses, retirement: d.retirement, advisor: d.advisor, generatedAt: new Date().toISOString() } as any);
+    const html = generateCashFlowReport({ client: d.client, expenses: d.expenses, retirement: d.retirement, advisor: d.advisor, generatedAt: new Date().toISOString(), includeCover: req.query.cover === "true" } as any);
     res.setHeader("Content-Type", "text/html; charset=utf-8"); res.send(html);
   } catch (err) { console.error(err); res.status(500).json({ message: "Failed" }); }
 });
@@ -236,7 +236,7 @@ r.get("/:clientId/asset-allocation", async (req: AuthRequest, res: Response) => 
   try {
     const d = await fetchClientFpData(+req.params.clientId, req.userId!);
     if (!d) return res.status(404).json({ message: "Not found" });
-    const html = generateAssetAllocationReport({ client: d.client, netWorth: d.netWorth, advisor: d.advisor, generatedAt: new Date().toISOString() } as any);
+    const html = generateAssetAllocationReport({ client: d.client, netWorth: d.netWorth, advisor: d.advisor, generatedAt: new Date().toISOString(), includeCover: req.query.cover === "true" } as any);
     res.setHeader("Content-Type", "text/html; charset=utf-8"); res.send(html);
   } catch (err) { console.error(err); res.status(500).json({ message: "Failed" }); }
 });
@@ -246,7 +246,7 @@ r.get("/:clientId/retirement-readiness", async (req: AuthRequest, res: Response)
   try {
     const d = await fetchClientFpData(+req.params.clientId, req.userId!);
     if (!d) return res.status(404).json({ message: "Not found" });
-    const html = generateRetirementReadinessReport({ client: d.client, retirement: d.retirement, expenses: d.expenses, netWorth: d.netWorth, advisor: d.advisor, generatedAt: new Date().toISOString() } as any);
+    const html = generateRetirementReadinessReport({ client: d.client, retirement: d.retirement, expenses: d.expenses, netWorth: d.netWorth, advisor: d.advisor, generatedAt: new Date().toISOString(), includeCover: req.query.cover === "true" } as any);
     res.setHeader("Content-Type", "text/html; charset=utf-8"); res.send(html);
   } catch (err) { console.error(err); res.status(500).json({ message: "Failed" }); }
 });
@@ -256,7 +256,7 @@ r.get("/:clientId/goal-status", async (req: AuthRequest, res: Response) => {
   try {
     const d = await fetchClientFpData(+req.params.clientId, req.userId!);
     if (!d) return res.status(404).json({ message: "Not found" });
-    const html = generateGoalStatusReport({ client: d.client, plans: [], education: d.education, retirement: d.retirement, netWorth: d.netWorth, advisor: d.advisor, generatedAt: new Date().toISOString() } as any);
+    const html = generateGoalStatusReport({ client: d.client, plans: [], education: d.education, retirement: d.retirement, netWorth: d.netWorth, advisor: d.advisor, generatedAt: new Date().toISOString(), includeCover: req.query.cover === "true" } as any);
     res.setHeader("Content-Type", "text/html; charset=utf-8"); res.send(html);
   } catch (err) { console.error(err); res.status(500).json({ message: "Failed" }); }
 });
@@ -266,7 +266,7 @@ r.get("/:clientId/insurance-audit", async (req: AuthRequest, res: Response) => {
   try {
     const d = await fetchClientFpData(+req.params.clientId, req.userId!);
     if (!d) return res.status(404).json({ message: "Not found" });
-    const html = generateInsuranceAuditReport({ client: d.client, insurance: d.insurance, products: [], netWorth: d.netWorth, advisor: d.advisor, generatedAt: new Date().toISOString() } as any);
+    const html = generateInsuranceAuditReport({ client: d.client, insurance: d.insurance, products: [], netWorth: d.netWorth, advisor: d.advisor, generatedAt: new Date().toISOString(), includeCover: req.query.cover === "true" } as any);
     res.setHeader("Content-Type", "text/html; charset=utf-8"); res.send(html);
   } catch (err) { console.error(err); res.status(500).json({ message: "Failed" }); }
 });
@@ -276,7 +276,7 @@ r.get("/:clientId/estate-summary", async (req: AuthRequest, res: Response) => {
   try {
     const d = await fetchClientFpData(+req.params.clientId, req.userId!);
     if (!d) return res.status(404).json({ message: "Not found" });
-    const html = generateEstateSummaryReport({ client: d.client, estateNotes: d.estateNotes, netWorth: d.netWorth, products: [], advisor: d.advisor, generatedAt: new Date().toISOString() } as any);
+    const html = generateEstateSummaryReport({ client: d.client, estateNotes: d.estateNotes, netWorth: d.netWorth, products: [], advisor: d.advisor, generatedAt: new Date().toISOString(), includeCover: req.query.cover === "true" } as any);
     res.setHeader("Content-Type", "text/html; charset=utf-8"); res.send(html);
   } catch (err) { console.error(err); res.status(500).json({ message: "Failed" }); }
 });
@@ -286,7 +286,7 @@ r.get("/:clientId/tax-strategy", async (req: AuthRequest, res: Response) => {
   try {
     const d = await fetchClientFpData(+req.params.clientId, req.userId!);
     if (!d) return res.status(404).json({ message: "Not found" });
-    const html = generateTaxStrategyReport({ client: d.client, taxNotes: d.taxNotes, netWorth: d.netWorth, retirement: d.retirement, advisor: d.advisor, generatedAt: new Date().toISOString() } as any);
+    const html = generateTaxStrategyReport({ client: d.client, taxNotes: d.taxNotes, netWorth: d.netWorth, retirement: d.retirement, advisor: d.advisor, generatedAt: new Date().toISOString(), includeCover: req.query.cover === "true" } as any);
     res.setHeader("Content-Type", "text/html; charset=utf-8"); res.send(html);
   } catch (err) { console.error(err); res.status(500).json({ message: "Failed" }); }
 });
@@ -295,7 +295,7 @@ r.get("/:clientId/one-page", async (req: AuthRequest, res: Response) => {
   try {
     const d = await fetchClientFpData(+req.params.clientId, req.userId!);
     if (!d) return res.status(404).json({ message: "Not found" });
-    const html = generateOnePagePlan({ client: d.client, netWorth: d.netWorth, retirement: d.retirement, insurance: d.insurance, plans: [], education: d.education, aiRecs: [], expenses: d.expenses, advisor: d.advisor, generatedAt: new Date().toISOString() } as any);
+    const html = generateOnePagePlan({ client: d.client, netWorth: d.netWorth, retirement: d.retirement, insurance: d.insurance, plans: [], education: d.education, aiRecs: [], expenses: d.expenses, advisor: d.advisor, generatedAt: new Date().toISOString(), includeCover: req.query.cover === "true" } as any);
     res.setHeader("Content-Type", "text/html; charset=utf-8"); res.send(html);
   } catch (err: any) { console.error("REPORT ERROR:", err?.message); res.status(500).json({ message: err?.message ?? "Failed" }); }
 });

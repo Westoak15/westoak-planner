@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { FileText, Download, CheckSquare, Square, Loader2 } from "lucide-react";
+import { FileText, Download, CheckSquare, Square, Loader2, BookOpen } from "lucide-react";
 
 interface ReportSection {
   id: string;
@@ -45,17 +45,22 @@ const CATEGORY_COLORS: Record<string, string> = {
 export function ReportsTab({ clientId }: { clientId: number }) {
   const [selected, setSelected]           = useState<Set<string>>(new Set());
   const [generating, setGenerating]       = useState(false);
+  const [includeCover, setIncludeCover]   = useState(false);
   const [fnaAnalysisId, setFnaAnalysisId] = useState<number | null>(null);
   const [fnaAnalyses, setFnaAnalyses]     = useState<any[]>([]);
   const [loadingFna, setLoadingFna]       = useState(false);
 
   const token = () => localStorage.getItem("fp_token") ?? "";
 
-  async function fetchHtml(route: string): Promise<string> {
+  async function fetchHtml(route: string, withCover = false): Promise<string> {
     let url = `/api/reports/${clientId}/${route}`;
     if (route === "fna") {
       if (!fnaAnalysisId) return "<p>No FNA analysis selected</p>";
       url = `/api/reports/${clientId}/fna/${fnaAnalysisId}`;
+    }
+    // comprehensive always has its own cover; individual reports pass ?cover=true when toggled
+    if (withCover && route !== "comprehensive" && route !== "one-page") {
+      url += "?cover=true";
     }
     const res = await fetch(url, { headers: { Authorization: `Bearer ${token()}` } });
     if (!res.ok) return `<p style="color:red">Failed to load ${route}</p>`;
@@ -75,7 +80,7 @@ export function ReportsTab({ clientId }: { clientId: number }) {
   async function openCombined(routes: string[]) {
     setGenerating(true);
     try {
-      const parts = await Promise.all(routes.map(r => fetchHtml(r)));
+      const parts = await Promise.all(routes.map(r => fetchHtml(r, includeCover)));
       const css = extractCss(parts[0]);
       const combined = `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>Financial Report</title>
 <style>${css}.report-divider{page-break-before:always;}</style></head><body>
@@ -132,6 +137,21 @@ ${parts.map(h => stripBody(h)).join('\n<div class="report-divider"></div>\n')}
         <div className="flex items-center gap-3">
           <button onClick={() => setSelected(new Set(REPORT_SECTIONS.map(s => s.id)))} className="text-sm text-[#0c1e3a] font-semibold hover:underline">All</button>
           <button onClick={() => setSelected(new Set())} className="text-sm text-gray-400 hover:underline">None</button>
+
+          {/* Cover page toggle */}
+          <button
+            onClick={() => setIncludeCover(v => !v)}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-semibold transition-colors ${
+              includeCover
+                ? "bg-[#0c1e3a] text-white border-[#0c1e3a]"
+                : "bg-white text-gray-500 border-gray-200 hover:border-gray-400"
+            }`}
+            title="Prepend a cover page to each selected report"
+          >
+            <BookOpen className="w-3.5 h-3.5" />
+            Cover page {includeCover ? "on" : "off"}
+          </button>
+
           <button onClick={generateSelected} disabled={selectedCount === 0 || generating}
             className="flex items-center gap-2 bg-[#0c1e3a] hover:bg-[#0e2a4a] disabled:opacity-40 text-white font-semibold px-5 py-2.5 rounded-xl text-sm">
             {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4" />}
@@ -204,7 +224,7 @@ ${parts.map(h => stripBody(h)).join('\n<div class="report-divider"></div>\n')}
                           </div>
                         )}
                       </div>
-                      <button onClick={async e => { e.stopPropagation(); const h = await fetchHtml(section.route); const b = new Blob([h], { type: "text/html" }); window.open(URL.createObjectURL(b), "_blank"); }}
+                      <button onClick={async e => { e.stopPropagation(); const h = await fetchHtml(section.route, includeCover); const b = new Blob([h], { type: "text/html" }); window.open(URL.createObjectURL(b), "_blank"); }}
                         className="flex-shrink-0 p-1 text-gray-300 hover:text-gray-600 transition-colors" title="Preview">
                         <Download className="w-3.5 h-3.5" />
                       </button>

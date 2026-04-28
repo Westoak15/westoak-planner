@@ -655,7 +655,7 @@ export function RetirementTab({ clientId, clientName }: { clientId: number; clie
   };
 
   const deleteMut = useMutation({
-    mutationFn: (id: number) => apiFetch(`/api/retirement/${id}`, { method: "DELETE" }),
+    mutationFn: (id: number) => apiFetch(`/api/retirement-projections/${id}`, { method: "DELETE" }),
     onSuccess: () => qc.invalidateQueries({ queryKey: [`/api/clients/${clientId}/retirement`] }),
   });
 

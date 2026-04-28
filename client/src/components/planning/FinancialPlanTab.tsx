@@ -377,7 +377,9 @@ export function FinancialPlanTab({ clientId, clientName }: { clientId: number; c
 
   useEffect(() => { loadSaved(); }, [clientId]);
 
-  async function loadSaved() {
+  function loadFromHistory(saved: SavedPlan) {
+    if (saved.plan) { setPlan(saved.plan); setView("plan"); }
+  }
     setLoadingSaved(true);
     try {
       const res = await fetch(`/api/clients/${clientId}/saved-plans`, {
@@ -412,8 +414,13 @@ export function FinancialPlanTab({ clientId, clientName }: { clientId: number; c
     }
   }
 
-  function loadFromHistory(saved: SavedPlan) {
-    if (saved.plan) { setPlan(saved.plan); setView("plan"); }
+  async function deleteSaved(id: number) {
+    if (!confirm("Delete this saved plan?")) return;
+    await fetch(`/api/saved-plans/${id}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token()}` },
+    });
+    await loadSaved();
   }
 
   return (
@@ -518,6 +525,10 @@ export function FinancialPlanTab({ clientId, clientName }: { clientId: number; c
                     <button onClick={() => loadFromHistory(s)}
                       className="text-xs text-[#0c1e3a] font-semibold border border-[#0c1e3a]/20 px-3 py-1.5 rounded-lg hover:bg-[#0c1e3a]/5">
                       Load
+                    </button>
+                    <button onClick={() => deleteSaved(s.id)}
+                      className="text-xs text-red-500 border border-red-100 px-3 py-1.5 rounded-lg hover:bg-red-50">
+                      Delete
                     </button>
                   </div>
                 </div>

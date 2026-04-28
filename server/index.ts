@@ -51,7 +51,7 @@ app.use("/api/tax",     taxRouter);
 app.use("/api",         fpRouter);
 app.use("/api",         fpAliasesRouter);
 app.use("/api",         fpFullRouter);
-app.use("/api/clients", clientsRouter)
+app.use("/api/clients", clientsRouter);
 app.use("/api",         simulateRouter);
 app.use("/api",         simulationRouter);   // ← FIX 1: mounts /api/simulation/:clientId/*
 app.use("/api/reports", reportsRouter);

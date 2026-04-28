@@ -2628,8 +2628,8 @@ const { data: plans = [] } = useClientPlans(selectedClientId ?? 0);
   const recalculatedTabKeys = new Set(recentlyResolvedFlags.map(f => moduleToTabMap[f.module]).filter(Boolean));
 
   return (
-    <div className="flex h-full" data-testid="fp-popout-container">
-      <aside className="w-[200px] flex-shrink-0 bg-muted/30 border-r border-border flex flex-col">
+    <div className="flex min-h-screen" data-testid="fp-popout-container">
+      <aside style={{ width: "200px", minHeight: "100vh", flexShrink: 0 }} className="bg-muted/30 border-r border-border flex flex-col overflow-y-auto">
         <div className="p-3 border-b border-border">
           <select
             value={selectedClientId ?? ""}
@@ -2670,8 +2670,7 @@ const { data: plans = [] } = useClientPlans(selectedClientId ?? 0);
           ))}
         </nav>
       </aside>
-
-      <div className="flex-1 overflow-y-auto p-6">
+      <div className="flex-1 p-6">
         {selectedClientId && unresolvedFlags.length > 0 && (
           <div className="mb-4 px-4 py-3 bg-amber-50 border border-amber-200 rounded-xl flex items-center gap-3" data-testid="stale-banner">
             <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0" />
@@ -2715,12 +2714,6 @@ const { data: plans = [] } = useClientPlans(selectedClientId ?? 0);
             {activeTab === "plan"       && <FinancialPlanTab clientId={selectedClientId} clientName={(selectedClient as any)?.firstName} />}
             {activeTab === "dashboard"  && activePlanId && <SimulationDashboard
               planId={activePlanId}
-              retirementAge={ret?.retirementAge ?? 65}
-              currentAge={ret?.currentAge ?? 45}
-              baseWithdrawal={Math.max(0,
-                Number(ret?.desiredRetirementIncome ?? 0) -
-                (Number(ret?.pensionIncome ?? 0) + Number(ret?.cppMonthly ?? 0) * 12 + Number(ret?.oasMonthly ?? 0) * 12)
-              )}
             />}
             {activeTab === "dashboard"  && !activePlanId && (
               <div className="border border-dashed border-border rounded-2xl p-8 text-center text-muted-foreground">

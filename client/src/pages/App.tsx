@@ -1329,7 +1329,7 @@ export default function App() {
         </header>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 flex flex-col overflow-hidden h-full">
           {tab === "clients" && !showClientDetail && (
             <ClientsTab onSelect={selectClient} />
           )}
@@ -1349,9 +1349,11 @@ export default function App() {
             </div>
           )}
           {tab === "planning" && client && (
-            <QueryClientProvider client={queryClient}>
-              <FinancialPlanningContent initialClientId={client.id} />
-            </QueryClientProvider>
+            <div className="flex-1 flex overflow-hidden">
+              <QueryClientProvider client={queryClient}>
+                <FinancialPlanningContent initialClientId={client.id} />
+              </QueryClientProvider>
+           </div>
           )}
           {showPersonTabs && (
             <div className="px-6 pt-5 pb-0">
@@ -1392,7 +1394,7 @@ export default function App() {
 )}
           {tab === "dashboard"  && client && <DashboardTab     clientId={client.id} />}
           {tab === "letters" && client && <LettersTab clientId={client.id} client={client} />}
-          {tab === "goals" && client && <GoalsTab clientId={client.id} client={client} person={person} />}
+          {tab === "goals" && client && <GoalsTab clientId={client.id} client={client} />}
           {tab === "reports" && client && <ReportsTab clientId={client.id} />}
           {tab === "tax" && client && (
   <QueryClientProvider client={queryClient}>

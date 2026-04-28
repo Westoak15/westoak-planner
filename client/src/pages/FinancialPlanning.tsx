@@ -2688,8 +2688,8 @@ const { data: plans = [] } = useClientPlans(selectedClientId ?? 0);
 
         {selectedClientId ? (
           <>
-            {/* Person tabs — Client / Spouse / Combined */}
-            {selectedClient && (
+            {/* Person tabs — only shown on tabs that use primary/spouse distinction */}
+            {selectedClient && ["retirement", "tax", "dashboard"].includes(activeTab) && (
               <div className="flex gap-1 mb-5 bg-muted/40 rounded-xl p-1 border border-border w-fit">
                 <button onClick={() => setPerson("primary")}
                   className={`px-4 py-1.5 rounded-lg text-sm font-semibold transition-colors ${person === "primary" ? "bg-white shadow text-[#0c1e3a] border border-border" : "text-muted-foreground hover:text-foreground"}`}>

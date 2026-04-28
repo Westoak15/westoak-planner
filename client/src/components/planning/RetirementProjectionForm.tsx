@@ -765,61 +765,141 @@ export function RetirementTab({ clientId, clientName }: { clientId: number; clie
       {/* Projection cards */}
       <div className="space-y-4">
         {activeProjections.map((proj) => {
-          const funded   = proj.successRate ? +proj.successRate : null;
-          const barColor = funded === null ? "#9ca3af" : funded >= 90 ? "#16a34a" : funded >= 70 ? "#d97706" : "#dc2626";
-          const surplus  = proj.shortfallSurplus ? +proj.shortfallSurplus : null;
-          const isPerson = (proj.person ?? "primary") as "primary" | "spouse";
+          const funded    = proj.successRate ? +proj.successRate : null;
+          const barColor  = funded === null ? "#9ca3af" : funded >= 90 ? "#16a34a" : funded >= 70 ? "#d97706" : "#dc2626";
+          const isPerson  = (proj.person ?? "primary") as "primary" | "spouse";
           const personName = isPerson === "spouse" ? (clientData?.spouseFirstName ?? "Spouse") : (clientName ?? "Primary");
 
+          // Income phase calculations
+          const desiredIncome   = Number(proj.desiredRetirementIncome ?? 0);
+          const pensionIncome   = Number(proj.pensionIncome ?? 0);
+          const cppMonthly      = Number(proj.cppMonthly ?? 0);
+          const oasMonthly      = Number(proj.oasMonthly ?? 0);
+          const cppStartAge     = Number(proj.cppStartAge ?? 65);
+          const oasStartAge     = Number(proj.oasStartAge ?? 65);
+          const retirementAge   = Number(proj.retirementAge ?? 65);
+
+          // CPP deferral bonus: +0.7% per month deferred past 60 (approx 8.4%/yr)
+          const cppDeferralYears = Math.max(0, cppStartAge - 65);
+          const cppAdjusted = cppMonthly * (1 + cppDeferralYears * 0.084);
+
+          // OAS deferral bonus: +0.6% per month deferred past 65
+          const oasDeferralYears = Math.max(0, oasStartAge - 65);
+          const oasAdjusted = oasMonthly * (1 + oasDeferralYears * 0.072);
+
+          // Phase 1: Retirement → CPP start (pension only, portfolio fills gap)
+          const phase1GuaranteedAnnual = pensionIncome;
+          const phase1PortfolioNeeded  = Math.max(0, desiredIncome - phase1GuaranteedAnnual);
+
+          // Phase 2: CPP start → OAS start
+          const phase2GuaranteedAnnual = pensionIncome + cppAdjusted * 12;
+          const phase2PortfolioNeeded  = Math.max(0, desiredIncome - phase2GuaranteedAnnual);
+
+          // Phase 3: OAS start onward
+          const phase3GuaranteedAnnual = pensionIncome + cppAdjusted * 12 + oasAdjusted * 12;
+          const phase3PortfolioNeeded  = Math.max(0, desiredIncome - phase3GuaranteedAnnual);
+
+          const projectedBalance = Number(proj.projectedBalance ?? 0);
+          const surplus = Number(proj.shortfallSurplus ?? 0);
+
           return (
-            <div key={proj.id} className="border border-gray-200 rounded-xl p-6 hover:border-gray-300 transition-colors">
-              <div className="flex items-start justify-between mb-4">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h4 className="font-medium text-gray-900 text-base">
-                      {proj.label || personName}
-                    </h4>
-                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                      isPerson === "spouse" ? "bg-purple-100 text-purple-700" : "bg-blue-100 text-blue-700"
-                    }`}>
-                      {isPerson === "spouse" ? "Spouse" : "Primary"}
-                    </span>
-                  </div>
-                  <p className="text-xs text-gray-400 mt-0.5">
-                    Age {proj.currentAge} → {proj.retirementAge} · {proj.lifeExpectancy} yr plan
-                  </p>
+            <div key={proj.id} className="border border-gray-200 rounded-xl overflow-hidden hover:border-gray-300 transition-colors">
+              {/* Card header */}
+              <div className="flex items-center justify-between px-4 py-3 bg-gray-50 border-b border-gray-100">
+                <div className="flex items-center gap-2">
+                  <h4 className="font-semibold text-gray-900 text-sm">{proj.label || personName}</h4>
+                  <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${
+                    isPerson === "spouse" ? "bg-purple-100 text-purple-700" : "bg-blue-100 text-blue-700"
+                  }`}>{isPerson === "spouse" ? "Spouse" : "Primary"}</span>
+                  <span className="text-xs text-gray-400">Age {proj.currentAge} → {proj.retirementAge} · to age {proj.lifeExpectancy}</span>
                 </div>
-                <div className="flex gap-2">
-                  <button onClick={() => setEditing(proj)} className="text-xs px-3 py-1.5 border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50">Edit</button>
-                  <button onClick={() => proj.id && confirm("Delete this projection?") && deleteMut.mutate(proj.id)} className="text-xs px-3 py-1.5 border border-red-100 rounded-lg text-red-500 hover:bg-red-50">Delete</button>
+                <div className="flex gap-1.5">
+                  <button onClick={() => setEditing(proj)} className="text-xs px-2.5 py-1 border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-100">Edit</button>
+                  <button onClick={() => proj.id && confirm("Delete this projection?") && deleteMut.mutate(proj.id)} className="text-xs px-2.5 py-1 border border-red-100 rounded-lg text-red-500 hover:bg-red-50">Delete</button>
                 </div>
               </div>
-              <div className="grid grid-cols-4 gap-3 mb-4">
-                {[
-                  { label: "Projected balance",   value: proj.projectedBalance ? "$" + Math.round(+proj.projectedBalance).toLocaleString() : "—" },
-                  { label: "CPP + OAS / mo",       value: proj.cppMonthly && proj.oasMonthly ? "$" + (Math.round(+proj.cppMonthly) + Math.round(+proj.oasMonthly)).toLocaleString() : "—" },
-                  { label: "Desired income",       value: proj.desiredRetirementIncome ? "$" + Math.round(+proj.desiredRetirementIncome).toLocaleString() + "/yr" : "—" },
-                  { label: surplus !== null && surplus >= 0 ? "Surplus / yr" : "Shortfall / yr",
-                    value: surplus !== null ? "$" + Math.abs(Math.round(surplus)).toLocaleString() : "—",
-                    color: surplus !== null ? (surplus >= 0 ? "#16a34a" : "#dc2626") : undefined },
-                ].map((m, i) => (
-                  <div key={i} className="bg-gray-50 rounded-lg px-3 py-2.5">
-                    <p className="text-xs text-gray-500 mb-0.5">{m.label}</p>
-                    <p className="text-sm font-semibold" style={{ color: (m as any).color ?? "#111827" }}>{m.value}</p>
+
+              <div className="p-4 space-y-4">
+                {/* Top KPIs */}
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="bg-gray-50 rounded-lg px-3 py-2.5">
+                    <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-1">Projected Portfolio</p>
+                    <p className="text-base font-bold text-gray-900">${Math.round(projectedBalance).toLocaleString()}</p>
+                    <p className="text-[10px] text-gray-400">at retirement age {retirementAge}</p>
                   </div>
-                ))}
-              </div>
-              {funded !== null && (
-                <div>
-                  <div className="flex justify-between items-center mb-1">
-                    <span className="text-xs text-gray-400">Income coverage</span>
-                    <span className="text-xs font-medium" style={{ color: barColor }}>{funded}% funded</span>
+                  <div className="bg-gray-50 rounded-lg px-3 py-2.5">
+                    <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-1">Desired Income</p>
+                    <p className="text-base font-bold text-gray-900">${Math.round(desiredIncome).toLocaleString()}/yr</p>
+                    <p className="text-[10px] text-gray-400">${Math.round(desiredIncome / 12).toLocaleString()}/mo target</p>
                   </div>
-                  <div className="h-1 bg-gray-100 rounded-full overflow-hidden">
-                    <div className="h-full rounded-full" style={{ width: `${Math.min(funded, 100)}%`, backgroundColor: barColor }} />
+                  <div className={`rounded-lg px-3 py-2.5 ${surplus >= 0 ? "bg-green-50" : "bg-red-50"}`}>
+                    <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-1">{surplus >= 0 ? "Annual Surplus" : "Annual Shortfall"}</p>
+                    <p className={`text-base font-bold ${surplus >= 0 ? "text-green-700" : "text-red-700"}`}>${Math.abs(Math.round(surplus)).toLocaleString()}/yr</p>
+                    <p className="text-[10px] text-gray-400">at retirement</p>
                   </div>
                 </div>
-              )}
+
+                {/* Income phases */}
+                <div>
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide mb-2">Income by Phase</p>
+                  <div className="grid grid-cols-3 gap-2">
+                    {[
+                      {
+                        label:      `At Retirement (age ${retirementAge})`,
+                        guaranteed: phase1GuaranteedAnnual,
+                        portfolio:  phase1PortfolioNeeded,
+                        sources:    pensionIncome > 0 ? `Pension: $${Math.round(pensionIncome / 12).toLocaleString()}/mo` : "No pension",
+                        note:       cppStartAge > retirementAge ? `CPP starts age ${cppStartAge}` : "CPP included",
+                        color:      "border-[#0c1e3a]/20 bg-[#0c1e3a]/3",
+                      },
+                      {
+                        label:      `CPP Starts (age ${cppStartAge})`,
+                        guaranteed: phase2GuaranteedAnnual,
+                        portfolio:  phase2PortfolioNeeded,
+                        sources:    `CPP: $${Math.round(cppAdjusted).toLocaleString()}/mo${cppDeferralYears > 0 ? ` (+${(cppDeferralYears * 8.4).toFixed(0)}% deferral)` : ""}`,
+                        note:       oasStartAge > cppStartAge ? `OAS starts age ${oasStartAge}` : "OAS included",
+                        color:      "border-blue-200 bg-blue-50/50",
+                      },
+                      {
+                        label:      `OAS Starts (age ${oasStartAge})`,
+                        guaranteed: phase3GuaranteedAnnual,
+                        portfolio:  phase3PortfolioNeeded,
+                        sources:    `OAS: $${Math.round(oasAdjusted).toLocaleString()}/mo${oasDeferralYears > 0 ? ` (+${(oasDeferralYears * 7.2).toFixed(0)}% deferral)` : ""}`,
+                        note:       phase3PortfolioNeeded <= 0 ? "Fully covered" : `Portfolio covers gap`,
+                        color:      phase3PortfolioNeeded <= 0 ? "border-green-200 bg-green-50/50" : "border-amber-200 bg-amber-50/50",
+                      },
+                    ].map((phase, i) => (
+                      <div key={i} className={`rounded-lg border p-2.5 ${phase.color}`}>
+                        <p className="text-[9px] font-bold text-gray-500 uppercase tracking-wide mb-1.5">{phase.label}</p>
+                        <p className="text-sm font-bold text-gray-900">${Math.round(phase.guaranteed / 12).toLocaleString()}<span className="text-[10px] font-normal text-gray-400">/mo guaranteed</span></p>
+                        {phase.portfolio > 0 && (
+                          <p className="text-xs text-amber-700 mt-0.5">+${Math.round(phase.portfolio / 12).toLocaleString()}/mo from portfolio</p>
+                        )}
+                        <p className="text-[10px] text-gray-500 mt-1.5 border-t border-white/50 pt-1">{phase.sources}</p>
+                        <p className={`text-[10px] mt-0.5 ${phase.portfolio <= 0 ? "text-green-600 font-semibold" : "text-gray-400"}`}>{phase.note}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Success rate bar */}
+                {funded !== null && (
+                  <div>
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="text-xs text-gray-500">Plan funding rate — probability income goal is met through age {proj.lifeExpectancy}</span>
+                      <span className="text-xs font-semibold" style={{ color: barColor }}>{funded}%</span>
+                    </div>
+                    <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                      <div className="h-full rounded-full transition-all" style={{ width: `${Math.min(funded, 100)}%`, backgroundColor: barColor }} />
+                    </div>
+                    <p className="text-[10px] text-gray-400 mt-1">
+                      {funded >= 90 ? "✓ Strong — plan is well-funded across most market scenarios" :
+                       funded >= 70 ? "⚠ Moderate — consider increasing contributions or adjusting retirement age" :
+                       "✗ At risk — significant changes needed to meet retirement income goals"}
+                    </p>
+                  </div>
+                )}
+              </div>
             </div>
           );
         })}
@@ -827,5 +907,4 @@ export function RetirementTab({ clientId, clientName }: { clientId: number; clie
     </div>
   );
 }
-
 export default RetirementProjectionForm;

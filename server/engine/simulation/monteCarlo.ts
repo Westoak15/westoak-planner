@@ -74,10 +74,16 @@ export interface PortfolioAllocation {
 export interface SimulationParams {
   initialBalance: number;
   allocation: PortfolioAllocation;
-  annualContribution: number;   // Can be negative for withdrawals
+  annualContribution: number;   // Base annual contribution (negative = withdrawal)
   yearsToSimulate: number;
   numberOfPaths: number;         // Typically 1000-10000
   inflationRate?: number;        // Optional: adjust for inflation
+  // Goal events: one-time or recurring cashflows injected by year offset from simulation start
+  goalEvents?: Array<{
+    yearOffset: number;          // Years from simulation start (1-based)
+    amount: number;              // Positive = inflow, negative = outflow
+    label?: string;
+  }>;
 }
 
 export interface SimulationResult {
@@ -150,31 +156,45 @@ function calculatePortfolioReturn(
 function simulatePath(params: SimulationParams): number[] {
   const balances: number[] = [params.initialBalance];
   let currentBalance = params.initialBalance;
-  
+
+  // Build a lookup map for goal events by year offset for O(1) access
+  const goalsByYear = new Map<number, number>();
+  if (params.goalEvents) {
+    for (const evt of params.goalEvents) {
+      goalsByYear.set(evt.yearOffset, (goalsByYear.get(evt.yearOffset) ?? 0) + evt.amount);
+    }
+  }
+
   for (let year = 1; year <= params.yearsToSimulate; year++) {
     // Generate correlated returns for all asset classes
     const returns = generateCorrelatedReturns();
-    
+
     // Calculate portfolio return
     const portfolioReturn = calculatePortfolioReturn(params.allocation, returns);
-    
+
     // Apply return to current balance
     currentBalance = currentBalance * (1 + portfolioReturn);
-    
-    // Add contribution (or subtract withdrawal if negative)
+
+    // Add base contribution (or subtract withdrawal if negative)
     currentBalance += params.annualContribution;
-    
+
+    // Apply goal event for this year (one-time inflow or outflow)
+    const goalAmt = goalsByYear.get(year);
+    if (goalAmt !== undefined) {
+      currentBalance += goalAmt;
+    }
+
     // Adjust for inflation if specified
     if (params.inflationRate) {
       currentBalance /= (1 + params.inflationRate);
     }
-    
+
     // Floor at zero (can't have negative account balance)
     currentBalance = Math.max(0, currentBalance);
-    
+
     balances.push(currentBalance);
   }
-  
+
   return balances;
 }
 

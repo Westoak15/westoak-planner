@@ -1,7 +1,7 @@
 import { Router, Response } from "express";
 import { db } from "../db/index.js";
 import {
-  clients, financialPlans,
+  clients, financialPlans, financialGoals,
   netWorthEntries, retirementProjections, insuranceAnalyses,
   educationSavings, debtEntries, taxPlanningNotes, estatePlanningNotes,
   aiRecommendations, planAssumptions, simulationResults,
@@ -199,6 +199,35 @@ r.post("/plans/:planId/run-simulation", async (req: AuthRequest, res: Response) 
     const assumptions = await db.select().from(planAssumptions).where(eq(planAssumptions.planId, +req.params.planId));
     const baseAssum = assumptions.find(a => a.scenario === "base") ?? assumptions[0];
 
+    // ── Pull goals with projection impact ──────────────────────────────
+    const goals = await db.select().from(financialGoals)
+      .where(eq(financialGoals.clientId, p.clientId));
+
+    const currentYear  = new Date().getFullYear();
+    const retireAge    = projRow.retirementAge ?? 65;
+    const currentAge   = projRow.currentAge   ?? 35;
+    const yearsToRetire = Math.max(0, retireAge - currentAge);
+
+    // Convert goals to simulation-start-relative year offsets
+    const goalEvents: Array<{ yearOffset: number; amount: number; label: string }> = [];
+    for (const g of goals) {
+      if (!g.projectionImpact) continue;
+      const targetYear = g.targetYear ?? (g.targetDate ? new Date(g.targetDate).getFullYear() : null);
+      if (!targetYear) continue;
+      const yearOffset = targetYear - currentYear;
+      if (yearOffset < 1) continue; // already passed
+
+      if ((g.cashflowType === "outflow" || g.cashflowType === "inflow") && g.targetAmount) {
+        const sign = g.cashflowType === "outflow" ? -1 : 1;
+        goalEvents.push({ yearOffset, amount: sign * Math.abs(parseFloat(String(g.targetAmount))), label: g.title });
+      } else if (g.cashflowType === "recurring_expense" && g.startYear && g.endYear && g.annualAmount) {
+        for (let yr = g.startYear; yr <= g.endYear; yr++) {
+          const offset = yr - currentYear;
+          if (offset >= 1) goalEvents.push({ yearOffset: offset, amount: -Math.abs(parseFloat(String(g.annualAmount))), label: g.title });
+        }
+      }
+    }
+
     const { runMonteCarloSimulation, PRESET_ALLOCATIONS } = await import("../engine/simulation/monteCarlo.js") as any;
     const params = {
       initialBalance:     Number(projRow.rrspBalance ?? 0) + Number(projRow.tfsaBalance ?? 0) + Number(projRow.nonRegBalance ?? 0),
@@ -207,8 +236,18 @@ r.post("/plans/:planId/run-simulation", async (req: AuthRequest, res: Response) 
       yearsToSimulate:    Math.max(1, (projRow.lifeExpectancy ?? 90) - (projRow.currentAge ?? 35)),
       numberOfPaths:      baseAssum?.simulationCount ?? 1000,
       inflationRate:      Number(projRow.inflationRate ?? 2) / 100,
+      goalEvents:         goalEvents.length > 0 ? goalEvents : undefined,
     };
-    res.json(runMonteCarloSimulation(params));
+    const result = runMonteCarloSimulation(params);
+    // Attach goal summary to result for frontend display
+    (result as any).goalEventCount = goalEvents.length;
+    (result as any).goalEventSummary = goalEvents.map(e => ({
+      label: e.label,
+      yearOffset: e.yearOffset,
+      year: currentYear + e.yearOffset,
+      amount: e.amount,
+    }));
+    res.json(result);
   } catch (e: any) {
     console.error("[run-simulation]", e.message);
     res.status(500).json({ message: e.message });

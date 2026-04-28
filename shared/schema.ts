@@ -12,6 +12,22 @@ export const financialGoals = pgTable("financial_goals", {
   targetDate:    text("target_date"),
   status:        text("status").notNull().default("in_progress"),
   notes:         text("notes"),
+  // ── Projection fields ──────────────────────────────────────────────────
+  // cashflowType: how this goal affects the plan cashflow
+  //   "outflow"          = one-time spend (cottage, car, renovation)
+  //   "inflow"           = one-time receipt (inheritance, bonus, sale)
+  //   "savings_target"   = accumulation goal (RESP, emergency fund, down payment)
+  //   "recurring_expense"= annual extra spend for N years (travel, sabbatical)
+  cashflowType:        text("cashflow_type").default("savings_target"),
+  targetYear:          integer("target_year"),          // calendar year goal hits
+  projectionImpact:    boolean("projection_impact").default(false), // inject into Monte Carlo
+  priority:            integer("priority").default(3),  // 1=critical, 5=nice-to-have
+  monthlyContribution: decimal("monthly_contribution", { precision: 15, scale: 2 }), // savings toward goal
+  inflationAdjust:     boolean("inflation_adjust").default(true),
+  startYear:           integer("start_year"),           // for recurring_expense
+  endYear:             integer("end_year"),              // for recurring_expense
+  annualAmount:        decimal("annual_amount", { precision: 15, scale: 2 }), // for recurring_expense
+  fundingSource:       text("funding_source").default("non_reg"), // non_reg|tfsa|rrsp|automatic
   createdAt:     timestamp("created_at").defaultNow().notNull(),
   updatedAt:     timestamp("updated_at").defaultNow().notNull(),
 });

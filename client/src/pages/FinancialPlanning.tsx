@@ -811,6 +811,92 @@ function RESPTab({ clientId, planId }: { clientId: number; planId: number | null
     </div>
   );
 }
+
+// ── Debt Tab ──────────────────────────────────────────────────────────────────
+
+function DebtTab({ clientId, planId }: { clientId: number; planId: number | null }) {
+  const { data: debts = [] } = useDebtEntries(clientId);
+  const createDebt = useCreateDebtEntry();
+  const deleteDebt = useDeleteDebtEntry(clientId);
+  const [showAdd, setShowAdd] = useState(false);
+  const [form, setForm] = useState({ name: "", category: "Credit Card", balance: "", interestRate: "", minimumPayment: "", term: "", notes: "" });
+  const categories = ["Mortgage", "Car Loan", "Student Loan", "Credit Card", "Personal Loan", "Line of Credit", "Other"];
+  const totalDebt = (debts as any[]).reduce((s, d) => s + parseFloat(d.balance || "0"), 0);
+  const avgRate = debts.length > 0 ? (debts as any[]).reduce((s, d) => s + parseFloat(d.interestRate || "0"), 0) / debts.length : 0;
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    createDebt.mutate({ clientId, data: { name: form.name, category: form.category, balance: form.balance, interestRate: form.interestRate, minimumPayment: form.minimumPayment || "0", term: form.term || undefined, notes: form.notes || undefined } },
+      { onSuccess: () => { setShowAdd(false); setForm({ name: "", category: "Credit Card", balance: "", interestRate: "", minimumPayment: "", term: "", notes: "" }); } });
+  };
+
+  return (
+    <div className="space-y-6 animate-in fade-in duration-300">
+      <div className="flex justify-between items-center">
+        <h2 className="text-xl font-display font-bold">Debt Management</h2>
+        <button onClick={() => setShowAdd(true)} data-testid="button-fp-add-debt" className="flex items-center space-x-2 px-4 py-2 bg-secondary text-secondary-foreground font-semibold rounded-xl hover:bg-secondary/90 transition-colors shadow-sm">
+          <Plus className="w-4 h-4" /><span>Add Debt</span>
+        </button>
+      </div>
+      <div className="grid grid-cols-3 gap-4">
+        <div className="border border-red-200 rounded-2xl p-5 bg-red-50/50" data-testid="fp-total-debt"><p className="text-xs font-semibold text-red-500 uppercase tracking-wider">Total Debt</p><p className="text-2xl font-bold text-red-600 mt-1">{fmt$(totalDebt)}</p></div>
+        <div className="border border-border rounded-2xl p-5" data-testid="fp-debt-accounts"><p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Accounts</p><p className="text-2xl font-bold mt-1">{debts.length}</p></div>
+        <div className="border border-orange-200 rounded-2xl p-5 bg-orange-50/50" data-testid="fp-avg-rate"><p className="text-xs font-semibold text-orange-600 uppercase tracking-wider">Avg Interest Rate</p><p className="text-2xl font-bold text-orange-700 mt-1">{avgRate.toFixed(1)}%</p></div>
+      </div>
+      <div className="border border-border rounded-2xl overflow-hidden">
+        <table className="w-full text-sm">
+          <thead className="bg-muted/50"><tr>
+            <th className="text-left px-4 py-3 font-semibold">Name</th>
+            <th className="text-left px-4 py-3 font-semibold">Category</th>
+            <th className="text-right px-4 py-3 font-semibold">Balance</th>
+            <th className="text-right px-4 py-3 font-semibold">Rate</th>
+            <th className="text-right px-4 py-3 font-semibold">Min. Payment</th>
+            <th className="text-center px-4 py-3 font-semibold">Actions</th>
+          </tr></thead>
+          <tbody>
+            {(debts as any[]).map(d => (
+              <tr key={d.id} className="border-t hover:bg-muted/30" data-testid={`row-fp-debt-${d.id}`}>
+                <td className="px-4 py-3 font-medium">{d.name}</td>
+                <td className="px-4 py-3 text-muted-foreground">{d.category}</td>
+                <td className="px-4 py-3 text-right font-semibold text-red-600">{fmt$(parseFloat(d.balance))}</td>
+                <td className="px-4 py-3 text-right">{parseFloat(d.interestRate).toFixed(1)}%</td>
+                <td className="px-4 py-3 text-right">{fmt$(parseFloat(d.minimumPayment))}</td>
+                <td className="px-4 py-3 text-center">
+                  <button onClick={() => { if (confirm("Delete?")) deleteDebt.mutate(d.id); }} data-testid={`button-fp-del-debt-${d.id}`} className="p-1 hover:bg-red-50 rounded"><Trash2 className="w-4 h-4 text-red-400" /></button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        {debts.length === 0 && <div className="text-center py-12 text-muted-foreground">No debts tracked yet.</div>}
+      </div>
+      <ModuleScenarioPreview planId={planId} module="debt" />
+      <DebtPayoffTimeline debts={debts as any[]} />
+      {showAdd && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl w-full max-w-lg shadow-2xl p-6">
+            <h2 className="text-2xl font-display font-bold mb-6">Add Debt Account</h2>
+            <form onSubmit={handleSubmit} className="space-y-4" data-testid="form-fp-debt">
+              <div><label className="text-sm font-semibold">Name</label><input required value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} data-testid="input-fp-debt-name" className="w-full px-3 py-2 rounded-xl border mt-1" placeholder="e.g. TD Visa" /></div>
+              <div><label className="text-sm font-semibold">Category</label><select value={form.category} onChange={e => setForm({ ...form, category: e.target.value })} data-testid="select-fp-debt-cat" className="w-full px-3 py-2 rounded-xl border mt-1">{categories.map(c => <option key={c} value={c}>{c}</option>)}</select></div>
+              <div className="grid grid-cols-3 gap-4">
+                <div><label className="text-sm font-semibold">Balance ($)</label><input type="number" step="0.01" required value={form.balance} onChange={e => setForm({ ...form, balance: e.target.value })} data-testid="input-fp-debt-balance" className="w-full px-3 py-2 rounded-xl border mt-1" /></div>
+                <div><label className="text-sm font-semibold">Rate (%)</label><input type="number" step="0.01" required value={form.interestRate} onChange={e => setForm({ ...form, interestRate: e.target.value })} data-testid="input-fp-debt-rate" className="w-full px-3 py-2 rounded-xl border mt-1" /></div>
+                <div><label className="text-sm font-semibold">Min Payment ($)</label><input type="number" step="0.01" value={form.minimumPayment} onChange={e => setForm({ ...form, minimumPayment: e.target.value })} data-testid="input-fp-debt-min" className="w-full px-3 py-2 rounded-xl border mt-1" /></div>
+              </div>
+              <div className="pt-4 flex justify-end space-x-3">
+                <button type="button" onClick={() => setShowAdd(false)} className="px-6 py-3 rounded-xl font-semibold text-muted-foreground hover:bg-muted">Cancel</button>
+                <button type="submit" disabled={createDebt.isPending} data-testid="button-fp-submit-debt" className="px-6 py-3 rounded-xl font-semibold bg-primary text-primary-foreground">{createDebt.isPending ? "Adding..." : "Add Debt"}</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+// ── Tax Tab (complete rework — engine-backed) ─────────────────────────────────
+
 // ============================================================================
 // TAX TAB - FIXED VERSION WITH ALL WORKING PANELS
 // ============================================================================
@@ -2543,7 +2629,7 @@ const { data: plans = [] } = useClientPlans(selectedClientId ?? 0);
 
   return (
     <div className="flex min-h-screen" data-testid="fp-popout-container">
-      <aside style={{ width: "200px", minHeight: "100vh", flexShrink: 0 }} className="bg-muted/30 border-r border-border flex flex-col overflow-y-auto">
+      <aside style={{ width: "200px", minWidth: "200px", minHeight: "100vh", flexShrink: 0, flexBasis: "200px" }} className="bg-muted/30 border-r border-border flex flex-col overflow-y-auto">
         <div className="p-3 border-b border-border">
           <select
             value={selectedClientId ?? ""}
@@ -2584,7 +2670,7 @@ const { data: plans = [] } = useClientPlans(selectedClientId ?? 0);
           ))}
         </nav>
       </aside>
-      <div className="flex-1 p-6">
+      <div style={{ flex: 1, minWidth: 0 }} className="overflow-y-auto p-6">
         {selectedClientId && unresolvedFlags.length > 0 && (
           <div className="mb-4 px-4 py-3 bg-amber-50 border border-amber-200 rounded-xl flex items-center gap-3" data-testid="stale-banner">
             <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0" />

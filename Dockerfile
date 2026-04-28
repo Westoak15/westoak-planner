@@ -3,13 +3,12 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm install
 COPY . .
-RUN npm run build
+ARG CACHEBUST=1
+RUN echo "Cache bust: $CACHEBUST" && npm run build
 
 FROM node:20-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
-ARG BUILDTIME=unknown
-RUN echo "Build: $BUILDTIME"
 COPY package*.json ./
 RUN npm install --omit=dev
 COPY --from=builder /app/dist ./dist

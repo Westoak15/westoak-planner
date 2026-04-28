@@ -28,6 +28,7 @@ import {
   CppOasTimingView, InsuranceMethodComparison,
   RespFundingGauge, EstateScorecard, DebtPayoffTimeline,
 } from "@/components/planning/ModuleViews";
+import { FinancialPlanTab } from "@/components/planning/FinancialPlanTab";
 import {
    Target, DollarSign, PiggyBank, Shield, GraduationCap, CreditCard,
   Receipt, ScrollText, Brain, Plus, Trash2, Sparkles, TrendingUp, TrendingDown,
@@ -38,19 +39,20 @@ import {
 
 // ── Tab definitions ───────────────────────────────────────────────────────────
 
-type TabKey = "overview" | "dashboard" | "networth" | "retirement" | "insurance" | "resp" | "debt" | "tax" | "estate" | "ai";
+type TabKey = "overview" | "dashboard" | "networth" | "retirement" | "insurance" | "resp" | "debt" | "tax" | "estate" | "ai" | "plan";
 
 const tabs: { key: TabKey; label: string; icon: typeof Target }[] = [
-  { key: "overview",    label: "Overview",    icon: Target },
-  { key: "dashboard",   label: "Dashboard",   icon: BarChart3 },
-  { key: "networth",    label: "Net Worth",   icon: DollarSign },
-  { key: "retirement",  label: "Retirement",  icon: PiggyBank },
-  { key: "insurance",   label: "Insurance",   icon: Shield },
-  { key: "resp",        label: "RESP",        icon: GraduationCap },
-  { key: "debt",        label: "Debt",        icon: CreditCard },
-  { key: "tax",         label: "Tax",         icon: Receipt },
-  { key: "estate",      label: "Estate",      icon: ScrollText },
-  { key: "ai",          label: "AI Insights", icon: Brain },
+  { key: "overview",    label: "Overview",       icon: Target },
+  { key: "plan",        label: "Financial Plan", icon: Sparkles },
+  { key: "dashboard",   label: "Dashboard",      icon: BarChart3 },
+  { key: "networth",    label: "Net Worth",      icon: DollarSign },
+  { key: "retirement",  label: "Retirement",     icon: PiggyBank },
+  { key: "insurance",   label: "Insurance",      icon: Shield },
+  { key: "resp",        label: "RESP",           icon: GraduationCap },
+  { key: "debt",        label: "Debt",           icon: CreditCard },
+  { key: "tax",         label: "Tax",            icon: Receipt },
+  { key: "estate",      label: "Estate",         icon: ScrollText },
+  { key: "ai",          label: "AI Insights",    icon: Brain },
 ];
 
 const moduleToTabMap: Record<string, TabKey> = {
@@ -2710,6 +2712,7 @@ const { data: plans = [] } = useClientPlans(selectedClientId ?? 0);
               </div>
             )}
             {activeTab === "overview"   && <OverviewTab      clientId={selectedClientId} onTabChange={setActiveTab} />}
+            {activeTab === "plan"       && <FinancialPlanTab clientId={selectedClientId} clientName={(selectedClient as any)?.firstName} />}
             {activeTab === "dashboard"  && activePlanId && <SimulationDashboard
               planId={activePlanId}
               retirementAge={ret?.retirementAge ?? 65}

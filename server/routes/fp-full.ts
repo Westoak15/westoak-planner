@@ -396,4 +396,282 @@ r.get("/clients/:clientId/liabilities", async (req: AuthRequest, res: Response) 
   res.json(merged);
 });
 
+// ── Financial Plan Generation (Claude AI) ────────────────────────────────────
+r.post("/clients/:clientId/generate-plan", async (req: AuthRequest, res: Response) => {
+  const cid = +req.params.clientId;
+  if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
+
+  try {
+    // ── Aggregate all client data ────────────────────────────────────────────
+    const [
+      clientRows, nw, ret, ins, edu, debt, tax, estate, goals, pensions,
+    ] = await Promise.all([
+      db.select().from(clients).where(eq(clients.id, cid)),
+      db.select().from(netWorthEntries).where(eq(netWorthEntries.clientId, cid)),
+      db.select().from(retirementProjections).where(eq(retirementProjections.clientId, cid)),
+      db.select().from(insuranceAnalyses).where(eq(insuranceAnalyses.clientId, cid)),
+      db.select().from(educationSavings).where(eq(educationSavings.clientId, cid)),
+      db.select().from(debtEntries).where(eq(debtEntries.clientId, cid)),
+      db.select().from(taxPlanningNotes).where(eq(taxPlanningNotes.clientId, cid)),
+      db.select().from(estatePlanningNotes).where(eq(estatePlanningNotes.clientId, cid)),
+      db.select().from(financialGoals).where(eq(financialGoals.clientId, cid)),
+      (db as any).select().from((await import("../../shared/schema.js") as any).pensionPlans).where(eq((await import("../../shared/schema.js") as any).pensionPlans.clientId, cid)).catch(() => []),
+    ]);
+
+    const client = clientRows[0];
+    if (!client) return res.status(404).json({ message: "Client not found" });
+
+    const assets      = nw.filter(e => e.type === "asset").reduce((s, e) => s + Number(e.value), 0);
+    const liabilities = nw.filter(e => e.type === "liability").reduce((s, e) => s + Number(e.value), 0);
+    const retProj     = ret[0] as any;
+    const insData     = ins[0] as any;
+
+    // ── Build structured context for Claude ──────────────────────────────────
+    const context = {
+      client: {
+        name:            `${client.firstName} ${client.lastName}`,
+        age:             client.dateOfBirth ? new Date().getFullYear() - new Date(client.dateOfBirth as string).getFullYear() : null,
+        spouseName:      client.spouseFirstName ? `${client.spouseFirstName} ${(client as any).spouseLastName ?? ""}`.trim() : null,
+        province:        (client as any).province ?? "ON",
+        annualIncome:    Number((client as any).annualIncome ?? 0),
+        spouseIncome:    Number((client as any).spouseAnnualIncome ?? 0),
+        retirementAge:   (client as any).retirementAge ?? 65,
+        maritalStatus:   (client as any).maritalStatus ?? "unknown",
+        employmentStatus:(client as any).employmentStatus ?? "unknown",
+      },
+      netWorth: {
+        totalAssets:     assets,
+        totalLiabilities: liabilities,
+        netWorth:        assets - liabilities,
+        assets:          nw.filter(e => e.type === "asset").map(e => ({ name: e.name, category: e.category, value: Number(e.value) })),
+        liabilities:     nw.filter(e => e.type === "liability").map(e => ({ name: e.name, category: e.category, value: Number(e.value) })),
+      },
+      retirement: retProj ? {
+        currentAge:         retProj.currentAge,
+        retirementAge:      retProj.retirementAge,
+        lifeExpectancy:     retProj.lifeExpectancy,
+        rrspBalance:        Number(retProj.rrspBalance ?? 0),
+        tfsaBalance:        Number(retProj.tfsaBalance ?? 0),
+        nonRegBalance:      Number(retProj.nonRegBalance ?? 0),
+        annualContribution: Number(retProj.annualContribution ?? 0),
+        desiredIncome:      Number(retProj.desiredRetirementIncome ?? 0),
+        pensionIncome:      Number(retProj.pensionIncome ?? 0),
+        cppMonthly:         Number(retProj.cppMonthly ?? 0),
+        oasMonthly:         Number(retProj.oasMonthly ?? 0),
+        successRate:        Number(retProj.successRate ?? 0),
+        projectedBalance:   Number(retProj.projectedBalance ?? 0),
+        shortfallSurplus:   Number(retProj.shortfallSurplus ?? 0),
+      } : null,
+      insurance: insData ? {
+        lifeInsuranceGap:     Number((insData as any).lifeInsuranceGap ?? 0),
+        disabilityGap:        Number((insData as any).disabilityGap ?? 0),
+        criticalIllnessGap:   Number((insData as any).criticalIllnessGap ?? 0),
+        existingCoverage:     (insData as any).worksheetData?.existingCoverage ?? null,
+      } : null,
+      debt: debt.map(d => ({
+        name:           d.name,
+        category:       d.category,
+        balance:        Number(d.balance),
+        interestRate:   Number(d.interestRate),
+        minimumPayment: Number(d.minimumPayment),
+      })),
+      education: edu.map(e => ({
+        childName:     (e as any).childName,
+        targetAmount:  Number((e as any).targetAmount ?? 0),
+        currentBalance:Number((e as any).currentBalance ?? 0),
+        targetAge:     (e as any).targetAge,
+        childAge:      (e as any).childAge,
+      })),
+      goals: goals.map(g => ({
+        title:          g.title,
+        goalType:       g.goalType,
+        cashflowType:   g.cashflowType,
+        targetAmount:   Number(g.targetAmount ?? 0),
+        targetYear:     g.targetYear,
+        priority:       g.priority,
+        projectionImpact: g.projectionImpact,
+        status:         g.status,
+      })),
+      tax:   tax.map(t => ({ category: (t as any).category, title: (t as any).title, content: (t as any).content })),
+      estate: estate.map(e => ({ category: (e as any).category, title: (e as any).title, content: (e as any).content })),
+      pensions,
+    };
+
+    // ── Call Claude ──────────────────────────────────────────────────────────
+    const apiKey = process.env.ANTHROPIC_API_KEY;
+    if (!apiKey) return res.status(500).json({ message: "ANTHROPIC_API_KEY not configured" });
+
+    const systemPrompt = `You are a senior Canadian Certified Financial Planner (CFP) with 20 years of experience. 
+You are generating a comprehensive written financial plan for a Canadian client. 
+Your analysis must be specific, quantitative where data is available, and written in clear advisor language suitable for client presentation.
+Respond ONLY with a valid JSON object — no preamble, no markdown fences, no explanation outside the JSON.`;
+
+    const userPrompt = `Generate a comprehensive financial plan for this Canadian client. Here is their complete financial data:
+
+${JSON.stringify(context, null, 2)}
+
+Return a JSON object with EXACTLY this structure:
+{
+  "executiveSummary": {
+    "score": <1-5 integer overall health score>,
+    "headline": "<one compelling sentence summarizing the client's financial position>",
+    "narrative": "<3-4 paragraph written overview covering the client's current position, key strengths, key gaps, and the single most important priority. Be specific with numbers from the data.>",
+    "keyStrengths": ["<specific strength with numbers>", "<specific strength>", "<specific strength>"],
+    "keyGaps": ["<specific gap with numbers>", "<specific gap>", "<specific gap>"]
+  },
+  "sections": [
+    {
+      "id": "retirement",
+      "title": "Retirement Planning",
+      "score": <1-5>,
+      "status": "<on_track|needs_attention|at_risk|not_started>",
+      "narrative": "<2-3 paragraphs with specific analysis. Include current trajectory, gaps, CPP/OAS optimization if relevant, RRSP vs TFSA strategy. Use actual numbers from the data.>",
+      "recommendations": [
+        { "priority": "<high|medium|low>", "action": "<specific actionable recommendation>", "impact": "<quantified impact if possible>", "timeline": "<immediate|3_months|6_months|1_year|ongoing>" }
+      ]
+    },
+    {
+      "id": "risk_management",
+      "title": "Risk Management & Insurance",
+      "score": <1-5>,
+      "status": "<on_track|needs_attention|at_risk|not_started>",
+      "narrative": "<2-3 paragraphs covering life, disability, critical illness coverage gaps. Be specific about dollar gaps.>",
+      "recommendations": [{ "priority": "string", "action": "string", "impact": "string", "timeline": "string" }]
+    },
+    {
+      "id": "debt_cashflow",
+      "title": "Debt & Cash Flow Management",
+      "score": <1-5>,
+      "status": "<on_track|needs_attention|at_risk|not_started>",
+      "narrative": "<2-3 paragraphs. Analyze total debt load, interest costs, repayment strategy, cash flow optimization.>",
+      "recommendations": [{ "priority": "string", "action": "string", "impact": "string", "timeline": "string" }]
+    },
+    {
+      "id": "tax_efficiency",
+      "title": "Tax Efficiency",
+      "score": <1-5>,
+      "status": "<on_track|needs_attention|at_risk|not_started>",
+      "narrative": "<2-3 paragraphs. Cover RRSP/TFSA optimization, income splitting opportunities for couples, capital gains planning, withdrawal sequencing in retirement.>",
+      "recommendations": [{ "priority": "string", "action": "string", "impact": "string", "timeline": "string" }]
+    },
+    {
+      "id": "investment_strategy",
+      "title": "Investment Strategy",
+      "score": <1-5>,
+      "status": "<on_track|needs_attention|at_risk|not_started>",
+      "narrative": "<2-3 paragraphs covering asset allocation, registered vs non-registered positioning, portfolio construction relative to goals and timeline.>",
+      "recommendations": [{ "priority": "string", "action": "string", "impact": "string", "timeline": "string" }]
+    },
+    {
+      "id": "estate_planning",
+      "title": "Estate & Beneficiary Planning",
+      "score": <1-5>,
+      "status": "<on_track|needs_attention|at_risk|not_started>",
+      "narrative": "<2-3 paragraphs covering will status, beneficiary designations, power of attorney, probate exposure, any tax on death concerns.>",
+      "recommendations": [{ "priority": "string", "action": "string", "impact": "string", "timeline": "string" }]
+    },
+    {
+      "id": "education",
+      "title": "Education Savings",
+      "score": <1-5>,
+      "status": "<on_track|needs_attention|at_risk|not_started>",
+      "narrative": "<1-2 paragraphs. If no education data, note this is not applicable or data not provided.>",
+      "recommendations": [{ "priority": "string", "action": "string", "impact": "string", "timeline": "string" }]
+    },
+    {
+      "id": "goals",
+      "title": "Goals & Milestones",
+      "score": <1-5>,
+      "status": "<on_track|needs_attention|at_risk|not_started>",
+      "narrative": "<1-2 paragraphs covering the client's stated goals, their feasibility, and how they interact with the overall plan.>",
+      "recommendations": [{ "priority": "string", "action": "string", "impact": "string", "timeline": "string" }]
+    }
+  ],
+  "priorityActions": [
+    { "rank": 1, "title": "<short action title>", "description": "<one clear sentence>", "section": "<section id>", "priority": "high", "timeline": "<string>" },
+    { "rank": 2, "title": "string", "description": "string", "section": "string", "priority": "high", "timeline": "string" },
+    { "rank": 3, "title": "string", "description": "string", "section": "string", "priority": "high", "timeline": "string" },
+    { "rank": 4, "title": "string", "description": "string", "section": "string", "priority": "medium", "timeline": "string" },
+    { "rank": 5, "title": "string", "description": "string", "section": "string", "priority": "medium", "timeline": "string" }
+  ],
+  "disclaimer": "This financial plan has been prepared based on information provided as of ${new Date().toLocaleDateString("en-CA")}. It is intended as a guide and does not constitute legal, tax, or investment advice. Please consult qualified professionals before implementing any strategies."
+}`;
+
+    const claudeRes = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": apiKey,
+        "anthropic-version": "2023-06-01",
+      },
+      body: JSON.stringify({
+        model: "claude-opus-4-5",
+        max_tokens: 8000,
+        system: systemPrompt,
+        messages: [{ role: "user", content: userPrompt }],
+      }),
+    });
+
+    if (!claudeRes.ok) {
+      const err = await claudeRes.text();
+      console.error("[generate-plan] Claude error:", err);
+      return res.status(500).json({ message: "AI generation failed", detail: err });
+    }
+
+    const claudeData = await claudeRes.json() as any;
+    const rawText = claudeData.content?.[0]?.text ?? "";
+
+    // Parse JSON — strip any accidental markdown fences
+    const cleaned = rawText.replace(/^```json\s*/i, "").replace(/```\s*$/i, "").trim();
+    let plan: any;
+    try {
+      plan = JSON.parse(cleaned);
+    } catch (e) {
+      console.error("[generate-plan] JSON parse failed:", cleaned.slice(0, 300));
+      return res.status(500).json({ message: "Failed to parse AI response", raw: cleaned.slice(0, 500) });
+    }
+
+    // Attach metadata
+    plan.generatedAt  = new Date().toISOString();
+    plan.clientId     = cid;
+    plan.clientName   = `${client.firstName} ${client.lastName}`;
+    plan.dataSnapshot = {
+      netWorth:    assets - liabilities,
+      totalDebt:   debt.reduce((s, d) => s + Number(d.balance), 0),
+      successRate: retProj ? Number(retProj.successRate ?? 0) : null,
+    };
+
+    // Store as AI recommendation for history
+    await (db.insert(aiRecommendations) as any).values({
+      clientId:   cid,
+      title:      "Financial Plan — " + new Date().toLocaleDateString("en-CA"),
+      content:    JSON.stringify(plan),
+      category:   "financial_plan",
+      priority:   "high",
+      status:     "active",
+    }).catch(() => {}); // non-fatal if storage fails
+
+    res.json(plan);
+  } catch (e: any) {
+    console.error("[generate-plan]", e.message);
+    res.status(500).json({ message: e.message });
+  }
+});
+
+// ── Retrieve saved plans ──────────────────────────────────────────────────────
+r.get("/clients/:clientId/saved-plans", async (req: AuthRequest, res: Response) => {
+  const cid = +req.params.clientId;
+  if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
+  const rows = await db.select({
+    id:        aiRecommendations.id,
+    title:     aiRecommendations.title,
+    createdAt: aiRecommendations.createdAt,
+    content:   aiRecommendations.content,
+  }).from(aiRecommendations)
+    .where(and(eq(aiRecommendations.clientId, cid), eq(aiRecommendations.category, "financial_plan")));
+  res.json(rows.map(r => ({
+    ...r,
+    plan: (() => { try { return JSON.parse(r.content ?? "{}"); } catch { return null; } })(),
+  })));
+});
 export { r as fpFullRouter };

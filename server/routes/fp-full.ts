@@ -324,4 +324,76 @@ r.get("/clients/:clientId/financial-planning-report", async (req: AuthRequest, r
   } catch (e: any) { res.status(500).json({ message: e.message }); }
 });
 
+// ── Liabilities list (for goal debt-payoff dropdown) ─────────────────────────
+r.get("/clients/:clientId/liabilities", async (req: AuthRequest, res: Response) => {
+  const cid = +req.params.clientId;
+  if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
+
+  // Pull both net worth liabilities and debt entries in parallel
+  const [nwRows, debtRows] = await Promise.all([
+    db.select({
+      id:       netWorthEntries.id,
+      name:     netWorthEntries.name,
+      category: netWorthEntries.category,
+      value:    netWorthEntries.value,
+      metadata: netWorthEntries.metadata,
+    }).from(netWorthEntries)
+      .where(and(eq(netWorthEntries.clientId, cid), eq(netWorthEntries.type, "liability"))),
+    db.select({
+      id:             debtEntries.id,
+      name:           debtEntries.name,
+      category:       debtEntries.category,
+      balance:        debtEntries.balance,
+      interestRate:   debtEntries.interestRate,
+      minimumPayment: debtEntries.minimumPayment,
+    }).from(debtEntries)
+      .where(eq(debtEntries.clientId, cid)),
+  ]);
+
+  // Merge: for each NW liability, find a matching debt entry by name/category
+  const merged = nwRows.map(nw => {
+    const match = debtRows.find(d =>
+      d.name?.toLowerCase() === nw.name?.toLowerCase() ||
+      d.category?.toLowerCase() === nw.category?.toLowerCase()
+    );
+    // Monthly payment: prefer NW metadata, fall back to debt_entries minimum_payment
+    const nwMonthly = (nw as any).metadata?.monthlyPayment
+      ? Number((nw as any).metadata.monthlyPayment)
+      : null;
+    const monthlyPayment = nwMonthly ?? (match ? Number(match.minimumPayment) : null);
+    return {
+      id:             nw.id,
+      name:           nw.name,
+      category:       nw.category,
+      balance:        Number(nw.value),
+      interestRate:   match ? Number(match.interestRate) : null,
+      minimumPayment: monthlyPayment,
+      annualCost:     monthlyPayment ? monthlyPayment * 12 : null,
+      source:         match ? "debt_entries" : "net_worth",
+    };
+  });
+
+  // Also include any debt entries not already in NW liabilities
+  debtRows.forEach(d => {
+    const already = merged.find(m =>
+      m.name?.toLowerCase() === d.name?.toLowerCase() ||
+      m.category?.toLowerCase() === d.category?.toLowerCase()
+    );
+    if (!already) {
+      merged.push({
+        id:             d.id,
+        name:           d.name,
+        category:       d.category,
+        balance:        Number(d.balance),
+        interestRate:   Number(d.interestRate),
+        minimumPayment: Number(d.minimumPayment),
+        annualCost:     Number(d.minimumPayment) * 12,
+        source:         "debt_entries",
+      });
+    }
+  });
+
+  res.json(merged);
+});
+
 export { r as fpFullRouter };

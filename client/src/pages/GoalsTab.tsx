@@ -250,16 +250,55 @@ function GoalCard({ goal, onEdit, onDelete }: { goal: Goal; onEdit: () => void; 
 // ── Goal Form ────────────────────────────────────────────────────────────────
 
 function GoalForm({
-  initial, onSave, onCancel, busy,
+  initial, onSave, onCancel, busy, clientId,
 }: {
   initial: ReturnType<typeof emptyForm>;
   onSave: (f: ReturnType<typeof emptyForm>) => void;
   onCancel: () => void;
   busy: boolean;
+  clientId: number;
 }) {
   const [form, setForm] = useState(initial);
+  const [liabilities, setLiabilities] = useState<Array<{
+    id: number; name: string | null; category: string | null;
+    balance: number; interestRate: number | null;
+    minimumPayment: number | null; annualCost: number | null; source: string;
+  }>>([]);
+  const [selectedLiabilities, setSelectedLiabilities] = useState<Set<number>>(new Set());
   const upd = (k: string, v: any) => setForm(f => ({ ...f, [k]: v }));
   const typeInfo = GOAL_TYPES.find(t => t.key === form.goalType) ?? GOAL_TYPES[0];
+
+  // Load liabilities when debt_free type selected
+  useEffect(() => {
+    if (form.goalType === "debt_free" && liabilities.length === 0) {
+      api.get<any[]>(`/api/clients/${clientId}/liabilities`)
+        .then(setLiabilities)
+        .catch(() => {});
+    }
+  }, [form.goalType]);
+
+  function toggleLiability(id: number) {
+    setSelectedLiabilities(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+
+      // Recalculate totals from new selection
+      const selected = liabilities.filter(l => next.has(l.id));
+      const totalBalance = selected.reduce((s, l) => s + l.balance, 0);
+      const totalAnnual  = selected.reduce((s, l) => s + (l.annualCost ?? 0), 0);
+      const names = selected.map(l => l.name || l.category || "Debt").join(", ");
+
+      setForm(f => ({
+        ...f,
+        title:        selected.length === 1 ? `Pay off ${names}` : selected.length > 1 ? `Pay off: ${names}` : f.title,
+        targetAmount: String(Math.round(totalBalance)),
+        annualAmount: totalAnnual > 0 ? String(Math.round(totalAnnual)) : f.annualAmount,
+        cashflowType: "outflow",
+      }));
+
+      return next;
+    });
+  }
 
   // When goalType changes, update cashflowType to default for that type
   function changeType(key: string) {
@@ -321,6 +360,68 @@ function GoalForm({
               <option value="recurring_expense">Recurring annual expense</option>
             </select>
           </div>
+
+          {/* Liability multi-select for debt_free goals */}
+          {form.goalType === "debt_free" && liabilities.length > 0 && (
+            <div>
+              <label className="text-xs font-semibold text-gray-500 block mb-1.5">
+                Select Liabilities to Pay Off
+                {selectedLiabilities.size > 0 && (
+                  <span className="ml-2 text-[#0c1e3a] font-bold">{selectedLiabilities.size} selected</span>
+                )}
+              </label>
+              <div className="border border-gray-200 rounded-xl overflow-hidden divide-y divide-gray-100">
+                {liabilities.map(l => {
+                  const isSelected = selectedLiabilities.has(l.id);
+                  const label = l.name || l.category || `Liability #${l.id}`;
+                  return (
+                    <div key={l.id} onClick={() => toggleLiability(l.id)}
+                      className={`flex items-center gap-3 px-3 py-2.5 cursor-pointer transition-colors ${isSelected ? "bg-[#0c1e3a]/5" : "hover:bg-gray-50"}`}>
+                      <div className={`w-4 h-4 rounded border-2 flex-shrink-0 flex items-center justify-center transition-colors ${isSelected ? "bg-[#0c1e3a] border-[#0c1e3a]" : "border-gray-300"}`}>
+                        {isSelected && <svg width="8" height="8" viewBox="0 0 8 8"><path d="M1 4l2 2 4-4" stroke="white" strokeWidth="1.5" fill="none" strokeLinecap="round"/></svg>}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-gray-900">{label}</p>
+                        <p className="text-xs text-gray-400">
+                          {l.interestRate != null ? `${l.interestRate}% · ` : ""}
+                          {l.minimumPayment ? `$${l.minimumPayment.toLocaleString("en-CA", { maximumFractionDigits: 0 })}/mo` : ""}
+                          {l.annualCost ? ` · $${l.annualCost.toLocaleString("en-CA", { maximumFractionDigits: 0 })}/yr` : ""}
+                        </p>
+                      </div>
+                      <p className={`text-sm font-bold flex-shrink-0 ${isSelected ? "text-[#0c1e3a]" : "text-gray-700"}`}>
+                        ${l.balance.toLocaleString("en-CA", { maximumFractionDigits: 0 })}
+                      </p>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Totals row */}
+              {selectedLiabilities.size > 0 && (() => {
+                const sel = liabilities.filter(l => selectedLiabilities.has(l.id));
+                const totalBalance = sel.reduce((s, l) => s + l.balance, 0);
+                const totalAnnual  = sel.reduce((s, l) => s + (l.annualCost ?? 0), 0);
+                const totalMonthly = sel.reduce((s, l) => s + (l.minimumPayment ?? 0), 0);
+                return (
+                  <div className="mt-2 bg-[#0c1e3a]/5 rounded-xl px-3 py-2.5 grid grid-cols-3 gap-2">
+                    <div>
+                      <p className="text-[10px] text-gray-400">Total Balance</p>
+                      <p className="text-sm font-bold text-[#0c1e3a]">${totalBalance.toLocaleString("en-CA", { maximumFractionDigits: 0 })}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-gray-400">Monthly Payments</p>
+                      <p className="text-sm font-bold text-gray-700">${totalMonthly.toLocaleString("en-CA", { maximumFractionDigits: 0 })}/mo</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-gray-400">Annual Cost</p>
+                      <p className="text-sm font-bold text-gray-700">${totalAnnual.toLocaleString("en-CA", { maximumFractionDigits: 0 })}/yr</p>
+                    </div>
+                  </div>
+                );
+              })()}
+              <p className="text-[10px] text-gray-400 mt-1.5">Selecting liabilities auto-fills the title, target amount, and annual cost below</p>
+            </div>
+          )}
 
           {/* One-time fields */}
           {isOneTime && (
@@ -683,6 +784,7 @@ export function GoalsTab({ clientId, client }: { clientId: number; client?: any 
           onSave={save}
           onCancel={() => { setShowForm(false); setEditingGoal(null); }}
           busy={busy}
+          clientId={clientId}
         />
       )}
     </div>

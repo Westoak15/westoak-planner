@@ -2710,7 +2710,15 @@ const { data: plans = [] } = useClientPlans(selectedClientId ?? 0);
               </div>
             )}
             {activeTab === "overview"   && <OverviewTab      clientId={selectedClientId} onTabChange={setActiveTab} />}
-            {activeTab === "dashboard"  && activePlanId && <SimulationDashboard planId={activePlanId} />}
+            {activeTab === "dashboard"  && activePlanId && <SimulationDashboard
+              planId={activePlanId}
+              retirementAge={ret?.retirementAge ?? 65}
+              currentAge={ret?.currentAge ?? 45}
+              baseWithdrawal={Math.max(0,
+                Number(ret?.desiredRetirementIncome ?? 0) -
+                (Number(ret?.pensionIncome ?? 0) + Number(ret?.cppMonthly ?? 0) * 12 + Number(ret?.oasMonthly ?? 0) * 12)
+              )}
+            />}
             {activeTab === "dashboard"  && !activePlanId && (
               <div className="border border-dashed border-border rounded-2xl p-8 text-center text-muted-foreground">
                 <BarChart3 className="w-10 h-10 mx-auto mb-3 opacity-40" />

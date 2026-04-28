@@ -21,8 +21,8 @@ function pickGoalFields(body: any) {
   return {
     goalType,
     title,
-    targetAmount:        targetAmount        != null ? String(targetAmount)        : null,
-    currentAmount:       currentAmount       != null ? String(currentAmount)       : null,
+    targetAmount:        (targetAmount != null && targetAmount !== "") ? String(targetAmount) : null,
+    currentAmount:       (currentAmount != null && currentAmount !== "") ? String(currentAmount) : null,
     targetDate:          targetDate          || null,
     status,
     notes:               notes               || null,
@@ -30,11 +30,11 @@ function pickGoalFields(body: any) {
     targetYear:          targetYear          ? Number(targetYear)          : null,
     projectionImpact:    projectionImpact    != null ? Boolean(projectionImpact)   : false,
     priority:            priority            ? Number(priority)            : 3,
-    monthlyContribution: monthlyContribution != null ? String(monthlyContribution) : null,
+    monthlyContribution: (monthlyContribution != null && monthlyContribution !== "") ? String(monthlyContribution) : null,
     inflationAdjust:     inflationAdjust     != null ? Boolean(inflationAdjust)    : true,
     startYear:           startYear           ? Number(startYear)           : null,
     endYear:             endYear             ? Number(endYear)             : null,
-    annualAmount:        annualAmount        != null ? String(annualAmount)        : null,
+    annualAmount:        (annualAmount != null && annualAmount !== "") ? String(annualAmount) : null,
     fundingSource:       fundingSource       || "non_reg",
   };
 }
@@ -136,8 +136,6 @@ r.delete("/goal-check-ins/:id", async (req: AuthRequest, res: Response) => {
   await db.delete(goalCheckIns).where(eq(goalCheckIns.id, +req.params.id));
   res.json({ ok: true });
 });
-
-export { r as goalsRouter };
 
 // ── Goal Check-ins ────────────────────────────────────────────────────────────
 import { goalCheckIns } from "../../shared/schema.js";

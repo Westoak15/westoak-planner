@@ -318,3 +318,144 @@ export function detectSignificantChanges(
   
   return flags;
 }
+
+// ── Spending Flexibility Guardrail Engine ─────────────────────────────────────
+// The core guardrail model: if portfolio drops below the "floor" threshold,
+// reduce spending by flexDown%. If portfolio rises above "ceiling", increase
+// spending by flexUp%. This converts a probability number into actionable advice.
+
+export interface GuardrailParams {
+  // Portfolio thresholds (as fraction of "on-track" balance)
+  floorPct:    number;   // e.g. 0.80 = cut spending when portfolio < 80% of target path
+  ceilingPct:  number;   // e.g. 1.20 = increase spending when portfolio > 120% of target
+  flexDown:    number;   // e.g. 0.10 = reduce spending by 10% when floor triggered
+  flexUp:      number;   // e.g. 0.10 = increase spending by 10% when ceiling triggered
+}
+
+export interface GuardrailTrigger {
+  year:              number;   // calendar year
+  age:               number;
+  targetPathBalance: number;   // what the median path shows
+  floorBalance:      number;   // floor trigger level
+  ceilingBalance:    number;   // ceiling trigger level
+  reducedSpending:   number;   // spending if floor triggered
+  increasedSpending: number;   // spending if ceiling triggered
+  baseSpending:      number;
+}
+
+export interface GuardrailResult {
+  baseSuccessRate:     number;
+  adjustedSuccessRate: number;
+  successRateGain:     number;
+  params:              GuardrailParams;
+  triggerTable:        GuardrailTrigger[];
+  recommendation:      string;
+}
+
+export function applySpendingFlexibility(
+  // Base simulation result (from runMonteCarloSimulation)
+  basePaths:          number[][],       // [pathIndex][year] = balance
+  medianPath:         number[],         // p50 by year (the "target path")
+  baseAnnualWithdrawal: number,         // base retirement spending net of guaranteed income
+  retirementYear:     number,           // index in paths where retirement starts
+  params:             GuardrailParams,
+  retirementAge:      number,
+  inflationRate:      number = 0.02,
+): GuardrailResult {
+
+  const N = basePaths.length;
+  const years = basePaths[0].length - 1;
+
+  // ── Calculate adjusted success with spending flexibility ──────────────────
+  let adjustedSuccessCount = 0;
+  let baseSuccessCount = 0;
+
+  for (const path of basePaths) {
+    // Base success: does portfolio survive retirement without touching spending?
+    const baseEnds = path[path.length - 1];
+    if (baseEnds > 0) baseSuccessCount++;
+
+    // Adjusted: simulate with dynamic spending adjustments
+    let balance = path[retirementYear] ?? path[Math.min(retirementYear, path.length - 1)];
+    let spending = baseAnnualWithdrawal;
+    let survived = true;
+
+    for (let yr = retirementYear; yr < path.length - 1; yr++) {
+      // Get return for this year from the path
+      const prevBal = path[yr];
+      const nextBal = path[yr + 1];
+      // Infer return: nextBal = prevBal * (1+r) - spending
+      // r = (nextBal + spending - prevBal) / prevBal (approximate)
+      const impliedReturn = prevBal > 0 ? (nextBal + baseAnnualWithdrawal - prevBal) / prevBal : 0;
+
+      // Apply return to our adjusted balance
+      balance = balance * (1 + impliedReturn);
+
+      // Guardrail check against median path at this year
+      const targetBalance = medianPath[yr] ?? medianPath[medianPath.length - 1];
+      if (targetBalance > 0) {
+        if (balance < targetBalance * params.floorPct) {
+          spending = baseAnnualWithdrawal * (1 - params.flexDown);
+        } else if (balance > targetBalance * params.ceilingPct) {
+          spending = baseAnnualWithdrawal * (1 + params.flexUp);
+        } else {
+          spending = baseAnnualWithdrawal;
+        }
+      }
+
+      balance -= spending;
+      if (balance <= 0) { survived = false; break; }
+    }
+
+    if (survived && balance > 0) adjustedSuccessCount++;
+  }
+
+  const baseSuccessRate     = baseSuccessCount / N;
+  const adjustedSuccessRate = adjustedSuccessCount / N;
+  const gain                = adjustedSuccessRate - baseSuccessRate;
+
+  // ── Build trigger table ────────────────────────────────────────────────────
+  const triggerTable: GuardrailTrigger[] = [];
+  const retirementYears = years - retirementYear;
+
+  for (let i = 0; i < Math.min(retirementYears, 30); i++) {
+    const pathIdx = retirementYear + i;
+    const targetPathBalance = medianPath[pathIdx] ?? 0;
+    const inflAdj = Math.pow(1 + inflationRate, i);
+    const baseSpending = baseAnnualWithdrawal * inflAdj;
+
+    triggerTable.push({
+      year:              new Date().getFullYear() + i,
+      age:               retirementAge + i,
+      targetPathBalance: Math.round(targetPathBalance),
+      floorBalance:      Math.round(targetPathBalance * params.floorPct),
+      ceilingBalance:    Math.round(targetPathBalance * params.ceilingPct),
+      baseSpending:      Math.round(baseSpending),
+      reducedSpending:   Math.round(baseSpending * (1 - params.flexDown)),
+      increasedSpending: Math.round(baseSpending * (1 + params.flexUp)),
+    });
+  }
+
+  // ── Plain-English recommendation ──────────────────────────────────────────
+  const gainPct  = (gain * 100).toFixed(0);
+  const flexPct  = (params.flexDown * 100).toFixed(0);
+  const reducedAmt = Math.round(baseAnnualWithdrawal * (1 - params.flexDown)).toLocaleString("en-CA");
+  let recommendation = "";
+
+  if (gain > 0.05) {
+    recommendation = `Applying a ${flexPct}% spending flexibility guardrail increases your plan success rate from ${(baseSuccessRate * 100).toFixed(0)}% to ${(adjustedSuccessRate * 100).toFixed(0)}% — a ${gainPct}-point improvement. In years when your portfolio falls below the floor trigger, reduce annual withdrawals from $${Math.round(baseAnnualWithdrawal).toLocaleString("en-CA")} to $${reducedAmt}. This is the single highest-impact adjustment available.`;
+  } else if (gain > 0.01) {
+    recommendation = `Spending flexibility adds ${gainPct} percentage points to your success rate (${(baseSuccessRate * 100).toFixed(0)}% → ${(adjustedSuccessRate * 100).toFixed(0)}%). The plan is already reasonably strong; guardrails provide a useful safety margin but are not urgently required.`;
+  } else {
+    recommendation = `Your plan has a ${(baseSuccessRate * 100).toFixed(0)}% base success rate. Spending flexibility adds minimal uplift in this scenario, suggesting the plan is either already very robust or that flexibility alone cannot compensate for the underlying shortfall — consider also increasing contributions or delaying retirement.`;
+  }
+
+  return {
+    baseSuccessRate,
+    adjustedSuccessRate,
+    successRateGain: gain,
+    params,
+    triggerTable,
+    recommendation,
+  };
+}

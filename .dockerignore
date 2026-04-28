@@ -1,7 +1,8 @@
-# flyctl launch added from .gitignore
-**\node_modules
-**\dist
-**\.env
-**\drizzle
-**\.DS_Store
+**/node_modules
+**/dist
+**/.env
+**/drizzle
+**/.DS_Store
+node_modules/.vite
+.vite
 fly.toml

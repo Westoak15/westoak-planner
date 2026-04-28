@@ -3,8 +3,25 @@ import {
   Sparkles, RefreshCw, ChevronDown, ChevronUp, CheckCircle,
   AlertTriangle, XCircle, Clock, TrendingUp, Shield, CreditCard,
   Receipt, BarChart3, ScrollText, GraduationCap, Target, FileText,
-  Loader2, Calendar, ArrowRight, Star,
+  Loader2, Calendar, ArrowRight, Star, Printer, Trash2, History,
 } from "lucide-react";
+
+// Print styles — injected once into the document head
+const PRINT_STYLES = `
+@media print {
+  body > * { display: none !important; }
+  #fp-plan-print-root { display: block !important; }
+  #fp-plan-print-root { font-family: 'Inter', system-ui, sans-serif; font-size: 12px; color: #111; }
+  .fp-print-hide { display: none !important; }
+  .fp-section-card { page-break-inside: avoid; margin-bottom: 16px; border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; }
+  .fp-section-expanded { display: block !important; }
+  .fp-priority-actions { page-break-inside: avoid; }
+  h1 { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
+  h2 { font-size: 16px; font-weight: 600; margin-bottom: 8px; }
+  h3 { font-size: 13px; font-weight: 600; margin-bottom: 6px; }
+  p { margin-bottom: 6px; line-height: 1.5; }
+}
+`;
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -116,17 +133,18 @@ function ScoreRing({ score }: { score: number }) {
 
 // ── Section Card ─────────────────────────────────────────────────────────────
 
-function SectionCard({ section }: { section: PlanSection }) {
+function SectionCard({ section, forceExpand = false }: { section: PlanSection; forceExpand?: boolean }) {
   const [expanded, setExpanded] = useState(false);
+  const isExpanded = expanded || forceExpand;
   const Icon   = SECTION_ICONS[section.id] ?? Target;
   const status = STATUS_CONFIG[section.status] ?? STATUS_CONFIG.needs_attention;
   const StatusIcon = status.icon;
 
   return (
-    <div className={`border rounded-xl overflow-hidden transition-all ${status.bg}`}>
+    <div className={`fp-section-card border rounded-xl overflow-hidden transition-all ${status.bg}`}>
       <button
         onClick={() => setExpanded(v => !v)}
-        className="w-full flex items-center gap-3 px-4 py-3 text-left hover:opacity-80 transition-opacity"
+        className="w-full flex items-center gap-3 px-4 py-3 text-left hover:opacity-80 transition-opacity fp-print-hide"
       >
         <ScoreRing score={section.score} />
         <div className="flex-1 min-w-0">
@@ -138,18 +156,18 @@ function SectionCard({ section }: { section: PlanSection }) {
               {status.label}
             </span>
           </div>
-          {!expanded && (
+          {!isExpanded && (
             <p className="text-xs text-gray-500 mt-0.5 line-clamp-1">{section.narrative.split("\n")[0].slice(0, 120)}...</p>
           )}
         </div>
         <div className="flex items-center gap-2 flex-shrink-0 ml-2">
           <span className="text-[10px] text-gray-400">{section.recommendations.length} rec{section.recommendations.length !== 1 ? "s" : ""}</span>
-          {expanded ? <ChevronUp className="w-4 h-4 text-gray-400" /> : <ChevronDown className="w-4 h-4 text-gray-400" />}
+          {isExpanded ? <ChevronUp className="w-4 h-4 text-gray-400" /> : <ChevronDown className="w-4 h-4 text-gray-400" />}
         </div>
       </button>
 
-      {expanded && (
-        <div className="px-4 pb-4 border-t border-white/50 pt-3">
+      {isExpanded && (
+        <div className="px-4 pb-4 border-t border-white/50 pt-3 fp-section-expanded">
           {/* Narrative */}
           <div className="prose prose-sm max-w-none mb-4">
             {section.narrative.split("\n\n").map((para, i) => (
@@ -336,6 +354,27 @@ export function FinancialPlanTab({ clientId, clientName }: { clientId: number; c
   const [view, setView]         = useState<"plan" | "history">("plan");
   const [expandAll, setExpandAll] = useState(false);
 
+  // Inject print styles once
+  useEffect(() => {
+    const id = "fp-plan-print-styles";
+    if (!document.getElementById(id)) {
+      const style = document.createElement("style");
+      style.id = id;
+      style.textContent = PRINT_STYLES;
+      document.head.appendChild(style);
+    }
+  }, []);
+
+  function printPlan() {
+    if (!plan) return;
+    // Expand all sections for print, then restore
+    setExpandAll(true);
+    setTimeout(() => {
+      window.print();
+      setExpandAll(false);
+    }, 300);
+  }
+
   useEffect(() => { loadSaved(); }, [clientId]);
 
   async function loadSaved() {
@@ -380,7 +419,7 @@ export function FinancialPlanTab({ clientId, clientName }: { clientId: number; c
   return (
     <div className="max-w-4xl mx-auto space-y-5">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between fp-print-hide">
         <div>
           <h2 className="text-xl font-bold text-gray-900">Financial Plan</h2>
           <p className="text-sm text-gray-400 mt-0.5">
@@ -389,10 +428,17 @@ export function FinancialPlanTab({ clientId, clientName }: { clientId: number; c
         </div>
         <div className="flex items-center gap-2">
           {plan && (
-            <button onClick={() => setExpandAll(v => !v)}
-              className="text-xs text-gray-500 hover:text-gray-700 border border-gray-200 px-3 py-1.5 rounded-lg">
-              {expandAll ? "Collapse all" : "Expand all"}
-            </button>
+            <>
+              <button onClick={() => setExpandAll(v => !v)}
+                className="text-xs text-gray-500 hover:text-gray-700 border border-gray-200 px-3 py-1.5 rounded-lg">
+                {expandAll ? "Collapse all" : "Expand all"}
+              </button>
+              <button onClick={printPlan}
+                className="flex items-center gap-1.5 text-xs text-gray-600 hover:text-gray-900 border border-gray-200 px-3 py-1.5 rounded-lg">
+                <Printer className="w-3.5 h-3.5" />
+                Print / PDF
+              </button>
+            </>
           )}
           <button
             onClick={generate}
@@ -446,31 +492,84 @@ export function FinancialPlanTab({ clientId, clientName }: { clientId: number; c
 
       {/* History view */}
       {view === "history" && (
-        <div className="space-y-2">
+        <div className="space-y-3">
+          <p className="text-xs text-gray-400">Previously generated plans — click Load to view or regenerate from current data.</p>
           {loadingSaved && <p className="text-sm text-gray-400">Loading…</p>}
           {saved.length === 0 && !loadingSaved && (
             <div className="text-center py-8 text-sm text-gray-400">No saved plans yet — generate one above.</div>
           )}
-          {saved.map(s => (
-            <div key={s.id} className="flex items-center justify-between bg-white border border-gray-200 rounded-xl px-4 py-3">
-              <div>
-                <p className="text-sm font-semibold text-gray-900">{s.title}</p>
-                <p className="text-xs text-gray-400">{new Date(s.createdAt).toLocaleString("en-CA")}</p>
+          {saved.map(s => {
+            const p = s.plan;
+            const score = p?.executiveSummary?.score;
+            const scoreColor = score ? (score >= 4 ? "text-green-600" : score >= 3 ? "text-amber-600" : "text-red-600") : "text-gray-400";
+            const sections = p?.sections?.length ?? 0;
+            const actions  = p?.priorityActions?.length ?? 0;
+            return (
+              <div key={s.id} className="bg-white border border-gray-200 rounded-xl overflow-hidden hover:border-gray-300 transition-colors">
+                <div className="flex items-center justify-between px-4 py-3 bg-gray-50 border-b border-gray-100">
+                  <div className="flex items-center gap-3">
+                    {score && <span className={`text-lg font-bold ${scoreColor}`}>{score}/5</span>}
+                    <div>
+                      <p className="text-sm font-semibold text-gray-900">{s.title}</p>
+                      <p className="text-xs text-gray-400">{new Date(s.createdAt).toLocaleString("en-CA", { dateStyle: "medium", timeStyle: "short" })}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button onClick={() => loadFromHistory(s)}
+                      className="text-xs text-[#0c1e3a] font-semibold border border-[#0c1e3a]/20 px-3 py-1.5 rounded-lg hover:bg-[#0c1e3a]/5">
+                      Load
+                    </button>
+                  </div>
+                </div>
+                {p && (
+                  <div className="px-4 py-3">
+                    <p className="text-xs text-gray-600 mb-2 line-clamp-2">{p.executiveSummary?.headline}</p>
+                    <div className="grid grid-cols-3 gap-2">
+                      <div className="bg-gray-50 rounded-lg px-2.5 py-2 text-center">
+                        <p className="text-sm font-bold text-gray-900">{fmt$(p.dataSnapshot?.netWorth ?? 0)}</p>
+                        <p className="text-[10px] text-gray-400">Net Worth</p>
+                      </div>
+                      <div className="bg-gray-50 rounded-lg px-2.5 py-2 text-center">
+                        <p className="text-sm font-bold text-gray-900">{sections}</p>
+                        <p className="text-[10px] text-gray-400">Sections</p>
+                      </div>
+                      <div className="bg-gray-50 rounded-lg px-2.5 py-2 text-center">
+                        <p className="text-sm font-bold text-gray-900">{actions}</p>
+                        <p className="text-[10px] text-gray-400">Priority Actions</p>
+                      </div>
+                    </div>
+                    {/* Section score dots */}
+                    {p.sections && (
+                      <div className="flex gap-1.5 mt-2 flex-wrap">
+                        {p.sections.map((sec: any) => {
+                          const st = STATUS_CONFIG[sec.status as keyof typeof STATUS_CONFIG] ?? STATUS_CONFIG.needs_attention;
+                          return (
+                            <span key={sec.id} className={`text-[9px] px-2 py-0.5 rounded-full border font-semibold ${st.bg} ${st.color}`}>
+                              {sec.title.split(" ")[0]} {sec.score}/5
+                            </span>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
-              <button onClick={() => loadFromHistory(s)}
-                className="text-xs text-[#0c1e3a] font-semibold border border-[#0c1e3a]/20 px-3 py-1.5 rounded-lg hover:bg-[#0c1e3a]/5">
-                Load
-              </button>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
       {/* Plan view */}
       {view === "plan" && plan && !loading && (
-        <div className="space-y-4">
+        <div id="fp-plan-print-root" className="space-y-4">
+          {/* Print header — only shows when printing */}
+          <div className="hidden print:block mb-4 pb-4 border-b border-gray-200">
+            <h1 className="text-2xl font-bold text-gray-900">Financial Plan — {plan.clientName}</h1>
+            <p className="text-sm text-gray-500">Generated {new Date(plan.generatedAt).toLocaleDateString("en-CA", { dateStyle: "long" })}</p>
+          </div>
+
           {/* Generated at */}
-          <p className="text-[10px] text-gray-400">
+          <p className="text-[10px] text-gray-400 fp-print-hide">
             Generated {new Date(plan.generatedAt).toLocaleString("en-CA")} for {plan.clientName}
           </p>
 
@@ -479,7 +578,9 @@ export function FinancialPlanTab({ clientId, clientName }: { clientId: number; c
 
           {/* Priority actions */}
           {plan.priorityActions?.length > 0 && (
-            <PriorityActionsPanel actions={plan.priorityActions} />
+            <div className="fp-priority-actions">
+              <PriorityActionsPanel actions={plan.priorityActions} />
+            </div>
           )}
 
           {/* Executive summary */}
@@ -487,12 +588,12 @@ export function FinancialPlanTab({ clientId, clientName }: { clientId: number; c
 
           {/* Section cards */}
           <div>
-            <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center justify-between mb-2 fp-print-hide">
               <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">Planning Sections</p>
             </div>
             <div className="space-y-2">
               {plan.sections.map(section => (
-                <SectionCard key={section.id} section={section} />
+                <SectionCard key={section.id} section={section} forceExpand={expandAll} />
               ))}
             </div>
           </div>

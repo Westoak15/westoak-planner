@@ -5,6 +5,7 @@ import { api } from "../lib/api";
 import { Sidebar, type Tab } from "../components/Sidebar";
 import { LettersTab } from "./LettersTab";
 import { FinancialPlanningContent } from "./FinancialPlanning";
+import { FinancialPlanTab } from "@/components/planning/FinancialPlanTab";
 import { RetirementTab as RetirementTabNew } from "@/components/planning/RetirementProjectionForm";
 
 import { QueryClientProvider } from "@tanstack/react-query";
@@ -1329,7 +1330,7 @@ export default function App() {
         </header>
 
         {/* Content */}
-        <div className="flex-1 flex flex-col overflow-hidden h-full">
+        <div className="flex-1 overflow-y-auto">
           {tab === "clients" && !showClientDetail && (
             <ClientsTab onSelect={selectClient} />
           )}
@@ -1349,11 +1350,14 @@ export default function App() {
             </div>
           )}
           {tab === "planning" && client && (
-            <div className="flex-1 flex overflow-hidden">
-              <QueryClientProvider client={queryClient}>
-                <FinancialPlanningContent initialClientId={client.id} />
-              </QueryClientProvider>
-           </div>
+            <QueryClientProvider client={queryClient}>
+              <FinancialPlanningContent initialClientId={client.id} />
+            </QueryClientProvider>
+          )}
+          {tab === "financialplan" && client && (
+            <div className="flex-1 overflow-y-auto p-6">
+              <FinancialPlanTab clientId={client.id} clientName={client.firstName} />
+            </div>
           )}
           {showPersonTabs && (
             <div className="px-6 pt-5 pb-0">
@@ -1394,7 +1398,7 @@ export default function App() {
 )}
           {tab === "dashboard"  && client && <DashboardTab     clientId={client.id} />}
           {tab === "letters" && client && <LettersTab clientId={client.id} client={client} />}
-          {tab === "goals" && client && <GoalsTab clientId={client.id} client={client} />}
+          {tab === "goals" && client && <GoalsTab clientId={client.id} client={client} person={person} />}
           {tab === "reports" && client && <ReportsTab clientId={client.id} />}
           {tab === "tax" && client && (
   <QueryClientProvider client={queryClient}>

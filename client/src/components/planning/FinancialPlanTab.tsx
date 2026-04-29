@@ -380,6 +380,8 @@ export function FinancialPlanTab({ clientId, clientName }: { clientId: number; c
   function loadFromHistory(saved: SavedPlan) {
     if (saved.plan) { setPlan(saved.plan); setView("plan"); }
   }
+
+  async function loadSaved() {
     setLoadingSaved(true);
     try {
       const res = await fetch(`/api/clients/${clientId}/saved-plans`, {

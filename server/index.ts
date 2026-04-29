@@ -24,7 +24,7 @@ import { pensionRouter } from "./routes/pension.js";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = parseInt(process.env.PORT ?? "8080", 10);
 
-// ── Startup migrations (idempotent) ───────────────────────────────────────────
+// ── Startup migrations (idempotent)  ───────────────────────────────────────────
 async function runMigrations() {
   const migrations = [
     `ALTER TABLE retirement_projections ADD COLUMN IF NOT EXISTS person TEXT DEFAULT 'primary'`,

@@ -155,7 +155,7 @@ function SectionCard({ section, forceExpand = false }: { section: PlanSection; f
             </span>
           </div>
           {!isExpanded && (
-            <p className="text-xs text-gray-500 mt-0.5 line-clamp-1">{section.narrative.split("\n")[0].slice(0, 120)}...</p>
+            <p className="text-xs text-gray-500 mt-0.5 line-clamp-1">{(section.narrative ?? "").split("\n")[0].slice(0, 120)}...</p>
           )}
         </div>
         <div className="flex items-center gap-2 flex-shrink-0 ml-2">
@@ -168,7 +168,7 @@ function SectionCard({ section, forceExpand = false }: { section: PlanSection; f
         <div className="px-4 pb-4 border-t border-white/50 pt-3 fp-section-expanded">
           {/* Narrative */}
           <div className="prose prose-sm max-w-none mb-4">
-            {section.narrative.split("\n\n").map((para, i) => (
+            {(section.narrative ?? "").split("\n\n").map((para, i) => (
               para.trim() && <p key={i} className="text-sm text-gray-700 leading-relaxed mb-2">{para.trim()}</p>
             ))}
           </div>
@@ -291,7 +291,7 @@ function OverallScoreCard({ plan }: { plan: FinancialPlan }) {
             return (
               <div key={s.id} className="text-center">
                 <div className={`w-1.5 h-1.5 rounded-full mx-auto mb-0.5 ${sc.dot}`} />
-                <p className="text-[9px] text-gray-500 leading-tight">{s.title.split(" ")[0]}</p>
+                <p className="text-[9px] text-gray-500 leading-tight">{(s.title ?? "").split(" ")[0]}</p>
                 <p className="text-[9px] font-bold text-gray-700">{s.score}/5</p>
               </div>
             );
@@ -309,7 +309,7 @@ function ExecutiveSummary({ es }: { es: FinancialPlan["executiveSummary"] }) {
     <div className="bg-white border border-gray-200 rounded-xl p-4">
       <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide mb-3">Executive Summary</p>
       <div className="space-y-2 mb-4">
-        {es.narrative.split("\n\n").map((para, i) => (
+        {(es.narrative ?? "").split("\n\n").map((para, i) => (
           para.trim() && <p key={i} className="text-sm text-gray-700 leading-relaxed">{para.trim()}</p>
         ))}
       </div>
@@ -561,7 +561,7 @@ export function FinancialPlanTab({ clientId, clientName }: { clientId: number; c
                           const st = STATUS_CONFIG[sec.status as keyof typeof STATUS_CONFIG] ?? STATUS_CONFIG.needs_attention;
                           return (
                             <span key={sec.id} className={`text-[9px] px-2 py-0.5 rounded-full border font-semibold ${st.bg} ${st.color}`}>
-                              {sec.title.split(" ")[0]} {sec.score}/5
+                              {(sec.title ?? "").split(" ")[0]} {sec.score}/5
                             </span>
                           );
                         })}

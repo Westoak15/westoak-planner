@@ -633,6 +633,9 @@ export function generateNetWorthReport(data: { includeCover?: boolean; client: a
   const body = cover + `
 <div class="section">
   <h2 class="section-title">Balance Sheet</h2>
+  <div class="callout info" style="margin-bottom:20px">
+    <strong>About this statement:</strong> Your net worth is calculated by subtracting all liabilities (what you owe) from all assets (what you own). It is the most fundamental measure of financial health and should grow over time as you pay down debt and accumulate savings. Tracking net worth annually reveals whether your overall financial position is improving.
+  </div>
   <div class="summary-grid">
     <div class="summary-card"><div class="label">Total Assets</div><div class="value positive">${fmtCad(totalA)}</div></div>
     <div class="summary-card"><div class="label">Total Liabilities</div><div class="value negative">${fmtCad(totalL)}</div></div>
@@ -695,6 +698,9 @@ ${data.debts.length>0?`<div class="section"><h2 class="section-title">Debt Summa
     <tr class="total"><td colspan="2">Total</td><td style="text-align:right">${fmtCad(data.debts.reduce((s,d)=>s+v(d.balance),0))}</td><td></td></tr>
   </tbody></table></div>`:""}
 ${data.education.length>0?`<div class="section"><h2 class="section-title">Education Savings (RESP)</h2>
+  <div class="callout info" style="margin-bottom:12px">
+    <strong>About RESP:</strong> A Registered Education Savings Plan grows tax-sheltered until withdrawn for post-secondary education. The federal government contributes 20% on the first $2,500 annually per beneficiary through the Canada Education Savings Grant (CESG), up to $500/year and $7,200 lifetime. Provincial grants may also apply. Contributions are not tax-deductible but income earned in the plan is taxed in the student's hands at withdrawal, usually at a low rate.
+  </div>
   <table><thead><tr><th>Child</th><th>Birth Year</th><th style="text-align:right">Balance</th><th style="text-align:right">Annual Contribution</th></tr></thead><tbody>
     ${data.education.map(e=>`<tr><td>${esc(e.childName)}</td><td>${esc(e.childBirthYear)}</td><td style="text-align:right">${fmtCad(v(e.currentBalance))}</td><td style="text-align:right">${fmtCad(v(e.annualContribution))}</td></tr>`).join("")}
   </tbody></table></div>`:""}
@@ -871,6 +877,9 @@ export function generateRetirementReport(data: {
 
 <div class="section">
   <h2 class="section-title">Retirement Overview</h2>
+  <div class="callout info" style="margin-bottom:20px">
+    <strong>About this projection:</strong> This report projects your retirement income based on current savings, expected contributions, and assumed investment returns. The success rate shows the percentage of simulated market scenarios in which your portfolio lasts through your full retirement. A rate above 85% is generally considered a strong plan; below 70% warrants action. All projections are estimates — actual results depend on market performance, inflation, and your withdrawal behaviour.
+  </div>
   ${retirement ? `
   <div class="summary-grid">
     <div class="summary-card"><div class="label">Retirement Age</div><div class="value">${esc(retirement.retirementAge)}</div></div>
@@ -881,6 +890,7 @@ export function generateRetirementReport(data: {
   </div>` : ""}
 
   ${sim ? `
+  <p style="font-size:11px;color:#6b7280;margin-bottom:8px;font-style:italic">The chart below shows 1,000 simulated market scenarios. The dark blue line is the median (50th percentile) outcome. The shaded bands represent the range of outcomes from the 10th percentile (worst 10% of scenarios) to the 90th (best 10%). Your plan succeeds if your portfolio remains above zero through your target life expectancy.</p>
   <h3>Monte Carlo Projection (${sim.yearsProjected} Years - ${sim.simulationCount?.toLocaleString() ?? ""} Simulations)</h3>
   <div class="chart-container">${mcChart}</div>
   <table>
@@ -1043,6 +1053,9 @@ export function generateCashFlowReport(data: {
 
 <div class="section">
   <h2 class="section-title">Summary</h2>
+  <div class="callout info" style="margin-bottom:20px">
+    <strong>About this statement:</strong> This cash flow report categorizes your household expenses into essential costs (housing, food, utilities, insurance) and discretionary spending (travel, entertainment, dining). Understanding this split is critical for retirement planning — discretionary expenses can typically be reduced in lean years, while essential costs remain fixed. The retirement column shows projected expenses after applying your adjustment percentages.
+  </div>
   <div class="summary-grid" style="grid-template-columns:repeat(4,1fr)">
     <div class="summary-card"><div class="label">Total Monthly</div><div class="value">${fmtCad(totalMonthly)}</div></div>
     <div class="summary-card"><div class="label">Total Annual</div><div class="value">${fmtCad(totalAnnual)}</div></div>
@@ -1125,6 +1138,9 @@ export function generateAssetAllocationReport(data: {
 
 <div class="section">
   <h2 class="section-title">Allocation by Account Type</h2>
+  <div class="callout info" style="margin-bottom:20px">
+    <strong>About this report:</strong> Asset allocation describes how your investable assets are distributed across account types (RRSP, TFSA, non-registered) and investment categories (equities, fixed income, cash). Account type affects the tax treatment of investment returns. Investment type determines your exposure to market risk and growth potential. A well-diversified portfolio reduces concentration risk and aligns with your investment time horizon and risk tolerance.
+  </div>
   ${warnings}
   ${investments.length === 0 ? "<p>No investment holdings recorded. Add investments in the Net Worth tab.</p>" : `
   <table>
@@ -1203,6 +1219,9 @@ export function generateRetirementReadinessReport(data: {
 
 <div class="section">
   <h2 class="section-title">Readiness Score</h2>
+  <div class="callout info" style="margin-bottom:20px">
+    <strong>About this score:</strong> The Retirement Readiness Score compares your projected portfolio at retirement against the portfolio required to sustain your desired income using the 4% withdrawal rule — a widely used planning benchmark that assumes a 30-year retirement with a diversified portfolio. A score of 100% means your projected savings exactly meet the target; above 100% indicates a surplus. The 4% rule is a starting point — your advisor may recommend a different withdrawal rate based on your specific situation.
+  </div>
   <div style="display:flex;align-items:center;gap:32px;margin-bottom:20px">
     <div style="text-align:center">
       <div style="width:100px;height:100px;border-radius:50%;border:8px solid ${scoreColor};display:flex;align-items:center;justify-content:center;font-size:22pt;font-weight:700;color:${scoreColor}">${readinessScore}%</div>
@@ -1220,6 +1239,9 @@ export function generateRetirementReadinessReport(data: {
 </div>
 <div class="section">
   <h2 class="section-title">Income in Retirement</h2>
+  <div class="callout info" style="margin-bottom:8px">
+    <strong>About retirement income sources:</strong> Canadian retirees typically draw income from three buckets: (1) Government benefits — CPP (Canada Pension Plan) and OAS (Old Age Security), which are indexed to inflation; (2) Registered accounts — RRSP/RRIF withdrawals, which are taxable; and (3) Portfolio income — from TFSA and non-registered accounts. Optimizing the sequence and timing of these withdrawals significantly affects lifetime taxes paid and plan longevity.
+  </div>
   <div class="summary-grid" style="grid-template-columns:repeat(4,1fr)">
     <div class="summary-card"><div class="label">Portfolio Income (4%)</div><div class="value">${fmtCad(projBalance * 0.04)}/yr</div></div>
     <div class="summary-card"><div class="label">Estimated CPP</div><div class="value">${fmtCad(cppEstimate)}/yr</div></div>
@@ -1306,6 +1328,9 @@ ${data.education.length > 0 ? `<div class="section">
 </div>` : ""}
 ${data.plans.length > 0 ? `<div class="section">
   <h2 class="section-title">Financial Plans</h2>
+  <div class="callout info" style="margin-bottom:16px">
+    <strong>About goal tracking:</strong> This report summarizes progress toward your stated financial goals. Progress percentages compare your current net worth against goal target amounts — they are indicative benchmarks rather than precise measurements. Goals marked as completed represent milestones you have already achieved. Review goal targets annually to ensure they reflect your current priorities.
+  </div>
   <table>
     <thead><tr><th>Plan Name</th><th>Status</th><th style="text-align:right">Goal</th><th style="text-align:right">Target Date</th><th style="text-align:right">Progress</th><th>Track</th></tr></thead>
     <tbody>${planRows}</tbody>
@@ -1427,6 +1452,9 @@ export function generateEstateSummaryReport(data: {
 
 <div class="section">
   <h2 class="section-title">Estate Checklist</h2>
+  <div class="callout info" style="margin-bottom:20px">
+    <strong>About estate planning:</strong> A comprehensive estate plan ensures your assets are distributed according to your wishes, minimizes probate fees and taxes, and provides for your care if you become incapacitated. In Canada, registered accounts (RRSP, TFSA, RRIF) with named beneficiaries pass outside the estate and avoid probate. Life insurance proceeds also bypass the estate. Proper beneficiary designations and a current will are the most impactful steps most Canadians can take.
+  </div>
   <table>
     <thead><tr><th>Area</th><th>Status</th><th>Notes</th></tr></thead>
     <tbody>${checklist}</tbody>
@@ -1434,6 +1462,9 @@ export function generateEstateSummaryReport(data: {
 </div>
 <div class="section">
   <h2 class="section-title">Assets for Distribution</h2>
+  <div class="callout info" style="margin-bottom:8px">
+    <strong>About the taxable estate:</strong> At death, RRSP/RRIF assets are generally deemed to be received as income in the final tax return — this can trigger significant taxes unless rolled over to a surviving spouse. Non-registered accounts are subject to a deemed disposition at fair market value. Proper estate planning, including spousal rollovers, charitable bequests, and insurance strategies, can materially reduce the tax burden on your estate.
+  </div>
   <div class="summary-grid">
     <div class="summary-card"><div class="label">Total Assets</div><div class="value positive">${fmtCad(totalAssets)}</div></div>
     <div class="summary-card"><div class="label">Total Liabilities</div><div class="value negative">${fmtCad(totalLiabilities)}</div></div>
@@ -1478,6 +1509,9 @@ export function generateTaxStrategyReport(data: {
 
 <div class="section">
   <h2 class="section-title">Account Structure Overview</h2>
+  <div class="callout info" style="margin-bottom:20px">
+    <strong>About tax-efficient investing:</strong> In Canada, the account type holding an investment determines how its returns are taxed. RRSP contributions are tax-deductible and grow tax-deferred, but withdrawals are fully taxable. TFSA contributions are made with after-tax dollars, but all growth and withdrawals are completely tax-free. Non-registered accounts are taxed annually on income and on capital gains upon disposition. The general principle is to hold the highest-growth, most tax-inefficient investments inside registered accounts and maintain tax-efficient holdings outside.
+  </div>
   <div class="summary-grid">
     <div class="summary-card"><div class="label">RRSP (Tax-Deferred)</div><div class="value">${fmtCad(rrspTotal)}</div></div>
     <div class="summary-card"><div class="label">TFSA (Tax-Free)</div><div class="value">${fmtCad(tfsaTotal)}</div></div>

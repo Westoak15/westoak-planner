@@ -375,8 +375,10 @@ export function FinancialPlanTab({ clientId, clientName }: { clientId: number; c
 
   useEffect(() => { loadSaved(); }, [clientId]);
 
-  function loadFromHistory(saved: SavedPlan) {
-    if (saved.plan) { setPlan(saved.plan); setView("plan"); }
+  function loadFromHistory(s: SavedPlan) {
+    console.log("[load-history] plan:", s.plan ? "exists" : "null", "keys:", s.plan ? Object.keys(s.plan) : []);
+    if (s.plan) { setPlan(s.plan); setView("plan"); }
+    else { setError("This saved plan could not be loaded — the data may be corrupted."); }
   }
 
   async function loadSaved() {
@@ -404,6 +406,9 @@ export function FinancialPlanTab({ clientId, clientName }: { clientId: number; c
         throw new Error(e.message ?? "Generation failed");
       }
       const data = await res.json();
+      console.log("[generate-plan] response keys:", Object.keys(data));
+      console.log("[generate-plan] has executiveSummary:", !!data.executiveSummary);
+      console.log("[generate-plan] has sections:", !!data.sections, data.sections?.length);
       setPlan(data);
       setView("plan");
       await loadSaved();
@@ -585,7 +590,7 @@ export function FinancialPlanTab({ clientId, clientName }: { clientId: number; c
           </p>
 
           {/* Overall score */}
-          <OverallScoreCard plan={plan} />
+          {plan.executiveSummary && <OverallScoreCard plan={plan} />}
 
           {/* Priority actions */}
           {plan.priorityActions?.length > 0 && (
@@ -595,24 +600,36 @@ export function FinancialPlanTab({ clientId, clientName }: { clientId: number; c
           )}
 
           {/* Executive summary */}
-          <ExecutiveSummary es={plan.executiveSummary} />
+          {plan.executiveSummary && <ExecutiveSummary es={plan.executiveSummary} />}
 
           {/* Section cards */}
-          <div>
-            <div className="flex items-center justify-between mb-2 fp-print-hide">
-              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">Planning Sections</p>
+          {plan.sections?.length > 0 && (
+            <div>
+              <div className="flex items-center justify-between mb-2 fp-print-hide">
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">Planning Sections</p>
+              </div>
+              <div className="space-y-2">
+                {plan.sections.map(section => (
+                  <SectionCard key={section.id} section={section} forceExpand={expandAll} />
+                ))}
+              </div>
             </div>
-            <div className="space-y-2">
-              {plan.sections.map(section => (
-                <SectionCard key={section.id} section={section} forceExpand={expandAll} />
-              ))}
+          )}
+
+          {/* Show raw if structure is unexpected */}
+          {!plan.executiveSummary && !plan.sections && (
+            <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+              <p className="text-sm text-amber-700 font-semibold mb-2">Plan structure unexpected</p>
+              <pre className="text-xs text-gray-600 overflow-auto max-h-96">{JSON.stringify(plan, null, 2)}</pre>
             </div>
-          </div>
+          )}
 
           {/* Disclaimer */}
-          <div className="bg-gray-50 border border-gray-200 rounded-xl p-3">
-            <p className="text-[10px] text-gray-400 leading-relaxed">{plan.disclaimer}</p>
-          </div>
+          {plan.disclaimer && (
+            <div className="bg-gray-50 border border-gray-200 rounded-xl p-3">
+              <p className="text-[10px] text-gray-400 leading-relaxed">{plan.disclaimer}</p>
+            </div>
+          )}
         </div>
       )}
 

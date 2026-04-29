@@ -674,4 +674,12 @@ r.get("/clients/:clientId/saved-plans", async (req: AuthRequest, res: Response) 
     plan: (() => { try { return JSON.parse(r.content ?? "{}"); } catch { return null; } })(),
   })));
 });
+
+r.delete("/saved-plans/:id", async (req: AuthRequest, res: Response) => {
+  const [ex] = await db.select({ id: aiRecommendations.id, clientId: aiRecommendations.clientId })
+    .from(aiRecommendations).where(eq(aiRecommendations.id, +req.params.id));
+  if (!ex || !await ownsClient(ex.clientId, req.userId!)) return res.status(404).json({ message: "Not found" });
+  await db.delete(aiRecommendations).where(eq(aiRecommendations.id, ex.id));
+  res.json({ ok: true });
+});
 export { r as fpFullRouter };

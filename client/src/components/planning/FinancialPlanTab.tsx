@@ -9,17 +9,15 @@ import {
 // Print styles — injected once into the document head
 const PRINT_STYLES = `
 @media print {
-  body > * { display: none !important; }
-  #fp-plan-print-root { display: block !important; }
-  #fp-plan-print-root { font-family: 'Inter', system-ui, sans-serif; font-size: 12px; color: #111; }
+  /* Hide app chrome */
+  body > div > aside,
+  body > div > header,
   .fp-print-hide { display: none !important; }
+  /* Show plan content properly */
+  #fp-plan-print-root { display: block !important; }
   .fp-section-card { page-break-inside: avoid; margin-bottom: 16px; border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; }
   .fp-section-expanded { display: block !important; }
   .fp-priority-actions { page-break-inside: avoid; }
-  h1 { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
-  h2 { font-size: 16px; font-weight: 600; margin-bottom: 8px; }
-  h3 { font-size: 13px; font-weight: 600; margin-bottom: 6px; }
-  p { margin-bottom: 6px; line-height: 1.5; }
 }
 `;
 

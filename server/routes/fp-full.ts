@@ -396,7 +396,24 @@ r.get("/clients/:clientId/liabilities", async (req: AuthRequest, res: Response) 
   res.json(merged);
 });
 
-// ── Financial Plan Generation (Claude AI) ────────────────────────────────────
+// ── Financial Plan HTML Report ────────────────────────────────────────────────
+r.post("/clients/:clientId/financial-plan-report", async (req: AuthRequest, res: Response) => {
+  const cid = +req.params.clientId;
+  if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
+  try {
+    const { plan } = req.body;
+    if (!plan) return res.status(400).json({ message: "plan is required" });
+    const [clientRow] = await db.select().from(clients).where(eq(clients.id, cid));
+    if (!clientRow) return res.status(404).json({ message: "Client not found" });
+    const { generateFinancialPlanReport } = await import("../services/reportGenerator.js") as any;
+    const html = generateFinancialPlanReport({ plan, client: clientRow });
+    res.setHeader("Content-Type", "text/html; charset=utf-8");
+    res.send(html);
+  } catch (e: any) {
+    console.error("[financial-plan-report]", e.message);
+    res.status(500).json({ message: e.message });
+  }
+});
 r.post("/clients/:clientId/generate-plan", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.clientId;
   if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });

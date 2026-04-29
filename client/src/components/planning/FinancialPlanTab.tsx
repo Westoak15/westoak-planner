@@ -358,19 +358,32 @@ export function FinancialPlanTab({ clientId, clientName }: { clientId: number; c
     if (!document.getElementById(id)) {
       const style = document.createElement("style");
       style.id = id;
-      style.textContent = PRINT_STYLES;
+      style.textContent = `@media print { .fp-print-hide { display: none !important; } }`;
       document.head.appendChild(style);
     }
   }, []);
 
-  function printPlan() {
+  const [printing, setPrinting] = useState(false);
+
+  async function printPlan() {
     if (!plan) return;
-    // Expand all sections for print, then restore
-    setExpandAll(true);
-    setTimeout(() => {
-      window.print();
-      setExpandAll(false);
-    }, 300);
+    setPrinting(true);
+    try {
+      const res = await fetch(`/api/clients/${clientId}/financial-plan-report`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token()}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ plan }),
+      });
+      if (!res.ok) throw new Error("Report generation failed");
+      const html = await res.text();
+      const blob = new Blob([html], { type: "text/html" });
+      const win  = window.open(URL.createObjectURL(blob), "_blank");
+      if (!win) alert("Please allow pop-ups to view the report");
+    } catch (e: any) {
+      setError(e.message);
+    } finally {
+      setPrinting(false);
+    }
   }
 
   useEffect(() => { loadSaved(); }, [clientId]);
@@ -445,10 +458,10 @@ export function FinancialPlanTab({ clientId, clientName }: { clientId: number; c
                 className="text-xs text-gray-500 hover:text-gray-700 border border-gray-200 px-3 py-1.5 rounded-lg">
                 {expandAll ? "Collapse all" : "Expand all"}
               </button>
-              <button onClick={printPlan}
-                className="flex items-center gap-1.5 text-xs text-gray-600 hover:text-gray-900 border border-gray-200 px-3 py-1.5 rounded-lg">
-                <Printer className="w-3.5 h-3.5" />
-                Print / PDF
+              <button onClick={printPlan} disabled={printing}
+                className="flex items-center gap-1.5 text-xs text-gray-600 hover:text-gray-900 border border-gray-200 px-3 py-1.5 rounded-lg disabled:opacity-50">
+                {printing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Printer className="w-3.5 h-3.5" />}
+                {printing ? "Generating…" : "Print / PDF"}
               </button>
             </>
           )}

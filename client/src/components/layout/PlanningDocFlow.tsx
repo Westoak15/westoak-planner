@@ -44,16 +44,16 @@ const MODULE_LABELS: Record<PlanningTab, string> = {
 };
 
 const VOICE_HINTS: Record<PlanningTab, string> = {
-  networth:   "Say assets and liabilities e.g. "RRSP $220k, mortgage $410k"",
-  retirement: "Say retirement goals e.g. "retire at 62, need $8,000 a month"",
-  pension:    "Say pension details e.g. "DBPP, accrued 22 years at $2,800/month"",
-  insurance:  "Say coverage e.g. "life insurance $500k, no disability coverage"",
-  resp:       "Say RESP details e.g. "two kids, RESP balance $45k"",
-  expenses:   "Say monthly expenses e.g. "rent $2,200, groceries $600, car $850"",
-  goals:      "Describe goals e.g. "buy cottage in 5 years, budget $400k"",
-  tax:        "Say province and income e.g. "Ontario, $185k salary, married"",
-  estate:     "Say estate details e.g. "will in place, no POA, two beneficiaries"",
-  ai:         "Ask for an analysis e.g. "what are the top planning gaps for this client?"",
+  networth:   "Say assets and liabilities, e.g. RRSP $220k, mortgage $410k",
+  retirement: "Say retirement goals, e.g. retire at 62, need $8,000 a month",
+  pension:    "Say pension details, e.g. DBPP, accrued 22 years at $2,800/month",
+  insurance:  "Say coverage, e.g. life insurance $500k, no disability coverage",
+  resp:       "Say RESP details, e.g. two kids, RESP balance $45k",
+  expenses:   "Say monthly expenses, e.g. rent $2,200, groceries $600, car $850",
+  goals:      "Describe goals, e.g. buy cottage in 5 years, budget $400k",
+  tax:        "Say province and income, e.g. Ontario, $185k salary, married",
+  estate:     "Say estate details, e.g. will in place, no POA, two beneficiaries",
+  ai:         "Ask for an analysis, e.g. what are the top planning gaps for this client?",
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -131,7 +131,7 @@ export function PlanningDocFlow({
   const mediaRecRef   = useRef<MediaRecorder | null>(null);
   const chunksRef     = useRef<Blob[]>([]);
   const timerRef      = useRef<ReturnType<typeof setInterval> | null>(null);
-  const recognitionRef = useRef<SpeechRecognition | null>(null);
+  const recognitionRef = useRef<any>(null);
   const transcriptRef = useRef("");
 
   async function startRec() {

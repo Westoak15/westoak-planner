@@ -1,5 +1,6 @@
 import { z } from "zod";
-
+import aiVoiceRouter from "./routes/ai-voice.js";
+app.use("/api/ai", aiVoiceRouter);
 export const errorSchemas = {
   validation: z.object({ message: z.string(), field: z.string().optional() }),
   notFound:   z.object({ message: z.string() }),

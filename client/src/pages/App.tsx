@@ -7,7 +7,7 @@ import { LettersTab } from "./LettersTab";
 import { FinancialPlanningContent } from "./FinancialPlanning";
 import { FinancialPlanTab } from "@/components/planning/FinancialPlanTab";
 import { RetirementTab as RetirementTabNew } from "@/components/planning/RetirementProjectionForm";
-
+import { MeetingRecorderTrigger } from "../components/MeetingRecorder";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "../lib/queryClient";
 import { MonteCarloResults } from "../components/MonteCarloResults";
@@ -21,9 +21,10 @@ import { PoliciesTab } from "./PoliciesTab";
 import { GoalsTab } from "./GoalsTab";
 import { PensionTab } from "./PensionTab";
 import { fmt$, fmtPct, initials, avatarBg, cn } from "../lib/utils";
+import { VoiceProvider, useVoice, labelToKey } from "../contexts/VoiceContext";
 import {
   Plus, Pencil, Trash2, X, Check, ChevronRight, Search,
-  User, Users, Home, Calendar, Briefcase, LogOut, Save, KeyRound, Eye, EyeOff
+  User, Users, Home, Calendar, Briefcase, LogOut, Save, KeyRound, Eye, EyeOff,  Mic, MicOff, Loader2
  } from "lucide-react";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -74,14 +75,49 @@ function Card({ children, className }: { children: React.ReactNode; className?: 
 }
 
 function Input({ label, value, onChange, type = "text", placeholder }: { label: string; value: string; onChange: (v: string) => void; type?: string; placeholder?: string }) {
+  const { voiceState, activeField, supported, listen } = useVoice();
+  const fieldKey = labelToKey(label);
+  const isListening  = activeField === fieldKey && voiceState === "listening";
+  const isProcessing = activeField === fieldKey && voiceState === "processing";
+
   return (
     <div>
-      <label className="block text-xs font-semibold text-gray-500 mb-1">{label}</label>
-      <input type={type} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder}
-        className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500" />
+      <div className="flex items-center justify-between mb-1">
+        <label className="block text-xs font-semibold text-gray-500">{label}</label>
+        {supported && (
+          <button
+            type="button"
+            title={isListening ? "Stop listening" : `Speak to fill "${label}"`}
+            onClick={() => listen({ fieldKey, fieldLabel: label, fieldType: type }, onChange)}
+            className={`flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center transition-all ${
+              isListening  ? "bg-red-500 text-white animate-pulse" :
+              isProcessing ? "bg-yellow-400 text-white" :
+              "text-gray-300 hover:text-[#0c1e3a]"
+            }`}
+          >
+            {isProcessing
+              ? <Loader2 className="w-3 h-3 animate-spin" />
+              : isListening
+              ? <MicOff className="w-3 h-3" />
+              : <Mic className="w-3 h-3" />}
+          </button>
+        )}
+      </div>
+      <input
+        type={type}
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        placeholder={placeholder}
+        className={`w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 transition-colors ${
+          isListening  ? "border-red-300 ring-2 ring-red-100" :
+          isProcessing ? "border-yellow-300 ring-2 ring-yellow-100" :
+          "border-gray-200"
+        }`}
+      />
     </div>
   );
 }
+
 
 function Select({ label, value, onChange, options }: { label: string; value: string; onChange: (v: string) => void; options: string[] }) {
   return (
@@ -121,11 +157,44 @@ function DobInput({ label, value, onChange }: { label: string; value: string; on
 }
 
 function Textarea({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
+  const { voiceState, activeField, supported, listen } = useVoice();
+  const fieldKey = labelToKey(label);
+  const isListening  = activeField === fieldKey && voiceState === "listening";
+  const isProcessing = activeField === fieldKey && voiceState === "processing";
+
   return (
     <div>
-      <label className="block text-xs font-semibold text-gray-500 mb-1">{label}</label>
-      <textarea value={value} onChange={e => onChange(e.target.value)} rows={3}
-        className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 resize-none" />
+      <div className="flex items-center justify-between mb-1">
+        <label className="block text-xs font-semibold text-gray-500">{label}</label>
+        {supported && (
+          <button
+            type="button"
+            title={isListening ? "Stop listening" : `Speak to fill "${label}"`}
+            onClick={() => listen({ fieldKey, fieldLabel: label, fieldType: "text" }, onChange)}
+            className={`flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center transition-all ${
+              isListening  ? "bg-red-500 text-white animate-pulse" :
+              isProcessing ? "bg-yellow-400 text-white" :
+              "text-gray-300 hover:text-[#0c1e3a]"
+            }`}
+          >
+            {isProcessing
+              ? <Loader2 className="w-3 h-3 animate-spin" />
+              : isListening
+              ? <MicOff className="w-3 h-3" />
+              : <Mic className="w-3 h-3" />}
+          </button>
+        )}
+      </div>
+      <textarea
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        rows={3}
+        className={`w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 resize-none transition-colors ${
+          isListening  ? "border-red-300 ring-2 ring-red-100" :
+          isProcessing ? "border-yellow-300 ring-2 ring-yellow-100" :
+          "border-gray-200"
+        }`}
+      />
     </div>
   );
 }
@@ -1293,6 +1362,7 @@ export default function App() {
   const PERSON_TABS: Tab[] = ["retirement", "goals", "pension", "insurance", "tax"];
   const showPersonTabs = client && hasSpouse && PERSON_TABS.includes(tab);
   return (
+    <VoiceProvider>
     <div className="flex h-screen overflow-hidden bg-gray-50">
       <Sidebar activeTab={tab} onTab={t => { if (t === "clients") { setShowClientDetail(false); } setTab(t as any); setPerson("primary"); }} clientName={clientName} role={role} level={level} />
 
@@ -1313,6 +1383,10 @@ export default function App() {
                   {client.spouseFirstName ? `${client.lastName} Family` : `${client.firstName} ${client.lastName}`}
                 </button>
                 {plan && <><span className="text-gray-300">·</span><span className="text-sm text-gray-500">{plan.name}</span></>}
+                <MeetingRecorderTrigger
+                  clientId={client.id}
+                  clientName={client.spouseFirstName ? `${client.lastName} Family` : `${client.firstName} ${client.lastName}`}
+                 />
               </>
             )}
             {!client && <span className="text-sm font-semibold text-gray-500">Financial Planning</span>}
@@ -1390,7 +1464,7 @@ export default function App() {
           )}
           {tab === "admin" && <AdminPanel />}
           {tab === "agents" && <AgentsTab />}
-          {tab === "resp"    && client && <RespTabNew clientId={client.id} client={client} />}
+          {tab === "resp" && client && <RespTabNew clientId={client.id} client={client} />}
           {tab === "expenses" && client && (
   <QueryClientProvider client={queryClient}>
     <ExpensesTab clientId={client.id} />
@@ -1418,7 +1492,8 @@ export default function App() {
 
         </div>
       </div>
-    </div>
+       </div>
+    </VoiceProvider>
   );
 }
 

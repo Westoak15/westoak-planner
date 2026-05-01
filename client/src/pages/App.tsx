@@ -1372,6 +1372,9 @@ export default function App() {
         {/* Top bar */}
         <header className="flex-shrink-0 h-11 bg-white border-b border-gray-200 flex items-center px-5 justify-between">
           <div className="flex items-center gap-3">
+           <span className="text-xs font-bold text-[#0c1e3a] tracking-wide border-r border-gray-200 pr-3 mr-1">
+             Knights of Columbus
+          </span>
             {client && (
               <>
                 <div className={`w-6 h-6 rounded-full ${avatarBg(client.firstName+client.lastName)} flex items-center justify-center text-white text-[10px] font-bold`}>
@@ -1470,6 +1473,7 @@ export default function App() {
     clientName={client.spouseFirstName
       ? `${client.lastName} Family`
       : `${client.firstName} ${client.lastName}`}
+      client={client} 
   >
     {tab === "networth"   && <NetWorthTabNew clientId={client.id} client={client} />}
 

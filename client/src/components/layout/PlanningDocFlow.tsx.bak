@@ -2,22 +2,6 @@ import { useState, useRef, useEffect, ReactNode } from "react";
 import { Mic, MicOff, Circle, X, Copy, Check, ChevronDown, ChevronUp, Loader2, FileText, Lightbulb, ListChecks } from "lucide-react";
 import { useVoice } from "../../contexts/VoiceContext";
 import { cn } from "../../lib/utils";
-import { api } from "../../lib/api";
-
-interface ClientOverview {
-  netWorth: number;
-  totalAssets: number;
-  totalLiabilities: number;
-}
-
-interface ClientInfo {
-  id: number;
-  firstName: string;
-  lastName: string;
-  spouseFirstName?: string | null;
-  province?: string | null;
-  annualIncome?: string | null;
-}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Module config — maps sidebar Tab values to display labels
@@ -83,7 +67,6 @@ interface PlanningDocFlowProps {
   onTabChange: (t: PlanningTab) => void;
   clientId: number;
   clientName: string;
-  client?: ClientInfo;
   children: ReactNode;
 }
 
@@ -92,18 +75,9 @@ export function PlanningDocFlow({
   onTabChange,
   clientId,
   clientName,
-  client,
   children,
 }: PlanningDocFlowProps) {
   const voice = useVoice();
-
-  // ── Client overview (net worth strip) ───────────────────────────────────────
-  const [overview, setOverview] = useState<ClientOverview | null>(null);
-  useEffect(() => {
-    api.get<ClientOverview>(`/api/clients/${clientId}/overview`)
-      .then(setOverview)
-      .catch(() => {});
-  }, [clientId]);
 
   // ── Pill nav scroll ─────────────────────────────────────────────────────────
   const pillNavRef   = useRef<HTMLDivElement>(null);
@@ -218,46 +192,8 @@ export function PlanningDocFlow({
   const isVoiceListening  = voice.voiceState === "listening";
   const isVoiceProcessing = voice.voiceState === "processing";
 
-  const fmt$ = (v: number | null | undefined) =>
-    v == null ? "—" : new Intl.NumberFormat("en-CA", { style: "currency", currency: "CAD", maximumFractionDigits: 0 }).format(v);
-
   return (
     <div className="flex flex-col h-full bg-white relative">
-
-      {/* ── K of C client context strip ──────────────────────────────────────── */}
-      <div className="flex-shrink-0 flex items-center justify-between px-4 bg-[#0c1e3a] border-b border-[#1a3160]" style={{ height: 36 }}>
-        <div className="flex items-center gap-4">
-          <span className="text-[11px] font-bold text-white tracking-wide opacity-80">Knights of Columbus</span>
-          <span className="text-[rgba(255,255,255,0.2)] text-xs">|</span>
-          {overview ? (
-            <>
-              <span className="text-[11px] text-[rgba(255,255,255,0.6)]">
-                Net worth&nbsp;
-                <span className={`font-semibold ${overview.netWorth >= 0 ? "text-emerald-400" : "text-red-400"}`}>
-                  {fmt$(overview.netWorth)}
-                </span>
-              </span>
-              <span className="text-[11px] text-[rgba(255,255,255,0.6)]">
-                Assets&nbsp;<span className="font-semibold text-blue-300">{fmt$(overview.totalAssets)}</span>
-              </span>
-              <span className="text-[11px] text-[rgba(255,255,255,0.6)]">
-                Liabilities&nbsp;<span className="font-semibold text-red-400">{fmt$(overview.totalLiabilities)}</span>
-              </span>
-            </>
-          ) : (
-            <span className="text-[11px] text-[rgba(255,255,255,0.4)]">Loading…</span>
-          )}
-          {client?.annualIncome && (
-            <span className="text-[11px] text-[rgba(255,255,255,0.6)]">
-              Income&nbsp;<span className="font-semibold text-white">{fmt$(Number(client.annualIncome))}</span>
-            </span>
-          )}
-          {client?.province && (
-            <span className="text-[11px] font-semibold text-[rgba(255,255,255,0.7)]">{client.province}</span>
-          )}
-        </div>
-        <span className="text-[11px] text-[rgba(255,255,255,0.4)]">{clientName}</span>
-      </div>
 
       {/* ── Pill nav ─────────────────────────────────────────────────────────── */}
       <div className="flex-shrink-0 border-b border-gray-200 bg-white">

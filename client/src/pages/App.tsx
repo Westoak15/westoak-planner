@@ -8,6 +8,7 @@ import { FinancialPlanningContent } from "./FinancialPlanning";
 import { FinancialPlanTab } from "@/components/planning/FinancialPlanTab";
 import { RetirementTab as RetirementTabNew } from "@/components/planning/RetirementProjectionForm";
 import { MeetingRecorderTrigger } from "../components/MeetingRecorder";
+import { PlanningDocFlow, PLANNING_TABS, type PlanningTab } from "../components/layout/PlanningDocFlow";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "../lib/queryClient";
 import { MonteCarloResults } from "../components/MonteCarloResults";
@@ -1383,10 +1384,6 @@ export default function App() {
                   {client.spouseFirstName ? `${client.lastName} Family` : `${client.firstName} ${client.lastName}`}
                 </button>
                 {plan && <><span className="text-gray-300">·</span><span className="text-sm text-gray-500">{plan.name}</span></>}
-                <MeetingRecorderTrigger
-                  clientId={client.id}
-                  clientName={client.spouseFirstName ? `${client.lastName} Family` : `${client.firstName} ${client.lastName}`}
-                 />
               </>
             )}
             {!client && <span className="text-sm font-semibold text-gray-500">Financial Planning</span>}
@@ -1452,42 +1449,68 @@ export default function App() {
             </div>
           )}
 
-          {tab === "networth"   && client && <NetWorthTabNew   clientId={client.id} client={client} />}
+          {tab === "admin"   && <AdminPanel />}
 
-          {tab === "retirement" && client && (<QueryClientProvider client={queryClient}><RetirementTabNew clientId={client.id} clientName={client.firstName} /></QueryClientProvider>)}
-          {tab === "pension"    && client && <PensionTab clientId={client.id} client={client} person={person} />}
-          {tab === "insurance" && client && <PoliciesTab clientId={client.id} client={client} person={person} />}
-          {tab === "fna" && client && (
-            <QueryClientProvider client={queryClient}>
-              <FnaTabNew clientId={client.id} planId={null} client={client} />
-            </QueryClientProvider>
-          )}
-          {tab === "admin" && <AdminPanel />}
-          {tab === "agents" && <AgentsTab />}
-          {tab === "resp" && client && <RespTabNew clientId={client.id} client={client} />}
-          {tab === "expenses" && client && (
+{tab === "agents"  && <AgentsTab />}
+{tab === "dashboard" && client && <DashboardTab clientId={client.id} />}
+{tab === "letters"   && client && <LettersTab clientId={client.id} client={client} />}
+{tab === "reports"   && client && <ReportsTab clientId={client.id} />}
+{tab === "fna" && client && (
   <QueryClientProvider client={queryClient}>
-    <ExpensesTab clientId={client.id} />
+    <FnaTabNew clientId={client.id} planId={null} client={client} />
   </QueryClientProvider>
 )}
-          {tab === "dashboard"  && client && <DashboardTab     clientId={client.id} />}
-          {tab === "letters" && client && <LettersTab clientId={client.id} client={client} />}
-          {tab === "goals" && client && <GoalsTab clientId={client.id} client={client} person={person} />}
-          {tab === "reports" && client && <ReportsTab clientId={client.id} />}
-          {tab === "tax" && client && (
-  <QueryClientProvider client={queryClient}>
-    <TaxTabNew clientId={client.id} client={client} person={person} />
-  </QueryClientProvider>
-)}
-          {tab === "estate" && client && (
-  <QueryClientProvider client={queryClient}>
-    <EstateTabNew clientId={client.id} planId={null} client={client} />
-  </QueryClientProvider>
-)}
-{tab === "ai" && client && (
-  <QueryClientProvider client={queryClient}>
-    <AITab clientId={client.id} />
-  </QueryClientProvider>
+
+{/* Planning tabs — wrapped in Document Flow shell */}
+{PLANNING_TABS.includes(tab as PlanningTab) && client && (
+  <PlanningDocFlow
+    tab={tab as PlanningTab}
+    onTabChange={t => { setTab(t as any); setPerson("primary"); }}
+    clientId={client.id}
+    clientName={client.spouseFirstName
+      ? `${client.lastName} Family`
+      : `${client.firstName} ${client.lastName}`}
+  >
+    {tab === "networth"   && <NetWorthTabNew clientId={client.id} client={client} />}
+
+    {tab === "retirement" && (
+      <QueryClientProvider client={queryClient}>
+        <RetirementTabNew clientId={client.id} clientName={client.firstName} />
+      </QueryClientProvider>
+    )}
+
+    {tab === "pension" && <PensionTab clientId={client.id} client={client} person={person} />}
+
+    {tab === "insurance" && <PoliciesTab clientId={client.id} client={client} person={person} />}
+
+    {tab === "resp" && <RespTabNew clientId={client.id} client={client} />}
+
+    {tab === "expenses" && (
+      <QueryClientProvider client={queryClient}>
+        <ExpensesTab clientId={client.id} />
+      </QueryClientProvider>
+    )}
+
+    {tab === "goals" && <GoalsTab clientId={client.id} client={client} />}
+
+    {tab === "tax" && (
+      <QueryClientProvider client={queryClient}>
+        <TaxTabNew clientId={client.id} client={client} person={person} />
+      </QueryClientProvider>
+    )}
+
+    {tab === "estate" && (
+      <QueryClientProvider client={queryClient}>
+        <EstateTabNew clientId={client.id} planId={null} client={client} />
+      </QueryClientProvider>
+    )}
+
+    {tab === "ai" && (
+      <QueryClientProvider client={queryClient}>
+        <AITab clientId={client.id} />
+      </QueryClientProvider>
+    )}
+  </PlanningDocFlow>
 )}
 
         </div>

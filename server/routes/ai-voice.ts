@@ -1,116 +1,152 @@
 /**
  * server/routes/ai-voice.ts
  *
- * Mount in server/routes.ts (same as reports):
+ * Endpoints:
+ *   POST /api/ai/voice-fill   — AI maps spoken text to plan field values
+ *   POST /api/ai/meeting-summary — transcribe + summarise a recorded meeting
+ *
+ * Mount in server/routes.ts:
  *   import aiVoiceRouter from "./routes/ai-voice.js";
  *   app.use("/api/ai", aiVoiceRouter);
  */
 
-import { Router, Response } from "express";
-import Anthropic from "@anthropic-ai/sdk";
-import { isAuthenticated, type AuthRequest } from "../auth/index.js";
+import { Router } from "express";
+import OpenAI from "openai";
+import type { AuthRequest } from "../auth/index.js";
 
 const r = Router();
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-r.use((req: any, res: any, next: any) => {
-  if (req.query.token && !req.headers.authorization) {
-    req.headers.authorization = `Bearer ${req.query.token}`;
+// ─────────────────────────────────────────────────────────────────────────────
+// Auth middleware — mirrors your reports.ts pattern
+// ─────────────────────────────────────────────────────────────────────────────
+r.use((req: any, res, next) => {
+  // Token-in-query fallback for EventSource / download links
+  if (!req.session?.staffId && req.query?.token) {
+    req.session = req.session || {};
+    req.session.staffId = req.query.token;
   }
-  return isAuthenticated(req, res, next);
+  if (!req.session?.staffId) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+  next();
 });
 
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+// ─────────────────────────────────────────────────────────────────────────────
+// POST /api/ai/voice-fill
+// Body: { text: string, moduleId: string, fieldSchema: string[] }
+// Returns: { fields: Record<string, string> }
+// ─────────────────────────────────────────────────────────────────────────────
+r.post("/voice-fill", async (req: AuthRequest, res) => {
+  try {
+    const { text, moduleId, fieldSchema } = req.body as {
+      text: string;
+      moduleId: string;
+      fieldSchema: string[];
+    };
+
+    if (!text || !fieldSchema?.length) {
+      return res.status(400).json({ message: "text and fieldSchema are required" });
+    }
+
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o",
+      response_format: { type: "json_object" },
+      messages: [
+        {
+          role: "system",
+          content: `You are a financial planning assistant helping a Canadian advisor fill out a ${moduleId} section.
+The advisor has spoken naturally. Extract values for the following fields: ${fieldSchema.join(", ")}.
+Return ONLY a JSON object where keys are field names from the schema and values are the extracted strings.
+For monetary values, return numbers only (no $ or commas). For percentages, return the number only.
+Omit fields that were not mentioned. Do not invent values.`,
+        },
+        { role: "user", content: text },
+      ],
+    });
+
+    const raw = completion.choices[0].message.content ?? "{}";
+    const fields = JSON.parse(raw);
+    res.json({ fields });
+  } catch (err) {
+    console.error("[ai-voice] voice-fill error:", err);
+    res.status(500).json({ message: "Failed to process voice input" });
+  }
+});
 
 // ─────────────────────────────────────────────────────────────────────────────
 // POST /api/ai/meeting-summary
-// Body: { transcript: string, clientId: number }
+// Body: { audio?: string (base64 webm), transcript?: string, clientId, clientName }
+// Returns: { summary, actionItems, fieldSuggestions, transcript }
 // ─────────────────────────────────────────────────────────────────────────────
-r.post("/meeting-summary", async (req: AuthRequest, res: Response) => {
-  const { transcript } = req.body as { transcript: string; clientId: number };
-
-  if (!transcript?.trim()) {
-    return res.status(400).json({ message: "transcript is required" });
-  }
-
+r.post("/meeting-summary", async (req: AuthRequest, res) => {
   try {
-    const message = await anthropic.messages.create({
-      model: "claude-opus-4-5",
-      max_tokens: 1024,
-      system: `You are a financial planning assistant. Extract and structure key planning information from a meeting transcript between a Canadian financial advisor and their client.
-
-Return ONLY valid JSON — no markdown, no prose — in this exact shape:
-{
-  "keyFigures": [{ "label": "Annual Income", "value": "$120,000" }],
-  "goals": ["Retire at 62 with $80,000/year income"],
-  "actionItems": ["Review RRSP contribution room"],
-  "recommendedAreas": ["Retirement Planning", "Tax Planning"],
-  "rawSummary": "One-paragraph plain-English summary."
-}
-
-Guidelines:
-- keyFigures: dollar amounts, ages, rates, balances mentioned
-- goals: client's stated financial, retirement, or life goals
-- actionItems: concrete next steps agreed to by advisor or client
-- recommendedAreas: choose only from — Retirement Planning, Tax Planning, Estate Planning, Insurance, Education Planning, Net Worth, Debt Management, Cash Flow, Investment Planning, Pension Analysis
-- rawSummary: 2–4 sentences
-- Return empty arrays if nothing relevant was mentioned`,
-      messages: [{ role: "user", content: `Meeting transcript:\n\n${transcript}` }],
-    });
-
-    const raw   = (message.content[0] as any).text ?? "";
-    const clean = raw.replace(/```json|```/g, "").trim();
-    const summary = JSON.parse(clean);
-
-    res.json(summary);
-  } catch (err) {
-    console.error("meeting-summary error:", err);
-    res.status(500).json({ message: "Failed to generate summary" });
-  }
-});
-
-// ─────────────────────────────────────────────────────────────────────────────
-// POST /api/ai/voice-field
-// Body: { speech, fieldKey, fieldLabel, fieldType, sectionContext }
-// ─────────────────────────────────────────────────────────────────────────────
-r.post("/voice-field", async (req: AuthRequest, res: Response) => {
-  const { speech, fieldKey, fieldLabel, fieldType, sectionContext } =
-    req.body as {
-      speech: string;
-      fieldKey: string;
-      fieldLabel: string;
-      fieldType: string;
-      sectionContext: string;
+    const { audio, transcript: browserTranscript, clientId, clientName } = req.body as {
+      audio?: string;
+      transcript?: string;
+      clientId: number;
+      clientName: string;
     };
 
-  if (!speech?.trim()) {
-    return res.status(400).json({ message: "speech is required" });
-  }
+    let transcript = browserTranscript ?? "";
 
-  try {
-    const message = await anthropic.messages.create({
-      model: "claude-haiku-4-5-20251001",
-      max_tokens: 128,
-      system: `You are a data-entry assistant for a Canadian financial planning app.
-Extract just the field value from natural speech. Return ONLY valid JSON: { "value": "<extracted value>" }
-- number fields: bare number string ("80000" not "$80,000")
-- date fields: ISO format "YYYY-MM-DD"
-- text fields: clean normalised text
-Never return prose — only the JSON object.`,
-      messages: [{
-        role: "user",
-        content: `Field: "${fieldLabel}" (key: ${fieldKey}, type: ${fieldType})\nSection: ${sectionContext || "Financial Planning"}\nSpoken input: "${speech}"`,
-      }],
+    // If audio provided and transcript is thin, run Whisper
+    if (audio && transcript.split(" ").length < 20) {
+      const audioBuffer = Buffer.from(audio, "base64");
+      const audioFile = new File([audioBuffer], "recording.webm", { type: "audio/webm" });
+      const whisperRes = await openai.audio.transcriptions.create({
+        model: "whisper-1",
+        file: audioFile,
+        language: "en",
+      });
+      transcript = whisperRes.text;
+    }
+
+    if (!transcript) {
+      return res.status(400).json({ message: "No transcript available to summarise" });
+    }
+
+    // AI summary + field extraction
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o",
+      response_format: { type: "json_object" },
+      messages: [
+        {
+          role: "system",
+          content: `You are a Canadian financial planning assistant. Analyse this advisor-client meeting transcript and return a JSON object with:
+{
+  "summary": "2-4 sentence plain-language summary of key planning points discussed",
+  "actionItems": ["action item 1", "action item 2", ...],
+  "fieldSuggestions": [
+    { "module": "net-worth", "field": "primaryResidence", "value": "850000" },
+    { "module": "cash-flow", "field": "annualIncome", "value": "185000" },
+    ...
+  ]
+}
+
+Available modules: net-worth, cash-flow, tax, rrsp, tfsa, retirement, insurance, estate, goals, education.
+For fieldSuggestions, only include values clearly stated or strongly implied. Monetary values as numbers only.
+Action items should be specific next steps for the advisor.`,
+        },
+        {
+          role: "user",
+          content: `Client: ${clientName} (ID: ${clientId})\n\nTranscript:\n${transcript}`,
+        },
+      ],
     });
 
-    const raw   = (message.content[0] as any).text ?? "";
-    const clean = raw.replace(/```json|```/g, "").trim();
-    const { value } = JSON.parse(clean);
+    const raw = completion.choices[0].message.content ?? "{}";
+    const parsed = JSON.parse(raw);
 
-    res.json({ value: String(value ?? speech) });
+    res.json({
+      transcript,
+      summary: parsed.summary ?? "",
+      actionItems: parsed.actionItems ?? [],
+      fieldSuggestions: parsed.fieldSuggestions ?? [],
+    });
   } catch (err) {
-    console.error("voice-field error:", err);
-    // Graceful fallback — raw speech beats a blank field
-    res.json({ value: speech });
+    console.error("[ai-voice] meeting-summary error:", err);
+    res.status(500).json({ message: "Failed to process meeting recording" });
   }
 });
 

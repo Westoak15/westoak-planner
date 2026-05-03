@@ -541,7 +541,7 @@ export function FinancialPlanTab({ clientId, clientName }: { clientId: number; c
                   </div>
                   <div className="flex items-center gap-2">
                     <button onClick={() => loadFromHistory(s)}
-                      className="text-xs text-blue-600 font-semibold border border-blue-600/20 px-3 py-1.5 rounded-lg hover:bg-brand-gradient/5">
+                      className="text-xs text-blue-600 font-semibold border border-blue-600/20 px-3 py-1.5 rounded-lg hover:bg-brand-soft">
                       Load
                     </button>
                     <button onClick={() => deleteSaved(s.id)}

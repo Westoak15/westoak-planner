@@ -218,7 +218,7 @@ export function PensionTab({ clientId, client, person = "primary" }: {
                 return (
                   <tr key={p.id} className="hover:bg-slate-50 transition-colors">
                     <TD>
-                      <span className="bg-brand-gradient/10 text-blue-600 text-xs font-semibold px-2 py-0.5 rounded-full">
+                      <span className="bg-brand-tint text-blue-600 text-xs font-semibold px-2 py-0.5 rounded-full">
                         {pensionLabel(p.pensionType)}
                       </span>
                     </TD>

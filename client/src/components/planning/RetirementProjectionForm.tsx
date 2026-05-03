@@ -850,7 +850,7 @@ export function RetirementTab({ clientId, clientName }: { clientId: number; clie
                         portfolio:  phase1PortfolioNeeded,
                         sources:    pensionIncome > 0 ? `Pension: $${Math.round(pensionIncome / 12).toLocaleString()}/mo` : "No pension",
                         note:       cppStartAge > retirementAge ? `CPP starts age ${cppStartAge}` : "CPP included",
-                        color:      "border-blue-600/20 bg-brand-gradient/3",
+                        color:      "border-blue-600/20 bg-brand-softer",
                       },
                       {
                         label:      `CPP Starts (age ${cppStartAge})`,

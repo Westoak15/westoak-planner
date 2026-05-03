@@ -277,7 +277,7 @@ export function GuardrailsPanel({
           </div>
 
           {/* How to use callout */}
-          <div className="bg-brand-gradient/5 border border-blue-600/15 rounded-xl p-4">
+          <div className="bg-brand-soft border border-blue-600/15 rounded-xl p-4">
             <p className="text-xs font-bold text-blue-600 mb-2">How to use this with your client</p>
             <ol className="text-xs text-gray-600 space-y-1.5 list-decimal list-inside leading-relaxed">
               <li>Review the portfolio balance at each annual meeting against the "Target Portfolio" column</li>

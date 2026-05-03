@@ -225,7 +225,7 @@ export function PlanningDocFlow({
     <div className="flex flex-col h-full bg-white relative">
 
       {/* ── K of C client context strip ──────────────────────────────────────── */}
-      <div className="flex-shrink-0 flex items-center justify-between px-4 bg-brand-gradient border-b border-[#1a3160]" style={{ height: 36 }}>
+      <div className="flex-shrink-0 flex items-center justify-between px-4 bg-brand-gradient border-b border-cyan-300/40" style={{ height: 36 }}>
         <div className="flex items-center gap-4">
           <span className="text-[11px] font-bold text-white tracking-wide opacity-80">Knights of Columbus</span>
           <span className="text-[rgba(255,255,255,0.2)] text-xs">|</span>
@@ -362,7 +362,7 @@ export function PlanningDocFlow({
               ? "bg-blue-600 scale-110"
               : isVoiceProcessing
               ? "bg-gray-400 cursor-not-allowed"
-              : "bg-brand-gradient hover:bg-[#1a3160] hover:scale-105 active:scale-95"
+              : "bg-brand-gradient hover:bg-brand-gradient-hover hover:scale-105 active:scale-95"
           )}
           title="Voice fill — hover for tip"
           aria-label="Voice fill"

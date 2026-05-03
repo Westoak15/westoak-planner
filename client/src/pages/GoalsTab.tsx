@@ -329,7 +329,7 @@ function GoalForm({
                   <button key={t.key} onClick={() => changeType(t.key)}
                     className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-left text-xs transition-all ${
                       form.goalType === t.key
-                        ? "border-blue-600 bg-brand-gradient/5 text-blue-600 font-semibold"
+                        ? "border-blue-600 bg-brand-soft text-blue-600 font-semibold"
                         : "border-slate-200 text-gray-600 hover:border-slate-300"
                     }`}>
                     <Icon className="w-3.5 h-3.5 flex-shrink-0" />
@@ -376,7 +376,7 @@ function GoalForm({
                   const label = l.name || l.category || `Liability #${l.id}`;
                   return (
                     <div key={l.id} onClick={() => toggleLiability(l.id)}
-                      className={`flex items-center gap-3 px-3 py-2.5 cursor-pointer transition-colors ${isSelected ? "bg-brand-gradient/5" : "hover:bg-slate-50"}`}>
+                      className={`flex items-center gap-3 px-3 py-2.5 cursor-pointer transition-colors ${isSelected ? "bg-brand-soft" : "hover:bg-slate-50"}`}>
                       <div className={`w-4 h-4 rounded border-2 flex-shrink-0 flex items-center justify-center transition-colors ${isSelected ? "bg-brand-gradient border-blue-600" : "border-slate-300"}`}>
                         {isSelected && <svg width="8" height="8" viewBox="0 0 8 8"><path d="M1 4l2 2 4-4" stroke="white" strokeWidth="1.5" fill="none" strokeLinecap="round"/></svg>}
                       </div>
@@ -403,7 +403,7 @@ function GoalForm({
                 const totalAnnual  = sel.reduce((s, l) => s + (l.annualCost ?? 0), 0);
                 const totalMonthly = sel.reduce((s, l) => s + (l.minimumPayment ?? 0), 0);
                 return (
-                  <div className="mt-2 bg-brand-gradient/5 rounded-xl px-3 py-2.5 grid grid-cols-3 gap-2">
+                  <div className="mt-2 bg-brand-soft rounded-xl px-3 py-2.5 grid grid-cols-3 gap-2">
                     <div>
                       <p className="text-[10px] text-gray-400">Total Balance</p>
                       <p className="text-sm font-bold text-blue-600">${totalBalance.toLocaleString("en-CA", { maximumFractionDigits: 0 })}</p>
@@ -539,7 +539,7 @@ function GoalForm({
 
           {/* Projection impact toggle */}
           <div className={`flex items-center justify-between rounded-xl px-3 py-2.5 border transition-all ${
-            form.projectionImpact ? "bg-brand-gradient/5 border-blue-600/20" : "bg-slate-50 border-slate-200"
+            form.projectionImpact ? "bg-brand-soft border-blue-600/20" : "bg-slate-50 border-slate-200"
           }`}>
             <div>
               <p className={`text-xs font-semibold ${form.projectionImpact ? "text-blue-600" : "text-gray-700"}`}>

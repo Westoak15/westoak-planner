@@ -95,7 +95,7 @@ function MeetingRecorderModal({ clientId, clientName, onClose }: ModalProps) {
           <div className="flex items-center gap-3">
             <div className={cn(
               "w-8 h-8 rounded-full flex items-center justify-center",
-              state === "recording" ? "bg-red-100" : "bg-brand-gradient/10"
+              state === "recording" ? "bg-red-100" : "bg-brand-tint"
             )}>
               <Mic className={cn("w-4 h-4", state === "recording" ? "text-red-500" : "text-blue-600")} />
             </div>
@@ -115,7 +115,7 @@ function MeetingRecorderModal({ clientId, clientName, onClose }: ModalProps) {
           {/* Idle state */}
           {state === "idle" && (
             <div className="flex flex-col items-center justify-center py-10 text-center">
-              <div className="w-16 h-16 bg-brand-gradient/5 rounded-full flex items-center justify-center mb-4">
+              <div className="w-16 h-16 bg-brand-soft rounded-full flex items-center justify-center mb-4">
                 <Mic className="w-7 h-7 text-blue-600" />
               </div>
               <h3 className="font-bold text-gray-800 mb-1">Ready to record</h3>

@@ -4,7 +4,7 @@ import { useAuth } from "../lib/auth";
 import { Eye, EyeOff, Check, X } from "lucide-react";
 import { api } from "../lib/api";
 
-const INPUT = "w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500/30 focus:border-cyan-500";
+const INPUT = "fp-input";
 
 const SECURITY_QUESTIONS = [
   "What was the name of your first pet?",
@@ -32,7 +32,7 @@ function PasswordStrength({ password }: { password: string }) {
   return (
     <div className="mt-2 space-y-2">
       <div className="flex items-center gap-2">
-        <div className="flex-1 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+        <div className="flex-1 h-1.5 bg-slate-200 rounded-full overflow-hidden">
           <div className={`h-full ${barColor} rounded-full transition-all`} style={{ width: `${(score / 5) * 100}%` }} />
         </div>
         <span className={`text-xs font-semibold ${score <= 1 ? "text-red-500" : score <= 3 ? "text-amber-500" : score === 4 ? "text-blue-600" : "text-emerald-600"}`}>{strength}</span>
@@ -40,8 +40,8 @@ function PasswordStrength({ password }: { password: string }) {
       <div className="grid grid-cols-1 gap-1">
         {rules.map(r => (
           <div key={r.label} className="flex items-center gap-1.5">
-            {r.ok ? <Check className="w-3 h-3 text-emerald-500 flex-shrink-0" /> : <X className="w-3 h-3 text-gray-300 flex-shrink-0" />}
-            <span className={`text-xs ${r.ok ? "text-emerald-600" : "text-gray-400"}`}>{r.label}</span>
+            {r.ok ? <Check className="w-3 h-3 text-emerald-500 flex-shrink-0" /> : <X className="w-3 h-3 text-slate-300 flex-shrink-0" />}
+            <span className={`text-xs ${r.ok ? "text-emerald-600" : "text-slate-400"}`}>{r.label}</span>
           </div>
         ))}
       </div>
@@ -97,9 +97,9 @@ export default function Login() {
     catch (e: any) { setError(e.message); }
     finally { setBusy(false); }
   }
-async function submitRegister() {
+  async function submitRegister() {
     reset(); setBusy(true);
-    try { 
+    try {
       await register({
        email: form.email,
         password: form.password,
@@ -108,7 +108,7 @@ async function submitRegister() {
         firmName: form.firmName || undefined,
         securityQuestion: form.securityQuestion,
         securityAnswer: form.securityAnswer
-     }); 
+     });
   }
     catch (e: any) { setError(e.message); }
     finally { setBusy(false); }
@@ -149,22 +149,35 @@ async function submitRegister() {
     finally { setBusy(false); }
   }
 
+  const submitBtn =
+    "w-full bg-brand-gradient hover:bg-brand-gradient-hover disabled:opacity-50 text-white font-semibold py-3 rounded-xl text-sm shadow-sm transition-all";
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#0c1e3a] p-4">
+    <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden bg-slate-100">
+      {/* Soft ambient gradient backdrop */}
+      <div
+        aria-hidden
+        className="absolute inset-0 -z-10"
+        style={{
+          backgroundImage:
+            "radial-gradient(60% 50% at 20% 20%, rgba(37, 99, 235, 0.10) 0%, rgba(37, 99, 235, 0) 70%), radial-gradient(50% 40% at 80% 80%, rgba(6, 182, 212, 0.10) 0%, rgba(6, 182, 212, 0) 70%)",
+        }}
+      />
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <img src="/koc-logo.png" alt="Knights of Columbus" className="w-24 h-24 object-contain mx-auto mb-3" />
-          <div className="text-white/60 text-sm">Financial Planning Suite</div>
+          <img src="/koc-logo.png" alt="Knights of Columbus" className="w-20 h-20 object-contain mx-auto mb-3" />
+          <div className="text-[11px] font-semibold tracking-[0.18em] uppercase text-brand-gradient">Financial Planning Suite</div>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-2xl p-8"><form autoComplete="off" onSubmit={e => e.preventDefault()}>
+        <div className="fp-card fp-card-accent shadow-xl shadow-slate-300/30 p-8">
+          <form autoComplete="off" onSubmit={e => e.preventDefault()}>
 
           {(mode === "login" || mode === "register") && (
             <>
-              <div className="flex bg-gray-100 rounded-xl p-1 mb-6">
+              <div className="flex bg-slate-100 rounded-xl p-1 mb-6">
                 {(["login","register"] as const).map(m => (
                   <button key={m} onClick={() => { setMode(m); reset(); }}
-                    className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-all ${mode === m ? "bg-white shadow text-gray-900" : "text-gray-400 hover:text-gray-600"}`}>
+                    className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-all ${mode === m ? "bg-white shadow text-slate-900" : "text-slate-400 hover:text-slate-600"}`}>
                     {m === "login" ? "Sign In" : "Register"}
                   </button>
                 ))}
@@ -189,7 +202,7 @@ async function submitRegister() {
                     onKeyDown={e => e.key === "Enter" && mode === "login" && submitLogin()}
                     className={INPUT + " pr-11"} />
                   <button type="button" onClick={() => setShowPw(s => !s)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
                     {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
@@ -197,32 +210,32 @@ async function submitRegister() {
                 {mode === "register" && <PasswordStrength password={form.password} />}
 
                 {mode === "register" && (
-                  <div className="pt-2 border-t border-gray-100">
-                    <p className="text-xs font-semibold text-gray-500 mb-2">Security Question (used for password recovery)</p>
+                  <div className="pt-2 border-t border-slate-100">
+                    <p className="text-xs font-semibold text-slate-500 mb-2">Security Question (used for password recovery)</p>
                     <select value={form.securityQuestion} onChange={e => u("securityQuestion", e.target.value)}
                       className={INPUT + " mb-2"}>
                       {SECURITY_QUESTIONS.map(q => <option key={q} value={q}>{q}</option>)}
                     </select>
                     <input placeholder="Your answer" value={form.securityAnswer} onChange={e => u("securityAnswer", e.target.value)} className={INPUT} />
-                    <p className="text-xs text-gray-400 mt-1">Answer is case-insensitive and stored securely.</p>
+                    <p className="text-xs text-slate-400 mt-1">Answer is case-insensitive and stored securely.</p>
                   </div>
                 )}
 
                 {mode === "login" && (
                   <div className="text-right -mt-1">
                     <button onClick={() => { setMode("forgot-email"); reset(); }}
-                      className="text-xs text-cyan-600 hover:text-cyan-800 font-medium">
+                      className="text-xs text-cyan-600 hover:text-cyan-800 font-semibold">
                       Forgot password?
                     </button>
                   </div>
                 )}
-                
-                {error && <p className="text-red-500 text-sm bg-red-50 rounded-lg px-3 py-2">{error}</p>}
+
+                {error && <p className="text-red-500 text-sm bg-red-50 border border-red-100 rounded-lg px-3 py-2">{error}</p>}
 
                 <button
                   onClick={mode === "login" ? submitLogin : submitRegister}
                   disabled={busy || (mode === "register" && (!pwOk || !form.securityAnswer))}
-                  className="w-full bg-[#0c1e3a] hover:bg-[#0e2a4a] disabled:opacity-50 text-white font-semibold py-3 rounded-xl text-sm transition-colors">
+                  className={submitBtn}>
                   {busy ? "Please wait…" : mode === "login" ? "Sign In" : "Create Account"}
                 </button>
               </div>
@@ -232,50 +245,48 @@ async function submitRegister() {
           {mode === "forgot-email" && (
             <div className="space-y-4">
               <div>
-                <h2 className="text-lg font-bold text-gray-900">Reset Password</h2>
-                <p className="text-sm text-gray-500 mt-1">Enter your email to retrieve your security question.</p>
+                <h2 className="text-lg font-bold text-slate-900">Reset Password</h2>
+                <p className="text-sm text-slate-500 mt-1">Enter your email to retrieve your security question.</p>
               </div>
               <input type="email" placeholder="Email address" autoComplete="off" value={forgotEmail} onChange={e => setForgotEmail(e.target.value)} className={INPUT} />
-              {error && <p className="text-red-500 text-sm bg-red-50 rounded-lg px-3 py-2">{error}</p>}
-              <button onClick={submitForgotEmail} disabled={busy || !forgotEmail}
-                className="w-full bg-[#0c1e3a] hover:bg-[#0e2a4a] disabled:opacity-50 text-white font-semibold py-3 rounded-xl text-sm">
+              {error && <p className="text-red-500 text-sm bg-red-50 border border-red-100 rounded-lg px-3 py-2">{error}</p>}
+              <button onClick={submitForgotEmail} disabled={busy || !forgotEmail} className={submitBtn}>
                 {busy ? "Please wait…" : "Continue"}
               </button>
-              <button onClick={() => { setMode("login"); reset(); }} className="w-full text-sm text-gray-400 hover:text-gray-600 text-center">← Back to Sign In</button>
+              <button onClick={() => { setMode("login"); reset(); }} className="w-full text-sm text-slate-400 hover:text-slate-600 text-center">← Back to Sign In</button>
             </div>
           )}
 
           {mode === "forgot-question" && (
             <div className="space-y-4">
               <div>
-                <h2 className="text-lg font-bold text-gray-900">Security Question</h2>
-                <p className="text-sm text-gray-500 mt-1">Answer your security question to continue.</p>
+                <h2 className="text-lg font-bold text-slate-900">Security Question</h2>
+                <p className="text-sm text-slate-500 mt-1">Answer your security question to continue.</p>
               </div>
-              <div className="bg-blue-50 border border-blue-200 rounded-xl px-4 py-3">
-                <p className="text-sm font-semibold text-blue-800">{forgotQuestion}</p>
+              <div className="bg-gradient-to-r from-blue-50 to-cyan-50 border border-cyan-200/70 rounded-xl px-4 py-3">
+                <p className="text-sm font-semibold text-slate-800">{forgotQuestion}</p>
               </div>
               <input placeholder="Your answer" value={forgotAnswer} onChange={e => setForgotAnswer(e.target.value)} className={INPUT} />
-              <p className="text-xs text-gray-400 -mt-2">Answers are not case-sensitive.</p>
-              {error && <p className="text-red-500 text-sm bg-red-50 rounded-lg px-3 py-2">{error}</p>}
-              <button onClick={submitForgotAnswer} disabled={busy || !forgotAnswer}
-                className="w-full bg-[#0c1e3a] hover:bg-[#0e2a4a] disabled:opacity-50 text-white font-semibold py-3 rounded-xl text-sm">
+              <p className="text-xs text-slate-400 -mt-2">Answers are not case-sensitive.</p>
+              {error && <p className="text-red-500 text-sm bg-red-50 border border-red-100 rounded-lg px-3 py-2">{error}</p>}
+              <button onClick={submitForgotAnswer} disabled={busy || !forgotAnswer} className={submitBtn}>
                 {busy ? "Verifying…" : "Continue"}
               </button>
-              <button onClick={() => { setMode("forgot-email"); reset(); }} className="w-full text-sm text-gray-400 hover:text-gray-600 text-center">← Back</button>
+              <button onClick={() => { setMode("forgot-email"); reset(); }} className="w-full text-sm text-slate-400 hover:text-slate-600 text-center">← Back</button>
             </div>
           )}
 
           {mode === "forgot-reset" && (
             <div className="space-y-4">
               <div>
-                <h2 className="text-lg font-bold text-gray-900">Set New Password</h2>
-                <p className="text-sm text-gray-500 mt-1">Choose a strong new password.</p>
+                <h2 className="text-lg font-bold text-slate-900">Set New Password</h2>
+                <p className="text-sm text-slate-500 mt-1">Choose a strong new password.</p>
               </div>
               <div className="relative">
                 <input type={showNewPw ? "text" : "password"} placeholder="New password" autoComplete="new-password" value={newPassword}
                   onChange={e => setNewPassword(e.target.value)} className={INPUT + " pr-11"} />
                 <button type="button" onClick={() => setShowNewPw(s => !s)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
                   {showNewPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
@@ -287,30 +298,33 @@ async function submitRegister() {
                 {confirmPassword && !pwMatch && <p className="text-xs text-red-500 mt-1">Passwords do not match</p>}
                 {confirmPassword && pwMatch  && <p className="text-xs text-emerald-600 mt-1">✓ Passwords match</p>}
               </div>
-              {error && <p className="text-red-500 text-sm bg-red-50 rounded-lg px-3 py-2">{error}</p>}
-              <button onClick={submitForgotReset} disabled={busy || !newPwOk || !pwMatch}
-                className="w-full bg-[#0c1e3a] hover:bg-[#0e2a4a] disabled:opacity-50 text-white font-semibold py-3 rounded-xl text-sm">
+              {error && <p className="text-red-500 text-sm bg-red-50 border border-red-100 rounded-lg px-3 py-2">{error}</p>}
+              <button onClick={submitForgotReset} disabled={busy || !newPwOk || !pwMatch} className={submitBtn}>
                 {busy ? "Saving…" : "Reset Password"}
               </button>
-              <button onClick={() => { setMode("forgot-question"); reset(); }} className="w-full text-sm text-gray-400 hover:text-gray-600 text-center">← Back</button>
+              <button onClick={() => { setMode("forgot-question"); reset(); }} className="w-full text-sm text-slate-400 hover:text-slate-600 text-center">← Back</button>
             </div>
           )}
 
           {mode === "forgot-done" && (
             <div className="text-center py-6 space-y-4">
-              <div className="w-14 h-14 bg-emerald-100 rounded-full flex items-center justify-center mx-auto">
+              <div className="w-14 h-14 bg-gradient-to-br from-emerald-100 to-cyan-100 rounded-full flex items-center justify-center mx-auto">
                 <Check className="w-7 h-7 text-emerald-600" />
               </div>
-              <h2 className="text-lg font-bold text-gray-900">Password Reset!</h2>
-              <p className="text-sm text-gray-500">Your password has been changed successfully. You can now sign in.</p>
+              <h2 className="text-lg font-bold text-slate-900">Password Reset!</h2>
+              <p className="text-sm text-slate-500">Your password has been changed successfully. You can now sign in.</p>
               <button onClick={() => { setMode("login"); reset(); setForgotEmail(""); setForgotAnswer(""); setNewPassword(""); setConfirmPassword(""); }}
-                className="w-full bg-[#0c1e3a] hover:bg-[#0e2a4a] text-white font-semibold py-3 rounded-xl text-sm">
+                className={submitBtn}>
                 Sign In
               </button>
             </div>
           )}
 
-        </form>
+          </form>
+        </div>
+
+        <div className="text-center mt-6 text-[11px] text-slate-400">
+          © Knights of Columbus · Financial Planning Suite
         </div>
       </div>
     </div>

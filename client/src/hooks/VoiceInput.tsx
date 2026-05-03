@@ -30,7 +30,7 @@ export function MicButton({ fieldKey, voiceState, activeField, supported, onList
         "flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center transition-all",
         isListening  && "bg-red-500 text-white animate-pulse",
         isProcessing && "bg-yellow-400 text-white",
-        !isActive    && "text-gray-300 hover:text-[#0c1e3a]",
+        !isActive    && "text-gray-300 hover:text-blue-600",
       )}
     >
       {isProcessing
@@ -86,7 +86,7 @@ export function VoiceInput({
             ? "border-red-300 ring-2 ring-red-200"
             : activeField === voiceOpts.fieldKey && voiceState === "processing"
             ? "border-yellow-300 ring-2 ring-yellow-100"
-            : "border-gray-200"
+            : "border-slate-200"
         )}
       />
     </div>
@@ -134,7 +134,7 @@ export function VoiceTextarea({
             ? "border-red-300 ring-2 ring-red-200"
             : activeField === voiceOpts.fieldKey && voiceState === "processing"
             ? "border-yellow-300 ring-2 ring-yellow-100"
-            : "border-gray-200"
+            : "border-slate-200"
         )}
       />
     </div>

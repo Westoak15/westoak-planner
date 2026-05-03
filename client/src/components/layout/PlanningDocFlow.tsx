@@ -225,7 +225,7 @@ export function PlanningDocFlow({
     <div className="flex flex-col h-full bg-white relative">
 
       {/* ── K of C client context strip ──────────────────────────────────────── */}
-      <div className="flex-shrink-0 flex items-center justify-between px-4 bg-[#0c1e3a] border-b border-[#1a3160]" style={{ height: 36 }}>
+      <div className="flex-shrink-0 flex items-center justify-between px-4 bg-brand-gradient border-b border-[#1a3160]" style={{ height: 36 }}>
         <div className="flex items-center gap-4">
           <span className="text-[11px] font-bold text-white tracking-wide opacity-80">Knights of Columbus</span>
           <span className="text-[rgba(255,255,255,0.2)] text-xs">|</span>
@@ -260,7 +260,7 @@ export function PlanningDocFlow({
       </div>
 
       {/* ── Pill nav ─────────────────────────────────────────────────────────── */}
-      <div className="flex-shrink-0 border-b border-gray-200 bg-white">
+      <div className="flex-shrink-0 border-b border-slate-200 bg-white">
         <div
           ref={pillNavRef}
           className="flex items-center gap-1 px-4 py-2 overflow-x-auto"
@@ -274,8 +274,8 @@ export function PlanningDocFlow({
               className={cn(
                 "flex-shrink-0 rounded-full px-3.5 py-1 text-[12px] font-medium border transition-all duration-150 whitespace-nowrap",
                 t === tab
-                  ? "bg-[#0c1e3a] text-white border-[#0c1e3a]"
-                  : "bg-white text-gray-500 border-gray-200 hover:border-gray-300 hover:text-gray-700"
+                  ? "bg-brand-gradient text-white border-blue-600"
+                  : "bg-white text-gray-500 border-slate-200 hover:border-slate-300 hover:text-gray-700"
               )}
             >
               {MODULE_LABELS[t]}
@@ -285,7 +285,7 @@ export function PlanningDocFlow({
       </div>
 
       {/* ── Module toolbar ───────────────────────────────────────────────────── */}
-      <div className="flex-shrink-0 sticky top-0 z-10 flex items-center justify-between px-5 py-2 bg-white border-b border-gray-100">
+      <div className="flex-shrink-0 sticky top-0 z-10 flex items-center justify-between px-5 py-2 bg-white border-b border-slate-100">
         <span className="text-sm font-semibold text-gray-900">{MODULE_LABELS[tab]}</span>
 
         <div className="flex items-center gap-2">
@@ -320,8 +320,8 @@ export function PlanningDocFlow({
               recStatus === "recording"
                 ? "bg-red-600 border-red-600 text-white hover:bg-red-700"
                 : recStatus === "processing"
-                ? "bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed"
-                : "bg-white border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50"
+                ? "bg-slate-100 border-slate-200 text-gray-400 cursor-not-allowed"
+                : "bg-white border-slate-200 text-gray-600 hover:border-slate-300 hover:bg-slate-50"
             )}
           >
             <Circle className={cn("w-2.5 h-2.5", recStatus === "recording" ? "fill-white text-white" : "fill-red-500 text-red-500")} />
@@ -339,7 +339,7 @@ export function PlanningDocFlow({
       <div className="fixed bottom-6 right-6 z-40 flex flex-col items-end gap-2">
         {/* Hint bubble */}
         {fabHintVisible && !isVoiceListening && !isVoiceProcessing && (
-          <div className="bg-[#0c1e3a] text-white text-xs rounded-xl px-3.5 py-2.5 max-w-[220px] text-right leading-snug shadow-md">
+          <div className="bg-brand-gradient text-white text-xs rounded-xl px-3.5 py-2.5 max-w-[220px] text-right leading-snug shadow-md">
             {VOICE_HINTS[tab]}
             <div className="text-[10px] opacity-60 mt-1">Click a field's mic button to dictate</div>
           </div>
@@ -362,7 +362,7 @@ export function PlanningDocFlow({
               ? "bg-blue-600 scale-110"
               : isVoiceProcessing
               ? "bg-gray-400 cursor-not-allowed"
-              : "bg-[#0c1e3a] hover:bg-[#1a3160] hover:scale-105 active:scale-95"
+              : "bg-brand-gradient hover:bg-[#1a3160] hover:scale-105 active:scale-95"
           )}
           title="Voice fill — hover for tip"
           aria-label="Voice fill"
@@ -421,18 +421,18 @@ function MeetingSummaryDrawer({
       <div className="fixed inset-0 z-50 bg-black/20" onClick={onClose} />
 
       {/* Panel */}
-      <div className="fixed right-0 top-0 h-full w-full max-w-md bg-white z-50 flex flex-col border-l border-gray-200 shadow-xl">
+      <div className="fixed right-0 top-0 h-full w-full max-w-md bg-white z-50 flex flex-col border-l border-slate-200 shadow-xl">
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
           <div>
             <h3 className="text-sm font-semibold text-gray-900">Meeting Summary</h3>
             <p className="text-xs text-gray-400 mt-0.5">{dateStr} · {durStr}</p>
           </div>
           <div className="flex gap-2">
-            <button onClick={onReset} className="text-xs text-gray-400 hover:text-gray-600 px-2 py-1 border border-gray-200 rounded-md transition-colors">
+            <button onClick={onReset} className="text-xs text-gray-400 hover:text-gray-600 px-2 py-1 border border-slate-200 rounded-md transition-colors">
               New recording
             </button>
-            <button onClick={onClose} className="p-1.5 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors">
+            <button onClick={onClose} className="p-1.5 rounded-md text-gray-400 hover:text-gray-600 hover:bg-slate-100 transition-colors">
               <X className="w-4 h-4" />
             </button>
           </div>
@@ -451,7 +451,7 @@ function MeetingSummaryDrawer({
                 {copied ? "Copied" : "Copy"}
               </button>
             </div>
-            <div className="text-sm text-gray-700 leading-relaxed bg-gray-50 border border-gray-100 rounded-lg px-3.5 py-3 whitespace-pre-wrap">
+            <div className="text-sm text-gray-700 leading-relaxed bg-slate-50 border border-slate-100 rounded-lg px-3.5 py-3 whitespace-pre-wrap">
               {summary.summary || "No summary generated."}
             </div>
           </div>
@@ -465,7 +465,7 @@ function MeetingSummaryDrawer({
               <ul className="space-y-2">
                 {summary.actionItems.map((item, i) => (
                   <li key={i} className="flex items-start gap-2 text-sm text-gray-700">
-                    <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-[#0c1e3a] flex-shrink-0" />
+                    <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-brand-gradient flex-shrink-0" />
                     {item}
                   </li>
                 ))}
@@ -483,7 +483,7 @@ function MeetingSummaryDrawer({
               {showTranscript ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
             </button>
             {showTranscript && (
-              <div className="text-xs text-gray-600 leading-relaxed bg-gray-50 border border-gray-100 rounded-lg px-3.5 py-3 max-h-56 overflow-y-auto font-mono whitespace-pre-wrap">
+              <div className="text-xs text-gray-600 leading-relaxed bg-slate-50 border border-slate-100 rounded-lg px-3.5 py-3 max-h-56 overflow-y-auto font-mono whitespace-pre-wrap">
                 {summary.transcript || "No transcript available."}
               </div>
             )}

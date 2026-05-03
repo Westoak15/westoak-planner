@@ -23,7 +23,7 @@ type PolicyDraft = Omit<Policy, "id" | "createdAt">;
 const POLICY_TYPES = ["Term Life","Whole Life","Universal Life","Disability (DI)","Long-Term Care (LTC)","Critical Illness","Other"];
 const TERM_TYPES   = ["Term Life","Critical Illness"];
 const FREQUENCIES  = ["Monthly","Quarterly","Semi-Annual","Annual"];
-const INPUT = "w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500";
+const INPUT = "w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500";
 
 const emptyDraft = (): PolicyDraft => ({
   type:"Term Life", insured:"primary", provider:"", policyNumber:"",
@@ -133,7 +133,7 @@ export function PoliciesTab({ clientId, client, person = "primary" }: { clientId
         { label: "Life coverage",     value: fmt$(lifeCoverage),   color: "text-blue-600",    bg: "bg-blue-50"   },
         { label: "Disability",        value: diCoverage > 0 ? fmt$(diCoverage) + "/mo" : "—", color: "text-violet-600", bg: "bg-violet-50" },
         { label: "Critical illness",  value: fmt$(ciCoverage),     color: "text-emerald-600", bg: "bg-emerald-50"},
-        { label: "Total premium/yr",  value: fmt$(totalPremium),   color: "text-gray-700",    bg: "bg-gray-100"  },
+        { label: "Total premium/yr",  value: fmt$(totalPremium),   color: "text-gray-700",    bg: "bg-slate-100"  },
       ]} />
 
       {/* Header */}
@@ -145,7 +145,7 @@ export function PoliciesTab({ clientId, client, person = "primary" }: { clientId
           </p>
         </div>
         <button onClick={openCreate}
-          className="flex items-center gap-2 bg-[#0c1e3a] hover:bg-[#0e2a4a] text-white text-sm font-semibold px-4 py-2 rounded-xl transition-colors">
+          className="flex items-center gap-2 bg-brand-gradient hover:bg-brand-gradient-hover text-white text-sm font-semibold px-4 py-2 rounded-xl transition-colors">
           <Plus className="w-4 h-4" /> Add Policy
         </button>
       </div>
@@ -154,15 +154,15 @@ export function PoliciesTab({ clientId, client, person = "primary" }: { clientId
       {loading ? (
         <div className="text-center py-16 text-gray-400">Loading…</div>
       ) : filteredPolicies.length === 0 ? (
-        <div className="text-center py-16 border-2 border-dashed border-gray-200 rounded-2xl">
+        <div className="text-center py-16 border-2 border-dashed border-slate-200 rounded-2xl">
           <Shield className="w-10 h-10 text-gray-300 mx-auto mb-3" />
           <p className="text-gray-500 font-semibold">No policies on file</p>
           <p className="text-sm text-gray-400 mt-1">Add existing life, disability, or LTC coverage</p>
         </div>
       ) : (
-        <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+        <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
           <table className="w-full text-sm">
-            <thead className="bg-gray-50 border-b border-gray-200">
+            <thead className="bg-slate-50 border-b border-slate-200">
               <tr>
                 <TH>Type</TH>
                 <TH>Insured</TH>
@@ -175,11 +175,11 @@ export function PoliciesTab({ clientId, client, person = "primary" }: { clientId
                 <TH></TH>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-slate-100">
               {filteredPolicies.map(p => (
-                <tr key={p.id} className="hover:bg-gray-50 transition-colors">
+                <tr key={p.id} className="hover:bg-slate-50 transition-colors">
                   <TD>
-                    <span className="bg-[#0c1e3a]/10 text-[#0c1e3a] text-xs font-semibold px-2 py-0.5 rounded-full whitespace-nowrap">
+                    <span className="bg-brand-gradient/10 text-blue-600 text-xs font-semibold px-2 py-0.5 rounded-full whitespace-nowrap">
                       {p.type}
                     </span>
                   </TD>
@@ -205,7 +205,7 @@ export function PoliciesTab({ clientId, client, person = "primary" }: { clientId
                   <TD><span className="text-gray-400 text-xs">{p.beneficiary || "—"}</span></TD>
                   <TD>
                     <div className="flex gap-1">
-                      <button onClick={() => openEdit(p)} className="p-1.5 text-gray-400 hover:text-[#0c1e3a] transition-colors">
+                      <button onClick={() => openEdit(p)} className="p-1.5 text-gray-400 hover:text-blue-600 transition-colors">
                         <Pencil className="w-3.5 h-3.5" />
                       </button>
                       <button onClick={() => del(p.id)} className="p-1.5 text-gray-400 hover:text-red-500 transition-colors">
@@ -224,7 +224,7 @@ export function PoliciesTab({ clientId, client, person = "primary" }: { clientId
       {filteredPolicies.some(p => p.notes) && (
         <div className="mt-3 space-y-1.5">
           {filteredPolicies.filter(p => p.notes).map(p => (
-            <div key={p.id} className="flex gap-2 text-xs text-gray-500 bg-gray-50 rounded-lg px-3 py-2">
+            <div key={p.id} className="flex gap-2 text-xs text-gray-500 bg-slate-50 rounded-lg px-3 py-2">
               <span className="font-semibold text-gray-600">{p.provider || p.type}:</span>
               <span>{p.notes}</span>
             </div>
@@ -236,7 +236,7 @@ export function PoliciesTab({ clientId, client, person = "primary" }: { clientId
       {showForm && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg">
-            <div className="flex justify-between items-center px-6 pt-6 pb-4 border-b border-gray-100">
+            <div className="flex justify-between items-center px-6 pt-6 pb-4 border-b border-slate-100">
               <h2 className="text-lg font-bold text-gray-900">{editId ? "Edit Policy" : "Add Policy"}</h2>
               <button onClick={() => setShowForm(false)} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
             </div>
@@ -275,7 +275,7 @@ export function PoliciesTab({ clientId, client, person = "primary" }: { clientId
                   <label className="text-xs font-semibold text-gray-500 mb-1 block">Premium</label>
                   <div className="flex gap-2">
                     <input type="number" value={draft.premium} onChange={e => u("premium", e.target.value)} className={INPUT} placeholder="0" />
-                    <select value={draft.premiumFrequency} onChange={e => u("premiumFrequency", e.target.value)} className="border border-gray-200 rounded-lg px-2 py-2 text-sm w-32">
+                    <select value={draft.premiumFrequency} onChange={e => u("premiumFrequency", e.target.value)} className="border border-slate-200 rounded-lg px-2 py-2 text-sm w-32">
                       {FREQUENCIES.map(f => <option key={f} value={f}>{f}</option>)}
                     </select>
                   </div>
@@ -305,7 +305,7 @@ export function PoliciesTab({ clientId, client, person = "primary" }: { clientId
             <div className="flex justify-end gap-3 px-6 pb-6">
               <button onClick={() => setShowForm(false)} className="px-4 py-2.5 text-sm font-semibold text-gray-500 hover:text-gray-700">Cancel</button>
               <button onClick={save} disabled={saving || !draft.type}
-                className="flex items-center gap-2 px-6 py-2.5 bg-[#0c1e3a] hover:bg-[#0e2a4a] disabled:opacity-50 text-white text-sm font-semibold rounded-xl transition-colors">
+                className="flex items-center gap-2 px-6 py-2.5 bg-brand-gradient hover:bg-brand-gradient-hover disabled:opacity-50 text-white text-sm font-semibold rounded-xl transition-colors">
                 <Save className="w-4 h-4" /> {saving ? "Saving…" : editId ? "Save Changes" : "Add Policy"}
               </button>
             </div>

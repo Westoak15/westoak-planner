@@ -33,7 +33,7 @@ const COMPREHENSIVE_ROUTES = [
 const CATEGORIES = ["Summary", "Net Worth", "Retirement", "Insurance", "Cash Flow", "Goals", "Tax & Estate"];
 
 const CATEGORY_COLORS: Record<string, string> = {
-  "Summary":      "bg-[#0c1e3a]",
+  "Summary":      "bg-brand-gradient",
   "Net Worth":    "bg-blue-600",
   "Retirement":   "bg-teal-600",
   "Insurance":    "bg-purple-600",
@@ -135,7 +135,7 @@ ${parts.map(h => stripBody(h)).join('\n<div class="report-divider"></div>\n')}
           <p className="text-sm text-gray-400">Select reports and generate combined in one tab</p>
         </div>
         <div className="flex items-center gap-3">
-          <button onClick={() => setSelected(new Set(REPORT_SECTIONS.map(s => s.id)))} className="text-sm text-[#0c1e3a] font-semibold hover:underline">All</button>
+          <button onClick={() => setSelected(new Set(REPORT_SECTIONS.map(s => s.id)))} className="text-sm text-blue-600 font-semibold hover:underline">All</button>
           <button onClick={() => setSelected(new Set())} className="text-sm text-gray-400 hover:underline">None</button>
 
           {/* Cover page toggle */}
@@ -143,8 +143,8 @@ ${parts.map(h => stripBody(h)).join('\n<div class="report-divider"></div>\n')}
             onClick={() => setIncludeCover(v => !v)}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-semibold transition-colors ${
               includeCover
-                ? "bg-[#0c1e3a] text-white border-[#0c1e3a]"
-                : "bg-white text-gray-500 border-gray-200 hover:border-gray-400"
+                ? "bg-brand-gradient text-white border-blue-600"
+                : "bg-white text-gray-500 border-slate-200 hover:border-gray-400"
             }`}
             title="Prepend a cover page to each selected report"
           >
@@ -153,7 +153,7 @@ ${parts.map(h => stripBody(h)).join('\n<div class="report-divider"></div>\n')}
           </button>
 
           <button onClick={generateSelected} disabled={selectedCount === 0 || generating}
-            className="flex items-center gap-2 bg-[#0c1e3a] hover:bg-[#0e2a4a] disabled:opacity-40 text-white font-semibold px-5 py-2.5 rounded-xl text-sm">
+            className="flex items-center gap-2 bg-brand-gradient hover:bg-brand-gradient-hover disabled:opacity-40 text-white font-semibold px-5 py-2.5 rounded-xl text-sm">
             {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4" />}
             {generating ? "Generating..." : `Generate${selectedCount > 0 ? ` (${selectedCount})` : ""}`}
           </button>
@@ -170,9 +170,9 @@ ${parts.map(h => stripBody(h)).join('\n<div class="report-divider"></div>\n')}
           const singleReport = sections.length === 1;
 
           return (
-            <div key={cat} className="border border-gray-200 rounded-xl overflow-hidden flex flex-col">
+            <div key={cat} className="border border-slate-200 rounded-xl overflow-hidden flex flex-col">
               {/* Category bar */}
-              <div className="flex items-center justify-between px-3 py-2 bg-gray-50 border-b border-gray-100">
+              <div className="flex items-center justify-between px-3 py-2 bg-slate-50 border-b border-slate-100">
                 <div className="flex items-center gap-2">
                   <span className={`w-2.5 h-2.5 rounded-full ${colorDot}`} />
                   <span className="text-sm font-bold text-gray-800">{cat}</span>
@@ -181,9 +181,9 @@ ${parts.map(h => stripBody(h)).join('\n<div class="report-divider"></div>\n')}
                   )}
                 </div>
                 {!singleReport && (
-                  <button onClick={() => toggleCat(cat)} className="flex items-center gap-1 text-xs text-gray-500 hover:text-[#0c1e3a]">
+                  <button onClick={() => toggleCat(cat)} className="flex items-center gap-1 text-xs text-gray-500 hover:text-blue-600">
                     {allCatSelected
-                      ? <><CheckSquare className="w-3.5 h-3.5 text-[#0c1e3a]" /> All</>
+                      ? <><CheckSquare className="w-3.5 h-3.5 text-blue-600" /> All</>
                       : <><Square className="w-3.5 h-3.5" /> Select all</>}
                   </button>
                 )}
@@ -196,10 +196,10 @@ ${parts.map(h => stripBody(h)).join('\n<div class="report-divider"></div>\n')}
                   return (
                     <div key={section.id}
                       onClick={() => toggle(section.id)}
-                      className={`flex items-center gap-2 px-3 py-2.5 cursor-pointer hover:bg-gray-50 transition-colors ${isSelected ? "bg-blue-50/40" : ""}`}>
+                      className={`flex items-center gap-2 px-3 py-2.5 cursor-pointer hover:bg-slate-50 transition-colors ${isSelected ? "bg-blue-50/40" : ""}`}>
                       <div className="flex-shrink-0">
                         {isSelected
-                          ? <CheckSquare className="w-4 h-4 text-[#0c1e3a]" />
+                          ? <CheckSquare className="w-4 h-4 text-blue-600" />
                           : <Square className="w-4 h-4 text-gray-300" />}
                       </div>
                       <div className="flex-1 min-w-0">
@@ -213,7 +213,7 @@ ${parts.map(h => stripBody(h)).join('\n<div class="report-divider"></div>\n')}
                               : fnaAnalyses.length === 0 ? <span className="text-xs text-red-500">No FNA analyses</span>
                               : (
                                 <select value={fnaAnalysisId ?? ""} onChange={e => setFnaAnalysisId(Number(e.target.value))}
-                                  className="border border-gray-200 rounded px-2 py-0.5 text-xs w-full">
+                                  className="border border-slate-200 rounded px-2 py-0.5 text-xs w-full">
                                   {fnaAnalyses.map((a: any) => (
                                     <option key={a.id} value={a.id}>
                                       {a.primaryName || "FNA"} - {a.createdAt ? new Date(a.createdAt).toLocaleDateString() : ""}
@@ -239,10 +239,10 @@ ${parts.map(h => stripBody(h)).join('\n<div class="report-divider"></div>\n')}
 
       {/* Sticky footer */}
       {selectedCount > 0 && (
-        <div className="fixed bottom-6 right-6 flex items-center gap-3 bg-[#0c1e3a] text-white px-5 py-3 rounded-2xl shadow-2xl">
+        <div className="fixed bottom-6 right-6 flex items-center gap-3 bg-brand-gradient text-white px-5 py-3 rounded-2xl shadow-2xl">
           <span className="text-sm font-semibold">{selectedCount} selected</span>
           <button onClick={generateSelected} disabled={generating}
-            className="flex items-center gap-2 bg-white text-[#0c1e3a] font-bold px-4 py-1.5 rounded-xl text-sm hover:bg-gray-100 disabled:opacity-50">
+            className="flex items-center gap-2 bg-white text-blue-600 font-bold px-4 py-1.5 rounded-xl text-sm hover:bg-slate-100 disabled:opacity-50">
             {generating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FileText className="w-3.5 h-3.5" />}
             Generate in One Tab
           </button>

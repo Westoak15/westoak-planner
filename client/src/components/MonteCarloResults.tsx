@@ -153,7 +153,7 @@ export function MonteCarloResults({ result, onClose, onPrint }: Props) {
       <div className="min-h-screen flex items-start justify-center p-4 py-8">
         <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl">
           {/* Header */}
-          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-[#0c1e3a] rounded-t-2xl">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-brand-gradient rounded-t-2xl">
             <div>
               <h2 className="text-white font-bold text-lg">Monte Carlo Retirement Analysis</h2>
               <p className="text-white/50 text-xs">{result.simulations.toLocaleString()} simulations · {result.yearsProjected} years projected</p>
@@ -169,10 +169,10 @@ export function MonteCarloResults({ result, onClose, onPrint }: Props) {
           <div className="p-6">
             {/* Top row: gauge + final balances */}
             <div className="grid grid-cols-3 gap-5 mb-6">
-              <div className="flex flex-col items-center justify-center bg-gray-50 rounded-xl p-4">
+              <div className="flex flex-col items-center justify-center bg-slate-50 rounded-xl p-4">
                 <SuccessGauge rate={successRate} />
               </div>
-              <div className="col-span-2 bg-gray-50 rounded-xl p-4">
+              <div className="col-span-2 bg-slate-50 rounded-xl p-4">
                 <h3 className="font-bold text-gray-800 mb-3 text-sm">Final Portfolio Balance at Age {result.lifeExpectancy}</h3>
                 <div className="space-y-2">
                   {scenarios.map(s => (
@@ -186,7 +186,7 @@ export function MonteCarloResults({ result, onClose, onPrint }: Props) {
             </div>
 
             {/* Chart */}
-            <div className="bg-gray-50 rounded-xl p-4 mb-6">
+            <div className="bg-slate-50 rounded-xl p-4 mb-6">
               <h3 className="font-bold text-gray-800 mb-3 text-sm">Portfolio Projection — {result.simulations.toLocaleString()} Simulations</h3>
               <PercentileChart bands={percentileBands} />
             </div>

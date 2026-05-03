@@ -18,7 +18,7 @@ const TD = ({ children, right }: { children: React.ReactNode; right?: boolean })
   <td className={cn("px-3 py-2.5 text-sm", right && "text-right")}>{children}</td>
 );
 function Card({ children, className }: { children?: React.ReactNode; className?: string }) {
-  return <div className={cn("bg-white rounded-xl border border-gray-200 shadow-sm", className)}>{children}</div>;
+  return <div className={cn("bg-white rounded-xl border border-slate-200 shadow-sm", className)}>{children}</div>;
 }
 function SummaryBar({ items }: { items: { label: string; value: string; color: string; bg: string }[] }) {
   return (
@@ -35,13 +35,13 @@ function SummaryBar({ items }: { items: { label: string; value: string; color: s
 function InlineInput({ value, onChange, type = "text", placeholder, className, maxLength }: { value: string; onChange: (v: string) => void; type?: string; placeholder?: string; className?: string; maxLength?: number }) {
   return (
     <input type={type} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} maxLength={maxLength}
-      className={cn("border border-gray-200 rounded-lg px-2 py-1.5 text-sm w-full focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500", className)} />
+      className={cn("border border-slate-200 rounded-lg px-2 py-1.5 text-sm w-full focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500", className)} />
   );
 }
 function InlineSelect({ value, onChange, options }: { value: string; onChange: (v: string) => void; options: string[] }) {
   return (
     <select value={value} onChange={e => onChange(e.target.value)}
-      className="border border-gray-200 rounded-lg px-2 py-1.5 text-sm w-full focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 bg-white">
+      className="border border-slate-200 rounded-lg px-2 py-1.5 text-sm w-full focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 bg-white">
       {options.map(o => <option key={o}>{o}</option>)}
     </select>
   );
@@ -80,7 +80,7 @@ function ExtraFields({ draft, onChange, spouseName, dependants }: { draft: NWDra
       <div className="flex items-center gap-3 mt-1">
         <span className="text-xs text-gray-500">Beneficiary:</span>
         <select value={draft.respBeneficiary} onChange={e => onChange("respBeneficiary", e.target.value)}
-          className="border border-gray-200 rounded px-2 py-1 text-xs">
+          className="border border-slate-200 rounded px-2 py-1 text-xs">
           <option value="">Select beneficiary</option>
           {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
         </select>
@@ -93,14 +93,14 @@ function ExtraFields({ draft, onChange, spouseName, dependants }: { draft: NWDra
       <div className="flex items-center gap-3 mt-1">
         <label className="flex items-center gap-1.5 text-xs text-gray-600 cursor-pointer">
           <input type="checkbox" checked={draft.isSpousal} onChange={e => onChange("isSpousal", e.target.checked)}
-            className="w-3.5 h-3.5 rounded border-gray-300" />
+            className="w-3.5 h-3.5 rounded border-slate-300" />
           Spousal RRSP
         </label>
         {draft.isSpousal && (
           <div className="flex items-center gap-1.5">
             <span className="text-xs text-gray-500">Contributor:</span>
             <select value={draft.rrspContributor} onChange={e => onChange("rrspContributor", e.target.value)}
-              className="border border-gray-200 rounded px-2 py-1 text-xs w-full">
+              className="border border-slate-200 rounded px-2 py-1 text-xs w-full">
               <option value="">Select contributor</option>
               <option value="client">Client</option>
               <option value="spouse">Spouse</option>
@@ -242,17 +242,17 @@ async function saveAll() {
         const draftRows = drafts.filter(d => d.type === type);
         return (
           <Card key={type} className="mb-5">
-            <div className="p-4 border-b border-gray-100 flex items-center justify-between">
+            <div className="p-4 border-b border-slate-100 flex items-center justify-between">
               <div>
                 <h3 className="font-bold text-gray-800">{type === "asset" ? "Assets" : "Liabilities"}</h3>
                 <p className={`text-lg font-bold ${type === "asset" ? "text-emerald-600" : "text-red-500"}`}>{fmt$(total)}</p>
               </div>
-              <button onClick={() => addDraft(type)} className="flex items-center gap-1.5 text-sm font-semibold text-white bg-[#0c1e3a] hover:bg-[#0e2a4a] px-3 py-1.5 rounded-lg">
+              <button onClick={() => addDraft(type)} className="flex items-center gap-1.5 text-sm font-semibold text-white bg-brand-gradient hover:bg-brand-gradient-hover px-3 py-1.5 rounded-lg">
                 <Plus className="w-3.5 h-3.5" /> Add {type === "asset" ? "Asset" : "Liability"}
               </button>
             </div>
             <table className="w-full text-sm">
-              <thead className="bg-gray-50 border-b border-gray-100">
+              <thead className="bg-slate-50 border-b border-slate-100">
                 <tr>
                   <TH>Owner</TH><TH>Category</TH><TH>Name / Description</TH>
                   <TH>{type === "asset" ? "Value" : "Balance Owing"}</TH>
@@ -260,7 +260,7 @@ async function saveAll() {
                   <TH>Notes</TH><TH></TH>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-slate-100">
                 {rows.map(e => editingId === +e.id ? (   
                 // ── Edit mode ──────────────────────────────────────────
                   <tr key={e.id} className="bg-amber-50/50 border-b border-amber-100">
@@ -314,7 +314,7 @@ async function saveAll() {
                           </label>
                           {editForm.isSpousal && (
                             <select value={editForm.rrspContributor ?? ""} onChange={e => setEditForm(f => ({ ...f, rrspContributor: e.target.value }))}
-                              className="border border-gray-200 rounded px-2 py-1 text-xs w-full">
+                              className="border border-slate-200 rounded px-2 py-1 text-xs w-full">
                               <option value="">Select contributor</option>
                               <option value="client">Client</option>
                               <option value="spouse">Spouse</option>
@@ -334,7 +334,7 @@ async function saveAll() {
                         <div className="flex items-center gap-3 mt-1">
                           <span className="text-xs text-gray-500">Beneficiary:</span>
                           <select value={(editForm as any).respBeneficiary ?? ""} onChange={e => setEditForm(f => ({...f, respBeneficiary: e.target.value}))}
-                            className="border border-gray-200 rounded px-2 py-1 text-xs">
+                            className="border border-slate-200 rounded px-2 py-1 text-xs">
                             <option value="">Select beneficiary</option>
                             <option value="all">All Children</option>
                             {Array.isArray((client as any)?.dependants) && (client as any).dependants.map((d: any) => (
@@ -347,11 +347,11 @@ async function saveAll() {
                   </tr>
                 ) : (
                   // ── View mode ──────────────────────────────────────────
-                  <tr key={e.id} className="hover:bg-gray-50 cursor-pointer group" onClick={() => startEdit(e)}>
+                  <tr key={e.id} className="hover:bg-slate-50 cursor-pointer group" onClick={() => startEdit(e)}>
                     <TD><span className="text-xs text-gray-500">{ownerLabel(e)}</span></TD>
                     <TD>
                       <div className="flex flex-col gap-1">
-                        <span className="bg-gray-100 text-gray-600 text-xs px-2 py-0.5 rounded-full w-fit">{e.category}</span>
+                        <span className="bg-slate-100 text-gray-600 text-xs px-2 py-0.5 rounded-full w-fit">{e.category}</span>
                         {metaBadge(e)}
                       </div>
                     </TD>
@@ -379,7 +379,7 @@ async function saveAll() {
                           <div>
                             <label className="text-[10px] text-gray-400 uppercase font-semibold block mb-0.5">Owner</label>
                             <select value={d.owner} onChange={e => updateDraft(ri, "owner", e.target.value)}
-                              className="border border-gray-200 rounded-lg px-2 py-1.5 text-sm w-full focus:outline-none focus:ring-2 focus:ring-cyan-500/20 bg-white">
+                              className="border border-slate-200 rounded-lg px-2 py-1.5 text-sm w-full focus:outline-none focus:ring-2 focus:ring-cyan-500/20 bg-white">
                               <option value="primary">{primaryName}</option>
                               {spouseName && <option value="spouse">{spouseName}</option>}
                               {spouseName && <option value="joint">Joint</option>}
@@ -433,9 +433,9 @@ async function saveAll() {
 
       {drafts.length > 0 && (
         <div className="flex justify-end gap-2 mt-2">
-          <button onClick={() => setDrafts([])} className="text-sm text-gray-500 px-4 py-2 border border-gray-200 rounded-lg hover:bg-gray-50">Discard All</button>
+          <button onClick={() => setDrafts([])} className="text-sm text-gray-500 px-4 py-2 border border-slate-200 rounded-lg hover:bg-slate-50">Discard All</button>
           <button onClick={saveAll} disabled={saving}
-            className="flex items-center gap-1.5 bg-[#0c1e3a] hover:bg-[#0e2a4a] disabled:opacity-50 text-white text-sm font-semibold px-5 py-2 rounded-lg">
+            className="flex items-center gap-1.5 bg-brand-gradient hover:bg-brand-gradient-hover disabled:opacity-50 text-white text-sm font-semibold px-5 py-2 rounded-lg">
             <Save className="w-3.5 h-3.5" /> {saving ? "Saving…" : `Save ${drafts.filter(d=>d.value).length} Entries`}
           </button>
         </div>
@@ -714,10 +714,10 @@ export function RetirementTab({ clientId, client, person = "primary" }: { client
  return (
     <div className="p-6 max-w-5xl mx-auto">
       {simResult && <MonteCarloResults result={simResult} onClose={() => setSimResult(null)} onPrint={() => window.print()} />}
-      <div className="flex gap-1 mb-5 border-b border-gray-200">
+      <div className="flex gap-1 mb-5 border-b border-slate-200">
         {(["projections","drawdown"] as const).map(key => (
           <button key={key} onClick={() => setActiveSubTab(key)}
-            className={`px-4 py-2 text-sm font-semibold rounded-t-lg transition-colors ${activeSubTab === key ? "bg-white border border-b-white border-gray-200 text-[#0c1e3a] -mb-px" : "text-gray-500 hover:text-gray-700"}`}>
+            className={`px-4 py-2 text-sm font-semibold rounded-t-lg transition-colors ${activeSubTab === key ? "bg-white border border-b-white border-slate-200 text-blue-600 -mb-px" : "text-gray-500 hover:text-gray-700"}`}>
             {key === "projections" ? "Retirement Projections" : "Drawdown Strategies"}
           </button>
         ))}
@@ -733,7 +733,7 @@ export function RetirementTab({ clientId, client, person = "primary" }: { client
             {simulating ? "Running..." : "Retirement Checkup"}
           </button>
           <button onClick={addDraft}
-            className="flex items-center gap-1.5 text-sm font-semibold text-white bg-[#0c1e3a] hover:bg-[#0e2a4a] px-3 py-1.5 rounded-lg">
+            className="flex items-center gap-1.5 text-sm font-semibold text-white bg-brand-gradient hover:bg-brand-gradient-hover px-3 py-1.5 rounded-lg">
             <Plus className="w-3.5 h-3.5" /> Add Projection
           </button>
         </div>
@@ -759,14 +759,14 @@ export function RetirementTab({ clientId, client, person = "primary" }: { client
                     <label className="text-xs font-semibold text-gray-500 mb-1 block">{l}</label>
                     <input type={t} step="any" value={(d as any)[k]}
                       onChange={e => setDrafts(x => x.map((x2, idx) => idx === i ? { ...x2, [k]: e.target.value } : x2))}
-                      className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm" />
+                      className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm" />
                   </div>
                 ))}
                 <div>
                   <label className="text-xs font-semibold text-gray-500 mb-1 block">CPP Start Age</label>
                   <select value={(d as any).cppStartAge}
                     onChange={e => setDrafts(x => x.map((x2, idx) => idx === i2 ? { ...x2, cppStartAge: e.target.value } : x2))}
-                    className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm bg-white">
+                    className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm bg-white">
                     {[60,61,62,63,64,65,66,67,68,69,70,71].map(age => {
                       const monthsDiff = (age - 65) * 12;
                       const pct = monthsDiff < 0 ? monthsDiff * 0.6 : monthsDiff * 0.7;
@@ -779,7 +779,7 @@ export function RetirementTab({ clientId, client, person = "primary" }: { client
                   <label className="text-xs font-semibold text-gray-500 mb-1 block">OAS Start Age</label>
                   <select value={(d as any).oasStartAge}
                     onChange={e => setDrafts(x => x.map((x2, idx) => idx === i2 ? { ...x2, oasStartAge: e.target.value } : x2))}
-                    className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm bg-white">
+                    className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm bg-white">
                     {[65,66,67,68,69,70].map(age => {
                       const pct = (age - 65) * 7.2;
                       return <option key={age} value={age}>{age} — {pct > 0 ? `+${pct.toFixed(0)}% enhanced` : "standard"}</option>;
@@ -791,9 +791,9 @@ export function RetirementTab({ clientId, client, person = "primary" }: { client
             );
           })}
           <div className="flex justify-end gap-2">
-            <button onClick={() => { setDrafts([]); setEditingId(null); }} className="text-sm text-gray-500 px-4 py-2 border border-gray-200 rounded-lg">Cancel</button>
+            <button onClick={() => { setDrafts([]); setEditingId(null); }} className="text-sm text-gray-500 px-4 py-2 border border-slate-200 rounded-lg">Cancel</button>
             <button onClick={saveAll} disabled={saving}
-              className="flex items-center gap-1.5 bg-[#0c1e3a] hover:bg-[#0e2a4a] disabled:opacity-50 text-white text-sm font-semibold px-5 py-2 rounded-lg">
+              className="flex items-center gap-1.5 bg-brand-gradient hover:bg-brand-gradient-hover disabled:opacity-50 text-white text-sm font-semibold px-5 py-2 rounded-lg">
               <Save className="w-3.5 h-3.5" /> {saving ? "Saving..." : editingId ? "Save Changes" : `Save ${drafts.length} Projection${drafts.length > 1 ? "s" : ""}`}
             </button>
           </div>
@@ -832,7 +832,7 @@ export function RetirementTab({ clientId, client, person = "primary" }: { client
                   const hasDesired = desired > 0;
 
                   return (
-                    <div key={p.id} className="border border-gray-100 rounded-xl p-4">
+                    <div key={p.id} className="border border-slate-100 rounded-xl p-4">
                       {/* Header */}
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center gap-2 flex-wrap">
@@ -845,7 +845,7 @@ export function RetirementTab({ clientId, client, person = "primary" }: { client
                           )}
                         </div>
                         <div className="flex gap-1">
-                          <button onClick={() => startEdit(p)} className="p-1 text-gray-300 hover:text-[#0c1e3a]"><Pencil className="w-3.5 h-3.5" /></button>
+                          <button onClick={() => startEdit(p)} className="p-1 text-gray-300 hover:text-blue-600"><Pencil className="w-3.5 h-3.5" /></button>
                           <button onClick={() => del(p.id)} className="p-1 text-gray-300 hover:text-red-500"><Trash2 className="w-3.5 h-3.5" /></button>
                         </div>
                       </div>
@@ -862,7 +862,7 @@ export function RetirementTab({ clientId, client, person = "primary" }: { client
                           <p className="text-lg font-bold text-purple-700">{hasDesired ? `${fmt$(desired)}/yr` : "—"}</p>
                           <p className="text-[10px] text-purple-400 mt-0.5">retirement target</p>
                         </div>
-                        <div className={`rounded-xl p-3 ${!hasDesired ? "bg-gray-50" : gap >= 0 ? "bg-emerald-50" : "bg-red-50"}`}>
+                        <div className={`rounded-xl p-3 ${!hasDesired ? "bg-slate-50" : gap >= 0 ? "bg-emerald-50" : "bg-red-50"}`}>
                           <p className={`text-[10px] font-bold uppercase ${!hasDesired ? "text-gray-400" : gap >= 0 ? "text-emerald-600" : "text-red-600"}`}>
                             {!hasDesired ? "Shortfall" : gap >= 0 ? "Surplus" : "Shortfall"}
                           </p>
@@ -873,7 +873,7 @@ export function RetirementTab({ clientId, client, person = "primary" }: { client
                             {!hasDesired ? "set desired income" : "per year"}
                           </p>
                         </div>
-                        <div className="bg-gray-50 rounded-xl p-3">
+                        <div className="bg-slate-50 rounded-xl p-3">
                           <p className="text-[10px] font-bold text-gray-500 uppercase">Portfolio Drawdown</p>
                           <p className="text-lg font-bold text-gray-700">{fmt$(drawdown)}/yr</p>
                           <p className="text-[10px] text-gray-400 mt-0.5">4% rule on projected balance</p>
@@ -904,7 +904,7 @@ export function RetirementTab({ clientId, client, person = "primary" }: { client
                             {oasAge > 65 && <span className="ml-1">(+{((oasAge - 65) * 7.2).toFixed(0)}% enhanced)</span>}
                           </p>
                         </div>
-                        <div className="col-span-2 bg-gray-50 rounded-xl p-3">
+                        <div className="col-span-2 bg-slate-50 rounded-xl p-3">
                           <p className="text-[10px] font-bold text-gray-500 uppercase mb-1.5">Current Portfolio</p>
                           <div className="grid grid-cols-3 gap-2">
                             <div>
@@ -976,7 +976,7 @@ export function InsuranceTab({ clientId }: { clientId: number }) {
       <div className="flex items-center justify-between mb-5">
         <h2 className="text-xl font-bold text-gray-900">Insurance Analyses</h2>
         <button onClick={() => setDrafts(d => [...d, emptyIns()])}
-          className="flex items-center gap-1.5 text-sm font-semibold text-white bg-[#0c1e3a] hover:bg-[#0e2a4a] px-3 py-1.5 rounded-lg">
+          className="flex items-center gap-1.5 text-sm font-semibold text-white bg-brand-gradient hover:bg-brand-gradient-hover px-3 py-1.5 rounded-lg">
           <Plus className="w-3.5 h-3.5" /> Add Analysis
         </button>
       </div>
@@ -1008,9 +1008,9 @@ export function InsuranceTab({ clientId }: { clientId: number }) {
 
       {drafts.length > 0 && (
         <div className="flex justify-end gap-2 mb-5">
-          <button onClick={() => setDrafts([])} className="text-sm text-gray-500 px-4 py-2 border border-gray-200 rounded-lg">Discard</button>
+          <button onClick={() => setDrafts([])} className="text-sm text-gray-500 px-4 py-2 border border-slate-200 rounded-lg">Discard</button>
           <button onClick={saveAll} disabled={saving}
-            className="flex items-center gap-1.5 bg-[#0c1e3a] hover:bg-[#0e2a4a] disabled:opacity-50 text-white text-sm font-semibold px-5 py-2 rounded-lg">
+            className="flex items-center gap-1.5 bg-brand-gradient hover:bg-brand-gradient-hover disabled:opacity-50 text-white text-sm font-semibold px-5 py-2 rounded-lg">
             <Save className="w-3.5 h-3.5" /> {saving ? "Saving…" : `Save ${drafts.length} Analysis`}
           </button>
         </div>
@@ -1030,7 +1030,7 @@ export function InsuranceTab({ clientId }: { clientId: number }) {
               {[["Life Insurance","existingLifeCoverage","recommendedLife","lifeGap"],
                 ["Disability","existingDisability","recommendedDisability","disabilityGap"],
                 ["Critical Illness","existingCriticalIllness","recommendedCriticalIllness","criticalIllnessGap"]].map(([title,ex,rec,gap]) => (
-                <div key={title} className="bg-gray-50 rounded-lg p-3">
+                <div key={title} className="bg-slate-50 rounded-lg p-3">
                   <p className="text-xs font-bold text-gray-400 uppercase mb-2">{title}</p>
                   <div className="space-y-1 text-xs">
                     <div className="flex justify-between"><span className="text-gray-500">Existing</span><span className="font-medium">{fmt$((a as any)[ex])}</span></div>
@@ -1110,7 +1110,7 @@ export function RespTab({ clientId, client }: { clientId: number; client?: any }
       <div className="flex items-center justify-between mb-5">
         <h2 className="text-xl font-bold text-gray-900">RESP / Education Savings</h2>
         <button onClick={addDraft}
-          className="flex items-center gap-1.5 text-sm font-semibold text-white bg-[#0c1e3a] hover:bg-[#0e2a4a] px-3 py-1.5 rounded-lg">
+          className="flex items-center gap-1.5 text-sm font-semibold text-white bg-brand-gradient hover:bg-brand-gradient-hover px-3 py-1.5 rounded-lg">
           <Plus className="w-3.5 h-3.5" /> Add Child
         </button>
       </div>
@@ -1140,9 +1140,9 @@ export function RespTab({ clientId, client }: { clientId: number; client?: any }
 
       {drafts.length > 0 && (
         <div className="flex justify-end gap-2 mb-5">
-          <button onClick={() => setDrafts([])} className="text-sm text-gray-500 px-4 py-2 border border-gray-200 rounded-lg">Discard</button>
+          <button onClick={() => setDrafts([])} className="text-sm text-gray-500 px-4 py-2 border border-slate-200 rounded-lg">Discard</button>
           <button onClick={saveAll} disabled={saving || !drafts.some(d => d.childName)}
-            className="flex items-center gap-1.5 bg-[#0c1e3a] hover:bg-[#0e2a4a] disabled:opacity-50 text-white text-sm font-semibold px-5 py-2 rounded-lg">
+            className="flex items-center gap-1.5 bg-brand-gradient hover:bg-brand-gradient-hover disabled:opacity-50 text-white text-sm font-semibold px-5 py-2 rounded-lg">
             <Save className="w-3.5 h-3.5" /> {saving ? "Saving…" : `Save ${drafts.filter(d=>d.childName).length} Child${drafts.filter(d=>d.childName).length !== 1 ? "ren" : ""}`}
           </button>
         </div>
@@ -1210,7 +1210,7 @@ export function DebtTab({ clientId }: { clientId: number }) {
           {rows.length > 0 && <p className="text-sm font-bold text-red-500">Total: {fmt$(totalDebt)}</p>}
         </div>
         <button onClick={() => setDrafts(d => [...d, emptyDebt()])}
-          className="flex items-center gap-1.5 text-sm font-semibold text-white bg-[#0c1e3a] hover:bg-[#0e2a4a] px-3 py-1.5 rounded-lg">
+          className="flex items-center gap-1.5 text-sm font-semibold text-white bg-brand-gradient hover:bg-brand-gradient-hover px-3 py-1.5 rounded-lg">
           <Plus className="w-3.5 h-3.5" /> Add Debt
         </button>
       </div>
@@ -1240,9 +1240,9 @@ export function DebtTab({ clientId }: { clientId: number }) {
             </tbody>
           </table>
           <div className="flex justify-end gap-2 p-3">
-            <button onClick={() => setDrafts([])} className="text-sm text-gray-500 px-4 py-2 border border-gray-200 rounded-lg">Discard</button>
+            <button onClick={() => setDrafts([])} className="text-sm text-gray-500 px-4 py-2 border border-slate-200 rounded-lg">Discard</button>
             <button onClick={saveAll} disabled={saving || !drafts.some(d => d.name && d.balance)}
-              className="flex items-center gap-1.5 bg-[#0c1e3a] hover:bg-[#0e2a4a] disabled:opacity-50 text-white text-sm font-semibold px-5 py-2 rounded-lg">
+              className="flex items-center gap-1.5 bg-brand-gradient hover:bg-brand-gradient-hover disabled:opacity-50 text-white text-sm font-semibold px-5 py-2 rounded-lg">
               <Save className="w-3.5 h-3.5" /> {saving ? "Saving…" : `Save ${drafts.filter(d=>d.name&&d.balance).length} Debts`}
             </button>
           </div>
@@ -1255,14 +1255,14 @@ export function DebtTab({ clientId }: { clientId: number }) {
       {rows.length > 0 && (
         <Card>
           <table className="w-full text-sm">
-            <thead className="bg-gray-50 border-b border-gray-200">
+            <thead className="bg-slate-50 border-b border-slate-200">
               <tr><TH>Name</TH><TH>Type</TH><TH>Balance</TH><TH>Rate</TH><TH>Min Payment</TH><TH>Strategy</TH><TH></TH></tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-slate-100">
               {rows.map(d => (
-                <tr key={d.id} className="hover:bg-gray-50">
+                <tr key={d.id} className="hover:bg-slate-50">
                   <TD><span className="font-medium text-gray-800">{d.name}</span></TD>
-                  <TD><span className="bg-gray-100 text-gray-600 text-xs px-2 py-0.5 rounded-full">{d.type.replace("_"," ")}</span></TD>
+                  <TD><span className="bg-slate-100 text-gray-600 text-xs px-2 py-0.5 rounded-full">{d.type.replace("_"," ")}</span></TD>
                   <TD right><span className="font-bold text-red-500">{fmt$(d.balance)}</span></TD>
                   <TD right>{fmtPct(d.interestRate)}</TD>
                   <TD right>{fmt$(d.minimumPayment)}</TD>
@@ -1270,7 +1270,7 @@ export function DebtTab({ clientId }: { clientId: number }) {
                   <TD><button onClick={() => del(d.id)} className="text-gray-300 hover:text-red-500"><Trash2 className="w-3.5 h-3.5" /></button></TD>
                 </tr>
               ))}
-              <tr className="border-t-2 border-gray-300 bg-gray-50">
+              <tr className="border-t-2 border-slate-300 bg-slate-50">
                 <td colSpan={2} className="px-3 py-3 font-bold text-gray-900 text-sm">Total</td>
                 <td className="px-3 py-3 text-right font-bold text-red-500 text-sm">{fmt$(totalDebt)}</td>
                 <td colSpan={4}></td>

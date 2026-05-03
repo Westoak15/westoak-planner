@@ -509,7 +509,7 @@ function buildDefaultFromNW() {
             </div>
             <div className="flex items-center gap-1">
               <button onClick={() => { if (a.worksheetData) { setForm({ ...defaultWs, ...a.worksheetData }); } else { setForm({ ...defaultWs, primaryName: a.primaryName ?? "", primaryAge: a.primaryAge ? String(a.primaryAge) : "", spouseName: a.spouseName ?? "", spouseAge: a.spouseAge ? String(a.spouseAge) : "" }); } setViewingId(a.id); setShowWorksheet(true); }} className="p-1.5 text-primary hover:bg-primary/10 rounded-lg" title="Open"><Eye className="w-4 h-4" /></button>
-              <button onClick={async () => { const token = localStorage.getItem("fp_token"); const res = await fetch(`/api/reports/${clientId}/fna/${a.id}`, { headers: { Authorization: `Bearer ${token}` } }); const html = await res.text(); const blob = new Blob([html], { type: "text/html" }); window.open(URL.createObjectURL(blob), "_blank"); }} className="p-1.5 text-gray-500 hover:bg-gray-100 rounded-lg" title="Report"><Printer className="w-4 h-4" /></button>
+              <button onClick={async () => { const token = localStorage.getItem("fp_token"); const res = await fetch(`/api/reports/${clientId}/fna/${a.id}`, { headers: { Authorization: `Bearer ${token}` } }); const html = await res.text(); const blob = new Blob([html], { type: "text/html" }); window.open(URL.createObjectURL(blob), "_blank"); }} className="p-1.5 text-gray-500 hover:bg-slate-100 rounded-lg" title="Report"><Printer className="w-4 h-4" /></button>
               <button onClick={() => { if (confirm("Delete this analysis?")) deleteAnalysis.mutate(a.id); }} className="p-1.5 text-red-400 hover:bg-red-50 rounded-lg" title="Delete"><Trash2 className="w-4 h-4" /></button>
             </div>
           </div>
@@ -1174,7 +1174,7 @@ function RrspRoomPanel({ clientId, prefill, person = "primary", primaryLabel = "
           <strong>RRSP Room Tracker</strong> — Calculates available contribution room using the CRA 18% formula with carry-forward.
         </div>
         <button onClick={openNew}
-          className="flex items-center gap-1.5 text-sm font-semibold text-white bg-[#0c1e3a] hover:bg-[#0e2a4a] px-4 py-2 rounded-xl whitespace-nowrap">
+          className="flex items-center gap-1.5 text-sm font-semibold text-white bg-brand-gradient hover:bg-brand-gradient-hover px-4 py-2 rounded-xl whitespace-nowrap">
           <Plus className="w-4 h-4" /> New Analysis
         </button>
       </div>
@@ -1182,7 +1182,7 @@ function RrspRoomPanel({ clientId, prefill, person = "primary", primaryLabel = "
       {showForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg">
-            <div className="flex items-center justify-between p-5 border-b border-gray-100">
+            <div className="flex items-center justify-between p-5 border-b border-slate-100">
               <h3 className="text-lg font-bold text-gray-900">{editingId ? "Edit" : "New"} RRSP Analysis — {personLabel}</h3>
               <button onClick={() => setShowForm(false)} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
             </div>
@@ -1190,7 +1190,7 @@ function RrspRoomPanel({ clientId, prefill, person = "primary", primaryLabel = "
               <div>
                 <label className="text-xs font-semibold text-gray-500 block mb-1">Label</label>
                 <input value={form.label} onChange={e => setForm(f => ({ ...f, label: e.target.value }))}
-                  className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm" />
+                  className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm" />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 {[
@@ -1205,15 +1205,15 @@ function RrspRoomPanel({ clientId, prefill, person = "primary", primaryLabel = "
                     <label className="text-xs font-semibold text-gray-500 block mb-1">{label}</label>
                     <input type="number" step="any" value={(form as any)[key]}
                       onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
-                      className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm" placeholder="0" />
+                      className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm" placeholder="0" />
                   </div>
                 ))}
               </div>
             </div>
-            <div className="flex gap-3 justify-end p-5 border-t border-gray-100">
+            <div className="flex gap-3 justify-end p-5 border-t border-slate-100">
               <button onClick={() => setShowForm(false)} className="text-sm text-gray-500 px-4 py-2">Cancel</button>
               <button onClick={save} disabled={saving}
-                className="flex items-center gap-1.5 bg-[#0c1e3a] hover:bg-[#0e2a4a] disabled:opacity-50 text-white text-sm font-semibold px-5 py-2.5 rounded-xl">
+                className="flex items-center gap-1.5 bg-brand-gradient hover:bg-brand-gradient-hover disabled:opacity-50 text-white text-sm font-semibold px-5 py-2.5 rounded-xl">
                 <Save className="w-3.5 h-3.5" /> {saving ? "Saving…" : "Calculate & Save"}
               </button>
             </div>
@@ -1223,7 +1223,7 @@ function RrspRoomPanel({ clientId, prefill, person = "primary", primaryLabel = "
 
       {loading ? <div className="text-center py-8 text-gray-400 text-sm">Loading…</div>
       : analyses.length === 0 ? (
-        <div className="text-center py-12 border-2 border-dashed border-gray-200 rounded-2xl">
+        <div className="text-center py-12 border-2 border-dashed border-slate-200 rounded-2xl">
           <p className="text-gray-500 font-semibold">No RRSP analyses yet for {personLabel}</p>
           <p className="text-sm text-gray-400 mt-1">Click New Analysis to calculate contribution room</p>
         </div>
@@ -1232,7 +1232,7 @@ function RrspRoomPanel({ clientId, prefill, person = "primary", primaryLabel = "
           {analyses.map((a: any) => {
             const r = a.resultData;
             return (
-              <div key={a.id} className="bg-white border border-gray-200 rounded-xl p-5">
+              <div key={a.id} className="bg-white border border-slate-200 rounded-xl p-5">
                 <div className="flex items-center justify-between mb-4">
                   <div>
                     <h3 className="font-bold text-gray-900">{a.label || "RRSP Analysis"}</h3>
@@ -1347,7 +1347,7 @@ function TfsaRoomPanel({ clientId, prefill, person = "primary", primaryLabel = "
           <strong>TFSA Room Tracker</strong> — Calculates available TFSA contribution room and projects tax-free growth advantage.
         </div>
         <button onClick={openNew}
-          className="flex items-center gap-1.5 text-sm font-semibold text-white bg-[#0c1e3a] hover:bg-[#0e2a4a] px-4 py-2 rounded-xl whitespace-nowrap">
+          className="flex items-center gap-1.5 text-sm font-semibold text-white bg-brand-gradient hover:bg-brand-gradient-hover px-4 py-2 rounded-xl whitespace-nowrap">
           <Plus className="w-4 h-4" /> New Analysis
         </button>
       </div>
@@ -1355,7 +1355,7 @@ function TfsaRoomPanel({ clientId, prefill, person = "primary", primaryLabel = "
       {showForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg">
-            <div className="flex items-center justify-between p-5 border-b border-gray-100">
+            <div className="flex items-center justify-between p-5 border-b border-slate-100">
               <h3 className="text-lg font-bold text-gray-900">{editingId ? "Edit" : "New"} TFSA Analysis — {personLabel}</h3>
               <button onClick={() => setShowForm(false)} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
             </div>
@@ -1363,7 +1363,7 @@ function TfsaRoomPanel({ clientId, prefill, person = "primary", primaryLabel = "
               <div>
                 <label className="text-xs font-semibold text-gray-500 block mb-1">Label</label>
                 <input value={form.label} onChange={e => setForm(f => ({ ...f, label: e.target.value }))}
-                  className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm" />
+                  className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm" />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 {[
@@ -1379,15 +1379,15 @@ function TfsaRoomPanel({ clientId, prefill, person = "primary", primaryLabel = "
                     <label className="text-xs font-semibold text-gray-500 block mb-1">{label}</label>
                     <input type="number" step="any" value={(form as any)[key]}
                       onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
-                      className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm" placeholder="0" />
+                      className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm" placeholder="0" />
                   </div>
                 ))}
               </div>
             </div>
-            <div className="flex gap-3 justify-end p-5 border-t border-gray-100">
+            <div className="flex gap-3 justify-end p-5 border-t border-slate-100">
               <button onClick={() => setShowForm(false)} className="text-sm text-gray-500 px-4 py-2">Cancel</button>
               <button onClick={save} disabled={saving}
-                className="flex items-center gap-1.5 bg-[#0c1e3a] hover:bg-[#0e2a4a] disabled:opacity-50 text-white text-sm font-semibold px-5 py-2.5 rounded-xl">
+                className="flex items-center gap-1.5 bg-brand-gradient hover:bg-brand-gradient-hover disabled:opacity-50 text-white text-sm font-semibold px-5 py-2.5 rounded-xl">
                 <Save className="w-3.5 h-3.5" /> {saving ? "Saving…" : "Calculate & Save"}
               </button>
             </div>
@@ -1397,7 +1397,7 @@ function TfsaRoomPanel({ clientId, prefill, person = "primary", primaryLabel = "
 
       {loading ? <div className="text-center py-8 text-gray-400 text-sm">Loading…</div>
       : analyses.length === 0 ? (
-        <div className="text-center py-12 border-2 border-dashed border-gray-200 rounded-2xl">
+        <div className="text-center py-12 border-2 border-dashed border-slate-200 rounded-2xl">
           <p className="text-gray-500 font-semibold">No TFSA analyses yet for {personLabel}</p>
           <p className="text-sm text-gray-400 mt-1">Click New Analysis to calculate contribution room</p>
         </div>
@@ -1406,7 +1406,7 @@ function TfsaRoomPanel({ clientId, prefill, person = "primary", primaryLabel = "
           {analyses.map((a: any) => {
             const r = a.resultData;
             return (
-              <div key={a.id} className="bg-white border border-gray-200 rounded-xl p-5">
+              <div key={a.id} className="bg-white border border-slate-200 rounded-xl p-5">
                 <div className="flex items-center justify-between mb-4">
                   <div>
                     <h3 className="font-bold text-gray-900">{a.label || "TFSA Analysis"}</h3>
@@ -1538,7 +1538,7 @@ function TaxProjectionPanel({ clientId, prefillPrimary, prefillSpouse, person = 
           <strong>Tax Projection</strong> — Year-by-year tax, wealth, and retirement income projection with RRSP/TFSA drawdown strategy.
         </div>
         <button onClick={openNew}
-          className="flex items-center gap-1.5 text-sm font-semibold text-white bg-[#0c1e3a] hover:bg-[#0e2a4a] px-4 py-2 rounded-xl whitespace-nowrap">
+          className="flex items-center gap-1.5 text-sm font-semibold text-white bg-brand-gradient hover:bg-brand-gradient-hover px-4 py-2 rounded-xl whitespace-nowrap">
           <Plus className="w-4 h-4" /> New Projection
         </button>
       </div>
@@ -1546,7 +1546,7 @@ function TaxProjectionPanel({ clientId, prefillPrimary, prefillSpouse, person = 
       {showForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between p-5 border-b border-gray-100">
+            <div className="flex items-center justify-between p-5 border-b border-slate-100">
               <h3 className="text-lg font-bold text-gray-900">{editingId ? "Edit" : "New"} Tax Projection — {personLabel}</h3>
               <button onClick={() => setShowForm(false)} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
             </div>
@@ -1554,7 +1554,7 @@ function TaxProjectionPanel({ clientId, prefillPrimary, prefillSpouse, person = 
               <div>
                 <label className="text-xs font-semibold text-gray-500 block mb-1">Label</label>
                 <input value={form.label} onChange={e => setForm(f => ({ ...f, label: e.target.value }))}
-                  className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm" />
+                  className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm" />
               </div>
               <div className="grid grid-cols-4 gap-3">
                 {[
@@ -1565,18 +1565,18 @@ function TaxProjectionPanel({ clientId, prefillPrimary, prefillSpouse, person = 
                     <label className="text-xs font-semibold text-gray-500 block mb-1">{label}</label>
                     <input type="number" value={(form as any)[key]}
                       onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
-                      className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm" />
+                      className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm" />
                   </div>
                 ))}
                 <div>
                   <label className="text-xs font-semibold text-gray-500 block mb-1">Province</label>
                   <select value={form.province} onChange={e => setForm(f => ({ ...f, province: e.target.value }))}
-                    className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm">
+                    className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm">
                     {provinces.map(p => <option key={p} value={p}>{p}</option>)}
                   </select>
                 </div>
               </div>
-              <div className="border-t border-gray-100 pt-3">
+              <div className="border-t border-slate-100 pt-3">
                 <p className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">Income</p>
                 <div className="grid grid-cols-3 gap-3">
                   {[
@@ -1593,12 +1593,12 @@ function TaxProjectionPanel({ clientId, prefillPrimary, prefillSpouse, person = 
                       <label className="text-xs font-semibold text-gray-500 block mb-1">{label}</label>
                       <input type="number" step="any" value={(form as any)[key]}
                         onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
-                        className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm" />
+                        className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm" />
                     </div>
                   ))}
                 </div>
               </div>
-              <div className="border-t border-gray-100 pt-3">
+              <div className="border-t border-slate-100 pt-3">
                 <p className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">Assets</p>
                 <div className="grid grid-cols-3 gap-3">
                   {[
@@ -1616,16 +1616,16 @@ function TaxProjectionPanel({ clientId, prefillPrimary, prefillSpouse, person = 
                       <label className="text-xs font-semibold text-gray-500 block mb-1">{label}</label>
                       <input type="number" step="any" value={(form as any)[key]}
                         onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
-                        className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm" />
+                        className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm" />
                     </div>
                   ))}
                 </div>
               </div>
             </div>
-            <div className="flex gap-3 justify-end p-5 border-t border-gray-100">
+            <div className="flex gap-3 justify-end p-5 border-t border-slate-100">
               <button onClick={() => setShowForm(false)} className="text-sm text-gray-500 px-4 py-2">Cancel</button>
               <button onClick={save} disabled={saving}
-                className="flex items-center gap-1.5 bg-[#0c1e3a] hover:bg-[#0e2a4a] disabled:opacity-50 text-white text-sm font-semibold px-5 py-2.5 rounded-xl">
+                className="flex items-center gap-1.5 bg-brand-gradient hover:bg-brand-gradient-hover disabled:opacity-50 text-white text-sm font-semibold px-5 py-2.5 rounded-xl">
                 <Save className="w-3.5 h-3.5" /> {saving ? "Saving…" : "Calculate & Save"}
               </button>
             </div>
@@ -1635,7 +1635,7 @@ function TaxProjectionPanel({ clientId, prefillPrimary, prefillSpouse, person = 
 
       {loading ? <div className="text-center py-8 text-gray-400 text-sm">Loading…</div>
       : analyses.length === 0 ? (
-        <div className="text-center py-12 border-2 border-dashed border-gray-200 rounded-2xl">
+        <div className="text-center py-12 border-2 border-dashed border-slate-200 rounded-2xl">
           <p className="text-gray-500 font-semibold">No tax projections yet for {personLabel}</p>
           <p className="text-sm text-gray-400 mt-1">Click New Projection to model lifetime tax and wealth</p>
         </div>
@@ -1645,7 +1645,7 @@ function TaxProjectionPanel({ clientId, prefillPrimary, prefillSpouse, person = 
             const r = a.resultData;
             const s = r?.summary;
             return (
-              <div key={a.id} className="bg-white border border-gray-200 rounded-xl p-5">
+              <div key={a.id} className="bg-white border border-slate-200 rounded-xl p-5">
                 <div className="flex items-center justify-between mb-4">
                   <div>
                     <h3 className="font-bold text-gray-900">{a.label || "Tax Projection"}</h3>
@@ -1681,9 +1681,9 @@ function TaxProjectionPanel({ clientId, prefillPrimary, prefillSpouse, person = 
                       {showTable === a.id ? "Hide" : "Show"} Year-by-Year Table
                     </button>
                     {showTable === a.id && r.projections && (
-                      <div className="mt-3 overflow-x-auto border border-gray-200 rounded-xl">
+                      <div className="mt-3 overflow-x-auto border border-slate-200 rounded-xl">
                         <table className="w-full text-xs">
-                          <thead className="bg-gray-50">
+                          <thead className="bg-slate-50">
                             <tr>
                               {["Year","Age","Phase","Total Income","Fed Tax","Prov Tax","Total Tax","After-Tax","Total Wealth"].map(h => (
                                 <th key={h} className="px-3 py-2 text-left font-semibold text-gray-500">{h}</th>
@@ -1692,7 +1692,7 @@ function TaxProjectionPanel({ clientId, prefillPrimary, prefillSpouse, person = 
                           </thead>
                           <tbody>
                             {(r.projections as any[]).map((p: any, i: number) => (
-                              <tr key={i} className="border-t border-gray-100 hover:bg-gray-50">
+                              <tr key={i} className="border-t border-slate-100 hover:bg-slate-50">
                                 <td className="px-3 py-1.5">{p.year}</td>
                                 <td className="px-3 py-1.5">{p.age}</td>
                                 <td className="px-3 py-1.5 capitalize">{p.phase}</td>
@@ -1861,7 +1861,7 @@ function CapitalGainsPanel({ clientId, client, person = "primary" }: {
           <span className="ml-2 text-xs bg-green-100 text-green-700 font-semibold px-2 py-0.5 rounded-full">Rate increase cancelled Mar 21, 2025</span>
         </div>
         <button onClick={openNew}
-          className="flex items-center gap-1.5 text-sm font-semibold text-white bg-[#0c1e3a] hover:bg-[#0e2a4a] px-4 py-2 rounded-xl whitespace-nowrap">
+          className="flex items-center gap-1.5 text-sm font-semibold text-white bg-brand-gradient hover:bg-brand-gradient-hover px-4 py-2 rounded-xl whitespace-nowrap">
           <Plus className="w-4 h-4" /> New Analysis
         </button>
       </div>
@@ -1869,7 +1869,7 @@ function CapitalGainsPanel({ clientId, client, person = "primary" }: {
       {showForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between p-5 border-b border-gray-100">
+            <div className="flex items-center justify-between p-5 border-b border-slate-100">
               <h3 className="text-lg font-bold text-gray-900">{editingId ? "Edit" : "New"} Capital Gains Analysis — {personLabel}</h3>
               <button onClick={() => setShowForm(false)} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
             </div>
@@ -1877,14 +1877,14 @@ function CapitalGainsPanel({ clientId, client, person = "primary" }: {
               <div>
                 <label className="text-xs font-semibold text-gray-500 block mb-1">Label</label>
                 <input value={form.label} onChange={e => setForm(f => ({ ...f, label: e.target.value }))}
-                  className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm" />
+                  className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm" />
               </div>
               <div className="grid grid-cols-3 gap-3">
                 <div>
                   <label className="text-xs font-semibold text-gray-500 block mb-1">Province</label>
                   <select value={form.province}
                     onChange={e => setForm(f => ({ ...f, province: e.target.value, marginalRate: String((PROVINCE_RATES[e.target.value] ?? 53.53).toFixed(2)) }))}
-                    className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm">
+                    className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm">
                     {provinces.map(p => <option key={p} value={p}>{p}</option>)}
                   </select>
                 </div>
@@ -1892,13 +1892,13 @@ function CapitalGainsPanel({ clientId, client, person = "primary" }: {
                   <label className="text-xs font-semibold text-gray-500 block mb-1">Marginal Tax Rate (%)</label>
                   <input type="number" step="0.1" value={form.marginalRate}
                     onChange={e => setForm(f => ({ ...f, marginalRate: e.target.value }))}
-                    className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm" />
+                    className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm" />
                 </div>
                 <div>
                   <label className="text-xs font-semibold text-gray-500 block mb-1">Prior Year Losses ($)</label>
                   <input type="number" value={form.carryForwardLoss}
                     onChange={e => setForm(f => ({ ...f, carryForwardLoss: e.target.value }))}
-                    className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm" placeholder="0" />
+                    className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm" placeholder="0" />
                 </div>
               </div>
 
@@ -1906,13 +1906,13 @@ function CapitalGainsPanel({ clientId, client, person = "primary" }: {
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Positions</label>
-                  <button onClick={addPosition} className="flex items-center gap-1 text-xs font-semibold text-[#0c1e3a] hover:underline">
+                  <button onClick={addPosition} className="flex items-center gap-1 text-xs font-semibold text-blue-600 hover:underline">
                     <Plus className="w-3.5 h-3.5" /> Add Position
                   </button>
                 </div>
-                <div className="border border-gray-200 rounded-xl overflow-hidden">
+                <div className="border border-slate-200 rounded-xl overflow-hidden">
                   <table className="w-full text-sm">
-                    <thead className="bg-gray-50 border-b border-gray-200">
+                    <thead className="bg-slate-50 border-b border-slate-200">
                       <tr>
                         <th className="px-3 py-2 text-left text-xs font-semibold text-gray-500">Type</th>
                         <th className="px-3 py-2 text-left text-xs font-semibold text-gray-500">Symbol</th>
@@ -1923,28 +1923,28 @@ function CapitalGainsPanel({ clientId, client, person = "primary" }: {
                         <th className="px-3 py-2"></th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-100">
+                    <tbody className="divide-y divide-slate-100">
                       {form.positions.map((pos, i) => {
                         const gain = Number(pos.fmv || 0) - Number(pos.acb || 0);
                         return (
-                          <tr key={i} className="hover:bg-gray-50">
+                          <tr key={i} className="hover:bg-slate-50">
                             <td className="px-3 py-2">
                               <select value={pos.type} onChange={e => updatePos(i, "type", e.target.value)}
-                                className="border border-gray-200 rounded-lg px-2 py-1.5 text-xs w-full">
+                                className="border border-slate-200 rounded-lg px-2 py-1.5 text-xs w-full">
                                 {ASSET_TYPES.map(t => <option key={t.key} value={t.key}>{t.label}</option>)}
                               </select>
                             </td>
                             <td className="px-3 py-2">
                               <input value={pos.symbol} onChange={e => updatePos(i, "symbol", e.target.value)}
-                                className="border border-gray-200 rounded-lg px-2 py-1.5 text-xs w-full" placeholder="e.g. XIC.TO" />
+                                className="border border-slate-200 rounded-lg px-2 py-1.5 text-xs w-full" placeholder="e.g. XIC.TO" />
                             </td>
                             <td className="px-3 py-2">
                               <input type="number" value={pos.acb} onChange={e => updatePos(i, "acb", e.target.value)}
-                                className="border border-gray-200 rounded-lg px-2 py-1.5 text-xs w-full text-right" placeholder="0" />
+                                className="border border-slate-200 rounded-lg px-2 py-1.5 text-xs w-full text-right" placeholder="0" />
                             </td>
                             <td className="px-3 py-2">
                               <input type="number" value={pos.fmv} onChange={e => updatePos(i, "fmv", e.target.value)}
-                                className="border border-gray-200 rounded-lg px-2 py-1.5 text-xs w-full text-right" placeholder="0" />
+                                className="border border-slate-200 rounded-lg px-2 py-1.5 text-xs w-full text-right" placeholder="0" />
                             </td>
                             <td className="px-3 py-2 text-right">
                               {(pos.acb || pos.fmv) && (
@@ -1989,10 +1989,10 @@ function CapitalGainsPanel({ clientId, client, person = "primary" }: {
                 </div>
               )}
             </div>
-            <div className="flex gap-3 justify-end p-5 border-t border-gray-100">
+            <div className="flex gap-3 justify-end p-5 border-t border-slate-100">
               <button onClick={() => setShowForm(false)} className="text-sm text-gray-500 px-4 py-2">Cancel</button>
               <button onClick={save} disabled={saving}
-                className="flex items-center gap-1.5 bg-[#0c1e3a] hover:bg-[#0e2a4a] disabled:opacity-50 text-white text-sm font-semibold px-5 py-2.5 rounded-xl">
+                className="flex items-center gap-1.5 bg-brand-gradient hover:bg-brand-gradient-hover disabled:opacity-50 text-white text-sm font-semibold px-5 py-2.5 rounded-xl">
                 <Save className="w-3.5 h-3.5" /> {saving ? "Saving…" : "Calculate & Save"}
               </button>
             </div>
@@ -2002,7 +2002,7 @@ function CapitalGainsPanel({ clientId, client, person = "primary" }: {
 
       {loading ? <div className="text-center py-8 text-gray-400 text-sm">Loading…</div>
       : analyses.length === 0 ? (
-        <div className="text-center py-12 border-2 border-dashed border-gray-200 rounded-2xl">
+        <div className="text-center py-12 border-2 border-dashed border-slate-200 rounded-2xl">
           <p className="text-gray-500 font-semibold">No capital gains analyses yet for {personLabel}</p>
           <p className="text-sm text-gray-400 mt-1">Click New Analysis to calculate gains, losses and LCGE</p>
         </div>
@@ -2018,7 +2018,7 @@ function CapitalGainsPanel({ clientId, client, person = "primary" }: {
             const net = Math.max(0, gains - losses - Number(inp?.carryForwardLoss || 0) - lcge);
             const tax = net * 0.5 * (Number(inp?.marginalRate || 53.53) / 100);
             return (
-              <div key={a.id} className="bg-white border border-gray-200 rounded-xl p-5">
+              <div key={a.id} className="bg-white border border-slate-200 rounded-xl p-5">
                 <div className="flex items-center justify-between mb-4">
                   <div>
                     <h3 className="font-bold text-gray-900">{a.label || "Capital Gains Analysis"}</h3>
@@ -2132,7 +2132,7 @@ function IncomeSplittingPanel({ clientId, prefill, person = "primary", primaryLa
           <strong>Income Splitting Optimizer</strong> — Finds the best strategy: pension split (T1032), spousal RRSP, CPP sharing, or prescribed rate loan.
         </div>
         <button onClick={openNew}
-          className="flex items-center gap-1.5 text-sm font-semibold text-white bg-[#0c1e3a] hover:bg-[#0e2a4a] px-4 py-2 rounded-xl whitespace-nowrap">
+          className="flex items-center gap-1.5 text-sm font-semibold text-white bg-brand-gradient hover:bg-brand-gradient-hover px-4 py-2 rounded-xl whitespace-nowrap">
           <Plus className="w-4 h-4" /> New Analysis
         </button>
       </div>
@@ -2140,7 +2140,7 @@ function IncomeSplittingPanel({ clientId, prefill, person = "primary", primaryLa
       {showForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg">
-            <div className="flex items-center justify-between p-5 border-b border-gray-100">
+            <div className="flex items-center justify-between p-5 border-b border-slate-100">
               <h3 className="text-lg font-bold text-gray-900">{editingId ? "Edit" : "New"} Income Splitting Analysis</h3>
               <button onClick={() => setShowForm(false)} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
             </div>
@@ -2148,46 +2148,46 @@ function IncomeSplittingPanel({ clientId, prefill, person = "primary", primaryLa
               <div>
                 <label className="text-xs font-semibold text-gray-500 block mb-1">Label</label>
                 <input value={form.label} onChange={e => setForm(f => ({ ...f, label: e.target.value }))}
-                  className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm" />
+                  className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm" />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-xs font-semibold text-gray-500 block mb-1">{primaryLabel} Income ($)</label>
                   <input type="number" value={form.higherIncome}
                     onChange={e => setForm(f => ({ ...f, higherIncome: e.target.value }))}
-                    className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm" placeholder="0" />
+                    className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm" placeholder="0" />
                 </div>
                 <div>
                   <label className="text-xs font-semibold text-gray-500 block mb-1">{spouseLabel} Income ($)</label>
                   <input type="number" value={form.lowerIncome}
                     onChange={e => setForm(f => ({ ...f, lowerIncome: e.target.value }))}
-                    className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm" placeholder="0" />
+                    className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm" placeholder="0" />
                 </div>
                 <div>
                   <label className="text-xs font-semibold text-gray-500 block mb-1">Eligible Pension Income ($)</label>
                   <input type="number" value={form.pensionIncome}
                     onChange={e => setForm(f => ({ ...f, pensionIncome: e.target.value }))}
-                    className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm" placeholder="0" />
+                    className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm" placeholder="0" />
                 </div>
                 <div>
                   <label className="text-xs font-semibold text-gray-500 block mb-1">Age (older spouse)</label>
                   <input type="number" value={form.age}
                     onChange={e => setForm(f => ({ ...f, age: e.target.value }))}
-                    className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm" />
+                    className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm" />
                 </div>
                 <div className="col-span-2">
                   <label className="text-xs font-semibold text-gray-500 block mb-1">Province</label>
                   <select value={form.province} onChange={e => setForm(f => ({ ...f, province: e.target.value }))}
-                    className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm">
+                    className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm">
                     {provinces.map(p => <option key={p} value={p}>{p}</option>)}
                   </select>
                 </div>
               </div>
             </div>
-            <div className="flex gap-3 justify-end p-5 border-t border-gray-100">
+            <div className="flex gap-3 justify-end p-5 border-t border-slate-100">
               <button onClick={() => setShowForm(false)} className="text-sm text-gray-500 px-4 py-2">Cancel</button>
               <button onClick={save} disabled={saving}
-                className="flex items-center gap-1.5 bg-[#0c1e3a] hover:bg-[#0e2a4a] disabled:opacity-50 text-white text-sm font-semibold px-5 py-2.5 rounded-xl">
+                className="flex items-center gap-1.5 bg-brand-gradient hover:bg-brand-gradient-hover disabled:opacity-50 text-white text-sm font-semibold px-5 py-2.5 rounded-xl">
                 <Save className="w-3.5 h-3.5" /> {saving ? "Saving…" : "Calculate & Save"}
               </button>
             </div>
@@ -2197,7 +2197,7 @@ function IncomeSplittingPanel({ clientId, prefill, person = "primary", primaryLa
 
       {loading ? <div className="text-center py-8 text-gray-400 text-sm">Loading…</div>
       : analyses.length === 0 ? (
-        <div className="text-center py-12 border-2 border-dashed border-gray-200 rounded-2xl">
+        <div className="text-center py-12 border-2 border-dashed border-slate-200 rounded-2xl">
           <p className="text-gray-500 font-semibold">No income splitting analyses yet</p>
           <p className="text-sm text-gray-400 mt-1">Click New Analysis to find the optimal strategy</p>
         </div>
@@ -2206,7 +2206,7 @@ function IncomeSplittingPanel({ clientId, prefill, person = "primary", primaryLa
           {analyses.map((a: any) => {
             const r = a.resultData;
             return (
-              <div key={a.id} className="bg-white border border-gray-200 rounded-xl p-5">
+              <div key={a.id} className="bg-white border border-slate-200 rounded-xl p-5">
                 <div className="flex items-center justify-between mb-4">
                   <div>
                     <h3 className="font-bold text-gray-900">{a.label || "Income Splitting"}</h3>
@@ -2238,7 +2238,7 @@ function IncomeSplittingPanel({ clientId, prefill, person = "primary", primaryLa
                       </div>
                     </div>
                     {r.details && (
-                      <p className="text-xs text-gray-500 bg-gray-50 rounded-lg p-3">{r.details}</p>
+                      <p className="text-xs text-gray-500 bg-slate-50 rounded-lg p-3">{r.details}</p>
                     )}
                   </>
                 )}
@@ -2693,7 +2693,7 @@ const { data: plans = [] } = useClientPlans(selectedClientId ?? 0);
             {selectedClient && ["retirement", "tax", "dashboard"].includes(activeTab) && (
               <div className="flex gap-1 mb-5 bg-muted/40 rounded-xl p-1 border border-border w-fit">
                 <button onClick={() => setPerson("primary")}
-                  className={`px-4 py-1.5 rounded-lg text-sm font-semibold transition-colors ${person === "primary" ? "bg-white shadow text-[#0c1e3a] border border-border" : "text-muted-foreground hover:text-foreground"}`}>
+                  className={`px-4 py-1.5 rounded-lg text-sm font-semibold transition-colors ${person === "primary" ? "bg-white shadow text-blue-600 border border-border" : "text-muted-foreground hover:text-foreground"}`}>
                   {(selectedClient as any).firstName ?? "Client"}
                 </button>
                 {(selectedClient as any).spouseFirstName && (

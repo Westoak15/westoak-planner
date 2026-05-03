@@ -36,11 +36,11 @@ function SliderInput({
     <div>
       <div className="flex items-center justify-between mb-1">
         <label className="text-xs font-semibold text-gray-600">{label}</label>
-        <span className="text-sm font-bold text-[#0c1e3a]">{format(value)}</span>
+        <span className="text-sm font-bold text-blue-600">{format(value)}</span>
       </div>
       <input type="range" min={min} max={max} step={step} value={value}
         onChange={e => onChange(parseFloat(e.target.value))}
-        className="w-full h-1.5 appearance-none rounded-full bg-gray-200 accent-[#0c1e3a]" />
+        className="w-full h-1.5 appearance-none rounded-full bg-slate-200 accent-blue-600" />
       {hint && <p className="text-[10px] text-gray-400 mt-1">{hint}</p>}
     </div>
   );
@@ -86,7 +86,7 @@ function TriggerTable({ triggers, showAll }: { triggers: GuardrailTrigger[]; sho
     <div className="overflow-x-auto">
       <table className="w-full text-xs">
         <thead>
-          <tr className="bg-[#0c1e3a] text-white">
+          <tr className="bg-brand-gradient text-white">
             <th className="px-3 py-2 text-left font-semibold">Age</th>
             <th className="px-3 py-2 text-right font-semibold">Target Portfolio</th>
             <th className="px-3 py-2 text-right font-semibold">⬇ Cut trigger</th>
@@ -98,7 +98,7 @@ function TriggerTable({ triggers, showAll }: { triggers: GuardrailTrigger[]; sho
         </thead>
         <tbody>
           {rows.map((r, i) => (
-            <tr key={r.age} className={i % 2 === 0 ? "bg-white" : "bg-gray-50"}>
+            <tr key={r.age} className={i % 2 === 0 ? "bg-white" : "bg-slate-50"}>
               <td className="px-3 py-2 font-semibold text-gray-700">Age {r.age}</td>
               <td className="px-3 py-2 text-right text-gray-900 font-medium">{fmt$(r.targetPathBalance)}</td>
               <td className="px-3 py-2 text-right text-amber-700">{fmt$(r.floorBalance)}</td>
@@ -173,7 +173,7 @@ export function GuardrailsPanel({
     <div className="space-y-5">
       {/* Header */}
       <div className="flex items-center gap-3">
-        <div className="w-9 h-9 rounded-xl bg-[#0c1e3a] flex items-center justify-center">
+        <div className="w-9 h-9 rounded-xl bg-brand-gradient flex items-center justify-center">
           <Shield className="w-4 h-4 text-white" />
         </div>
         <div>
@@ -194,7 +194,7 @@ export function GuardrailsPanel({
       </div>
 
       {/* Input controls */}
-      <div className="bg-white border border-gray-200 rounded-xl p-4 space-y-4">
+      <div className="bg-white border border-slate-200 rounded-xl p-4 space-y-4">
         <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">Guardrail Parameters</p>
         <div className="grid grid-cols-2 gap-5">
           <SliderInput
@@ -238,7 +238,7 @@ export function GuardrailsPanel({
           <SuccessComparison base={result.baseSuccessRate} adjusted={result.adjustedSuccessRate} />
 
           {/* Recommendation */}
-          <div className="bg-gray-50 border border-gray-200 rounded-xl p-4">
+          <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
             <p className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">Advisor Insight</p>
             <p className="text-sm text-gray-700 leading-relaxed">{result.recommendation}</p>
           </div>
@@ -247,7 +247,7 @@ export function GuardrailsPanel({
           {result.triggerTable.length > 0 && (
             <div className="grid grid-cols-3 gap-3">
               {[
-                { label: "Base annual spending", value: result.triggerTable[0].baseSpending, color: "text-gray-900", bg: "bg-white border-gray-200" },
+                { label: "Base annual spending", value: result.triggerTable[0].baseSpending, color: "text-gray-900", bg: "bg-white border-slate-200" },
                 { label: `Reduced (floor triggered)`, value: result.triggerTable[0].reducedSpending, color: "text-red-700", bg: "bg-red-50 border-red-200", icon: TrendingDown },
                 { label: `Increased (ceiling triggered)`, value: result.triggerTable[0].increasedSpending, color: "text-green-700", bg: "bg-green-50 border-green-200", icon: TrendingUp },
               ].map(s => {
@@ -265,11 +265,11 @@ export function GuardrailsPanel({
           )}
 
           {/* Trigger table */}
-          <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+          <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100">
               <p className="text-xs font-bold text-gray-700">Year-by-Year Guardrail Triggers</p>
               <button onClick={() => setShowAllRows(v => !v)}
-                className="text-xs text-[#0c1e3a] font-semibold hover:underline">
+                className="text-xs text-blue-600 font-semibold hover:underline">
                 {showAllRows ? "Show fewer" : "Show all years"}
               </button>
             </div>
@@ -277,8 +277,8 @@ export function GuardrailsPanel({
           </div>
 
           {/* How to use callout */}
-          <div className="bg-[#0c1e3a]/5 border border-[#0c1e3a]/15 rounded-xl p-4">
-            <p className="text-xs font-bold text-[#0c1e3a] mb-2">How to use this with your client</p>
+          <div className="bg-brand-soft border border-blue-600/15 rounded-xl p-4">
+            <p className="text-xs font-bold text-blue-600 mb-2">How to use this with your client</p>
             <ol className="text-xs text-gray-600 space-y-1.5 list-decimal list-inside leading-relaxed">
               <li>Review the portfolio balance at each annual meeting against the "Target Portfolio" column</li>
               <li>If the balance is below the "Cut trigger" — implement the "Reduced spending" amount for that year</li>

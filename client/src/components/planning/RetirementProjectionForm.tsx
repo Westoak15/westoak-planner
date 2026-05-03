@@ -317,7 +317,7 @@ export function RetirementProjectionForm({ clientId, clientName, projection, onS
   ];
 
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-8 shadow-sm">
+    <div className="bg-white border border-slate-200 rounded-xl p-8 shadow-sm">
 
       {/* Header */}
       <div className="flex items-start justify-between mb-7">
@@ -338,90 +338,90 @@ export function RetirementProjectionForm({ clientId, clientName, projection, onS
         <div className="grid grid-cols-4 gap-3">
           <div className="col-span-1">
             <label className="block text-xs text-gray-500 mb-1">Label (optional)</label>
-            <input type="text" value={f.label} onChange={set("label")} placeholder="e.g. Base case" className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400" />
+            <input type="text" value={f.label} onChange={set("label")} placeholder="e.g. Base case" className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400" />
           </div>
           <div>
             <label className="block text-xs text-gray-500 mb-1">Current age</label>
-            <input type="number" value={f.currentAge} onChange={set("currentAge")} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400" />
+            <input type="number" value={f.currentAge} onChange={set("currentAge")} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400" />
           </div>
           <div>
             <label className="block text-xs text-gray-500 mb-1">Retirement age</label>
-            <input type="number" value={f.retirementAge} onChange={set("retirementAge")} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400" />
+            <input type="number" value={f.retirementAge} onChange={set("retirementAge")} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400" />
           </div>
           <div>
             <label className="block text-xs text-gray-500 mb-1">Life expectancy</label>
-            <input type="number" value={f.lifeExpectancy} onChange={set("lifeExpectancy")} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400" />
+            <input type="number" value={f.lifeExpectancy} onChange={set("lifeExpectancy")} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400" />
           </div>
         </div>
       </div>
 
       {/* ── Section: Portfolio ── */}
-      <div className="border-t border-gray-100 pt-6 mb-7">
+      <div className="border-t border-slate-100 pt-6 mb-7">
         <p className="text-xs font-semibold tracking-widest text-gray-400 uppercase mb-3">Current Portfolio</p>
         <div className="grid grid-cols-3 gap-3">
           <div>
             <label className="block text-xs text-gray-500 mb-1">RRSP balance ($)</label>
-            <input type="number" value={f.rrspBalance} onChange={set("rrspBalance")} placeholder="0" className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400" />
+            <input type="number" value={f.rrspBalance} onChange={set("rrspBalance")} placeholder="0" className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400" />
           </div>
           <div>
             <label className="block text-xs text-gray-500 mb-1">TFSA balance ($)</label>
-            <input type="number" value={f.tfsaBalance} onChange={set("tfsaBalance")} placeholder="0" className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400" />
+            <input type="number" value={f.tfsaBalance} onChange={set("tfsaBalance")} placeholder="0" className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400" />
           </div>
           <div>
             <label className="block text-xs text-gray-500 mb-1">Non-reg balance ($)</label>
-            <input type="number" value={f.nonRegBalance} onChange={set("nonRegBalance")} placeholder="0" className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400" />
+            <input type="number" value={f.nonRegBalance} onChange={set("nonRegBalance")} placeholder="0" className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400" />
           </div>
         </div>
       </div>
 
       {/* ── Section: Growth & Contributions ── */}
-      <div className="border-t border-gray-100 pt-6 mb-7">
+      <div className="border-t border-slate-100 pt-6 mb-7">
         <p className="text-xs font-semibold tracking-widest text-gray-400 uppercase mb-3">Growth &amp; Contributions</p>
         <div className="grid grid-cols-4 gap-3">
           <div>
             <label className="block text-xs text-gray-500 mb-1">Annual RRSP contrib. ($)</label>
-            <input type="number" value={f.annualContribution} onChange={set("annualContribution")} placeholder="0" className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400" />
+            <input type="number" value={f.annualContribution} onChange={set("annualContribution")} placeholder="0" className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400" />
           </div>
           <div>
             <label className="block text-xs text-gray-500 mb-1">Annual TFSA contrib. ($)</label>
-            <input type="number" value={f.annualTfsaContribution} onChange={set("annualTfsaContribution")} placeholder="7000" className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400" />
+            <input type="number" value={f.annualTfsaContribution} onChange={set("annualTfsaContribution")} placeholder="7000" className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400" />
           </div>
           <div>
             <label className="block text-xs text-gray-500 mb-1">Expected return (%)</label>
-            <input type="number" step="0.1" value={f.expectedReturn} onChange={set("expectedReturn")} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400" />
+            <input type="number" step="0.1" value={f.expectedReturn} onChange={set("expectedReturn")} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400" />
           </div>
           <div>
             <label className="block text-xs text-gray-500 mb-1">Inflation rate (%)</label>
-            <input type="number" step="0.1" value={f.inflationRate} onChange={set("inflationRate")} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400" />
+            <input type="number" step="0.1" value={f.inflationRate} onChange={set("inflationRate")} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400" />
           </div>
         </div>
       </div>
 
       {/* ── Section: Retirement Income ── */}
-      <div className="border-t border-gray-100 pt-6 mb-7">
+      <div className="border-t border-slate-100 pt-6 mb-7">
         <p className="text-xs font-semibold tracking-widest text-gray-400 uppercase mb-3">Retirement Income</p>
         <div className="grid grid-cols-3 gap-3 mb-3">
           <div>
             <label className="block text-xs text-gray-500 mb-1">Desired annual income ($)</label>
-            <input type="number" value={f.desiredRetirementIncome} onChange={set("desiredRetirementIncome")} placeholder="75000" className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400" />
+            <input type="number" value={f.desiredRetirementIncome} onChange={set("desiredRetirementIncome")} placeholder="75000" className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400" />
           </div>
           <div>
             <label className="block text-xs text-gray-500 mb-1">DB / other pension income / yr ($)</label>
-            <input type="number" value={f.pensionIncome} onChange={set("pensionIncome")} placeholder="0" className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400" />
+            <input type="number" value={f.pensionIncome} onChange={set("pensionIncome")} placeholder="0" className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400" />
           </div>
           <div>{/* spacer */}</div>
         </div>
         <div className="grid grid-cols-4 gap-3">
           <div>
             <label className="block text-xs text-gray-500 mb-1">CPP monthly at 65 ($) <span className="text-gray-400">· 2026 max $1,364</span></label>
-            <input type="number" value={f.cppMonthly} onChange={set("cppMonthly")} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400" />
+            <input type="number" value={f.cppMonthly} onChange={set("cppMonthly")} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400" />
             {calc.cppMonthlyAdjusted !== +f.cppMonthly && (
               <p className="text-xs text-blue-500 mt-1">Adjusted at age {f.cppStartAge}: ${calc.cppMonthlyAdjusted}/mo</p>
             )}
           </div>
           <div>
             <label className="block text-xs text-gray-500 mb-1">CPP start age</label>
-            <select value={f.cppStartAge} onChange={set("cppStartAge")} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400">
+            <select value={f.cppStartAge} onChange={set("cppStartAge")} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400">
               <option value={60}>60 — reduced 36%</option>
               <option value={61}>61 — reduced 30%</option>
               <option value={62}>62 — reduced 24%</option>
@@ -437,14 +437,14 @@ export function RetirementProjectionForm({ clientId, clientName, projection, onS
           </div>
           <div>
             <label className="block text-xs text-gray-500 mb-1">OAS monthly at 65 ($) <span className="text-gray-400">· 2026 max $713</span></label>
-            <input type="number" value={f.oasMonthly} onChange={set("oasMonthly")} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400" />
+            <input type="number" value={f.oasMonthly} onChange={set("oasMonthly")} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400" />
             {calc.oasMonthlyAdjusted !== +f.oasMonthly && (
               <p className="text-xs text-blue-500 mt-1">Adjusted at age {f.oasStartAge}: ${calc.oasMonthlyAdjusted}/mo</p>
             )}
           </div>
           <div>
             <label className="block text-xs text-gray-500 mb-1">OAS start age</label>
-            <select value={f.oasStartAge} onChange={set("oasStartAge")} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400">
+            <select value={f.oasStartAge} onChange={set("oasStartAge")} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400">
               <option value={65}>65 — standard (100%)</option>
               <option value={66}>66 — enhanced 7.2%</option>
               <option value={67}>67 — enhanced 14.4%</option>
@@ -457,13 +457,13 @@ export function RetirementProjectionForm({ clientId, clientName, projection, onS
       </div>
 
       {/* ── Section: Live Income Analysis ── */}
-      <div className="border-t border-gray-100 pt-6 mb-7">
+      <div className="border-t border-slate-100 pt-6 mb-7">
         <p className="text-xs font-semibold tracking-widest text-gray-400 uppercase mb-3">Income analysis at retirement</p>
 
         {/* Metric cards */}
         <div className="grid grid-cols-4 gap-3 mb-4">
           {metrics.map((m, i) => (
-            <div key={i} className="bg-gray-50 rounded-lg px-4 py-3">
+            <div key={i} className="bg-slate-50 rounded-lg px-4 py-3">
               <p className="text-xs text-gray-500 leading-snug mb-1">{m.label}</p>
               <p className="text-xl font-semibold" style={{ color: m.color ?? "#111827" }}>{m.value}</p>
               <p className={`text-xs mt-0.5 ${(m as any).warn ? "text-amber-500" : "text-gray-400"}`}>{m.sub}</p>
@@ -477,14 +477,14 @@ export function RetirementProjectionForm({ clientId, clientName, projection, onS
             <span className="text-xs text-gray-500">Income coverage — inflation-adjusted</span>
             <span className="text-sm font-medium" style={{ color: barColor }}>{calc.funded}% funded</span>
           </div>
-          <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden mb-3">
+          <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden mb-3">
             <div className="h-full rounded-full transition-all duration-300" style={{ width: `${calc.funded}%`, backgroundColor: barColor }} />
           </div>
           <div className="flex justify-between items-center mb-1.5">
             <span className="text-xs text-gray-500">Income coverage — today's dollars (non-adjusted)</span>
             <span className="text-sm font-medium" style={{ color: calc.fundedNominal >= 90 ? "#16a34a" : calc.fundedNominal >= 70 ? "#d97706" : "#dc2626" }}>{calc.fundedNominal}% funded</span>
           </div>
-          <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+          <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
             <div className="h-full rounded-full transition-all duration-300" style={{ width: `${calc.fundedNominal}%`, backgroundColor: calc.fundedNominal >= 90 ? "#16a34a" : calc.fundedNominal >= 70 ? "#d97706" : "#dc2626" }} />
           </div>
           {calc.desiredAtRet > 0 && (
@@ -505,14 +505,14 @@ export function RetirementProjectionForm({ clientId, clientName, projection, onS
       </div>
 
       {/* ── Notes ── */}
-      <div className="border-t border-gray-100 pt-6 mb-7">
+      <div className="border-t border-slate-100 pt-6 mb-7">
         <p className="text-xs font-semibold tracking-widest text-gray-400 uppercase mb-3">Notes</p>
         <textarea
           value={f.notes}
           onChange={set("notes")}
           rows={3}
           placeholder="Advisor notes, assumptions, follow-up items…"
-          className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400"
+          className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400"
         />
       </div>
 
@@ -521,7 +521,7 @@ export function RetirementProjectionForm({ clientId, clientName, projection, onS
         {onCancel && (
           <button
             onClick={onCancel}
-            className="px-5 py-2 text-sm border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50 transition-colors"
+            className="px-5 py-2 text-sm border border-slate-200 rounded-lg text-gray-600 hover:bg-slate-50 transition-colors"
           >
             Cancel
           </button>
@@ -698,7 +698,7 @@ export function RetirementTab({ clientId, clientName }: { clientId: number; clie
           <button
             onClick={runCheckup}
             disabled={checkupLoading}
-            className="px-4 py-2 text-sm border border-gray-200 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50"
+            className="px-4 py-2 text-sm border border-slate-200 rounded-lg text-gray-700 hover:bg-slate-50 transition-colors disabled:opacity-50"
           >
             {checkupLoading ? "Running…" : "Retirement Checkup"}
           </button>
@@ -709,7 +709,7 @@ export function RetirementTab({ clientId, clientName }: { clientId: number; clie
       </div>
 
       {/* Person tabs */}
-      <div className="flex gap-1 mb-5 p-1 bg-gray-100 rounded-lg w-fit">
+      <div className="flex gap-1 mb-5 p-1 bg-slate-100 rounded-lg w-fit">
         {[
           { key: "primary" as const, label: clientName ?? "Primary" },
           ...(hasSpouse ? [{ key: "spouse" as const, label: clientData?.spouseFirstName ?? "Spouse" }] : []),
@@ -752,7 +752,7 @@ export function RetirementTab({ clientId, clientName }: { clientId: number; clie
       {/* Loading / empty */}
       {isLoading && <p className="text-sm text-gray-400 py-8 text-center">Loading…</p>}
       {!isLoading && activeProjections.length === 0 && (
-        <div className="border border-dashed border-gray-200 rounded-xl py-12 text-center">
+        <div className="border border-dashed border-slate-200 rounded-xl py-12 text-center">
           <p className="text-gray-400 text-sm mb-3">
             No {view === "combined" ? "" : view + " "}projections yet
           </p>
@@ -803,9 +803,9 @@ export function RetirementTab({ clientId, clientName }: { clientId: number; clie
           const surplus = Number(proj.shortfallSurplus ?? 0);
 
           return (
-            <div key={proj.id} className="border border-gray-200 rounded-xl overflow-hidden hover:border-gray-300 transition-colors">
+            <div key={proj.id} className="border border-slate-200 rounded-xl overflow-hidden hover:border-slate-300 transition-colors">
               {/* Card header */}
-              <div className="flex items-center justify-between px-4 py-3 bg-gray-50 border-b border-gray-100">
+              <div className="flex items-center justify-between px-4 py-3 bg-slate-50 border-b border-slate-100">
                 <div className="flex items-center gap-2">
                   <h4 className="font-semibold text-gray-900 text-sm">{proj.label || personName}</h4>
                   <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${
@@ -814,7 +814,7 @@ export function RetirementTab({ clientId, clientName }: { clientId: number; clie
                   <span className="text-xs text-gray-400">Age {proj.currentAge} → {proj.retirementAge} · to age {proj.lifeExpectancy}</span>
                 </div>
                 <div className="flex gap-1.5">
-                  <button onClick={() => setEditing(proj)} className="text-xs px-2.5 py-1 border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-100">Edit</button>
+                  <button onClick={() => setEditing(proj)} className="text-xs px-2.5 py-1 border border-slate-200 rounded-lg text-gray-600 hover:bg-slate-100">Edit</button>
                   <button onClick={() => proj.id && confirm("Delete this projection?") && deleteMut.mutate(proj.id)} className="text-xs px-2.5 py-1 border border-red-100 rounded-lg text-red-500 hover:bg-red-50">Delete</button>
                 </div>
               </div>
@@ -822,12 +822,12 @@ export function RetirementTab({ clientId, clientName }: { clientId: number; clie
               <div className="p-4 space-y-4">
                 {/* Top KPIs */}
                 <div className="grid grid-cols-3 gap-3">
-                  <div className="bg-gray-50 rounded-lg px-3 py-2.5">
+                  <div className="bg-slate-50 rounded-lg px-3 py-2.5">
                     <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-1">Projected Portfolio</p>
                     <p className="text-base font-bold text-gray-900">${Math.round(projectedBalance).toLocaleString()}</p>
                     <p className="text-[10px] text-gray-400">at retirement age {retirementAge}</p>
                   </div>
-                  <div className="bg-gray-50 rounded-lg px-3 py-2.5">
+                  <div className="bg-slate-50 rounded-lg px-3 py-2.5">
                     <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-1">Desired Income</p>
                     <p className="text-base font-bold text-gray-900">${Math.round(desiredIncome).toLocaleString()}/yr</p>
                     <p className="text-[10px] text-gray-400">${Math.round(desiredIncome / 12).toLocaleString()}/mo target</p>
@@ -850,7 +850,7 @@ export function RetirementTab({ clientId, clientName }: { clientId: number; clie
                         portfolio:  phase1PortfolioNeeded,
                         sources:    pensionIncome > 0 ? `Pension: $${Math.round(pensionIncome / 12).toLocaleString()}/mo` : "No pension",
                         note:       cppStartAge > retirementAge ? `CPP starts age ${cppStartAge}` : "CPP included",
-                        color:      "border-[#0c1e3a]/20 bg-[#0c1e3a]/3",
+                        color:      "border-blue-600/20 bg-brand-softer",
                       },
                       {
                         label:      `CPP Starts (age ${cppStartAge})`,
@@ -889,7 +889,7 @@ export function RetirementTab({ clientId, clientName }: { clientId: number; clie
                       <span className="text-xs text-gray-500">Plan funding rate — probability income goal is met through age {proj.lifeExpectancy}</span>
                       <span className="text-xs font-semibold" style={{ color: barColor }}>{funded}%</span>
                     </div>
-                    <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                    <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
                       <div className="h-full rounded-full transition-all" style={{ width: `${Math.min(funded, 100)}%`, backgroundColor: barColor }} />
                     </div>
                     <p className="text-[10px] text-gray-400 mt-1">

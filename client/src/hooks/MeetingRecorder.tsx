@@ -28,7 +28,7 @@ export function MeetingRecorderTrigger({ clientId, clientName }: MeetingRecorder
       <button
         onClick={() => setOpen(true)}
         title="Record meeting"
-        className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 hover:text-[#0c1e3a] border border-gray-200 hover:border-gray-300 px-2.5 py-1 rounded-lg transition-colors"
+        className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 hover:text-blue-600 border border-slate-200 hover:border-slate-300 px-2.5 py-1 rounded-lg transition-colors"
       >
         <Mic className="w-3.5 h-3.5" />
         Record
@@ -88,16 +88,16 @@ function MeetingRecorderModal({ clientId, clientName, onClose }: ModalProps) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm">
-      <div className="w-full max-w-2xl mx-4 bg-white rounded-2xl shadow-2xl border border-gray-100 flex flex-col max-h-[90vh]">
+      <div className="w-full max-w-2xl mx-4 bg-white rounded-2xl shadow-2xl border border-slate-100 flex flex-col max-h-[90vh]">
 
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
           <div className="flex items-center gap-3">
             <div className={cn(
               "w-8 h-8 rounded-full flex items-center justify-center",
-              state === "recording" ? "bg-red-100" : "bg-[#0c1e3a]/10"
+              state === "recording" ? "bg-red-100" : "bg-brand-tint"
             )}>
-              <Mic className={cn("w-4 h-4", state === "recording" ? "text-red-500" : "text-[#0c1e3a]")} />
+              <Mic className={cn("w-4 h-4", state === "recording" ? "text-red-500" : "text-blue-600")} />
             </div>
             <div>
               <h2 className="text-sm font-bold text-gray-900">Meeting Recorder</h2>
@@ -115,8 +115,8 @@ function MeetingRecorderModal({ clientId, clientName, onClose }: ModalProps) {
           {/* Idle state */}
           {state === "idle" && (
             <div className="flex flex-col items-center justify-center py-10 text-center">
-              <div className="w-16 h-16 bg-[#0c1e3a]/5 rounded-full flex items-center justify-center mb-4">
-                <Mic className="w-7 h-7 text-[#0c1e3a]" />
+              <div className="w-16 h-16 bg-brand-soft rounded-full flex items-center justify-center mb-4">
+                <Mic className="w-7 h-7 text-blue-600" />
               </div>
               <h3 className="font-bold text-gray-800 mb-1">Ready to record</h3>
               <p className="text-sm text-gray-400 mb-6 max-w-sm">
@@ -125,7 +125,7 @@ function MeetingRecorderModal({ clientId, clientName, onClose }: ModalProps) {
               </p>
               <button
                 onClick={startRecording}
-                className="flex items-center gap-2 bg-[#0c1e3a] hover:bg-[#0e2a4a] text-white text-sm font-semibold px-6 py-2.5 rounded-xl transition-colors"
+                className="flex items-center gap-2 bg-brand-gradient hover:bg-brand-gradient-hover text-white text-sm font-semibold px-6 py-2.5 rounded-xl transition-colors"
               >
                 <Mic className="w-4 h-4" /> Start Recording
               </button>
@@ -150,7 +150,7 @@ function MeetingRecorderModal({ clientId, clientName, onClose }: ModalProps) {
               </div>
 
               {/* Live transcript */}
-              <div className="bg-gray-50 rounded-xl border border-gray-100 p-4 min-h-[180px] max-h-[280px] overflow-y-auto">
+              <div className="bg-slate-50 rounded-xl border border-slate-100 p-4 min-h-[180px] max-h-[280px] overflow-y-auto">
                 {transcript ? (
                   <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{transcript}</p>
                 ) : (
@@ -163,7 +163,7 @@ function MeetingRecorderModal({ clientId, clientName, onClose }: ModalProps) {
           {/* Processing */}
           {state === "processing" && (
             <div className="flex flex-col items-center justify-center py-10 text-center">
-              <Loader2 className="w-8 h-8 text-[#0c1e3a] animate-spin mb-3" />
+              <Loader2 className="w-8 h-8 text-blue-600 animate-spin mb-3" />
               <p className="text-sm font-semibold text-gray-700">Generating AI summary…</p>
               <p className="text-xs text-gray-400 mt-1">Extracting figures, goals and action items</p>
             </div>
@@ -177,7 +177,7 @@ function MeetingRecorderModal({ clientId, clientName, onClose }: ModalProps) {
               </div>
               <p className="text-sm font-semibold text-red-600 mb-1">Something went wrong</p>
               <p className="text-xs text-gray-400 mb-5">{error}</p>
-              <button onClick={reset} className="text-sm font-semibold text-[#0c1e3a] hover:underline">Try again</button>
+              <button onClick={reset} className="text-sm font-semibold text-blue-600 hover:underline">Try again</button>
             </div>
           )}
 
@@ -298,29 +298,29 @@ function SummaryView({ summary, transcript, copied, onCopy, onDownload, onReset 
       </button>
 
       {showTranscript && (
-        <div className="bg-gray-50 rounded-xl border border-gray-100 p-4 max-h-52 overflow-y-auto">
+        <div className="bg-slate-50 rounded-xl border border-slate-100 p-4 max-h-52 overflow-y-auto">
           <p className="text-xs text-gray-600 leading-relaxed whitespace-pre-wrap">{transcript}</p>
         </div>
       )}
 
       {/* Actions */}
-      <div className="flex gap-2 pt-1 border-t border-gray-100">
+      <div className="flex gap-2 pt-1 border-t border-slate-100">
         <button
           onClick={() => onCopy(fullText)}
-          className="flex items-center gap-1.5 text-sm text-gray-600 border border-gray-200 hover:border-gray-300 px-3 py-1.5 rounded-lg transition-colors"
+          className="flex items-center gap-1.5 text-sm text-gray-600 border border-slate-200 hover:border-slate-300 px-3 py-1.5 rounded-lg transition-colors"
         >
           {copied ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
           {copied ? "Copied" : "Copy"}
         </button>
         <button
           onClick={onDownload}
-          className="flex items-center gap-1.5 text-sm text-gray-600 border border-gray-200 hover:border-gray-300 px-3 py-1.5 rounded-lg transition-colors"
+          className="flex items-center gap-1.5 text-sm text-gray-600 border border-slate-200 hover:border-slate-300 px-3 py-1.5 rounded-lg transition-colors"
         >
           <Download className="w-3.5 h-3.5" /> Download
         </button>
         <button
           onClick={onReset}
-          className="ml-auto flex items-center gap-1.5 text-sm text-white bg-[#0c1e3a] hover:bg-[#0e2a4a] px-3 py-1.5 rounded-lg transition-colors"
+          className="ml-auto flex items-center gap-1.5 text-sm text-white bg-brand-gradient hover:bg-brand-gradient-hover px-3 py-1.5 rounded-lg transition-colors"
         >
           <Mic className="w-3.5 h-3.5" /> New Recording
         </button>

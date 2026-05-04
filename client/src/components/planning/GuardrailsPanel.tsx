@@ -1,6 +1,30 @@
 import { useState, useMemo } from "react";
 import { Shield, TrendingDown, TrendingUp, ToggleLeft, ToggleRight, Info } from "lucide-react";
-import type { GuardrailParams, GuardrailResult, GuardrailTrigger } from "../../server/engine/simulation/guardrails.js";
+// Types mirrored from server/engine/simulation/guardrails.ts
+interface GuardrailParams {
+  floorPct:   number;
+  ceilingPct: number;
+  flexDown:   number;
+  flexUp:     number;
+}
+interface GuardrailTrigger {
+  year:              number;
+  age:               number;
+  targetPathBalance: number;
+  floorBalance:      number;
+  ceilingBalance:    number;
+  reducedSpending:   number;
+  increasedSpending: number;
+  baseSpending:      number;
+}
+interface GuardrailResult {
+  baseSuccessRate:     number;
+  adjustedSuccessRate: number;
+  successRateGain:     number;
+  params:              GuardrailParams;
+  triggerTable:        GuardrailTrigger[];
+  recommendation:      string;
+}
 
 // ── Types ────────────────────────────────────────────────────────────────────
 

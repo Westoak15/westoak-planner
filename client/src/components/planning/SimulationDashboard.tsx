@@ -3,6 +3,11 @@ import { useSimulationResults } from "@/hooks/use-plans";
 import { ScenarioComparison, ScenarioSummaryCards } from "./ScenarioComparison";
 import { PercentileChartGrid } from "./PercentileChart";
 import { SensitivityDisplay } from "./SensitivityDisplay";
+
+interface SimBands {
+  p10: number[]; p25: number[]; p50: number[];
+  p75: number[]; p90: number[]; labels: number[];
+}
 import { ActionItemsPanel } from "./ActionItemsPanel";
 import { SnapshotManager } from "./SnapshotManager";
 import { AssumptionEditor } from "./AssumptionEditor";
@@ -40,10 +45,11 @@ export function SimulationDashboard({
 
   // Get percentile bands from base results for guardrails
   const baseResult = baseResults[0] ?? simResults[0];
-  const percentileBands = baseResult?.percentileBands ?? {
+  const percentileBands: SimBands = {
     p10: [], p25: [], p50: [], p75: [], p90: [], labels: [],
+    ...(baseResult?.percentileBands ?? {}),
   };
-  const simSuccessRate = baseResult?.successRate ?? 0;
+  const simSuccessRate = Number(baseResult?.successRate ?? 0);
 
   return (
     <div className="space-y-6" data-testid="simulation-dashboard">

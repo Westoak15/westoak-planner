@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import React from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 // ── Auth helper ───────────────────────────────────────────────────────────────
@@ -196,6 +197,28 @@ function fmt(n: number) {
   return "$" + Math.abs(Math.round(n)).toLocaleString();
 }
 
+// ── Section (collapsible) ─────────────────────────────────────────────────────
+
+function Section({ title, children, defaultOpen = false }: { title: string; children: React.ReactNode; defaultOpen?: boolean }) {
+  const [open, setOpen] = React.useState(defaultOpen);
+  return (
+    <div className="bg-white border border-slate-200 rounded-2xl transition-all duration-200 hover:shadow-sm">
+      <div
+        onClick={() => setOpen(!open)}
+        className="flex justify-between items-center px-5 py-4 cursor-pointer hover:bg-slate-50 transition rounded-2xl"
+      >
+        <p className="text-sm font-medium text-slate-700">{title}</p>
+        <span className="text-slate-400 text-sm">{open ? "−" : "+"}</span>
+      </div>
+      {open && (
+        <div className="px-5 pb-5 space-y-4">
+          {children}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export function RetirementProjectionForm({ clientId, clientName, projection, onSaved, onCancel }: Props) {
@@ -325,17 +348,15 @@ export function RetirementProjectionForm({ clientId, clientName, projection, onS
           <h1 className="text-xl font-semibold text-slate-900">Retirement</h1>
           <p className="text-sm text-slate-500">Projection through age 95 · Pension and savings under one roof</p>
         </div>
-        <div className="flex items-center gap-2">
-          {onCancel && (
-            <button onClick={onCancel} className="text-slate-400 hover:text-slate-600 p-1 text-lg leading-none">✕</button>
-          )}
-        </div>
+        {onCancel && (
+          <button onClick={onCancel} className="text-slate-400 hover:text-slate-600 p-1 text-lg leading-none">✕</button>
+        )}
       </div>
 
-      {/* ── Results first (top) ── */}
+      {/* ── Results (always visible, top) ── */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {metrics.map((m, i) => (
-          <div key={i} className="bg-white border border-slate-200 rounded-xl p-4">
+          <div key={i} className="bg-white border border-slate-200 rounded-xl p-4 transition-all duration-200 hover:shadow-sm">
             <p className="text-xs text-slate-500">{m.label}</p>
             <p className="text-xl font-semibold mt-1" style={{ color: m.color ?? "#0f172a" }}>{m.value}</p>
             <p className={`text-[10px] mt-0.5 ${(m as any).warn ? "text-amber-500" : "text-slate-400"}`}>{m.sub}</p>
@@ -344,7 +365,7 @@ export function RetirementProjectionForm({ clientId, clientName, projection, onS
       </div>
 
       {/* Funding bars */}
-      <div className="bg-white border border-slate-200 rounded-2xl p-5 space-y-4">
+      <div className="bg-white border border-slate-200 rounded-2xl p-5 space-y-4 transition-all duration-200 hover:shadow-sm">
         <div>
           <div className="flex justify-between items-center mb-1">
             <p className="text-xs text-slate-500">Income coverage (inflation-adjusted)</p>
@@ -371,9 +392,9 @@ export function RetirementProjectionForm({ clientId, clientName, projection, onS
         )}
       </div>
 
-      {/* ── Section: Client ── */}
-      <div className="bg-white border border-slate-200 rounded-2xl p-5 space-y-4">
-        <p className="text-sm font-medium text-slate-600">Client</p>
+      {/* ── Core Inputs (always visible) ── */}
+      <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm transition-all duration-200 hover:shadow-md">
+        <p className="text-sm font-medium text-slate-600 mb-4">Retirement Setup</p>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div>
             <label className="block text-xs text-slate-500 mb-1">Label (optional)</label>
@@ -392,11 +413,20 @@ export function RetirementProjectionForm({ clientId, clientName, projection, onS
             <input type="number" value={f.lifeExpectancy} onChange={set("lifeExpectancy")} className="fp-input" />
           </div>
         </div>
+        <div className="mt-4 space-y-3">
+          <div>
+            <label className="block text-xs text-slate-500 mb-1">Desired annual income ($)</label>
+            <input type="number" value={f.desiredRetirementIncome} onChange={set("desiredRetirementIncome")} placeholder="75000" className="fp-input" />
+          </div>
+          <div>
+            <label className="block text-xs text-slate-500 mb-1">DB / other pension income / yr ($)</label>
+            <input type="number" value={f.pensionIncome} onChange={set("pensionIncome")} placeholder="0" className="fp-input" />
+          </div>
+        </div>
       </div>
 
-      {/* ── Section: Portfolio ── */}
-      <div className="bg-white border border-slate-200 rounded-2xl p-5 space-y-4">
-        <p className="text-sm font-medium text-slate-600">Portfolio</p>
+      {/* ── Portfolio (collapsible) ── */}
+      <Section title="Portfolio">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
             <label className="block text-xs text-slate-500 mb-1">RRSP balance ($)</label>
@@ -411,11 +441,10 @@ export function RetirementProjectionForm({ clientId, clientName, projection, onS
             <input type="number" value={f.nonRegBalance} onChange={set("nonRegBalance")} placeholder="0" className="fp-input" />
           </div>
         </div>
-      </div>
+      </Section>
 
-      {/* ── Section: Growth & Contributions ── */}
-      <div className="bg-white border border-slate-200 rounded-2xl p-5 space-y-4">
-        <p className="text-sm font-medium text-slate-600">Growth &amp; Contributions</p>
+      {/* ── Growth & Contributions (collapsible) ── */}
+      <Section title="Growth & Contributions">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div>
             <label className="block text-xs text-slate-500 mb-1">Annual RRSP contrib. ($)</label>
@@ -434,66 +463,58 @@ export function RetirementProjectionForm({ clientId, clientName, projection, onS
             <input type="number" step="0.1" value={f.inflationRate} onChange={set("inflationRate")} className="fp-input" />
           </div>
         </div>
-      </div>
+      </Section>
 
-      {/* ── Section: Retirement Income ── */}
-      <div className="bg-white border border-slate-200 rounded-2xl p-5 space-y-4">
-        <p className="text-sm font-medium text-slate-600">Retirement Income</p>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div>
-            <label className="block text-xs text-slate-500 mb-1">Desired annual income ($)</label>
-            <input type="number" value={f.desiredRetirementIncome} onChange={set("desiredRetirementIncome")} placeholder="75000" className="fp-input" />
+      {/* ── Government Benefits (collapsible) ── */}
+      <Section title="Government Benefits">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-3">
+            <div>
+              <label className="block text-xs text-slate-500 mb-1">CPP monthly at 65 ($) <span className="text-slate-400">· 2026 max $1,364</span></label>
+              <input type="number" value={f.cppMonthly} onChange={set("cppMonthly")} className="fp-input" />
+              {calc.cppMonthlyAdjusted !== +f.cppMonthly && (
+                <p className="text-xs text-blue-500 mt-1">Adjusted at age {f.cppStartAge}: ${calc.cppMonthlyAdjusted}/mo</p>
+              )}
+            </div>
+            <div>
+              <label className="block text-xs text-slate-500 mb-1">CPP start age</label>
+              <select value={f.cppStartAge} onChange={set("cppStartAge")} className="fp-input">
+                <option value={60}>60 — reduced 36%</option>
+                <option value={61}>61 — reduced 30%</option>
+                <option value={62}>62 — reduced 24%</option>
+                <option value={63}>63 — reduced 18%</option>
+                <option value={64}>64 — reduced 12%</option>
+                <option value={65}>65 — standard (100%)</option>
+                <option value={66}>66 — enhanced 8.4%</option>
+                <option value={67}>67 — enhanced 16.8%</option>
+                <option value={68}>68 — enhanced 25.2%</option>
+                <option value={69}>69 — enhanced 33.6%</option>
+                <option value={70}>70 — maximum +42%</option>
+              </select>
+            </div>
           </div>
-          <div>
-            <label className="block text-xs text-slate-500 mb-1">DB / other pension income / yr ($)</label>
-            <input type="number" value={f.pensionIncome} onChange={set("pensionIncome")} placeholder="0" className="fp-input" />
-          </div>
-          <div>{/* spacer */}</div>
-        </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div>
-            <label className="block text-xs text-slate-500 mb-1">CPP monthly at 65 ($) <span className="text-slate-400">· 2026 max $1,364</span></label>
-            <input type="number" value={f.cppMonthly} onChange={set("cppMonthly")} className="fp-input" />
-            {calc.cppMonthlyAdjusted !== +f.cppMonthly && (
-              <p className="text-xs text-blue-500 mt-1">Adjusted at age {f.cppStartAge}: ${calc.cppMonthlyAdjusted}/mo</p>
-            )}
-          </div>
-          <div>
-            <label className="block text-xs text-slate-500 mb-1">CPP start age</label>
-            <select value={f.cppStartAge} onChange={set("cppStartAge")} className="fp-input">
-              <option value={60}>60 — reduced 36%</option>
-              <option value={61}>61 — reduced 30%</option>
-              <option value={62}>62 — reduced 24%</option>
-              <option value={63}>63 — reduced 18%</option>
-              <option value={64}>64 — reduced 12%</option>
-              <option value={65}>65 — standard (100%)</option>
-              <option value={66}>66 — enhanced 8.4%</option>
-              <option value={67}>67 — enhanced 16.8%</option>
-              <option value={68}>68 — enhanced 25.2%</option>
-              <option value={69}>69 — enhanced 33.6%</option>
-              <option value={70}>70 — maximum +42%</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-xs text-slate-500 mb-1">OAS monthly at 65 ($) <span className="text-slate-400">· 2026 max $713</span></label>
-            <input type="number" value={f.oasMonthly} onChange={set("oasMonthly")} className="fp-input" />
-            {calc.oasMonthlyAdjusted !== +f.oasMonthly && (
-              <p className="text-xs text-blue-500 mt-1">Adjusted at age {f.oasStartAge}: ${calc.oasMonthlyAdjusted}/mo</p>
-            )}
-          </div>
-          <div>
-            <label className="block text-xs text-slate-500 mb-1">OAS start age</label>
-            <select value={f.oasStartAge} onChange={set("oasStartAge")} className="fp-input">
-              <option value={65}>65 — standard (100%)</option>
-              <option value={66}>66 — enhanced 7.2%</option>
-              <option value={67}>67 — enhanced 14.4%</option>
-              <option value={68}>68 — enhanced 21.6%</option>
-              <option value={69}>69 — enhanced 28.8%</option>
-              <option value={70}>70 — maximum +36%</option>
-            </select>
+          <div className="space-y-3">
+            <div>
+              <label className="block text-xs text-slate-500 mb-1">OAS monthly at 65 ($) <span className="text-slate-400">· 2026 max $713</span></label>
+              <input type="number" value={f.oasMonthly} onChange={set("oasMonthly")} className="fp-input" />
+              {calc.oasMonthlyAdjusted !== +f.oasMonthly && (
+                <p className="text-xs text-blue-500 mt-1">Adjusted at age {f.oasStartAge}: ${calc.oasMonthlyAdjusted}/mo</p>
+              )}
+            </div>
+            <div>
+              <label className="block text-xs text-slate-500 mb-1">OAS start age</label>
+              <select value={f.oasStartAge} onChange={set("oasStartAge")} className="fp-input">
+                <option value={65}>65 — standard (100%)</option>
+                <option value={66}>66 — enhanced 7.2%</option>
+                <option value={67}>67 — enhanced 14.4%</option>
+                <option value={68}>68 — enhanced 21.6%</option>
+                <option value={69}>69 — enhanced 28.8%</option>
+                <option value={70}>70 — maximum +36%</option>
+              </select>
+            </div>
           </div>
         </div>
-      </div>
+      </Section>
 
       {/* ── Insights ── */}
       {calc.rrspAtRrif > 0 && +f.retirementAge < 71 && (
@@ -503,7 +524,7 @@ export function RetirementProjectionForm({ clientId, clientName, projection, onS
       )}
 
       {/* ── Notes ── */}
-      <div className="bg-white border border-slate-200 rounded-2xl p-5">
+      <div className="bg-white border border-slate-200 rounded-2xl p-5 transition-all duration-200 hover:shadow-sm">
         <p className="text-sm font-medium text-slate-600 mb-2">Notes</p>
         <textarea
           value={f.notes}

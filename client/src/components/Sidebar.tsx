@@ -56,25 +56,23 @@ export function Sidebar({ activeTab, onTab, clientName, role, level }: Props) {
   });
 
   return (
-    <aside className="relative overflow-hidden w-64 flex-shrink-0 min-h-screen bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 border-r border-white/5 flex flex-col select-none">
-      {/* Light bleed overlay */}
-      <div className="absolute inset-0 bg-gradient-to-b from-white/5 to-transparent pointer-events-none" />
+    <aside className="w-64 flex-shrink-0 min-h-screen bg-slate-50 border-r border-slate-200 flex flex-col select-none">
 
       {/* Logo */}
-      <div className="relative py-5 flex flex-col items-center border-b border-white/10 px-4">
-        <img src="/koc-logo.png" alt="Knights of Columbus" className="w-20 h-20 object-contain mb-2" />
-        <div className="text-slate-400 font-medium text-[11px] tracking-wide text-center">Financial Planning Suite</div>
+      <div className="p-4 flex flex-col items-center gap-2 border-b border-slate-200">
+        <img src="/koc-logo.png" alt="Knights of Columbus" className="w-16 h-16 object-contain" />
+        <p className="text-xs text-slate-500 font-medium tracking-wide text-center">Financial Planning Suite</p>
       </div>
 
       {/* Nav */}
-      <nav className="relative flex-1 py-3 px-3 overflow-y-auto overflow-x-hidden space-y-0.5">
+      <nav className="flex-1 p-3 space-y-0.5 overflow-y-auto overflow-x-hidden">
         {visibleTabs.map(tab => {
           const isActive = activeTab === tab.key;
           const disabled = PLAN_TABS.includes(tab.key) && !clientName && !NO_CLIENT_TABS.includes(tab.key);
           const Icon = tab.icon;
           return (
             <div key={tab.key}>
-              {tab.dividerBefore && <div className="my-2 border-t border-white/5" />}
+              {tab.dividerBefore && <div className="my-2 border-t border-slate-200" />}
               <button
                 onClick={() => !disabled && onTab(tab.key)}
                 title={tab.label}
@@ -82,18 +80,18 @@ export function Sidebar({ activeTab, onTab, clientName, role, level }: Props) {
                 className={cn(
                   "group relative w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-150 focus:outline-none",
                   isActive
-                    ? "bg-white/5 text-white"
+                    ? "bg-white text-slate-900 shadow-sm"
                     : disabled
-                      ? "text-slate-600 cursor-not-allowed"
-                      : "text-slate-400 hover:text-white hover:bg-white/5 hover:translate-x-[2px] cursor-pointer"
+                      ? "text-slate-300 cursor-not-allowed"
+                      : "text-slate-500 hover:text-slate-900 hover:bg-white cursor-pointer"
                 )}
               >
                 {isActive && (
-                  <div className="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-1 bg-cyan-400 rounded-r shadow-[0_0_10px_rgba(34,211,238,0.6)]" />
+                  <div className="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-1 bg-blue-500 rounded-r" />
                 )}
                 <Icon className={cn(
-                  "w-4 h-4 flex-shrink-0 transition-transform group-hover:scale-110",
-                  isActive ? "text-cyan-400" : "text-slate-400 group-hover:text-white"
+                  "w-4 h-4 flex-shrink-0 transition-transform group-hover:scale-105",
+                  isActive ? "text-blue-500" : "text-slate-400 group-hover:text-slate-700"
                 )} />
                 <span className="text-sm font-medium">{tab.label}</span>
               </button>
@@ -103,9 +101,9 @@ export function Sidebar({ activeTab, onTab, clientName, role, level }: Props) {
       </nav>
 
       {/* Footer */}
-      <div className="relative px-4 py-3 border-t border-white/10">
-        {clientName && <div className="text-[10px] text-slate-400 text-center truncate mb-1">{clientName}</div>}
-        <div className="text-[10px] text-slate-500 text-center uppercase tracking-wider">
+      <div className="p-3 border-t border-slate-200">
+        {clientName && <div className="text-[10px] text-slate-500 text-center truncate mb-1">{clientName}</div>}
+        <div className="text-xs text-slate-400 text-center">
           {isGA ? "General Agent" : `Field Agent${isStandard ? " · Standard" : " · Enhanced"}`}
         </div>
       </div>

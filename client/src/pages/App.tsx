@@ -1330,7 +1330,7 @@ export default function App() {
 
   function backToClients() {
     setShowClientDetail(false);
-    setTab("agents");
+    setTab("clients");
   }
 
   const clientName = client ? `${client.firstName} ${client.lastName}` : undefined;

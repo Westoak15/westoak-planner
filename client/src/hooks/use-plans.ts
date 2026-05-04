@@ -95,7 +95,7 @@ export function useUpdateNetWorthEntry(clientId: number) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, data }: { id: number; data: Partial<{ type: string; category: string; name: string; value: string }> }) => {
-      const res = await apiRequest("PATCH", `/api/net-worth/${id}`, data); return res.json();
+      const res = await apiRequest("PUT", `/api/net-worth/${id}`, data); return res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/clients/:clientId/net-worth", clientId] });

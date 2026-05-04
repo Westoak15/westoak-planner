@@ -20,6 +20,7 @@ import { taxRouter }        from "./routes/tax.js";
 import { lettersRouter } from "./routes/letters.js";
 import { goalsRouter } from "./routes/goals.js";
 import { pensionRouter } from "./routes/pension.js";
+import aiVoiceRouter from "./routes/ai-voice.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = parseInt(process.env.PORT ?? "8080", 10);
@@ -29,6 +30,7 @@ async function runMigrations() {
   const migrations = [
     `ALTER TABLE retirement_projections ADD COLUMN IF NOT EXISTS person TEXT DEFAULT 'primary'`,
     `ALTER TABLE ai_recommendations ADD COLUMN IF NOT EXISTS run_id TEXT`,
+    `ALTER TABLE clients ADD COLUMN IF NOT EXISTS spouse_pension_type TEXT`,
   ];
   for (const sql of migrations) {
     try { await pool.query(sql); }
@@ -56,6 +58,7 @@ app.use("/api",         simulateRouter);
 app.use("/api",         simulationRouter);   // ← FIX 1: mounts /api/simulation/:clientId/*
 app.use("/api/reports", reportsRouter);
 app.use("/api",         lettersRouter);
+app.use("/api/ai",      aiVoiceRouter);
 
 
 if (process.env.NODE_ENV === "production") {

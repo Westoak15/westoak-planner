@@ -156,7 +156,7 @@ export function DrawdownTab({ clientId, client }: { clientId: number; client?: a
       </div>
 
       {/* Input Form */}
-      <div className="bg-white rounded-xl border border-slate-200 p-5">
+      <div className="bg-white rounded-xl border border-gray-200 p-5">
         <h3 className="text-sm font-bold text-gray-700 uppercase tracking-wide mb-4">Retirement Parameters</h3>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
           {[
@@ -169,12 +169,12 @@ export function DrawdownTab({ clientId, client }: { clientId: number; client?: a
               <label className="text-xs font-semibold text-gray-500 block mb-1">{f.label}</label>
               {f.type === "select" ? (
                 <select value={form[f.key as keyof typeof form]} onChange={e => upd(f.key, e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-purple-300">
+                  className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-purple-300">
                   {PROVINCES.map(p => <option key={p} value={p}>{p}</option>)}
                 </select>
               ) : (
                 <input type="number" value={form[f.key as keyof typeof form]} onChange={e => upd(f.key, e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-purple-300" />
+                  className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-purple-300" />
               )}
             </div>
           ))}
@@ -189,7 +189,7 @@ export function DrawdownTab({ clientId, client }: { clientId: number; client?: a
             <div key={f.key}>
               <label className="text-xs font-semibold text-gray-500 block mb-1">{f.label}</label>
               <input type="number" value={form[f.key as keyof typeof form]} onChange={e => upd(f.key, e.target.value)}
-                className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-purple-300" placeholder="0" />
+                className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-purple-300" placeholder="0" />
             </div>
           ))}
         </div>
@@ -203,7 +203,7 @@ export function DrawdownTab({ clientId, client }: { clientId: number; client?: a
             <div key={f.key}>
               <label className="text-xs font-semibold text-gray-500 block mb-1">{f.label}</label>
               <input type="number" value={form[f.key as keyof typeof form]} onChange={e => upd(f.key, e.target.value)}
-                className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-purple-300" placeholder="0" />
+                className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-purple-300" placeholder="0" />
             </div>
           ))}
         </div>
@@ -217,13 +217,13 @@ export function DrawdownTab({ clientId, client }: { clientId: number; client?: a
             <div key={f.key}>
               <label className="text-xs font-semibold text-gray-500 block mb-1">{f.label}</label>
               <input type="number" value={form[f.key as keyof typeof form]} onChange={e => upd(f.key, e.target.value)}
-                className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-purple-300" />
+                className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-purple-300" />
             </div>
           ))}
         </div>
         {error && <p className="text-red-500 text-sm mb-3">{error}</p>}
         <button onClick={runAnalysis} disabled={loading}
-          className="flex items-center gap-2 bg-brand-gradient hover:bg-brand-gradient-hover disabled:opacity-50 text-white font-semibold px-5 py-2.5 rounded-xl text-sm">
+          className="flex items-center gap-2 bg-[#0c1e3a] hover:bg-[#0e2a4a] disabled:opacity-50 text-white font-semibold px-5 py-2.5 rounded-xl text-sm">
           <TrendingDown className="w-4 h-4" />
           {loading ? "Calculating…" : "Run Drawdown Analysis"}
         </button>
@@ -290,11 +290,11 @@ export function DrawdownTab({ clientId, client }: { clientId: number; client?: a
                   <h3 className={`font-bold ${c.text}`}>{active.strategyLabel} — Detail</h3>
                   <div className="flex gap-2">
                     <button onClick={() => setShowChart(!showChart)}
-                      className="text-xs font-semibold text-gray-600 border border-slate-200 bg-white px-3 py-1.5 rounded-lg hover:bg-slate-50 flex items-center gap-1">
+                      className="text-xs font-semibold text-gray-600 border border-gray-200 bg-white px-3 py-1.5 rounded-lg hover:bg-gray-50 flex items-center gap-1">
                       {showChart ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />} Chart
                     </button>
                     <button onClick={() => setShowTable(!showTable)}
-                      className="text-xs font-semibold text-gray-600 border border-slate-200 bg-white px-3 py-1.5 rounded-lg hover:bg-slate-50 flex items-center gap-1">
+                      className="text-xs font-semibold text-gray-600 border border-gray-200 bg-white px-3 py-1.5 rounded-lg hover:bg-gray-50 flex items-center gap-1">
                       {showTable ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />} Year-by-Year
                     </button>
                   </div>
@@ -331,16 +331,16 @@ export function DrawdownTab({ clientId, client }: { clientId: number; client?: a
                 {showTable && (
                   <div className="bg-white rounded-xl border border-white/60 overflow-x-auto">
                     <table className="w-full text-xs">
-                      <thead className="bg-slate-50 border-b border-slate-200">
+                      <thead className="bg-gray-50 border-b border-gray-200">
                         <tr>
                           {["Age","Year","RRSP Bal","TFSA Bal","RRSP W/D","TFSA W/D","CPP","OAS","Total Income","Tax","Eff. Rate","After-Tax","Total Wealth"].map(h => (
                             <th key={h} className="px-2 py-2 text-left font-semibold text-gray-400 uppercase tracking-wide whitespace-nowrap">{h}</th>
                           ))}
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-100">
+                      <tbody className="divide-y divide-gray-100">
                         {active.years.map(y => (
-                          <tr key={y.age} className={`hover:bg-slate-50 ${y.age === 71 ? "bg-yellow-50" : ""}`}>
+                          <tr key={y.age} className={`hover:bg-gray-50 ${y.age === 71 ? "bg-yellow-50" : ""}`}>
                             <td className="px-2 py-1.5 font-semibold text-gray-700">{y.age}{y.age === 71 ? " ⚡" : ""}</td>
                             <td className="px-2 py-1.5 text-gray-500">{y.year}</td>
                             <td className="px-2 py-1.5">{fmt$(y.rrspBalance)}</td>

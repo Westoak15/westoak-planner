@@ -78,6 +78,7 @@ export const clients = pgTable("clients", {
   spouseAnnualIncome:          decimal("spouse_annual_income", { precision: 15, scale: 2 }),
   spouseRetirementAge:         integer("spouse_retirement_age"),
   spouseDesiredRetirementIncome: decimal("spouse_desired_retirement_income", { precision: 15, scale: 2 }),
+  spousePensionType:           text("spouse_pension_type"),
   dependants:                  jsonb("dependants"),
   notes:                       text("notes"),
   createdAt:                   timestamp("created_at").defaultNow().notNull(),

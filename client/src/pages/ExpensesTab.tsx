@@ -31,6 +31,9 @@ async function apiReq(method: string, path: string, body?: unknown) {
   return res.status === 204 ? null : res.json();
 }
 
+const INPUT_CLS = "w-full px-3 py-2.5 rounded-xl border border-[var(--border-light)] bg-[var(--bg-panel)] text-[var(--text-primary)] text-sm focus:outline-none focus:border-[var(--accent-cyan)] focus:ring-0 placeholder:text-[var(--text-tertiary)]";
+const LABEL_CLS = "text-sm font-semibold block mb-1 text-[var(--text-secondary)]";
+
 export function ExpensesTab({ clientId }: { clientId: number }) {
   const qc = useQueryClient();
   const key = ["expenses", clientId];
@@ -69,40 +72,40 @@ export function ExpensesTab({ clientId }: { clientId: number }) {
   }
 
   return (
-    <div className="p-6 max-w-4xl mx-auto space-y-6">
+    <div className="fp-insightled p-6 max-w-4xl mx-auto space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Household Expenses</h1>
-          <p className="text-sm text-gray-400 mt-0.5">Track monthly expenses to inform retirement income needs</p>
+          <h1 className="text-2xl font-bold text-[var(--text-primary)]">Household Expenses</h1>
+          <p className="text-sm text-[var(--text-tertiary)] mt-0.5">Track monthly expenses to inform retirement income needs</p>
         </div>
         <button onClick={() => { resetForm(); setShowForm(true); }}
-          className="flex items-center gap-2 bg-brand-gradient hover:bg-brand-gradient-hover text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors">
+          className="flex items-center gap-2 bg-gradient-to-r from-[var(--accent-cyan)] to-[var(--accent-blue)] hover:opacity-90 text-[var(--bg-base)] text-sm font-semibold px-4 py-2.5 rounded-xl transition-opacity">
           <Plus className="w-4 h-4" /> Add Expense
         </button>
       </div>
 
-      {/* Summary */}
+      {/* Summary KPI tiles */}
       <div className="grid grid-cols-3 gap-4">
         {[
           { label: "Monthly Total", value: `$${totalMonthly.toLocaleString("en-CA", { maximumFractionDigits: 0 })}`, sub: `$${(totalMonthly*12).toLocaleString("en-CA", { maximumFractionDigits: 0 })}/yr` },
           { label: "In Retirement (adjusted)", value: `$${retirementMonthly.toLocaleString("en-CA", { maximumFractionDigits: 0 })}/mo`, sub: `$${(retirementMonthly*12).toLocaleString("en-CA", { maximumFractionDigits: 0 })}/yr` },
           { label: "Categories", value: String(Object.keys(byCategory).length), sub: `${expenses.length} line items` },
         ].map(c => (
-          <div key={c.label} className="bg-white rounded-xl border border-slate-200 p-4">
-            <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">{c.label}</p>
-            <p className="text-2xl font-bold mt-1 text-blue-600">{c.value}</p>
-            <p className="text-xs text-gray-400">{c.sub}</p>
+          <div key={c.label} className="fp-insightled-card p-4">
+            <p className="text-xs font-semibold uppercase tracking-wider text-[var(--text-tertiary)]">{c.label}</p>
+            <p className="text-2xl font-bold mt-1 text-[var(--accent-cyan)] font-mono">{c.value}</p>
+            <p className="text-xs text-[var(--text-tertiary)]">{c.sub}</p>
           </div>
         ))}
       </div>
 
       {/* Retirement guardrail */}
       {expenses.length > 0 && (
-        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex gap-3">
-          <span className="text-amber-600 text-lg flex-shrink-0">⚠️</span>
+        <div className="border border-[var(--accent-amber)]/25 bg-[var(--accent-amber)]/5 rounded-xl p-4 flex gap-3">
+          <span className="text-[var(--accent-amber)] text-lg flex-shrink-0">⚠️</span>
           <div>
-            <p className="text-sm font-semibold text-amber-800">Retirement Income Guardrail</p>
-            <p className="text-sm text-amber-700 mt-0.5">
+            <p className="text-sm font-semibold text-[var(--accent-amber)]">Retirement Income Guardrail</p>
+            <p className="text-sm text-[var(--text-secondary)] mt-0.5">
               Estimated retirement expenses: <strong>${(retirementMonthly*12).toLocaleString("en-CA", { maximumFractionDigits: 0 })}/year</strong>.
               {retirementMonthly > 0 && ` 4% rule portfolio needed: $${(retirementMonthly*12/0.04).toLocaleString("en-CA", { maximumFractionDigits: 0 })}`}
             </p>
@@ -112,35 +115,42 @@ export function ExpensesTab({ clientId }: { clientId: number }) {
 
       {/* Expense list */}
       {Object.keys(byCategory).length === 0 ? (
-        <div className="text-center py-16 border-2 border-dashed border-slate-200 rounded-2xl text-gray-400">
-          No expenses recorded yet. Add household expenses to build a spending profile.
+        <div className="text-center py-12 border-2 border-dashed border-[var(--border-subtle)] rounded-2xl">
+          <p className="text-sm text-slate-500">No expenses yet</p>
+          <p className="text-xs text-slate-400 mt-1">Add household expenses to build your plan</p>
+          <button
+            onClick={() => { resetForm(); setShowForm(true); }}
+            className="mt-4 inline-flex items-center gap-1.5 bg-blue-600 text-white text-sm font-semibold px-4 py-2 rounded-lg hover:bg-blue-700 transition"
+          >
+            <Plus className="w-4 h-4" /> Add First Expense
+          </button>
         </div>
       ) : (
         <div className="space-y-4">
           {Object.entries(byCategory).map(([cat, items]) => {
             const catTotal = items.reduce((s, e) => s + parseFloat(e.monthlyAmount || "0"), 0);
             return (
-              <div key={cat} className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-                <div className="flex items-center justify-between px-4 py-2.5 bg-slate-50 border-b border-slate-200">
-                  <span className="text-sm font-semibold text-gray-800">{cat}</span>
-                  <span className="text-sm font-bold text-blue-600">${catTotal.toLocaleString("en-CA", { maximumFractionDigits: 0 })}/mo</span>
+              <div key={cat} className="fp-insightled-card overflow-hidden">
+                <div className="flex items-center justify-between px-4 py-2.5 bg-white/[0.03] border-b border-[var(--border-subtle)]">
+                  <span className="text-sm font-semibold text-[var(--text-primary)]">{cat}</span>
+                  <span className="text-sm font-bold text-[var(--accent-cyan)] font-mono">${catTotal.toLocaleString("en-CA", { maximumFractionDigits: 0 })}/mo</span>
                 </div>
-                <div className="divide-y divide-slate-100">
+                <div className="divide-y divide-[var(--border-subtle)]">
                   {items.map(e => (
-                    <div key={e.id} className="flex items-center justify-between px-4 py-2.5 group hover:bg-slate-50">
+                    <div key={e.id} className="flex items-center justify-between px-4 py-2.5 group hover:bg-white/[0.03]">
                       <div className="flex items-center gap-2 min-w-0">
-                        <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${e.isEssential ? "bg-red-400" : "bg-blue-400"}`} title={e.isEssential ? "Essential" : "Discretionary"} />
-                        <span className="text-sm truncate text-gray-700">{e.description || cat}</span>
-                        {!e.includeInRetirement && <span className="text-[10px] bg-slate-100 px-1.5 py-0.5 rounded text-gray-500">excl. retirement</span>}
+                        <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${e.isEssential ? "bg-[var(--accent-rose)]" : "bg-[var(--accent-blue)]"}`} title={e.isEssential ? "Essential" : "Discretionary"} />
+                        <span className="text-sm truncate text-[var(--text-secondary)]">{e.description || cat}</span>
+                        {!e.includeInRetirement && <span className="text-[10px] bg-white/5 px-1.5 py-0.5 rounded text-[var(--text-tertiary)]">excl. retirement</span>}
                         {e.includeInRetirement && e.retirementAdjustmentPct !== 100 && (
-                          <span className="text-[10px] bg-amber-50 text-amber-700 border border-amber-200 px-1.5 py-0.5 rounded">{e.retirementAdjustmentPct}% in retirement</span>
+                          <span className="text-[10px] bg-[var(--accent-amber)]/10 text-[var(--accent-amber)] border border-[var(--accent-amber)]/20 px-1.5 py-0.5 rounded">{e.retirementAdjustmentPct}% in retirement</span>
                         )}
                       </div>
                       <div className="flex items-center gap-3 flex-shrink-0">
-                        <span className="text-sm font-semibold text-gray-800">${parseFloat(e.monthlyAmount).toLocaleString("en-CA", { maximumFractionDigits: 0 })}/mo</span>
-                        <span className="text-xs text-gray-400">${(parseFloat(e.monthlyAmount)*12).toLocaleString("en-CA", { maximumFractionDigits: 0 })}/yr</span>
-                        <button onClick={() => startEdit(e)} className="p-1 rounded hover:bg-slate-100 opacity-0 group-hover:opacity-100 text-gray-400 hover:text-gray-700"><Pencil className="w-3.5 h-3.5" /></button>
-                        <button onClick={() => { if (confirm("Delete?")) deleteExp.mutate(e.id); }} className="p-1 rounded hover:bg-red-50 opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500"><Trash2 className="w-3.5 h-3.5" /></button>
+                        <span className="text-sm font-semibold text-[var(--text-primary)] font-mono">${parseFloat(e.monthlyAmount).toLocaleString("en-CA", { maximumFractionDigits: 0 })}/mo</span>
+                        <span className="text-xs text-[var(--text-tertiary)] font-mono">${(parseFloat(e.monthlyAmount)*12).toLocaleString("en-CA", { maximumFractionDigits: 0 })}/yr</span>
+                        <button onClick={() => startEdit(e)} className="p-1 rounded hover:bg-white/8 opacity-0 group-hover:opacity-100 text-[var(--text-tertiary)] hover:text-[var(--accent-blue)]"><Pencil className="w-3.5 h-3.5" /></button>
+                        <button onClick={() => { if (confirm("Delete?")) deleteExp.mutate(e.id); }} className="p-1 rounded hover:bg-[var(--accent-rose)]/10 opacity-0 group-hover:opacity-100 text-[var(--text-tertiary)] hover:text-[var(--accent-rose)]"><Trash2 className="w-3.5 h-3.5" /></button>
                       </div>
                     </div>
                   ))}
@@ -154,58 +164,58 @@ export function ExpensesTab({ clientId }: { clientId: number }) {
       {/* Add/Edit form */}
       {showForm && (
         <div className="fixed inset-0 z-50 flex">
-          <div className="flex-1 bg-black/30 backdrop-blur-sm" onClick={resetForm} />
-          <div className="w-full max-w-lg bg-white shadow-2xl flex flex-col h-full border-l border-slate-200">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200">
-              <h2 className="text-lg font-bold text-gray-900">{editing !== null ? "Edit Expense" : "Add Expense"}</h2>
-              <button onClick={resetForm} className="p-2 rounded-lg hover:bg-slate-100 text-gray-400"><Plus className="w-4 h-4 rotate-45" /></button>
+          <div className="flex-1 bg-black/40 backdrop-blur-sm" onClick={resetForm} />
+          <div className="w-full max-w-lg bg-[var(--bg-card)] shadow-2xl flex flex-col h-full border-l border-[var(--border-subtle)]">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--border-subtle)]">
+              <h2 className="text-lg font-bold text-[var(--text-primary)]">{editing !== null ? "Edit Expense" : "Add Expense"}</h2>
+              <button onClick={resetForm} className="p-2 rounded-lg hover:bg-white/8 text-[var(--text-tertiary)]"><Plus className="w-4 h-4 rotate-45" /></button>
             </div>
             <div className="flex-1 overflow-y-auto px-6 py-6 space-y-5">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-sm font-semibold block mb-1 text-gray-700">Category</label>
-                  <select value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))} className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm">
+                  <label className={LABEL_CLS}>Category</label>
+                  <select value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))} className={INPUT_CLS}>
                     {EXPENSE_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className="text-sm font-semibold block mb-1 text-gray-700">Monthly Amount ($)</label>
-                  <input type="number" min="0" step="10" value={form.monthlyAmount} onChange={e => setForm(f => ({ ...f, monthlyAmount: e.target.value }))} className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm" placeholder="0" />
+                  <label className={LABEL_CLS}>Monthly Amount ($)</label>
+                  <input type="number" min="0" step="10" value={form.monthlyAmount} onChange={e => setForm(f => ({ ...f, monthlyAmount: e.target.value }))} className={INPUT_CLS} placeholder="0" />
                 </div>
               </div>
               <div>
-                <label className="text-sm font-semibold block mb-1 text-gray-700">Description <span className="font-normal text-gray-400">(optional)</span></label>
-                <input value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="e.g. Mortgage payment, groceries..." className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm" />
+                <label className={LABEL_CLS}>Description <span className="font-normal text-[var(--text-tertiary)]">(optional)</span></label>
+                <input value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="e.g. Mortgage payment, groceries..." className={INPUT_CLS} />
               </div>
-              <div className="space-y-3 bg-slate-50 rounded-xl p-4 border border-slate-200">
-                <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">Retirement Planning</p>
+              <div className="space-y-3 bg-[var(--bg-panel)] rounded-xl p-4 border border-[var(--border-subtle)]">
+                <p className="text-xs font-semibold uppercase tracking-wider text-[var(--text-tertiary)]">Retirement Planning</p>
                 <label className="flex items-center gap-2 cursor-pointer">
-                  <input type="checkbox" checked={form.isEssential} onChange={e => setForm(f => ({ ...f, isEssential: e.target.checked }))} className="w-4 h-4 rounded" />
-                  <span className="text-sm font-medium text-gray-700">Essential expense</span>
-                  <span className="text-xs text-gray-400">(housing, food, healthcare)</span>
+                  <input type="checkbox" checked={form.isEssential} onChange={e => setForm(f => ({ ...f, isEssential: e.target.checked }))} className="w-4 h-4 rounded accent-[var(--accent-cyan)]" />
+                  <span className="text-sm font-medium text-[var(--text-secondary)]">Essential expense</span>
+                  <span className="text-xs text-[var(--text-tertiary)]">(housing, food, healthcare)</span>
                 </label>
                 <label className="flex items-center gap-2 cursor-pointer">
-                  <input type="checkbox" checked={form.includeInRetirement} onChange={e => setForm(f => ({ ...f, includeInRetirement: e.target.checked }))} className="w-4 h-4 rounded" />
-                  <span className="text-sm font-medium text-gray-700">Include in retirement income need</span>
+                  <input type="checkbox" checked={form.includeInRetirement} onChange={e => setForm(f => ({ ...f, includeInRetirement: e.target.checked }))} className="w-4 h-4 rounded accent-[var(--accent-cyan)]" />
+                  <span className="text-sm font-medium text-[var(--text-secondary)]">Include in retirement income need</span>
                 </label>
                 {form.includeInRetirement && (
                   <div>
-                    <label className="text-sm font-semibold block mb-1 text-gray-700">Retirement adjustment: <span className="text-blue-600">{form.retirementAdjustmentPct}%</span></label>
-                    <input type="range" min="0" max="150" step="5" value={form.retirementAdjustmentPct} onChange={e => setForm(f => ({ ...f, retirementAdjustmentPct: e.target.value }))} className="w-full" />
-                    <div className="flex justify-between text-[10px] text-gray-400 mt-0.5"><span>0%</span><span>100% (same)</span><span>150%</span></div>
-                    <p className="text-xs text-gray-400 mt-1">${(parseFloat(form.monthlyAmount||"0")*parseInt(form.retirementAdjustmentPct)/100).toLocaleString("en-CA",{maximumFractionDigits:0})}/mo in retirement</p>
+                    <label className="text-sm font-semibold block mb-1 text-[var(--text-secondary)]">Retirement adjustment: <span className="text-[var(--accent-cyan)]">{form.retirementAdjustmentPct}%</span></label>
+                    <input type="range" min="0" max="150" step="5" value={form.retirementAdjustmentPct} onChange={e => setForm(f => ({ ...f, retirementAdjustmentPct: e.target.value }))} className="w-full accent-[var(--accent-cyan)]" />
+                    <div className="flex justify-between text-[10px] text-[var(--text-tertiary)] mt-0.5"><span>0%</span><span>100% (same)</span><span>150%</span></div>
+                    <p className="text-xs text-[var(--text-tertiary)] mt-1">${(parseFloat(form.monthlyAmount||"0")*parseInt(form.retirementAdjustmentPct)/100).toLocaleString("en-CA",{maximumFractionDigits:0})}/mo in retirement</p>
                   </div>
                 )}
               </div>
               <div>
-                <label className="text-sm font-semibold block mb-1 text-gray-700">Notes</label>
-                <textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} rows={2} className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm resize-none" />
+                <label className={LABEL_CLS}>Notes</label>
+                <textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} rows={2} className={INPUT_CLS + " resize-none"} />
               </div>
             </div>
-            <div className="px-6 py-4 border-t border-slate-200 bg-slate-50 flex justify-end gap-3">
-              <button onClick={resetForm} className="px-5 py-2.5 rounded-xl font-semibold text-gray-500 hover:bg-slate-100">Cancel</button>
+            <div className="px-6 py-4 border-t border-[var(--border-subtle)] bg-[var(--bg-panel)] flex justify-end gap-3">
+              <button onClick={resetForm} className="px-5 py-2.5 rounded-xl font-semibold text-[var(--text-secondary)] hover:bg-white/8">Cancel</button>
               <button onClick={handleSubmit} disabled={createExp.isPending || updateExp.isPending || !form.monthlyAmount}
-                className="px-6 py-2.5 rounded-xl font-semibold bg-brand-gradient hover:bg-brand-gradient-hover text-white disabled:opacity-50">
+                className="px-6 py-2.5 rounded-xl font-semibold bg-gradient-to-r from-[var(--accent-cyan)] to-[var(--accent-blue)] hover:opacity-90 text-[var(--bg-base)] disabled:opacity-50">
                 {editing !== null ? "Save Changes" : "Add Expense"}
               </button>
             </div>

@@ -1,0 +1,110 @@
+import { useEffect, useState } from "react";
+import { Shield, FileHeart, Calendar, Plus } from "lucide-react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { HubShell } from "./insightled";
+import { PoliciesTab } from "../pages/PoliciesTab";
+import { InsuranceTab as FnaWorksheetTab } from "../pages/FinancialPlanning";
+import { api } from "../lib/api";
+
+const queryClient = new QueryClient();
+
+interface Policy {
+  id: number;
+  type: string;
+  insured: string;
+  coverageAmount: string;
+  premium: string;
+  premiumFrequency: string;
+}
+
+interface Props {
+  clientId: number;
+  client?: any;
+  person: "primary" | "spouse" | "combined";
+  onPersonChange: (p: "primary" | "spouse" | "combined") => void;
+}
+
+const fmt$ = (n: number) =>
+  "$" + n.toLocaleString("en-CA", { maximumFractionDigits: 0 });
+
+function annualPremium(p: Policy): number {
+  const v = parseFloat(p.premium || "0");
+  const mult: Record<string, number> = { Monthly: 12, Quarterly: 4, "Semi-Annual": 2, Annual: 1 };
+  return v * (mult[p.premiumFrequency] ?? 12);
+}
+
+export function ProtectionHub({ clientId, client, person, onPersonChange }: Props) {
+  const [subtab, setSubtab] = useState<"coverage" | "gap">("coverage");
+  const [policies, setPolicies] = useState<Policy[]>([]);
+
+  useEffect(() => {
+    api.get<Policy[]>(`/api/clients/${clientId}/policies`)
+      .then(setPolicies)
+      .catch(() => setPolicies([]));
+  }, [clientId]);
+
+  const totalPremium = policies.reduce((s, p) => s + annualPremium(p), 0);
+  const hasSpouse = !!client?.spouseFirstName;
+  const spouseLabel = hasSpouse
+    ? client.spouseFirstName
+    : null;
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <HubShell
+        icon={Shield}
+        title="Protection"
+        subtitle={
+          <>
+            <span className="flex items-center gap-1.5">
+              <Calendar className="w-3.5 h-3.5" /> {policies.length} active {policies.length === 1 ? "policy" : "policies"}
+            </span>
+            <span>•</span>
+            <span>Annual premium {fmt$(totalPremium)}</span>
+          </>
+        }
+        actions={
+          <button
+            className="px-4 py-2 rounded-lg bg-[var(--bg-card)] border border-[var(--border-light)] text-sm font-medium text-white hover:bg-white/5 transition-colors flex items-center gap-2"
+            onClick={() => setSubtab("coverage")}
+          >
+            <Plus className="w-4 h-4" /> Add Policy
+          </button>
+        }
+        subtabs={[
+          {
+            key: "coverage",
+            label: "Coverage",
+            icon: Shield,
+            badge: String(policies.length),
+            badgeTone: "cyan",
+          },
+          {
+            key: "gap",
+            label: "Gap Analysis",
+            icon: FileHeart,
+            badgeTone: "amber",
+          },
+        ]}
+        activeSubtab={subtab}
+        onSubtabChange={(k) => setSubtab(k as "coverage" | "gap")}
+        personToggle={{
+          person,
+          onPersonChange,
+          primaryLabel: client?.firstName ?? "Primary",
+          spouseLabel,
+          showCombined: false,
+        }}
+      >
+        <div className="p-6">
+          {subtab === "coverage" && (
+            <PoliciesTab clientId={clientId} client={client} person={person === "combined" ? "primary" : person} />
+          )}
+          {subtab === "gap" && (
+            <FnaWorksheetTab clientId={clientId} planId={null} client={client} />
+          )}
+        </div>
+      </HubShell>
+    </QueryClientProvider>
+  );
+}

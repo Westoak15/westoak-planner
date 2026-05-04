@@ -1,8 +1,15 @@
-import { useState, useRef, useEffect, ReactNode } from "react";
-import { Mic, MicOff, Circle, X, Copy, Check, ChevronDown, ChevronUp, Loader2, FileText, Lightbulb, ListChecks } from "lucide-react";
+import { useState, useRef, useEffect, ReactNode, createContext, useContext } from "react";
+import {
+  Mic, MicOff, Circle, X, Copy, Check, ChevronDown, ChevronUp,
+  Loader2, FileText, Lightbulb, ListChecks,
+  Wallet, Target, GraduationCap, Receipt, Sparkles,
+  TrendingUp, TrendingDown,
+  type LucideIcon,
+} from "lucide-react";
 import { useVoice } from "../../contexts/VoiceContext";
 import { cn } from "../../lib/utils";
 import { api } from "../../lib/api";
+import { HubShell } from "../insightled";
 
 interface ClientOverview {
   netWorth: number;
@@ -19,41 +26,36 @@ interface ClientInfo {
   annualIncome?: string | null;
 }
 
+// ── Net Worth sub-tab context (consumed by NetWorthTab in MultiEntryTabs) ─────
+export const NWSubtabCtx = createContext<{ sub: string; setSub: (s: string) => void }>(
+  { sub: "assets", setSub: () => {} }
+);
+
 // ─────────────────────────────────────────────────────────────────────────────
-// Module config — maps sidebar Tab values to display labels
+// Module config — maps sidebar Tab values to display labels + icons
 // ─────────────────────────────────────────────────────────────────────────────
 
+// Tabs that still render through PlanningDocFlow (the simple themed ones).
+// Merged hubs (protection, retirementhub, taxestate, documents, fp) provide
+// their own dark Insight-Led shell and route outside this wrapper.
 export const PLANNING_TABS = [
-  "networth", "retirement", "pension", "insurance",
-  "resp", "expenses", "goals", "tax", "estate", "ai",
+  "networth", "goals", "expenses", "ai",
 ] as const;
 
 export type PlanningTab = typeof PLANNING_TABS[number];
 
-const MODULE_LABELS: Record<PlanningTab, string> = {
-  networth:   "Net Worth",
-  retirement: "Retirement",
-  pension:    "Pension",
-  insurance:  "Insurance",
-  resp:       "Education / RESP",
-  expenses:   "Expenses",
-  goals:      "Goals",
-  tax:        "Tax Planning",
-  estate:     "Estate",
-  ai:         "AI Insights",
+const TAB_META: Record<PlanningTab, { icon: LucideIcon; title: string; tagline: string }> = {
+  networth: { icon: Wallet,    title: "Net Worth",   tagline: "Household assets, liabilities and education savings" },
+  goals:    { icon: Target,    title: "Goals",       tagline: "Plan and prioritize household goals" },
+  expenses: { icon: Receipt,   title: "Cash Flow",   tagline: "Monthly income vs. expenses" },
+  ai:       { icon: Sparkles,  title: "AI Insights", tagline: "Generated planning recommendations" },
 };
 
 const VOICE_HINTS: Record<PlanningTab, string> = {
-  networth:   "Say assets and liabilities, e.g. RRSP $220k, mortgage $410k",
-  retirement: "Say retirement goals, e.g. retire at 62, need $8,000 a month",
-  pension:    "Say pension details, e.g. DBPP, accrued 22 years at $2,800/month",
-  insurance:  "Say coverage, e.g. life insurance $500k, no disability coverage",
-  resp:       "Say RESP details, e.g. two kids, RESP balance $45k",
-  expenses:   "Say monthly expenses, e.g. rent $2,200, groceries $600, car $850",
-  goals:      "Describe goals, e.g. buy cottage in 5 years, budget $400k",
-  tax:        "Say province and income, e.g. Ontario, $185k salary, married",
-  estate:     "Say estate details, e.g. will in place, no POA, two beneficiaries",
-  ai:         "Ask for an analysis, e.g. what are the top planning gaps for this client?",
+  networth: "Say assets and liabilities, e.g. RRSP $220k, mortgage $410k",
+  goals:    "Describe goals, e.g. buy cottage in 5 years, budget $400k",
+  expenses: "Say monthly expenses, e.g. rent $2,200, groceries $600, car $850",
+  ai:       "Ask for an analysis, e.g. what are the top planning gaps for this client?",
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -74,30 +76,45 @@ function fmtDuration(s: number) {
   return `${Math.floor(s / 60).toString().padStart(2, "0")}:${(s % 60).toString().padStart(2, "0")}`;
 }
 
+const fmt$ = (v: number | null | undefined) =>
+  v == null ? "—" : new Intl.NumberFormat("en-CA", { style: "currency", currency: "CAD", maximumFractionDigits: 0 }).format(v);
+
 // ─────────────────────────────────────────────────────────────────────────────
 // PlanningDocFlow
 // ─────────────────────────────────────────────────────────────────────────────
 
 interface PlanningDocFlowProps {
   tab: PlanningTab;
-  onTabChange: (t: PlanningTab) => void;
+  /** Kept for API compatibility — sidebar drives navigation now. */
+  onTabChange?: (t: PlanningTab) => void;
   clientId: number;
   clientName: string;
   client?: ClientInfo;
+  /** Optional initial sub-tab for Net Worth (e.g. deep-link to "education"). */
+  initialNwSubtab?: string;
+  /** Optional Primary | Spouse | Combined toggle (used by Goals). */
+  personToggle?: {
+    person: "primary" | "spouse" | "combined";
+    onPersonChange: (p: "primary" | "spouse" | "combined") => void;
+    primaryLabel: string;
+    spouseLabel?: string | null;
+    showCombined?: boolean;
+  };
   children: ReactNode;
 }
 
 export function PlanningDocFlow({
   tab,
-  onTabChange,
   clientId,
-  clientName,
   client,
+  personToggle,
+  initialNwSubtab,
   children,
 }: PlanningDocFlowProps) {
   const voice = useVoice();
+  const meta  = TAB_META[tab];
 
-  // ── Client overview (net worth strip) ───────────────────────────────────────
+  // ── Client overview (used in subtitle + NW sub-tab badges) ──────────────────
   const [overview, setOverview] = useState<ClientOverview | null>(null);
   useEffect(() => {
     api.get<ClientOverview>(`/api/clients/${clientId}/overview`)
@@ -105,22 +122,9 @@ export function PlanningDocFlow({
       .catch(() => {});
   }, [clientId]);
 
-  // ── Pill nav scroll ─────────────────────────────────────────────────────────
-  const pillNavRef   = useRef<HTMLDivElement>(null);
-  const activePillRef = useRef<HTMLButtonElement>(null);
-
-  useEffect(() => {
-    if (activePillRef.current && pillNavRef.current) {
-      const pill = activePillRef.current;
-      const container = pillNavRef.current;
-      const left = pill.offsetLeft;
-      const right = left + pill.offsetWidth;
-      const vLeft = container.scrollLeft;
-      const vRight = vLeft + container.offsetWidth;
-      if (left < vLeft + 12) container.scrollTo({ left: left - 12, behavior: "smooth" });
-      else if (right > vRight - 12) container.scrollTo({ left: right - container.offsetWidth + 12, behavior: "smooth" });
-    }
-  }, [tab]);
+  // ── Net Worth sub-tab state (hoisted here so HubShell owns the strip) ───────
+  const [nwSubtab, setNwSubtab] = useState(initialNwSubtab ?? "assets");
+  useEffect(() => { setNwSubtab(initialNwSubtab ?? "assets"); }, [clientId, tab, initialNwSubtab]);
 
   // ── Recording ───────────────────────────────────────────────────────────────
   const [recStatus, setRecStatus]     = useState<RecordingStatus>("idle");
@@ -128,11 +132,11 @@ export function PlanningDocFlow({
   const [summary, setSummary]         = useState<MeetingSummary | null>(null);
   const [summaryOpen, setSummaryOpen] = useState(false);
 
-  const mediaRecRef   = useRef<MediaRecorder | null>(null);
-  const chunksRef     = useRef<Blob[]>([]);
-  const timerRef      = useRef<ReturnType<typeof setInterval> | null>(null);
+  const mediaRecRef    = useRef<MediaRecorder | null>(null);
+  const chunksRef      = useRef<Blob[]>([]);
+  const timerRef       = useRef<ReturnType<typeof setInterval> | null>(null);
   const recognitionRef = useRef<any>(null);
-  const transcriptRef = useRef("");
+  const transcriptRef  = useRef("");
 
   async function startRec() {
     try {
@@ -185,7 +189,7 @@ export function PlanningDocFlow({
         const resp = await fetch("/api/ai/meeting-summary", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ audio: b64, transcript: transcriptRef.current, clientId, clientName }),
+          body: JSON.stringify({ audio: b64, transcript: transcriptRef.current, clientId, clientName: client ? `${client.firstName} ${client.lastName}` : "" }),
         });
         const data = await resp.json();
         setSummary({
@@ -212,166 +216,127 @@ export function PlanningDocFlow({
   }, []);
 
   // ── Voice FAB ───────────────────────────────────────────────────────────────
-  // The FAB triggers the per-field voice mode in the currently active/focused field.
-  // We don't have a "global active field" so the FAB shows a hint prompt instead.
   const [fabHintVisible, setFabHintVisible] = useState(false);
   const isVoiceListening  = voice.voiceState === "listening";
   const isVoiceProcessing = voice.voiceState === "processing";
 
-  const fmt$ = (v: number | null | undefined) =>
-    v == null ? "—" : new Intl.NumberFormat("en-CA", { style: "currency", currency: "CAD", maximumFractionDigits: 0 }).format(v);
+  // ── Subtitle ────────────────────────────────────────────────────────────────
+  const subtitle: ReactNode = tab === "networth" && overview ? (
+    <>
+      <span>
+        Net worth&nbsp;
+        <span className={overview.netWorth >= 0 ? "text-emerald-400 font-semibold" : "text-red-400 font-semibold"}>
+          {fmt$(overview.netWorth)}
+        </span>
+      </span>
+      <span>•</span>
+      <span>Assets&nbsp;<span className="text-[var(--accent-cyan)] font-semibold">{fmt$(overview.totalAssets)}</span></span>
+      <span>•</span>
+      <span>Liabilities&nbsp;<span className="text-red-400 font-semibold">{fmt$(overview.totalLiabilities)}</span></span>
+    </>
+  ) : (
+    <span>{meta.tagline}</span>
+  );
+
+  // ── Header actions: recording chip + Record button ─────────────────────────
+  const actions = (
+    <div className="flex items-center gap-2">
+      {recStatus === "recording" && (
+        <div className="flex items-center gap-1.5 bg-rose-50 border border-rose-200 text-rose-700 text-[11px] font-mono font-medium rounded-full px-2.5 py-1">
+          <Circle className="w-2 h-2 fill-rose-500 text-rose-500 animate-pulse" />
+          {fmtDuration(recDuration)}
+        </div>
+      )}
+      {recStatus === "processing" && (
+        <div className="flex items-center gap-1.5 bg-amber-50 border border-amber-200 text-amber-700 text-[11px] font-medium rounded-full px-2.5 py-1">
+          <Loader2 className="w-3 h-3 animate-spin" /> Processing…
+        </div>
+      )}
+      {recStatus === "done" && (
+        <button
+          onClick={() => setSummaryOpen(true)}
+          className="flex items-center gap-1.5 bg-emerald-50 border border-emerald-200 text-emerald-700 text-[11px] font-medium rounded-full px-2.5 py-1 hover:bg-emerald-100 transition-colors"
+        >
+          <Circle className="w-2 h-2 fill-emerald-500 text-emerald-500" />
+          View summary
+        </button>
+      )}
+      <button
+        onClick={recStatus === "recording" ? stopRec : recStatus === "idle" || recStatus === "done" ? startRec : undefined}
+        disabled={recStatus === "processing"}
+        className={cn(
+          "flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium border transition-all",
+          recStatus === "recording"
+            ? "bg-rose-500 border-rose-500 text-white hover:bg-rose-600"
+            : recStatus === "processing"
+            ? "bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed"
+            : "bg-white border-slate-200 text-slate-700 hover:border-cyan-400 hover:text-cyan-700"
+        )}
+      >
+        <Circle className={cn("w-2.5 h-2.5", recStatus === "recording" ? "fill-white text-white" : "fill-rose-500 text-rose-500")} />
+        {recStatus === "recording" ? "Stop" : "Record"}
+      </button>
+    </div>
+  );
 
   return (
-    <div className="flex flex-col h-full bg-white relative">
-
-      {/* ── K of C client context strip ──────────────────────────────────────── */}
-      <div className="flex-shrink-0 flex items-center justify-between px-4 bg-brand-gradient border-b border-cyan-300/40" style={{ height: 36 }}>
-        <div className="flex items-center gap-4">
-          <span className="text-[11px] font-bold text-white tracking-wide opacity-80">Knights of Columbus</span>
-          <span className="text-[rgba(255,255,255,0.2)] text-xs">|</span>
-          {overview ? (
-            <>
-              <span className="text-[11px] text-[rgba(255,255,255,0.6)]">
-                Net worth&nbsp;
-                <span className={`font-semibold ${overview.netWorth >= 0 ? "text-emerald-400" : "text-red-400"}`}>
-                  {fmt$(overview.netWorth)}
-                </span>
-              </span>
-              <span className="text-[11px] text-[rgba(255,255,255,0.6)]">
-                Assets&nbsp;<span className="font-semibold text-blue-300">{fmt$(overview.totalAssets)}</span>
-              </span>
-              <span className="text-[11px] text-[rgba(255,255,255,0.6)]">
-                Liabilities&nbsp;<span className="font-semibold text-red-400">{fmt$(overview.totalLiabilities)}</span>
-              </span>
-            </>
-          ) : (
-            <span className="text-[11px] text-[rgba(255,255,255,0.4)]">Loading…</span>
-          )}
-          {client?.annualIncome && (
-            <span className="text-[11px] text-[rgba(255,255,255,0.6)]">
-              Income&nbsp;<span className="font-semibold text-white">{fmt$(Number(client.annualIncome))}</span>
-            </span>
-          )}
-          {client?.province && (
-            <span className="text-[11px] font-semibold text-[rgba(255,255,255,0.7)]">{client.province}</span>
-          )}
+    <>
+      <NWSubtabCtx.Provider value={{ sub: nwSubtab, setSub: setNwSubtab }}>
+      <HubShell
+        icon={meta.icon}
+        title={meta.title}
+        subtitle={subtitle}
+        actions={actions}
+        personToggle={personToggle}
+        subtabs={tab === "networth" ? [
+          { key: "assets",      label: "Assets",      icon: TrendingUp,      badge: overview ? fmt$(overview.totalAssets)      : undefined, badgeTone: "green" },
+          { key: "liabilities", label: "Liabilities", icon: TrendingDown,    badge: overview ? fmt$(overview.totalLiabilities) : undefined, badgeTone: "rose"  },
+          { key: "education",   label: "Education",   icon: GraduationCap,   badgeTone: "cyan" },
+        ] : undefined}
+        activeSubtab={tab === "networth" ? nwSubtab : undefined}
+        onSubtabChange={tab === "networth" ? setNwSubtab : undefined}
+      >
+        <div className="p-6">
+          {children}
         </div>
-        <span className="text-[11px] text-[rgba(255,255,255,0.4)]">{clientName}</span>
-      </div>
-
-      {/* ── Pill nav ─────────────────────────────────────────────────────────── */}
-      <div className="flex-shrink-0 border-b border-slate-200 bg-white">
-        <div
-          ref={pillNavRef}
-          className="flex items-center gap-1 px-4 py-2 overflow-x-auto"
-          style={{ scrollbarWidth: "none" }}
-        >
-          {PLANNING_TABS.map(t => (
-            <button
-              key={t}
-              ref={t === tab ? activePillRef : undefined}
-              onClick={() => onTabChange(t)}
-              className={cn(
-                "flex-shrink-0 rounded-full px-3.5 py-1 text-[12px] font-medium border transition-all duration-150 whitespace-nowrap",
-                t === tab
-                  ? "bg-brand-gradient text-white border-blue-600"
-                  : "bg-white text-gray-500 border-slate-200 hover:border-slate-300 hover:text-gray-700"
-              )}
-            >
-              {MODULE_LABELS[t]}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* ── Module toolbar ───────────────────────────────────────────────────── */}
-      <div className="flex-shrink-0 sticky top-0 z-10 flex items-center justify-between px-5 py-2 bg-white border-b border-slate-100">
-        <span className="text-sm font-semibold text-gray-900">{MODULE_LABELS[tab]}</span>
-
-        <div className="flex items-center gap-2">
-          {/* Recording status chip */}
-          {recStatus === "recording" && (
-            <div className="flex items-center gap-1.5 bg-red-50 border border-red-200 text-red-700 text-[11px] font-medium rounded-full px-2.5 py-1">
-              <Circle className="w-2 h-2 fill-red-500 text-red-500 animate-pulse" />
-              {fmtDuration(recDuration)}
-            </div>
-          )}
-          {recStatus === "processing" && (
-            <div className="flex items-center gap-1.5 bg-amber-50 border border-amber-200 text-amber-700 text-[11px] font-medium rounded-full px-2.5 py-1">
-              <Loader2 className="w-3 h-3 animate-spin" /> Processing…
-            </div>
-          )}
-          {recStatus === "done" && (
-            <button
-              onClick={() => setSummaryOpen(true)}
-              className="flex items-center gap-1.5 bg-emerald-50 border border-emerald-200 text-emerald-700 text-[11px] font-medium rounded-full px-2.5 py-1 hover:bg-emerald-100 transition-colors"
-            >
-              <Circle className="w-2 h-2 fill-emerald-500 text-emerald-500" />
-              View summary
-            </button>
-          )}
-
-          {/* Record button */}
-          <button
-            onClick={recStatus === "recording" ? stopRec : recStatus === "idle" || recStatus === "done" ? startRec : undefined}
-            disabled={recStatus === "processing"}
-            className={cn(
-              "flex items-center gap-1.5 rounded-md px-3 py-1.5 text-[11px] font-medium border transition-all",
-              recStatus === "recording"
-                ? "bg-red-600 border-red-600 text-white hover:bg-red-700"
-                : recStatus === "processing"
-                ? "bg-slate-100 border-slate-200 text-gray-400 cursor-not-allowed"
-                : "bg-white border-slate-200 text-gray-600 hover:border-slate-300 hover:bg-slate-50"
-            )}
-          >
-            <Circle className={cn("w-2.5 h-2.5", recStatus === "recording" ? "fill-white text-white" : "fill-red-500 text-red-500")} />
-            {recStatus === "recording" ? "Stop" : "Record"}
-          </button>
-        </div>
-      </div>
-
-      {/* ── Module content ───────────────────────────────────────────────────── */}
-      <div className="flex-1 overflow-y-auto">
-        {children}
-      </div>
+      </HubShell>
+      </NWSubtabCtx.Provider>
 
       {/* ── Voice FAB ────────────────────────────────────────────────────────── */}
       <div className="fixed bottom-6 right-6 z-40 flex flex-col items-end gap-2">
-        {/* Hint bubble */}
         {fabHintVisible && !isVoiceListening && !isVoiceProcessing && (
-          <div className="bg-brand-gradient text-white text-xs rounded-xl px-3.5 py-2.5 max-w-[220px] text-right leading-snug shadow-md">
+          <div className="bg-white border border-slate-200/80 text-slate-700 text-xs rounded-xl px-3.5 py-2.5 max-w-[220px] text-right leading-snug shadow-lg">
             {VOICE_HINTS[tab]}
-            <div className="text-[10px] opacity-60 mt-1">Click a field's mic button to dictate</div>
+            <div className="text-[10px] text-slate-400 mt-1">Click a field's mic button to dictate</div>
           </div>
         )}
         {isVoiceListening && (
-          <div className="bg-blue-600 text-white text-xs rounded-xl px-3 py-2 max-w-[200px] text-right leading-snug">
+          <div className="bg-cyan-50 border border-cyan-300 text-cyan-700 text-xs font-semibold rounded-xl px-3 py-2 max-w-[200px] text-right leading-snug">
             Listening…
           </div>
         )}
-        {/* Ripple */}
         {isVoiceListening && (
-          <div className="absolute bottom-0 right-0 w-14 h-14 rounded-full bg-blue-500/20 animate-ping pointer-events-none" />
+          <div className="absolute bottom-0 right-0 w-14 h-14 rounded-full bg-cyan-500/30 animate-ping pointer-events-none" />
         )}
         <button
           onMouseEnter={() => setFabHintVisible(true)}
           onMouseLeave={() => setFabHintVisible(false)}
           className={cn(
-            "relative w-14 h-14 rounded-full flex items-center justify-center shadow-md transition-all duration-200 focus:outline-none",
+            "relative w-14 h-14 rounded-full flex items-center justify-center shadow-lg transition-all duration-200 focus:outline-none border",
             isVoiceListening
-              ? "bg-blue-600 scale-110"
+              ? "bg-gradient-to-br from-blue-600 to-cyan-500 border-cyan-500 scale-110"
               : isVoiceProcessing
-              ? "bg-gray-400 cursor-not-allowed"
-              : "bg-brand-gradient hover:bg-brand-gradient-hover hover:scale-105 active:scale-95"
+              ? "bg-slate-100 border-slate-200 cursor-not-allowed"
+              : "bg-white border-slate-200 hover:border-cyan-400 hover:scale-105 active:scale-95"
           )}
           title="Voice fill — hover for tip"
           aria-label="Voice fill"
         >
           {isVoiceProcessing
-            ? <Loader2 className="w-5 h-5 text-white animate-spin" />
+            ? <Loader2 className="w-5 h-5 text-slate-500 animate-spin" />
             : isVoiceListening
             ? <MicOff className="w-5 h-5 text-white" />
-            : <Mic className="w-5 h-5 text-white" />
+            : <Mic className="w-5 h-5 text-cyan-600" />
           }
         </button>
       </div>
@@ -384,7 +349,7 @@ export function PlanningDocFlow({
           onReset={() => { setSummaryOpen(false); setSummary(null); setRecStatus("idle"); }}
         />
       )}
-    </div>
+    </>
   );
 }
 
@@ -401,7 +366,7 @@ function MeetingSummaryDrawer({
   onClose: () => void;
   onReset: () => void;
 }) {
-  const [copied, setCopied]           = useState(false);
+  const [copied, setCopied]                 = useState(false);
   const [showTranscript, setShowTranscript] = useState(false);
 
   function copy() {
@@ -417,22 +382,20 @@ function MeetingSummaryDrawer({
 
   return (
     <>
-      {/* Backdrop */}
-      <div className="fixed inset-0 z-50 bg-black/20" onClick={onClose} />
+      <div className="fixed inset-0 z-50 bg-black/60" onClick={onClose} />
 
-      {/* Panel */}
-      <div className="fixed right-0 top-0 h-full w-full max-w-md bg-white z-50 flex flex-col border-l border-slate-200 shadow-xl">
+      <div className="fp-insightled fixed right-0 top-0 h-full w-full max-w-md bg-white z-50 flex flex-col border-l border-slate-200/80 shadow-2xl">
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200/80">
           <div>
-            <h3 className="text-sm font-semibold text-gray-900">Meeting Summary</h3>
-            <p className="text-xs text-gray-400 mt-0.5">{dateStr} · {durStr}</p>
+            <h3 className="text-sm font-semibold text-slate-900">Meeting Summary</h3>
+            <p className="text-xs text-slate-400 mt-0.5">{dateStr} · {durStr}</p>
           </div>
           <div className="flex gap-2">
-            <button onClick={onReset} className="text-xs text-gray-400 hover:text-gray-600 px-2 py-1 border border-slate-200 rounded-md transition-colors">
+            <button onClick={onReset} className="text-xs text-slate-500 hover:text-cyan-700 px-2 py-1 border border-slate-200 rounded-md transition-colors">
               New recording
             </button>
-            <button onClick={onClose} className="p-1.5 rounded-md text-gray-400 hover:text-gray-600 hover:bg-slate-100 transition-colors">
+            <button onClick={onClose} className="p-1.5 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors">
               <X className="w-4 h-4" />
             </button>
           </div>
@@ -440,32 +403,30 @@ function MeetingSummaryDrawer({
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto px-5 py-5 space-y-6">
-          {/* AI Summary */}
           <div>
             <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-1.5 text-[10px] font-semibold text-gray-400 uppercase tracking-widest">
+              <div className="flex items-center gap-1.5 text-[10px] font-semibold text-slate-400 uppercase tracking-[0.1em]">
                 <Lightbulb className="w-3 h-3" /> Summary
               </div>
-              <button onClick={copy} className="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600 transition-colors">
+              <button onClick={copy} className="flex items-center gap-1 text-xs text-slate-500 hover:text-cyan-700 transition-colors">
                 {copied ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
                 {copied ? "Copied" : "Copy"}
               </button>
             </div>
-            <div className="text-sm text-gray-700 leading-relaxed bg-slate-50 border border-slate-100 rounded-lg px-3.5 py-3 whitespace-pre-wrap">
+            <div className="text-sm text-slate-700 leading-relaxed bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-3 whitespace-pre-wrap">
               {summary.summary || "No summary generated."}
             </div>
           </div>
 
-          {/* Action items */}
           {summary.actionItems.length > 0 && (
             <div>
-              <div className="flex items-center gap-1.5 text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-2">
+              <div className="flex items-center gap-1.5 text-[10px] font-semibold text-slate-400 uppercase tracking-[0.1em] mb-2">
                 <ListChecks className="w-3 h-3" /> Action Items
               </div>
               <ul className="space-y-2">
                 {summary.actionItems.map((item, i) => (
-                  <li key={i} className="flex items-start gap-2 text-sm text-gray-700">
-                    <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-brand-gradient flex-shrink-0" />
+                  <li key={i} className="flex items-start gap-2 text-sm text-slate-700">
+                    <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-cyan-500 flex-shrink-0" />
                     {item}
                   </li>
                 ))}
@@ -473,17 +434,16 @@ function MeetingSummaryDrawer({
             </div>
           )}
 
-          {/* Transcript */}
           <div>
             <button
               onClick={() => setShowTranscript(v => !v)}
-              className="flex items-center justify-between w-full text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-2"
+              className="flex items-center justify-between w-full text-[10px] font-semibold text-slate-400 uppercase tracking-[0.1em] mb-2 hover:text-slate-700 transition-colors"
             >
               <span className="flex items-center gap-1.5"><FileText className="w-3 h-3" /> Full Transcript</span>
               {showTranscript ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
             </button>
             {showTranscript && (
-              <div className="text-xs text-gray-600 leading-relaxed bg-slate-50 border border-slate-100 rounded-lg px-3.5 py-3 max-h-56 overflow-y-auto font-mono whitespace-pre-wrap">
+              <div className="text-xs text-slate-600 leading-relaxed bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-3 max-h-56 overflow-y-auto font-mono whitespace-pre-wrap">
                 {summary.transcript || "No transcript available."}
               </div>
             )}

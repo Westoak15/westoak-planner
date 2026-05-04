@@ -93,7 +93,7 @@ const STATUS_CONFIG = {
   on_track:        { label: "On Track",        color: "text-green-700",  bg: "bg-green-50  border-green-200",  icon: CheckCircle,    dot: "bg-green-500" },
   needs_attention: { label: "Needs Attention", color: "text-amber-700",  bg: "bg-amber-50  border-amber-200",  icon: AlertTriangle,  dot: "bg-amber-500" },
   at_risk:         { label: "At Risk",         color: "text-red-700",    bg: "bg-red-50    border-red-200",    icon: XCircle,        dot: "bg-red-500" },
-  not_started:     { label: "Not Started",     color: "text-gray-500",   bg: "bg-slate-50   border-slate-200",   icon: Clock,          dot: "bg-gray-300" },
+  not_started:     { label: "Not Started",     color: "text-gray-500",   bg: "bg-gray-50   border-gray-200",   icon: Clock,          dot: "bg-gray-300" },
 };
 
 const PRIORITY_CONFIG = {
@@ -215,7 +215,7 @@ function SectionCard({ section, forceExpand = false }: { section: PlanSection; f
 
 function PriorityActionsPanel({ actions }: { actions: PriorityAction[] }) {
   return (
-    <div className="bg-brand-gradient rounded-xl p-4 text-white">
+    <div className="bg-[#0c1e3a] rounded-xl p-4 text-white">
       <div className="flex items-center gap-2 mb-3">
         <Star className="w-4 h-4 text-yellow-400" />
         <h3 className="font-bold text-sm">Top Priority Actions</h3>
@@ -306,7 +306,7 @@ function OverallScoreCard({ plan }: { plan: FinancialPlan }) {
 
 function ExecutiveSummary({ es }: { es: FinancialPlan["executiveSummary"] }) {
   return (
-    <div className="bg-white border border-slate-200 rounded-xl p-4">
+    <div className="bg-white border border-gray-200 rounded-xl p-4">
       <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide mb-3">Executive Summary</p>
       <div className="space-y-2 mb-4">
         {(es.narrative ?? "").split("\n\n").map((para, i) => (
@@ -455,11 +455,11 @@ export function FinancialPlanTab({ clientId, clientName }: { clientId: number; c
           {plan && (
             <>
               <button onClick={() => setExpandAll(v => !v)}
-                className="text-xs text-gray-500 hover:text-gray-700 border border-slate-200 px-3 py-1.5 rounded-lg">
+                className="text-xs text-gray-500 hover:text-gray-700 border border-gray-200 px-3 py-1.5 rounded-lg">
                 {expandAll ? "Collapse all" : "Expand all"}
               </button>
               <button onClick={printPlan} disabled={printing}
-                className="flex items-center gap-1.5 text-xs text-gray-600 hover:text-gray-900 border border-slate-200 px-3 py-1.5 rounded-lg disabled:opacity-50">
+                className="flex items-center gap-1.5 text-xs text-gray-600 hover:text-gray-900 border border-gray-200 px-3 py-1.5 rounded-lg disabled:opacity-50">
                 {printing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Printer className="w-3.5 h-3.5" />}
                 {printing ? "Generating…" : "Print / PDF"}
               </button>
@@ -468,7 +468,7 @@ export function FinancialPlanTab({ clientId, clientName }: { clientId: number; c
           <button
             onClick={generate}
             disabled={loading}
-            className="flex items-center gap-2 bg-brand-gradient hover:bg-brand-gradient-hover disabled:opacity-50 text-white font-semibold px-4 py-2 rounded-xl text-sm"
+            className="flex items-center gap-2 bg-[#0c1e3a] hover:bg-[#0e2a4a] disabled:opacity-50 text-white font-semibold px-4 py-2 rounded-xl text-sm"
           >
             {loading
               ? <><Loader2 className="w-4 h-4 animate-spin" /> Generating plan…</>
@@ -487,15 +487,15 @@ export function FinancialPlanTab({ clientId, clientName }: { clientId: number; c
 
       {/* Loading state */}
       {loading && (
-        <div className="bg-white border border-slate-200 rounded-xl p-12 text-center">
-          <Loader2 className="w-8 h-8 text-blue-600 animate-spin mx-auto mb-4" />
+        <div className="bg-white border border-gray-200 rounded-xl p-12 text-center">
+          <Loader2 className="w-8 h-8 text-[#0c1e3a] animate-spin mx-auto mb-4" />
           <p className="font-semibold text-gray-700">Analysing client data…</p>
           <p className="text-sm text-gray-400 mt-1">
             Claude is reviewing all 8 planning areas. This takes 15–30 seconds.
           </p>
           <div className="mt-4 flex justify-center gap-1">
             {["Net Worth", "Retirement", "Insurance", "Debt", "Tax", "Estate", "Goals", "Education"].map(a => (
-              <span key={a} className="text-[10px] bg-slate-100 text-gray-500 px-2 py-0.5 rounded-full">{a}</span>
+              <span key={a} className="text-[10px] bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">{a}</span>
             ))}
           </div>
         </div>
@@ -503,7 +503,7 @@ export function FinancialPlanTab({ clientId, clientName }: { clientId: number; c
 
       {/* Tabs */}
       {(plan || saved.length > 0) && !loading && (
-        <div className="flex gap-1 p-1 bg-slate-100 rounded-lg w-fit">
+        <div className="flex gap-1 p-1 bg-gray-100 rounded-lg w-fit">
           <button onClick={() => setView("plan")}
             className={`px-4 py-1.5 rounded-md text-sm font-semibold transition-colors ${view === "plan" ? "bg-white shadow text-gray-900" : "text-gray-500 hover:text-gray-700"}`}>
             Current Plan
@@ -530,8 +530,8 @@ export function FinancialPlanTab({ clientId, clientName }: { clientId: number; c
             const sections = p?.sections?.length ?? 0;
             const actions  = p?.priorityActions?.length ?? 0;
             return (
-              <div key={s.id} className="bg-white border border-slate-200 rounded-xl overflow-hidden hover:border-slate-300 transition-colors">
-                <div className="flex items-center justify-between px-4 py-3 bg-slate-50 border-b border-slate-100">
+              <div key={s.id} className="bg-white border border-gray-200 rounded-xl overflow-hidden hover:border-gray-300 transition-colors">
+                <div className="flex items-center justify-between px-4 py-3 bg-gray-50 border-b border-gray-100">
                   <div className="flex items-center gap-3">
                     {score && <span className={`text-lg font-bold ${scoreColor}`}>{score}/5</span>}
                     <div>
@@ -541,7 +541,7 @@ export function FinancialPlanTab({ clientId, clientName }: { clientId: number; c
                   </div>
                   <div className="flex items-center gap-2">
                     <button onClick={() => loadFromHistory(s)}
-                      className="text-xs text-blue-600 font-semibold border border-blue-600/20 px-3 py-1.5 rounded-lg hover:bg-brand-soft">
+                      className="text-xs text-[#0c1e3a] font-semibold border border-[#0c1e3a]/20 px-3 py-1.5 rounded-lg hover:bg-[#0c1e3a]/5">
                       Load
                     </button>
                     <button onClick={() => deleteSaved(s.id)}
@@ -554,15 +554,15 @@ export function FinancialPlanTab({ clientId, clientName }: { clientId: number; c
                   <div className="px-4 py-3">
                     <p className="text-xs text-gray-600 mb-2 line-clamp-2">{p.executiveSummary?.headline}</p>
                     <div className="grid grid-cols-3 gap-2">
-                      <div className="bg-slate-50 rounded-lg px-2.5 py-2 text-center">
+                      <div className="bg-gray-50 rounded-lg px-2.5 py-2 text-center">
                         <p className="text-sm font-bold text-gray-900">{fmt$(p.dataSnapshot?.netWorth ?? 0)}</p>
                         <p className="text-[10px] text-gray-400">Net Worth</p>
                       </div>
-                      <div className="bg-slate-50 rounded-lg px-2.5 py-2 text-center">
+                      <div className="bg-gray-50 rounded-lg px-2.5 py-2 text-center">
                         <p className="text-sm font-bold text-gray-900">{sections}</p>
                         <p className="text-[10px] text-gray-400">Sections</p>
                       </div>
-                      <div className="bg-slate-50 rounded-lg px-2.5 py-2 text-center">
+                      <div className="bg-gray-50 rounded-lg px-2.5 py-2 text-center">
                         <p className="text-sm font-bold text-gray-900">{actions}</p>
                         <p className="text-[10px] text-gray-400">Priority Actions</p>
                       </div>
@@ -592,7 +592,7 @@ export function FinancialPlanTab({ clientId, clientName }: { clientId: number; c
       {view === "plan" && plan && !loading && (
         <div id="fp-plan-print-root" className="space-y-4">
           {/* Print header — only shows when printing */}
-          <div className="hidden print:block mb-4 pb-4 border-b border-slate-200">
+          <div className="hidden print:block mb-4 pb-4 border-b border-gray-200">
             <h1 className="text-2xl font-bold text-gray-900">Financial Plan — {plan.clientName}</h1>
             <p className="text-sm text-gray-500">Generated {new Date(plan.generatedAt).toLocaleDateString("en-CA", { dateStyle: "long" })}</p>
           </div>
@@ -639,7 +639,7 @@ export function FinancialPlanTab({ clientId, clientName }: { clientId: number; c
 
           {/* Disclaimer */}
           {plan.disclaimer && (
-            <div className="bg-slate-50 border border-slate-200 rounded-xl p-3">
+            <div className="bg-gray-50 border border-gray-200 rounded-xl p-3">
               <p className="text-[10px] text-gray-400 leading-relaxed">{plan.disclaimer}</p>
             </div>
           )}
@@ -648,7 +648,7 @@ export function FinancialPlanTab({ clientId, clientName }: { clientId: number; c
 
       {/* Empty state */}
       {!plan && !loading && (
-        <div className="bg-white border border-dashed border-slate-200 rounded-xl p-12 text-center">
+        <div className="bg-white border border-dashed border-gray-200 rounded-xl p-12 text-center">
           <Sparkles className="w-10 h-10 text-gray-200 mx-auto mb-3" />
           <p className="font-semibold text-gray-500">No plan generated yet</p>
           <p className="text-sm text-gray-400 mt-1 mb-5">
@@ -656,7 +656,7 @@ export function FinancialPlanTab({ clientId, clientName }: { clientId: number; c
             based on all available client data across retirement, insurance, debt, tax, estate, and goals.
           </p>
           <button onClick={generate} disabled={loading}
-            className="inline-flex items-center gap-2 bg-brand-gradient hover:bg-brand-gradient-hover text-white font-semibold px-5 py-2.5 rounded-xl text-sm">
+            className="inline-flex items-center gap-2 bg-[#0c1e3a] hover:bg-[#0e2a4a] text-white font-semibold px-5 py-2.5 rounded-xl text-sm">
             <Sparkles className="w-4 h-4" />
             Generate Financial Plan
           </button>

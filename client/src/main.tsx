@@ -5,9 +5,12 @@ import Login from "./pages/Login";
 import FPApp from "./pages/App";
 import "./index.css";
 
+// Force login on every page load (reload or fresh browser open)
+try { localStorage.removeItem("fp_token"); } catch {}
+
 function Root() {
   const { user, loading } = useAuth();
-  if (loading) return <div className="h-screen bg-slate-100 flex items-center justify-center"><span className="text-slate-400 text-sm">Loading…</span></div>;
+  if (loading) return <div className="h-screen bg-[#0c1e3a] flex items-center justify-center"><span className="text-white/40 text-sm">Loading…</span></div>;
   return user ? <FPApp /> : <Login />;
 }
 

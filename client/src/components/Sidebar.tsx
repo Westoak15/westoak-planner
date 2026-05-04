@@ -1,16 +1,18 @@
 import {
   Users, LayoutDashboard, Scale, PiggyBank,
-  Shield, GraduationCap, CreditCard, Receipt, ScrollText, Brain, ClipboardList,
-  FileHeart, Settings, UserCheck, FileText, Target, Building2, Sparkles
+  Shield, Receipt, Brain,
+  Settings, UserCheck, FileText, Target, Sparkles
 } from "lucide-react";
 import { cn } from "../lib/utils";
 
 export type Tab =
+  | "admin" | "agents"
   | "clients" | "dashboard"
-  | "networth" | "retirement" | "insurance" | "fna"
-  | "resp" | "expenses" | "tax" | "estate" | "ai"
-  | "planning" | "reports" | "letters" | "goals" | "pension" | "admin" | "agents"
-  | "financialplan";
+  | "networth" | "goals"
+  | "retirementhub" | "protection"
+  | "expenses"
+  | "taxestate" | "ai"
+  | "documents" | "fp";
 
 interface Props {
   activeTab: Tab;
@@ -21,30 +23,26 @@ interface Props {
 }
 
 const ALL_TABS: { key: Tab; label: string; icon: any; dividerBefore?: boolean; gaOnly?: boolean }[] = [
-  { key: "admin",      label: "Admin",        icon: Settings, gaOnly: true }, 
-  { key: "agents",     label: "Agents",       icon: UserCheck, dividerBefore: true, gaOnly: true }, 
-  { key: "clients", label: "Clients", icon: Users },
-  { key: "dashboard",  label: "Dashboard",    icon: LayoutDashboard, dividerBefore: true },
-  { key: "networth",   label: "Net Worth",    icon: Scale },  
-  { key: "goals",      label: "Goals",        icon: Target },
-  { key: "pension",    label: "Pension",      icon: Building2 },
-  { key: "retirement", label: "Retirement",   icon: PiggyBank },
-  { key: "insurance",  label: "Policies",     icon: Shield },
-  { key: "fna",        label: "FNA",          icon: FileHeart },
-  { key: "resp",       label: "RESP",         icon: GraduationCap },
-  { key: "expenses",   label: "Expenses",     icon: Receipt },
-  { key: "tax",        label: "Tax",          icon: Receipt },
-  { key: "estate",     label: "Estate",       icon: ScrollText },
-  { key: "reports",    label: "Reports",      icon: FileText }, 
-  { key: "letters",    label: "Letters",      icon: FileText },
-  { key: "ai",         label: "AI Insights",  icon: Brain },
-  { key: "planning",      label: "Full FP View",    icon: ClipboardList, dividerBefore: true },
-  { key: "financialplan", label: "Financial Plan",   icon: Sparkles },
-
+  { key: "admin",         label: "Admin",          icon: Settings, gaOnly: true },
+  { key: "agents",        label: "Agents",         icon: UserCheck, dividerBefore: true, gaOnly: true },
+  { key: "clients",       label: "Clients",        icon: Users },
+  { key: "dashboard",     label: "Dashboard",      icon: LayoutDashboard, dividerBefore: true },
+  { key: "networth",      label: "Net Worth",      icon: Scale },
+  { key: "goals",         label: "Goals",          icon: Target },
+  { key: "retirementhub", label: "Retirement",     icon: PiggyBank },
+  { key: "protection",    label: "Protection",     icon: Shield },
+  { key: "expenses",      label: "Cash Flow",      icon: Receipt },
+  { key: "taxestate",     label: "Tax & Estate",   icon: Scale },
+  { key: "ai",            label: "AI Insights",    icon: Brain },
+  { key: "documents",     label: "Documents",      icon: FileText, dividerBefore: true },
+  { key: "fp",            label: "Financial Plan", icon: Sparkles },
 ];
 
-const STANDARD_TABS: Tab[] = ["clients", "networth", "insurance", "fna", "letters"];
-const PLAN_TABS: Tab[] = ["dashboard","networth", "goals", "pension", "retirement","insurance", "expenses","fna","resp","tax","estate", "reports", "letters", "ai","planning","financialplan"];
+const STANDARD_TABS: Tab[] = ["clients", "networth", "protection", "documents"];
+const PLAN_TABS: Tab[] = [
+  "dashboard", "networth", "goals", "retirementhub", "protection",
+  "expenses", "taxestate", "ai", "documents", "fp"
+];
 const NO_CLIENT_TABS: Tab[] = ["clients", "admin", "agents"];
 
 export function Sidebar({ activeTab, onTab, clientName, role, level }: Props) {
@@ -58,43 +56,46 @@ export function Sidebar({ activeTab, onTab, clientName, role, level }: Props) {
   });
 
   return (
-    <aside className="w-[160px] flex-shrink-0 flex flex-col select-none relative" style={{
-      background: "linear-gradient(180deg, #0c1e3a 0%, #0e2a4a 60%, #0a3556 100%)"
-    }}>
-      {/* Depth overlay */}
+    <aside className="relative overflow-hidden w-64 flex-shrink-0 min-h-screen bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 border-r border-white/5 flex flex-col select-none">
+      {/* Light bleed overlay */}
       <div className="absolute inset-0 bg-gradient-to-b from-white/5 to-transparent pointer-events-none" />
 
       {/* Logo */}
-      <div className="py-4 flex flex-col items-center border-b border-white/10 px-3 relative z-10">
+      <div className="relative py-5 flex flex-col items-center border-b border-white/10 px-4">
         <img src="/koc-logo.png" alt="Knights of Columbus" className="w-20 h-20 object-contain mb-2" />
-        <div className="text-white/60 font-medium text-[10px] tracking-wide text-center">Financial Planning Suite</div>
+        <div className="text-slate-400 font-medium text-[11px] tracking-wide text-center">Financial Planning Suite</div>
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 py-2 overflow-y-auto overflow-x-hidden relative z-10">
+      <nav className="relative flex-1 py-3 px-3 overflow-y-auto overflow-x-hidden space-y-0.5">
         {visibleTabs.map(tab => {
           const isActive = activeTab === tab.key;
           const disabled = PLAN_TABS.includes(tab.key) && !clientName && !NO_CLIENT_TABS.includes(tab.key);
+          const Icon = tab.icon;
           return (
             <div key={tab.key}>
-              {tab.dividerBefore && <div className="mx-3 my-1.5 border-t border-white/10" />}
+              {tab.dividerBefore && <div className="my-2 border-t border-white/5" />}
               <button
                 onClick={() => !disabled && onTab(tab.key)}
                 title={tab.label}
                 disabled={disabled}
                 className={cn(
-                  "w-full flex items-center gap-2.5 py-2 px-3 rounded-lg mx-auto transition-all duration-200 relative group focus:outline-none",
-                  isActive   ? "bg-white/10 text-white"
-                  : disabled ? "text-white/20 cursor-not-allowed"
-                  : "text-white/45 hover:text-white/80 hover:bg-white/5 hover:translate-x-[2px] cursor-pointer"
+                  "group relative w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-150 focus:outline-none",
+                  isActive
+                    ? "bg-white/5 text-white"
+                    : disabled
+                      ? "text-slate-600 cursor-not-allowed"
+                      : "text-slate-400 hover:text-white hover:bg-white/5 hover:translate-x-[2px] cursor-pointer"
                 )}
-                style={{ width: "calc(100% - 12px)", marginLeft: "6px" }}
               >
                 {isActive && (
-                  <div className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-6 bg-cyan-400 rounded-r shadow-[0_0_10px_rgba(34,211,238,0.6)]" />
+                  <div className="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-1 bg-cyan-400 rounded-r shadow-[0_0_10px_rgba(34,211,238,0.6)]" />
                 )}
-                <tab.icon className={cn("w-4 h-4 flex-shrink-0 transition-transform group-hover:scale-105", isActive && "text-cyan-400")} />
-                <span className="text-[11px] font-medium leading-tight">{tab.label}</span>
+                <Icon className={cn(
+                  "w-4 h-4 flex-shrink-0 transition-transform group-hover:scale-110",
+                  isActive ? "text-cyan-400" : "text-slate-400 group-hover:text-white"
+                )} />
+                <span className="text-sm font-medium">{tab.label}</span>
               </button>
             </div>
           );
@@ -102,14 +103,12 @@ export function Sidebar({ activeTab, onTab, clientName, role, level }: Props) {
       </nav>
 
       {/* Footer */}
-      <div className="px-3 py-2 border-t border-white/10 relative z-10">
-        {clientName && <div className="text-[9px] text-white/30 text-center truncate mb-1">{clientName}</div>}
-        <div className="text-[9px] text-white/20 text-center uppercase tracking-wider">
+      <div className="relative px-4 py-3 border-t border-white/10">
+        {clientName && <div className="text-[10px] text-slate-400 text-center truncate mb-1">{clientName}</div>}
+        <div className="text-[10px] text-slate-500 text-center uppercase tracking-wider">
           {isGA ? "General Agent" : `Field Agent${isStandard ? " · Standard" : " · Enhanced"}`}
         </div>
       </div>
     </aside>
   );
 }
-
-

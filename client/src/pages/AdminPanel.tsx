@@ -15,7 +15,7 @@ interface FaUser {
   createdAt?: string;
 }
 
-const INPUT = "w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 bg-white";
+const INPUT = "fp-input";
 
 const EMPTY_FORM = {
   firstName: "", lastName: "", email: "", password: "",
@@ -93,7 +93,7 @@ export function AdminPanel() {
           <p className="text-sm text-gray-400 mt-0.5">{users.length} field agent{users.length !== 1 ? "s" : ""}</p>
         </div>
         <button onClick={openCreate}
-          className="flex items-center gap-2 bg-brand-gradient hover:bg-brand-gradient-hover text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors">
+          className="flex items-center gap-2 bg-[#0c1e3a] hover:bg-[#0e2a4a] text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors">
           <Plus className="w-4 h-4" /> Add Agent
         </button>
       </div>
@@ -102,15 +102,15 @@ export function AdminPanel() {
       {loading ? (
         <div className="text-center py-16 text-gray-400">Loading…</div>
       ) : users.length === 0 ? (
-        <div className="text-center py-16 border-2 border-dashed border-slate-200 rounded-2xl">
+        <div className="text-center py-16 border-2 border-dashed border-gray-200 rounded-2xl">
           <User className="w-10 h-10 text-gray-300 mx-auto mb-3" />
           <p className="text-gray-500 font-semibold">No field agents yet</p>
           <p className="text-sm text-gray-400 mt-1">Create an agent to get started</p>
         </div>
       ) : (
-        <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
+        <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
           <table className="w-full text-sm">
-            <thead className="bg-slate-50 border-b border-slate-200">
+            <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
                 <th className="text-left px-4 py-3 font-semibold text-gray-600">Agent</th>
                 <th className="text-left px-4 py-3 font-semibold text-gray-600">Agent ID</th>
@@ -120,9 +120,9 @@ export function AdminPanel() {
                 <th className="text-right px-4 py-3 font-semibold text-gray-600">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-gray-100">
               {users.map(fa => (
-                <tr key={fa.id} className="hover:bg-slate-50 transition-colors">
+                <tr key={fa.id} className="hover:bg-gray-50 transition-colors">
                   <td className="px-4 py-3">
                     <div className="font-semibold text-gray-900">{fa.firstName} {fa.lastName}</div>
                     <div className="text-xs text-gray-400">{fa.email}</div>
@@ -131,13 +131,13 @@ export function AdminPanel() {
                   <td className="px-4 py-3 text-gray-600">{fa.agency || "—"}</td>
                   <td className="px-4 py-3 text-gray-600">{fa.phone || "—"}</td>
                   <td className="px-4 py-3">
-                    <span className={`text-xs px-2 py-1 rounded-full font-semibold ${fa.level === "enhanced" ? "bg-cyan-100 text-cyan-700" : "bg-slate-100 text-gray-600"}`}>
+                    <span className={`text-xs px-2 py-1 rounded-full font-semibold ${fa.level === "enhanced" ? "bg-cyan-100 text-cyan-700" : "bg-gray-100 text-gray-600"}`}>
                       {fa.level === "enhanced" ? "Enhanced" : "Standard"}
                     </span>
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center justify-end gap-2">
-                      <button onClick={() => openEdit(fa)} className="p-1.5 text-gray-400 hover:text-blue-600 transition-colors">
+                      <button onClick={() => openEdit(fa)} className="p-1.5 text-gray-400 hover:text-[#0c1e3a] transition-colors">
                         <Pencil className="w-4 h-4" />
                       </button>
                       <button onClick={() => handleDelete(fa.id, `${fa.firstName} ${fa.lastName}`)} className="p-1.5 text-gray-400 hover:text-red-500 transition-colors">
@@ -156,7 +156,7 @@ export function AdminPanel() {
       {showForm && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg">
-            <div className="flex justify-between items-center px-6 pt-6 pb-4 border-b border-slate-100">
+            <div className="flex justify-between items-center px-6 pt-6 pb-4 border-b border-gray-100">
               <h2 className="text-lg font-bold text-gray-900">{editId ? "Edit Agent" : "New Field Agent"}</h2>
               <button onClick={() => setShowForm(false)} className="text-gray-400 hover:text-gray-600">
                 <X className="w-5 h-5" />
@@ -225,7 +225,7 @@ export function AdminPanel() {
             <div className="flex justify-end gap-3 px-6 pb-6">
               <button onClick={() => setShowForm(false)} className="px-4 py-2.5 text-sm font-semibold text-gray-500 hover:text-gray-700">Cancel</button>
               <button onClick={handleSubmit} disabled={busy || (!editId && (!form.firstName || !form.lastName || !form.email || !form.password))}
-                className="px-6 py-2.5 bg-brand-gradient hover:bg-brand-gradient-hover disabled:opacity-50 text-white text-sm font-semibold rounded-xl transition-colors">
+                className="px-6 py-2.5 bg-[#0c1e3a] hover:bg-[#0e2a4a] disabled:opacity-50 text-white text-sm font-semibold rounded-xl transition-colors">
                 {busy ? "Saving…" : editId ? "Save Changes" : "Create Agent"}
               </button>
             </div>

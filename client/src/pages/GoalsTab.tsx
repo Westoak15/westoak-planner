@@ -3,8 +3,9 @@ import { api } from "../lib/api";
 import {
   Target, Plus, Trash2, Pencil, X, Save, TrendingDown, TrendingUp,
   RefreshCw, Home, Car, GraduationCap, Plane, Shield, Star, DollarSign,
-  Calendar, ToggleLeft, ToggleRight, ChevronDown, ChevronUp,
+  Calendar, ToggleLeft, ToggleRight, ChevronDown, ChevronUp, Mic,
 } from "lucide-react";
+import { VoiceAddDialog } from "../components/VoiceAddDialog";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -52,11 +53,11 @@ const FUNDING_SOURCES = [
 ];
 
 const PRIORITY_LABELS: Record<number, { label: string; color: string }> = {
-  1: { label: "Critical",      color: "text-red-600 bg-red-50 border-red-200" },
-  2: { label: "High",          color: "text-amber-600 bg-amber-50 border-amber-200" },
-  3: { label: "Medium",        color: "text-blue-600 bg-blue-50 border-blue-200" },
-  4: { label: "Low",           color: "text-gray-600 bg-slate-50 border-slate-200" },
-  5: { label: "Nice to have",  color: "text-gray-400 bg-slate-50 border-slate-100" },
+  1: { label: "Critical",      color: "text-rose-600   bg-rose-50   border-rose-200"   },
+  2: { label: "High",          color: "text-amber-600  bg-amber-50  border-amber-200"  },
+  3: { label: "Medium",        color: "text-blue-600   bg-blue-50   border-blue-200"   },
+  4: { label: "Low",           color: "text-slate-600  bg-slate-100 border-slate-200"  },
+  5: { label: "Nice to have",  color: "text-slate-500  bg-slate-50  border-slate-200"  },
 };
 
 const STATUS_CONFIG: Record<string, { label: string; dot: string }> = {
@@ -109,16 +110,16 @@ function GoalTimeline({ goals, clientAge }: { goals: Goal[]; clientAge?: number 
   const pct = (year: number) => Math.max(0, Math.min(100, ((year - startYear) / span) * 100));
 
   return (
-    <div className="bg-white border border-slate-200 rounded-xl p-4 mb-5">
-      <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">Goal Timeline</p>
+    <div className="fp-insightled-card p-4 mb-5">
+      <p className="text-xs font-semibold text-[var(--text-tertiary)] uppercase tracking-wide mb-3">Goal Timeline</p>
       <div className="relative h-8">
         {/* Track */}
-        <div className="absolute top-3.5 left-0 right-0 h-0.5 bg-slate-200 rounded" />
+        <div className="absolute top-3.5 left-0 right-0 h-0.5 bg-[var(--border-light)] rounded" />
         {/* Year labels */}
         {[0, 25, 50, 75, 100].map(p => {
           const yr = Math.round(startYear + (span * p / 100));
           return (
-            <span key={p} className="absolute top-5 text-[9px] text-gray-400 -translate-x-1/2" style={{ left: `${p}%` }}>
+            <span key={p} className="absolute top-5 text-[9px] text-[var(--text-tertiary)] -translate-x-1/2" style={{ left: `${p}%` }}>
               {yr}
             </span>
           );
@@ -132,9 +133,9 @@ function GoalTimeline({ goals, clientAge }: { goals: Goal[]; clientAge?: number 
           const isOutflow = g.cashflowType === "outflow" || g.cashflowType === "recurring_expense";
           return (
             <div key={g.id} className="absolute -translate-x-1/2 top-0 flex flex-col items-center" style={{ left: `${left}%` }}>
-              <div className={`w-7 h-7 rounded-full flex items-center justify-center border-2 border-white shadow-sm ${isOutflow ? "bg-red-100" : "bg-green-100"}`}
+              <div className={`w-7 h-7 rounded-full flex items-center justify-center border-2 border-[var(--bg-panel)] shadow-sm ${isOutflow ? "bg-[var(--accent-rose)]/15" : "bg-[var(--accent-green)]/15"}`}
                 title={`${g.title} (${year})`}>
-                <Icon className={`w-3.5 h-3.5 ${isOutflow ? "text-red-600" : "text-green-600"}`} />
+                <Icon className={`w-3.5 h-3.5 ${isOutflow ? "text-[var(--accent-rose)]" : "text-[var(--accent-green)]"}`} />
               </div>
             </div>
           );
@@ -156,53 +157,53 @@ function GoalCard({ goal, onEdit, onDelete }: { goal: Goal; onEdit: () => void; 
   const pct = hasProgress ? Math.min(100, (Number(goal.currentAmount || 0) / Number(goal.targetAmount)) * 100) : 0;
 
   return (
-    <div className={`bg-white border rounded-xl p-4 hover:shadow-sm transition-all ${goal.projectionImpact ? "border-blue-600/20 shadow-[inset_0_0_0_1px_rgba(12,30,58,0.08)]" : "border-slate-200"}`}>
+    <div className={`bg-white border rounded-2xl p-5 shadow-sm hover:shadow-md hover:-translate-y-[1px] transition-all duration-200 ${goal.projectionImpact ? "border-cyan-300 ring-1 ring-cyan-200" : "border-slate-200"}`}>
       {/* Header */}
-      <div className="flex items-start justify-between gap-2 mb-3">
+      <div className="flex items-start justify-between gap-2 mb-4">
         <div className="flex items-center gap-2.5 min-w-0">
-          <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${isOutflow ? "bg-red-50" : "bg-green-50"}`}>
-            <Icon className={`w-4 h-4 ${isOutflow ? "text-red-600" : "text-green-600"}`} />
+          <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${isOutflow ? "bg-rose-50" : "bg-emerald-50"}`}>
+            <Icon className={`w-4 h-4 ${isOutflow ? "text-rose-600" : "text-emerald-600"}`} />
           </div>
           <div className="min-w-0">
-            <p className="font-semibold text-gray-900 text-sm truncate">{goal.title}</p>
-            <p className="text-xs text-gray-400">{typeInfo.label}</p>
+            <p className="font-semibold text-slate-900 text-sm truncate">{goal.title}</p>
+            <p className="text-xs text-slate-500">{typeInfo.label}</p>
           </div>
         </div>
         <div className="flex items-center gap-1.5 flex-shrink-0">
           {goal.projectionImpact && (
-            <span className="text-[9px] font-bold bg-brand-gradient text-white px-1.5 py-0.5 rounded">IN PLAN</span>
+            <span className="text-[9px] font-bold bg-cyan-500 text-white px-1.5 py-0.5 rounded">IN PLAN</span>
           )}
-          <button onClick={onEdit} className="p-1 text-gray-300 hover:text-blue-500"><Pencil className="w-3.5 h-3.5" /></button>
-          <button onClick={onDelete} className="p-1 text-gray-300 hover:text-red-500"><Trash2 className="w-3.5 h-3.5" /></button>
+          <button onClick={onEdit} className="p-1 text-slate-400 hover:text-blue-600"><Pencil className="w-3.5 h-3.5" /></button>
+          <button onClick={onDelete} className="p-1 text-slate-400 hover:text-rose-600"><Trash2 className="w-3.5 h-3.5" /></button>
         </div>
       </div>
 
       {/* Key numbers */}
-      <div className="grid grid-cols-2 gap-2 mb-3">
+      <div className="grid grid-cols-2 gap-2 mb-4">
         {goal.cashflowType === "recurring_expense" ? (
           <>
-            <div className="bg-slate-50 rounded-lg px-2.5 py-1.5">
-              <p className="text-[10px] text-gray-400 mb-0.5">Annual Cost</p>
-              <p className="text-sm font-bold text-gray-900">{fmt$(goal.annualAmount)}</p>
+            <div className="bg-slate-50 rounded-lg px-3 py-2">
+              <p className="text-[10px] text-slate-500 mb-0.5">Annual Cost</p>
+              <p className="text-sm font-bold text-slate-900 font-mono">{fmt$(goal.annualAmount)}</p>
             </div>
-            <div className="bg-slate-50 rounded-lg px-2.5 py-1.5">
-              <p className="text-[10px] text-gray-400 mb-0.5">Years</p>
-              <p className="text-sm font-bold text-gray-900">{goal.startYear} – {goal.endYear}</p>
+            <div className="bg-slate-50 rounded-lg px-3 py-2">
+              <p className="text-[10px] text-slate-500 mb-0.5">Years</p>
+              <p className="text-sm font-bold text-slate-900 font-mono">{goal.startYear} – {goal.endYear}</p>
             </div>
           </>
         ) : (
           <>
-            <div className="bg-slate-50 rounded-lg px-2.5 py-1.5">
-              <p className="text-[10px] text-gray-400 mb-0.5">
+            <div className="bg-slate-50 rounded-lg px-3 py-2">
+              <p className="text-[10px] text-slate-500 mb-0.5">
                 {goal.cashflowType === "inflow" ? "Expected Inflow" : "Target Amount"}
               </p>
-              <p className={`text-sm font-bold ${isOutflow ? "text-red-700" : "text-gray-900"}`}>
+              <p className={`text-sm font-bold font-mono ${isOutflow ? "text-rose-600" : goal.cashflowType === "inflow" ? "text-emerald-600" : "text-slate-900"}`}>
                 {isOutflow && goal.cashflowType !== "inflow" ? "−" : ""}{fmt$(goal.targetAmount)}
               </p>
             </div>
-            <div className="bg-slate-50 rounded-lg px-2.5 py-1.5">
-              <p className="text-[10px] text-gray-400 mb-0.5">Target Year</p>
-              <p className="text-sm font-bold text-gray-900">{goal.targetYear ?? "—"}</p>
+            <div className="bg-slate-50 rounded-lg px-3 py-2">
+              <p className="text-[10px] text-slate-500 mb-0.5">Target Year</p>
+              <p className="text-sm font-bold text-slate-900 font-mono">{goal.targetYear ?? "—"}</p>
             </div>
           </>
         )}
@@ -211,20 +212,20 @@ function GoalCard({ goal, onEdit, onDelete }: { goal: Goal; onEdit: () => void; 
       {/* Progress bar for savings targets */}
       {hasProgress && (
         <div className="mb-3">
-          <div className="flex justify-between text-[10px] text-gray-400 mb-1">
+          <div className="flex justify-between text-[10px] text-slate-500 mb-1">
             <span>{fmt$(goal.currentAmount)} saved</span>
             <span>{pct.toFixed(0)}%</span>
           </div>
-          <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
-            <div className="h-full bg-brand-gradient rounded-full" style={{ width: `${pct}%` }} />
+          <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+            <div className="h-full bg-blue-500 rounded-full" style={{ width: `${pct}%` }} />
           </div>
         </div>
       )}
 
       {/* Monthly contribution */}
       {goal.monthlyContribution && Number(goal.monthlyContribution) > 0 && (
-        <p className="text-xs text-gray-500 mb-2">
-          <span className="font-semibold">{fmt$(goal.monthlyContribution)}/mo</span> contributing
+        <p className="text-xs text-slate-600 mb-2">
+          <span className="font-semibold font-mono">{fmt$(goal.monthlyContribution)}/mo</span> contributing
         </p>
       )}
 
@@ -233,12 +234,12 @@ function GoalCard({ goal, onEdit, onDelete }: { goal: Goal; onEdit: () => void; 
         <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded border ${priority.color}`}>
           {priority.label}
         </span>
-        <span className="flex items-center gap-1 text-[9px] text-gray-400">
+        <span className="flex items-center gap-1 text-[9px] text-slate-500">
           <span className={`w-1.5 h-1.5 rounded-full ${status.dot}`} />
           {status.label}
         </span>
         {goal.fundingSource && goal.fundingSource !== "automatic" && (
-          <span className="text-[9px] text-gray-400 bg-slate-50 px-1.5 py-0.5 rounded border border-slate-100">
+          <span className="text-[9px] text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200">
             {FUNDING_SOURCES.find(f => f.key === goal.fundingSource)?.label ?? goal.fundingSource}
           </span>
         )}
@@ -311,17 +312,17 @@ function GoalForm({
   const isOneTime   = form.cashflowType === "outflow" || form.cashflowType === "inflow";
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
-        <div className="sticky top-0 bg-white border-b border-slate-100 px-6 py-4 flex items-center justify-between rounded-t-2xl">
-          <h3 className="text-base font-bold text-gray-900">{initial.title ? "Edit Goal" : "New Goal"}</h3>
-          <button onClick={onCancel} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+      <div className="bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+        <div className="sticky top-0 bg-[var(--bg-card)] border-b border-[var(--border-subtle)] px-6 py-4 flex items-center justify-between rounded-t-2xl">
+          <h3 className="text-base font-bold text-[var(--text-primary)]">{initial.title ? "Edit Goal" : "New Goal"}</h3>
+          <button onClick={onCancel} className="text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"><X className="w-5 h-5" /></button>
         </div>
 
         <div className="p-6 space-y-4">
           {/* Goal Type */}
           <div>
-            <label className="text-xs font-semibold text-gray-500 block mb-1.5">Goal Type</label>
+            <label className="text-xs font-semibold text-[var(--text-tertiary)] block mb-1.5">Goal Type</label>
             <div className="grid grid-cols-2 gap-2">
               {GOAL_TYPES.map(t => {
                 const Icon = t.icon;
@@ -329,8 +330,8 @@ function GoalForm({
                   <button key={t.key} onClick={() => changeType(t.key)}
                     className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-left text-xs transition-all ${
                       form.goalType === t.key
-                        ? "border-blue-600 bg-brand-soft text-blue-600 font-semibold"
-                        : "border-slate-200 text-gray-600 hover:border-slate-300"
+                        ? "border-[var(--accent-cyan)] bg-[var(--accent-cyan)]/10 text-[var(--accent-cyan)] font-semibold"
+                        : "border-[var(--border-light)] text-[var(--text-secondary)] hover:border-[var(--border-light)] hover:bg-white/5"
                     }`}>
                     <Icon className="w-3.5 h-3.5 flex-shrink-0" />
                     <span>{t.label}</span>
@@ -338,22 +339,22 @@ function GoalForm({
                 );
               })}
             </div>
-            <p className="text-[10px] text-gray-400 mt-1.5">{typeInfo.desc}</p>
+            <p className="text-[10px] text-[var(--text-tertiary)] mt-1.5">{typeInfo.desc}</p>
           </div>
 
           {/* Title */}
           <div>
-            <label className="text-xs font-semibold text-gray-500 block mb-1">Goal Title</label>
+            <label className="text-xs font-semibold text-[var(--text-tertiary)] block mb-1">Goal Title</label>
             <input value={form.title} onChange={e => upd("title", e.target.value)}
-              className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-blue-600"
+              className="w-full px-3 py-2 rounded-xl border border-[var(--border-light)] bg-[var(--bg-panel)] text-[var(--text-primary)] text-sm focus:outline-none focus:border-[var(--accent-cyan)] focus:ring-0 placeholder:text-[var(--text-tertiary)]"
               placeholder={typeInfo.label + " goal"} />
           </div>
 
           {/* Cashflow type override */}
           <div>
-            <label className="text-xs font-semibold text-gray-500 block mb-1">Cashflow Type</label>
+            <label className="text-xs font-semibold text-[var(--text-tertiary)] block mb-1">Cashflow Type</label>
             <select value={form.cashflowType} onChange={e => upd("cashflowType", e.target.value)}
-              className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-blue-600">
+              className="w-full px-3 py-2 rounded-xl border border-[var(--border-light)] bg-[var(--bg-panel)] text-[var(--text-primary)] text-sm focus:outline-none focus:border-[var(--accent-cyan)] focus:ring-0">
               <option value="outflow">One-time outflow (expense)</option>
               <option value="inflow">One-time inflow (receipt)</option>
               <option value="savings_target">Savings target (accumulation)</option>
@@ -364,31 +365,31 @@ function GoalForm({
           {/* Liability multi-select for debt_free goals */}
           {form.goalType === "debt_free" && liabilities.length > 0 && (
             <div>
-              <label className="text-xs font-semibold text-gray-500 block mb-1.5">
+              <label className="text-xs font-semibold text-[var(--text-tertiary)] block mb-1.5">
                 Select Liabilities to Pay Off
                 {selectedLiabilities.size > 0 && (
-                  <span className="ml-2 text-blue-600 font-bold">{selectedLiabilities.size} selected</span>
+                  <span className="ml-2 text-[var(--accent-cyan)] font-bold">{selectedLiabilities.size} selected</span>
                 )}
               </label>
-              <div className="border border-slate-200 rounded-xl overflow-hidden divide-y divide-slate-100">
+              <div className="border border-[var(--border-light)] rounded-xl overflow-hidden divide-y divide-[var(--border-subtle)]">
                 {liabilities.map(l => {
                   const isSelected = selectedLiabilities.has(l.id);
                   const label = l.name || l.category || `Liability #${l.id}`;
                   return (
                     <div key={l.id} onClick={() => toggleLiability(l.id)}
-                      className={`flex items-center gap-3 px-3 py-2.5 cursor-pointer transition-colors ${isSelected ? "bg-brand-soft" : "hover:bg-slate-50"}`}>
-                      <div className={`w-4 h-4 rounded border-2 flex-shrink-0 flex items-center justify-center transition-colors ${isSelected ? "bg-brand-gradient border-blue-600" : "border-slate-300"}`}>
+                      className={`flex items-center gap-3 px-3 py-2.5 cursor-pointer transition-colors ${isSelected ? "bg-[var(--accent-cyan)]/[0.07]" : "hover:bg-white/5"}`}>
+                      <div className={`w-4 h-4 rounded border-2 flex-shrink-0 flex items-center justify-center transition-colors ${isSelected ? "bg-[var(--accent-cyan)] border-[var(--accent-cyan)]" : "border-[var(--border-light)]"}`}>
                         {isSelected && <svg width="8" height="8" viewBox="0 0 8 8"><path d="M1 4l2 2 4-4" stroke="white" strokeWidth="1.5" fill="none" strokeLinecap="round"/></svg>}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-gray-900">{label}</p>
-                        <p className="text-xs text-gray-400">
+                        <p className="text-sm font-semibold text-[var(--text-primary)]">{label}</p>
+                        <p className="text-xs text-[var(--text-tertiary)]">
                           {l.interestRate != null ? `${l.interestRate}% · ` : ""}
                           {l.minimumPayment ? `$${l.minimumPayment.toLocaleString("en-CA", { maximumFractionDigits: 0 })}/mo` : ""}
                           {l.annualCost ? ` · $${l.annualCost.toLocaleString("en-CA", { maximumFractionDigits: 0 })}/yr` : ""}
                         </p>
                       </div>
-                      <p className={`text-sm font-bold flex-shrink-0 ${isSelected ? "text-blue-600" : "text-gray-700"}`}>
+                      <p className={`text-sm font-bold flex-shrink-0 font-mono ${isSelected ? "text-[var(--accent-cyan)]" : "text-[var(--text-secondary)]"}`}>
                         ${l.balance.toLocaleString("en-CA", { maximumFractionDigits: 0 })}
                       </p>
                     </div>
@@ -403,23 +404,23 @@ function GoalForm({
                 const totalAnnual  = sel.reduce((s, l) => s + (l.annualCost ?? 0), 0);
                 const totalMonthly = sel.reduce((s, l) => s + (l.minimumPayment ?? 0), 0);
                 return (
-                  <div className="mt-2 bg-brand-soft rounded-xl px-3 py-2.5 grid grid-cols-3 gap-2">
+                  <div className="mt-2 bg-[var(--accent-cyan)]/[0.07] rounded-xl px-3 py-2.5 grid grid-cols-3 gap-2">
                     <div>
-                      <p className="text-[10px] text-gray-400">Total Balance</p>
-                      <p className="text-sm font-bold text-blue-600">${totalBalance.toLocaleString("en-CA", { maximumFractionDigits: 0 })}</p>
+                      <p className="text-[10px] text-[var(--text-tertiary)]">Total Balance</p>
+                      <p className="text-sm font-bold text-[var(--accent-cyan)] font-mono">${totalBalance.toLocaleString("en-CA", { maximumFractionDigits: 0 })}</p>
                     </div>
                     <div>
-                      <p className="text-[10px] text-gray-400">Monthly Payments</p>
-                      <p className="text-sm font-bold text-gray-700">${totalMonthly.toLocaleString("en-CA", { maximumFractionDigits: 0 })}/mo</p>
+                      <p className="text-[10px] text-[var(--text-tertiary)]">Monthly Payments</p>
+                      <p className="text-sm font-bold text-[var(--text-primary)] font-mono">${totalMonthly.toLocaleString("en-CA", { maximumFractionDigits: 0 })}/mo</p>
                     </div>
                     <div>
-                      <p className="text-[10px] text-gray-400">Annual Cost</p>
-                      <p className="text-sm font-bold text-gray-700">${totalAnnual.toLocaleString("en-CA", { maximumFractionDigits: 0 })}/yr</p>
+                      <p className="text-[10px] text-[var(--text-tertiary)]">Annual Cost</p>
+                      <p className="text-sm font-bold text-[var(--text-primary)] font-mono">${totalAnnual.toLocaleString("en-CA", { maximumFractionDigits: 0 })}/yr</p>
                     </div>
                   </div>
                 );
               })()}
-              <p className="text-[10px] text-gray-400 mt-1.5">Selecting liabilities auto-fills the title, target amount, and annual cost below</p>
+              <p className="text-[10px] text-[var(--text-tertiary)] mt-1.5">Selecting liabilities auto-fills the title, target amount, and annual cost below</p>
             </div>
           )}
 
@@ -427,16 +428,16 @@ function GoalForm({
           {isOneTime && (
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-xs font-semibold text-gray-500 block mb-1">
+                <label className="text-xs font-semibold text-[var(--text-tertiary)] block mb-1">
                   {form.cashflowType === "inflow" ? "Expected Amount ($)" : "Cost / Amount ($)"}
                 </label>
                 <input type="number" value={form.targetAmount} onChange={e => upd("targetAmount", e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm" placeholder="0" />
+                  className="w-full px-3 py-2 rounded-xl border border-[var(--border-light)] bg-[var(--bg-panel)] text-[var(--text-primary)] text-sm focus:outline-none focus:border-[var(--accent-cyan)] focus:ring-0" placeholder="0" />
               </div>
               <div>
-                <label className="text-xs font-semibold text-gray-500 block mb-1">Target Year</label>
+                <label className="text-xs font-semibold text-[var(--text-tertiary)] block mb-1">Target Year</label>
                 <input type="number" value={form.targetYear} onChange={e => upd("targetYear", e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm"
+                  className="w-full px-3 py-2 rounded-xl border border-[var(--border-light)] bg-[var(--bg-panel)] text-[var(--text-primary)] text-sm focus:outline-none focus:border-[var(--accent-cyan)] focus:ring-0"
                   min={CURRENT_YEAR} max={CURRENT_YEAR + 60} />
               </div>
             </div>
@@ -447,27 +448,27 @@ function GoalForm({
             <>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs font-semibold text-gray-500 block mb-1">Target Amount ($)</label>
+                  <label className="text-xs font-semibold text-[var(--text-tertiary)] block mb-1">Target Amount ($)</label>
                   <input type="number" value={form.targetAmount} onChange={e => upd("targetAmount", e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm" placeholder="0" />
+                    className="w-full px-3 py-2 rounded-xl border border-[var(--border-light)] bg-[var(--bg-panel)] text-[var(--text-primary)] text-sm focus:outline-none focus:border-[var(--accent-cyan)] focus:ring-0" placeholder="0" />
                 </div>
                 <div>
-                  <label className="text-xs font-semibold text-gray-500 block mb-1">Current Balance ($)</label>
+                  <label className="text-xs font-semibold text-[var(--text-tertiary)] block mb-1">Current Balance ($)</label>
                   <input type="number" value={form.currentAmount} onChange={e => upd("currentAmount", e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm" placeholder="0" />
+                    className="w-full px-3 py-2 rounded-xl border border-[var(--border-light)] bg-[var(--bg-panel)] text-[var(--text-primary)] text-sm focus:outline-none focus:border-[var(--accent-cyan)] focus:ring-0" placeholder="0" />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs font-semibold text-gray-500 block mb-1">Target Year</label>
+                  <label className="text-xs font-semibold text-[var(--text-tertiary)] block mb-1">Target Year</label>
                   <input type="number" value={form.targetYear} onChange={e => upd("targetYear", e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm"
+                    className="w-full px-3 py-2 rounded-xl border border-[var(--border-light)] bg-[var(--bg-panel)] text-[var(--text-primary)] text-sm focus:outline-none focus:border-[var(--accent-cyan)] focus:ring-0"
                     min={CURRENT_YEAR} max={CURRENT_YEAR + 60} />
                 </div>
                 <div>
-                  <label className="text-xs font-semibold text-gray-500 block mb-1">Monthly Contribution ($)</label>
+                  <label className="text-xs font-semibold text-[var(--text-tertiary)] block mb-1">Monthly Contribution ($)</label>
                   <input type="number" value={form.monthlyContribution} onChange={e => upd("monthlyContribution", e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm" placeholder="0" />
+                    className="w-full px-3 py-2 rounded-xl border border-[var(--border-light)] bg-[var(--bg-panel)] text-[var(--text-primary)] text-sm focus:outline-none focus:border-[var(--accent-cyan)] focus:ring-0" placeholder="0" />
                 </div>
               </div>
             </>
@@ -477,21 +478,21 @@ function GoalForm({
           {isRecurring && (
             <div className="grid grid-cols-3 gap-3">
               <div>
-                <label className="text-xs font-semibold text-gray-500 block mb-1">Start Year</label>
+                <label className="text-xs font-semibold text-[var(--text-tertiary)] block mb-1">Start Year</label>
                 <input type="number" value={form.startYear} onChange={e => upd("startYear", e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm"
+                  className="w-full px-3 py-2 rounded-xl border border-[var(--border-light)] bg-[var(--bg-panel)] text-[var(--text-primary)] text-sm focus:outline-none focus:border-[var(--accent-cyan)] focus:ring-0"
                   min={CURRENT_YEAR} max={CURRENT_YEAR + 60} />
               </div>
               <div>
-                <label className="text-xs font-semibold text-gray-500 block mb-1">End Year</label>
+                <label className="text-xs font-semibold text-[var(--text-tertiary)] block mb-1">End Year</label>
                 <input type="number" value={form.endYear} onChange={e => upd("endYear", e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm"
+                  className="w-full px-3 py-2 rounded-xl border border-[var(--border-light)] bg-[var(--bg-panel)] text-[var(--text-primary)] text-sm focus:outline-none focus:border-[var(--accent-cyan)] focus:ring-0"
                   min={CURRENT_YEAR} max={CURRENT_YEAR + 60} />
               </div>
               <div>
-                <label className="text-xs font-semibold text-gray-500 block mb-1">Annual Cost ($)</label>
+                <label className="text-xs font-semibold text-[var(--text-tertiary)] block mb-1">Annual Cost ($)</label>
                 <input type="number" value={form.annualAmount} onChange={e => upd("annualAmount", e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm" placeholder="0" />
+                  className="w-full px-3 py-2 rounded-xl border border-[var(--border-light)] bg-[var(--bg-panel)] text-[var(--text-primary)] text-sm focus:outline-none focus:border-[var(--accent-cyan)] focus:ring-0" placeholder="0" />
               </div>
             </div>
           )}
@@ -499,77 +500,77 @@ function GoalForm({
           {/* Priority, status, funding */}
           <div className="grid grid-cols-3 gap-3">
             <div>
-              <label className="text-xs font-semibold text-gray-500 block mb-1">Priority</label>
+              <label className="text-xs font-semibold text-[var(--text-tertiary)] block mb-1">Priority</label>
               <select value={form.priority} onChange={e => upd("priority", Number(e.target.value))}
-                className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm">
+                className="w-full px-3 py-2 rounded-xl border border-[var(--border-light)] bg-[var(--bg-panel)] text-[var(--text-primary)] text-sm focus:outline-none focus:border-[var(--accent-cyan)] focus:ring-0">
                 {Object.entries(PRIORITY_LABELS).map(([k, v]) => (
                   <option key={k} value={k}>{v.label}</option>
                 ))}
               </select>
             </div>
             <div>
-              <label className="text-xs font-semibold text-gray-500 block mb-1">Status</label>
+              <label className="text-xs font-semibold text-[var(--text-tertiary)] block mb-1">Status</label>
               <select value={form.status} onChange={e => upd("status", e.target.value)}
-                className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm">
+                className="w-full px-3 py-2 rounded-xl border border-[var(--border-light)] bg-[var(--bg-panel)] text-[var(--text-primary)] text-sm focus:outline-none focus:border-[var(--accent-cyan)] focus:ring-0">
                 {Object.entries(STATUS_CONFIG).map(([k, v]) => (
                   <option key={k} value={k}>{v.label}</option>
                 ))}
               </select>
             </div>
             <div>
-              <label className="text-xs font-semibold text-gray-500 block mb-1">Funding Source</label>
+              <label className="text-xs font-semibold text-[var(--text-tertiary)] block mb-1">Funding Source</label>
               <select value={form.fundingSource} onChange={e => upd("fundingSource", e.target.value)}
-                className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm">
+                className="w-full px-3 py-2 rounded-xl border border-[var(--border-light)] bg-[var(--bg-panel)] text-[var(--text-primary)] text-sm focus:outline-none focus:border-[var(--accent-cyan)] focus:ring-0">
                 {FUNDING_SOURCES.map(f => <option key={f.key} value={f.key}>{f.label}</option>)}
               </select>
             </div>
           </div>
 
           {/* Inflation adjust */}
-          <div className="flex items-center justify-between bg-slate-50 rounded-xl px-3 py-2.5">
+          <div className="flex items-center justify-between bg-[var(--bg-panel)] border border-[var(--border-subtle)] rounded-xl px-3 py-2.5">
             <div>
-              <p className="text-xs font-semibold text-gray-700">Inflation-adjust amount</p>
-              <p className="text-[10px] text-gray-400">Grow the goal amount with inflation to target year</p>
+              <p className="text-xs font-semibold text-[var(--text-secondary)]">Inflation-adjust amount</p>
+              <p className="text-[10px] text-[var(--text-tertiary)]">Grow the goal amount with inflation to target year</p>
             </div>
             <button onClick={() => upd("inflationAdjust", !form.inflationAdjust)}
-              className={`transition-colors ${form.inflationAdjust ? "text-blue-600" : "text-gray-300"}`}>
+              className={`transition-colors ${form.inflationAdjust ? "text-[var(--accent-cyan)]" : "text-[var(--text-tertiary)]"}`}>
               {form.inflationAdjust ? <ToggleRight className="w-6 h-6" /> : <ToggleLeft className="w-6 h-6" />}
             </button>
           </div>
 
           {/* Projection impact toggle */}
           <div className={`flex items-center justify-between rounded-xl px-3 py-2.5 border transition-all ${
-            form.projectionImpact ? "bg-brand-soft border-blue-600/20" : "bg-slate-50 border-slate-200"
+            form.projectionImpact ? "bg-[var(--accent-cyan)]/[0.07] border-[var(--accent-cyan)]/25" : "bg-[var(--bg-panel)] border-[var(--border-subtle)]"
           }`}>
             <div>
-              <p className={`text-xs font-semibold ${form.projectionImpact ? "text-blue-600" : "text-gray-700"}`}>
+              <p className={`text-xs font-semibold ${form.projectionImpact ? "text-[var(--accent-cyan)]" : "text-[var(--text-secondary)]"}`}>
                 Include in Monte Carlo projection
               </p>
-              <p className="text-[10px] text-gray-400">
+              <p className="text-[10px] text-[var(--text-tertiary)]">
                 {form.projectionImpact
                   ? "This goal will be injected as a cashflow event in the retirement simulation"
                   : "Enable to factor this goal into retirement success probability"}
               </p>
             </div>
             <button onClick={() => upd("projectionImpact", !form.projectionImpact)}
-              className={`transition-colors ${form.projectionImpact ? "text-blue-600" : "text-gray-300"}`}>
+              className={`transition-colors ${form.projectionImpact ? "text-[var(--accent-cyan)]" : "text-[var(--text-tertiary)]"}`}>
               {form.projectionImpact ? <ToggleRight className="w-6 h-6" /> : <ToggleLeft className="w-6 h-6" />}
             </button>
           </div>
 
           {/* Notes */}
           <div>
-            <label className="text-xs font-semibold text-gray-500 block mb-1">Notes (optional)</label>
+            <label className="text-xs font-semibold text-[var(--text-tertiary)] block mb-1">Notes (optional)</label>
             <textarea value={form.notes} onChange={e => upd("notes", e.target.value)} rows={2}
-              className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm resize-none focus:outline-none focus:border-blue-600"
+              className="w-full px-3 py-2 rounded-xl border border-[var(--border-light)] bg-[var(--bg-panel)] text-[var(--text-primary)] text-sm resize-none focus:outline-none focus:border-[var(--accent-cyan)] focus:ring-0 placeholder:text-[var(--text-tertiary)]"
               placeholder="Any additional context..." />
           </div>
         </div>
 
-        <div className="sticky bottom-0 bg-white border-t border-slate-100 px-6 py-4 flex gap-3 justify-end rounded-b-2xl">
-          <button onClick={onCancel} className="text-sm text-gray-500 px-4 py-2 hover:text-gray-700">Cancel</button>
+        <div className="sticky bottom-0 bg-[var(--bg-card)] border-t border-[var(--border-subtle)] px-6 py-4 flex gap-3 justify-end rounded-b-2xl">
+          <button onClick={onCancel} className="text-sm text-[var(--text-secondary)] px-4 py-2 hover:text-[var(--text-primary)]">Cancel</button>
           <button onClick={() => onSave(form)} disabled={busy || !form.title}
-            className="flex items-center gap-1.5 bg-brand-gradient hover:bg-brand-gradient-hover disabled:opacity-50 text-white text-sm font-semibold px-5 py-2.5 rounded-xl">
+            className="flex items-center gap-1.5 bg-gradient-to-r from-[var(--accent-cyan)] to-[var(--accent-blue)] hover:opacity-90 disabled:opacity-50 text-[var(--bg-base)] text-sm font-semibold px-5 py-2.5 rounded-xl">
             <Save className="w-3.5 h-3.5" />
             {busy ? "Saving…" : "Save Goal"}
           </button>
@@ -601,15 +602,15 @@ function GoalsSummary({ goals }: { goals: Goal[] }) {
   return (
     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
       {[
-        { label: "Total Goals",        value: goals.length,      sub: "active",                  color: "text-gray-900" },
-        { label: "Projected Outflows", value: fmt$(totalOutflows), sub: "major purchases + recurring", color: "text-red-700" },
-        { label: "Expected Inflows",   value: fmt$(totalInflows), sub: "windfalls + receipts",    color: "text-green-700" },
-        { label: "In Monte Carlo",     value: inPlan,             sub: `${fmt$(totalMonthly)}/mo saved`, color: "text-blue-600" },
+        { label: "Total Goals",        value: goals.length,         sub: "active",                          color: "text-slate-900" },
+        { label: "Projected Outflows", value: fmt$(totalOutflows),  sub: "major purchases + recurring",     color: "text-rose-500" },
+        { label: "Expected Inflows",   value: fmt$(totalInflows),   sub: "windfalls + receipts",            color: "text-emerald-600" },
+        { label: "In Monte Carlo",     value: inPlan,               sub: `${fmt$(totalMonthly)}/mo saved`,  color: "text-cyan-600" },
       ].map(s => (
-        <div key={s.label} className="bg-white border border-slate-200 rounded-xl p-3">
-          <p className={`text-xl font-bold ${s.color}`}>{s.value}</p>
-          <p className="text-xs font-semibold text-gray-600 mt-0.5">{s.label}</p>
-          <p className="text-[10px] text-gray-400">{s.sub}</p>
+        <div key={s.label} className="bg-white border border-slate-200 rounded-2xl shadow-sm p-4 hover:shadow-md hover:-translate-y-[1px] transition-all duration-200">
+          <p className={`text-2xl font-semibold font-mono ${s.color}`}>{s.value}</p>
+          <p className="text-xs font-semibold text-slate-700 mt-1">{s.label}</p>
+          <p className="text-[10px] text-slate-500">{s.sub}</p>
         </div>
       ))}
     </div>
@@ -635,6 +636,27 @@ export function GoalsTab({ clientId, client }: { clientId: number; client?: any 
   function openNew() {
     setEditingGoal(null);
     setShowForm(true);
+  }
+
+  const [voiceOpen, setVoiceOpen] = useState(false);
+  async function addVoiceGoal(parsed: Record<string, string>) {
+    const goalType = ["retirement","savings","debt","education","home","travel","other"].includes(parsed.goalType ?? "")
+      ? parsed.goalType
+      : "other";
+    const draft = {
+      ...emptyForm(),
+      title:        parsed.title || "Untitled Goal",
+      goalType,
+      targetAmount: String(parsed.targetAmount ?? "").replace(/[^0-9.]/g, "") || "",
+      targetDate:   parsed.targetDate ?? "",
+      notes:        parsed.notes ?? "",
+    };
+    setBusy(true);
+    try {
+      await api.post(`/api/clients/${clientId}/goals`, draft);
+      await load();
+    } catch (e: any) { alert(e.message); }
+    finally { setBusy(false); setVoiceOpen(false); }
   }
 
   function openEdit(g: Goal) {
@@ -702,14 +724,41 @@ export function GoalsTab({ clientId, client }: { clientId: number; client?: any 
       {/* Header */}
       <div className="flex items-center justify-between mb-5">
         <div>
-          <h2 className="text-xl font-bold text-gray-900">Financial Goals</h2>
-          <p className="text-sm text-gray-400 mt-0.5">Goals with "IN PLAN" are wired into the Monte Carlo simulation</p>
+          <h2 className="text-xl font-bold text-slate-900">Financial Goals</h2>
+          <p className="text-sm text-slate-500 mt-0.5">Goals with "IN PLAN" are wired into the Monte Carlo simulation</p>
         </div>
-        <button onClick={openNew}
-          className="flex items-center gap-1.5 text-sm font-semibold text-white bg-brand-gradient hover:bg-brand-gradient-hover px-4 py-2 rounded-xl">
-          <Plus className="w-4 h-4" /> Add Goal
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setVoiceOpen(true)}
+            title="Voice add goal"
+            className="flex items-center gap-1.5 text-xs font-semibold bg-white border border-slate-200 text-slate-700 hover:text-cyan-600 hover:border-cyan-400 px-3 py-2 rounded-lg shadow-sm transition-colors"
+          >
+            <Mic className="w-3.5 h-3.5" /> Voice
+          </button>
+          <button onClick={openNew}
+            className="flex items-center gap-1.5 text-sm font-semibold bg-gradient-to-r from-blue-600 to-cyan-500 hover:shadow-md text-white px-4 py-2 rounded-lg shadow-sm transition">
+            <Plus className="w-4 h-4" /> Add Goal
+          </button>
+        </div>
       </div>
+
+      {voiceOpen && (
+        <VoiceAddDialog
+          title="Voice-Add Goal"
+          moduleId="goal"
+          prompt={`Try: "Retire at 60 with 1.5 million, target 2045"`}
+          fieldSchema={[
+            { key: "title",        label: "Title", description: "Short goal title (e.g. 'Retire at 60')" },
+            { key: "goalType",     label: "Type", description: "Category of goal",
+              enum: ["retirement", "savings", "debt", "education", "home", "travel", "other"] },
+            { key: "targetAmount", label: "Target $", description: "Target amount, number only" },
+            { key: "targetDate",   label: "Target Date", description: "Target date YYYY-MM-DD" },
+            { key: "notes",        label: "Notes", description: "Free-form notes" },
+          ]}
+          onConfirm={addVoiceGoal}
+          onClose={() => setVoiceOpen(false)}
+        />
+      )}
 
       {goals.length > 0 && (
         <>
@@ -720,7 +769,7 @@ export function GoalsTab({ clientId, client }: { clientId: number; client?: any 
 
       {/* Filter tabs */}
       {goals.length > 0 && (
-        <div className="flex gap-1 mb-4">
+        <div className="inline-flex gap-1 bg-slate-100 p-1 rounded-lg mb-4">
           {[
             { key: "all",     label: "Active" },
             { key: "plan",    label: `In Plan (${goals.filter(g => g.projectionImpact).length})` },
@@ -728,10 +777,10 @@ export function GoalsTab({ clientId, client }: { clientId: number; client?: any 
             { key: "events",  label: "Cashflow Events" },
           ].map(f => (
             <button key={f.key} onClick={() => setFilter(f.key as any)}
-              className={`text-xs font-semibold px-3 py-1.5 rounded-lg transition-all ${
+              className={`text-xs font-semibold px-3 py-1.5 rounded-md transition-all ${
                 filter === f.key
-                  ? "bg-brand-gradient text-white"
-                  : "text-gray-500 hover:text-gray-700 hover:bg-slate-100"
+                  ? "bg-white text-slate-900 shadow-sm"
+                  : "text-slate-500 hover:text-slate-900"
               }`}>
               {f.label}
             </button>
@@ -741,17 +790,17 @@ export function GoalsTab({ clientId, client }: { clientId: number; client?: any 
 
       {/* Goal cards */}
       {filtered.length === 0 && goals.length === 0 ? (
-        <div className="bg-white border border-slate-200 rounded-xl p-12 text-center">
-          <Target className="w-10 h-10 text-gray-200 mx-auto mb-3" />
-          <p className="text-sm font-semibold text-gray-500">No goals yet</p>
-          <p className="text-xs text-gray-400 mt-1 mb-4">Add goals to track progress and inject them into your retirement simulation</p>
+        <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-12 text-center">
+          <Target className="w-10 h-10 text-slate-300 mx-auto mb-3" />
+          <p className="text-sm font-semibold text-slate-700">No goals yet</p>
+          <p className="text-xs text-slate-500 mt-1 mb-4">Add goals to track progress and inject them into your retirement simulation</p>
           <button onClick={openNew}
-            className="inline-flex items-center gap-1.5 text-sm font-semibold text-white bg-brand-gradient hover:bg-brand-gradient-hover px-4 py-2 rounded-xl">
+            className="inline-flex items-center gap-1.5 text-sm font-semibold bg-gradient-to-r from-blue-600 to-cyan-500 hover:shadow-md text-white px-4 py-2 rounded-lg shadow-sm transition">
             <Plus className="w-4 h-4" /> Add your first goal
           </button>
         </div>
       ) : filtered.length === 0 ? (
-        <div className="text-center py-8 text-sm text-gray-400">No goals in this category</div>
+        <div className="text-center py-8 text-sm text-slate-500">No goals in this category</div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           {filtered
@@ -765,11 +814,11 @@ export function GoalsTab({ clientId, client }: { clientId: number; client?: any 
       {/* Completed goals (collapsed) */}
       {completed.length > 0 && (
         <details className="mt-6 group">
-          <summary className="text-sm text-gray-400 cursor-pointer hover:text-gray-600 flex items-center gap-1 select-none">
+          <summary className="text-sm text-slate-500 cursor-pointer hover:text-slate-700 flex items-center gap-1 select-none">
             <ChevronDown className="w-3.5 h-3.5 group-open:rotate-180 transition-transform" />
             {completed.length} completed goal{completed.length > 1 ? "s" : ""}
           </summary>
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mt-3 opacity-60">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mt-3 opacity-50">
             {completed.map(g => (
               <GoalCard key={g.id} goal={g} onEdit={() => openEdit(g)} onDelete={() => del(g.id)} />
             ))}

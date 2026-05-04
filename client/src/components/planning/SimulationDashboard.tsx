@@ -3,16 +3,16 @@ import { useSimulationResults } from "@/hooks/use-plans";
 import { ScenarioComparison, ScenarioSummaryCards } from "./ScenarioComparison";
 import { PercentileChartGrid } from "./PercentileChart";
 import { SensitivityDisplay } from "./SensitivityDisplay";
-
-interface SimBands {
-  p10: number[]; p25: number[]; p50: number[];
-  p75: number[]; p90: number[]; labels: number[];
-}
 import { ActionItemsPanel } from "./ActionItemsPanel";
 import { SnapshotManager } from "./SnapshotManager";
 import { AssumptionEditor } from "./AssumptionEditor";
 import { GuardrailsPanel } from "./GuardrailsPanel";
 import { BarChart3, Settings, TrendingUp, ListChecks, Camera, Activity, Shield } from "lucide-react";
+
+interface SimBands {
+  p10: number[]; p25: number[]; p50: number[];
+  p75: number[]; p90: number[]; labels: number[];
+}
 
 type DashboardTab = "scenarios" | "charts" | "sensitivity" | "guardrails" | "actions" | "snapshots" | "assumptions";
 

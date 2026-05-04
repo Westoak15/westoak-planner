@@ -12,7 +12,11 @@ export default defineConfig({
     },
   },
   server: {
-    port: 5173,
+    host: "0.0.0.0",
+    port: 5000,
+    strictPort: true,
+    allowedHosts: true,
+    hmr: false,
     proxy: { "/api": { target: "http://localhost:8080", changeOrigin: true } },
   },
   build: { outDir: "../dist/client", emptyOutDir: true },

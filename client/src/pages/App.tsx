@@ -3,29 +3,28 @@ import { useAuth } from "../lib/auth";
 import { token } from "../lib/api";
 import { api } from "../lib/api";
 import { Sidebar, type Tab } from "../components/Sidebar";
-import { LettersTab } from "./LettersTab";
-import { FinancialPlanningContent } from "./FinancialPlanning";
-import { FinancialPlanTab } from "@/components/planning/FinancialPlanTab";
-import { RetirementTab as RetirementTabNew } from "@/components/planning/RetirementProjectionForm";
-import { MeetingRecorderTrigger } from "../components/MeetingRecorder";
 import { PlanningDocFlow, PLANNING_TABS, type PlanningTab } from "../components/layout/PlanningDocFlow";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "../lib/queryClient";
-import { MonteCarloResults } from "../components/MonteCarloResults";
-import { NetWorthTab as NetWorthTabNew, RetirementTab as RetirementTabNew_OLD, RespTab as RespTabNew, InsuranceTab as InsuranceTabNew, DebtTab as DebtTabNew } from "./MultiEntryTabs";
-import { InsuranceTab as FnaTabNew, TaxTab as TaxTabNew, EstateNotesTab as EstateTabNew, AITab } from "./FinancialPlanning";
-import { ReportsTab } from "./ReportsTab";
+import { NetWorthTab as NetWorthTabNew } from "./MultiEntryTabs";
+import { AITab } from "./FinancialPlanning";
 import { AdminPanel } from "./AdminPanel"
 import { AgentsTab } from "./AgentsTab";
 import { ExpensesTab } from "./ExpensesTab";
-import { PoliciesTab } from "./PoliciesTab";
 import { GoalsTab } from "./GoalsTab";
-import { PensionTab } from "./PensionTab";
+import { InsightLedDashboard } from "../components/InsightLedDashboard";
+// Merged Insight-Led hubs (Policies+FNA, Retirement+Pension, Tax+Estate, Reports+Letters, Full FP+Plan)
+import { ProtectionHub } from "../components/ProtectionHub";
+import { RetirementHub } from "../components/RetirementHub";
+import { TaxEstateHub } from "../components/TaxEstateHub";
+import { DocumentsHub } from "../components/DocumentsHub";
+import { FinancialPlanHub } from "../components/FinancialPlanHub";
 import { fmt$, fmtPct, initials, avatarBg, cn } from "../lib/utils";
 import { VoiceProvider, useVoice, labelToKey } from "../contexts/VoiceContext";
+import { MeetingRecorderTrigger } from "../components/MeetingRecorder";
 import {
   Plus, Pencil, Trash2, X, Check, ChevronRight, Search,
-  User, Users, Home, Calendar, Briefcase, LogOut, Save, KeyRound, Eye, EyeOff,  Mic, MicOff, Loader2
+  User, Users, UserPlus, Baby, FileText, Home, Calendar, Briefcase, LogOut, Save, KeyRound, Eye, EyeOff,  Mic, MicOff, Loader2
  } from "lucide-react";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -36,7 +35,6 @@ interface Plan { id: number; name: string; status: string; createdAt: string; }
 interface NWEntry { id: number; type: string; category: string; name: string; value: string; notes: string | null; }
 interface RetirementProj { id: number; label: string; currentAge: number | null; retirementAge: number | null; currentRrsp: string | null; currentTfsa: string | null; currentNonReg: string | null; annualContribution: string | null; expectedReturn: string | null; desiredIncome: string | null; cppStartAge: number | null; oasStartAge: number | null; cppMonthly: string | null; oasMonthly: string | null; projectedBalance: string | null; successRate: string | null; notes: string | null; }
 interface InsuranceRec { id: number; method: string; annualIncome: string | null; yearsToReplace: number | null; existingLifeCoverage: string | null; existingDisability: string | null; existingCriticalIllness: string | null; recommendedLife: string | null; recommendedDisability: string | null; recommendedCriticalIllness: string | null; lifeGap: string | null; disabilityGap: string | null; criticalIllnessGap: string | null; notes: string | null; }
-interface EduPlan { id: number; childName: string; childDob: string | null; currentRespBalance: string | null; annualContribution: string | null; targetAmount: string | null; projectedBalance: string | null; cespGrant: string | null; notes: string | null; }
 interface DebtEntry { id: number; name: string; type: string; balance: string; interestRate: string | null; minimumPayment: string | null; payoffStrategy: string | null; notes: string | null; }
 interface AiRec { id: number; category: string; priority: string; title: string; description: string | null; status: string; }
 interface Overview { netWorth: number; totalAssets: number; totalLiabilities: number; totalDebt: number; retirementProjections: number; insuranceAnalyses: number; educationPlans: number; taxNotes: number; estateNotes: number; aiRecommendations: number; pendingAi: number; plans: number; }
@@ -52,8 +50,8 @@ const DEBT_TYPES    = ["mortgage","heloc","car_loan","credit_card","student_loan
 function Field({ label, value }: { label: string; value: string | number | null | undefined }) {
   return (
     <div>
-      <p className="text-[11px] text-gray-400 uppercase tracking-wide font-medium mb-0.5">{label}</p>
-      <p className="text-sm font-medium text-gray-800">{value ?? "—"}</p>
+      <p className="text-[10px] text-slate-400 uppercase tracking-[0.1em] font-semibold mb-0.5">{label}</p>
+      <p className="text-sm font-medium text-slate-800">{value ?? "—"}</p>
     </div>
   );
 }
@@ -61,9 +59,9 @@ function Field({ label, value }: { label: string; value: string | number | null 
 function SectionHeader({ title, onAdd }: { title: string; onAdd?: () => void }) {
   return (
     <div className="flex items-center justify-between mb-4">
-      <h2 className="text-base font-bold text-gray-900">{title}</h2>
+      <h2 className="text-base font-bold text-slate-900">{title}</h2>
       {onAdd && (
-        <button onClick={onAdd} className="flex items-center gap-1.5 text-sm font-semibold text-white bg-[#0c1e3a] hover:bg-[#0e2a4a] px-3 py-1.5 rounded-lg transition-colors">
+        <button onClick={onAdd} className="flex items-center gap-1.5 text-sm font-semibold text-white bg-brand-gradient hover:bg-brand-gradient-hover px-3 py-1.5 rounded-lg shadow-sm transition-all">
           <Plus className="w-3.5 h-3.5" /> Add
         </button>
       )}
@@ -71,8 +69,8 @@ function SectionHeader({ title, onAdd }: { title: string; onAdd?: () => void }) 
   );
 }
 
-function Card({ children, className }: { children: React.ReactNode; className?: string }) {
-  return <div className={cn("bg-white rounded-xl border border-gray-200 shadow-sm p-5", className)}>{children}</div>;
+function Card({ children, className, accent = false }: { children: React.ReactNode; className?: string; accent?: boolean }) {
+  return <div className={cn("fp-card p-5", accent && "fp-card-accent", className)}>{children}</div>;
 }
 
 function Input({ label, value, onChange, type = "text", placeholder }: { label: string; value: string; onChange: (v: string) => void; type?: string; placeholder?: string }) {
@@ -84,16 +82,16 @@ function Input({ label, value, onChange, type = "text", placeholder }: { label: 
   return (
     <div>
       <div className="flex items-center justify-between mb-1">
-        <label className="block text-xs font-semibold text-gray-500">{label}</label>
+        <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-[0.1em]">{label}</label>
         {supported && (
           <button
             type="button"
             title={isListening ? "Stop listening" : `Speak to fill "${label}"`}
             onClick={() => listen({ fieldKey, fieldLabel: label, fieldType: type }, onChange)}
             className={`flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center transition-all ${
-              isListening  ? "bg-red-500 text-white animate-pulse" :
-              isProcessing ? "bg-yellow-400 text-white" :
-              "text-gray-300 hover:text-[#0c1e3a]"
+              isListening  ? "bg-rose-500 text-white animate-pulse" :
+              isProcessing ? "bg-amber-400 text-white" :
+              "text-slate-300 hover:text-cyan-600"
             }`}
           >
             {isProcessing
@@ -109,10 +107,9 @@ function Input({ label, value, onChange, type = "text", placeholder }: { label: 
         value={value}
         onChange={e => onChange(e.target.value)}
         placeholder={placeholder}
-        className={`w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 transition-colors ${
-          isListening  ? "border-red-300 ring-2 ring-red-100" :
-          isProcessing ? "border-yellow-300 ring-2 ring-yellow-100" :
-          "border-gray-200"
+        className={`fp-input ${
+          isListening  ? "!border-rose-300 ring-2 ring-rose-100" :
+          isProcessing ? "!border-amber-300 ring-2 ring-amber-100" : ""
         }`}
       />
     </div>
@@ -123,9 +120,8 @@ function Input({ label, value, onChange, type = "text", placeholder }: { label: 
 function Select({ label, value, onChange, options }: { label: string; value: string; onChange: (v: string) => void; options: string[] }) {
   return (
     <div>
-      <label className="block text-xs font-semibold text-gray-500 mb-1">{label}</label>
-      <select value={value} onChange={e => onChange(e.target.value)}
-        className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 bg-white">
+      <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-[0.1em] mb-1">{label}</label>
+      <select value={value} onChange={e => onChange(e.target.value)} className="fp-input">
         {options.map(o => <option key={o} value={o}>{o}</option>)}
       </select>
     </div>
@@ -226,21 +222,21 @@ function ClientsTab({ onSelect }: { onSelect: (c: Client) => void }) {
   }
 
   return (
-    <div className="p-6 max-w-4xl mx-auto">
-      <div className="flex items-center justify-between mb-5">
+    <div className="p-8 max-w-5xl mx-auto space-y-6">
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-gray-900">Clients</h1>
-          <p className="text-sm text-gray-400 mt-0.5">{clients.length} total</p>
+          <h1 className="text-2xl font-bold text-slate-900">Clients</h1>
+          <p className="text-sm text-slate-400 mt-0.5">{clients.length} total</p>
         </div>
         <button onClick={() => setShowNew(true)} className="flex items-center gap-1.5 bg-gradient-to-r from-blue-600 to-cyan-500 text-white text-sm font-semibold px-4 py-2 rounded-xl shadow-sm hover:shadow-md hover:scale-[1.02] active:scale-[0.98] transition-all duration-150">
           <Plus className="w-3.5 h-3.5" /> Add Client
         </button>
       </div>
 
-      <div className="relative mb-4">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-        <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search clients…"
-          className="w-full max-w-sm pl-9 pr-4 py-2 text-sm bg-white/80 backdrop-blur border border-slate-200 rounded-xl shadow-sm focus:ring-2 focus:ring-blue-400 focus:outline-none transition" />
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+        <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search clients..."
+          className="w-full pl-9 pr-4 py-2 text-sm bg-white/80 backdrop-blur border border-slate-200 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition" />
       </div>
 
       {showNew && (
@@ -264,39 +260,47 @@ function ClientsTab({ onSelect }: { onSelect: (c: Client) => void }) {
         </Card>
       )}
 
-      <div className="space-y-3">
-        {loading
-          ? <div className="text-center py-12 text-slate-400 text-sm">Loading…</div>
-          : clients.length === 0
-          ? <div className="text-center py-16 text-slate-400 text-sm">{search ? "No clients match" : "No clients yet — add your first client"}</div>
-          : clients.map(c => (
+      {loading ? (
+        <div className="text-center py-12 text-slate-400 text-sm">Loading…</div>
+      ) : clients.length === 0 ? (
+        <div className="text-center py-16 text-slate-400 text-sm bg-white border border-slate-200 rounded-xl">
+          {search ? "No clients match" : "No clients yet — add your first client"}
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {clients.map(c => (
             <div
               key={c.id}
               onClick={() => onSelect(c)}
-              className="bg-white border border-slate-200 rounded-xl px-5 py-4 hover:shadow-md hover:-translate-y-[1px] transition-all duration-200 cursor-pointer flex justify-between items-center group"
+              className="group bg-white border border-slate-200 rounded-xl p-4 hover:shadow-md hover:border-slate-300 hover:-translate-y-[1px] transition-all duration-200 cursor-pointer flex justify-between items-center"
             >
               <div className="flex items-center gap-4">
-                <div className={`w-10 h-10 rounded-full ${avatarBg(c.firstName+c.lastName)} text-white flex items-center justify-center text-sm font-semibold shadow-sm flex-shrink-0`}>
+                <div className={`w-10 h-10 rounded-full ${avatarBg(c.firstName + c.lastName)} flex items-center justify-center text-white text-sm font-semibold flex-shrink-0 shadow-sm`}>
                   {initials(c.firstName, c.lastName)}
                 </div>
                 <div>
-                  <p className="font-semibold text-slate-900">{c.firstName} {c.lastName}</p>
-                  <p className="text-xs text-slate-500">{c.province ?? "—"}{c.email ? ` · ${c.email}` : ""}</p>
+                  <p className="font-medium text-slate-900">{c.firstName} {c.lastName}</p>
+                  <p className="text-xs text-slate-500">
+                    {c.province || "—"}
+                    {c.email ? <> · <span className="text-blue-600">{c.email}</span></> : null}
+                    {c.phone ? <> · {c.phone}</> : null}
+                  </p>
                 </div>
               </div>
-              <div className="flex items-center gap-3">
-                <div className="text-slate-400 group-hover:text-slate-600 transition text-sm">→</div>
+              <div className="flex items-center gap-2">
                 <button
                   onClick={e => { e.stopPropagation(); if (confirm("Delete client?")) api.delete(`/api/clients/${c.id}`).then(() => window.location.reload()); }}
-                  className="text-slate-300 hover:text-red-500 transition-colors p-1 opacity-0 group-hover:opacity-100"
+                  className="opacity-0 group-hover:opacity-100 p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-md transition"
+                  title="Delete client"
                 >
-                  <Trash2 className="w-3.5 h-3.5"/>
+                  <Trash2 className="w-4 h-4" />
                 </button>
+                <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-slate-500 transition" />
               </div>
             </div>
-          ))
-        }
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -339,9 +343,21 @@ function ClientDetail({ client, onBack, onPlanSelect, onUpdate, level }: { clien
      }
    }
 
+  // ── Helpers for the Household card ─────────────────────────────────────────
+  const dependants: any[] = (editing ? (form.dependants as any[]) : (client.dependants as any[])) ?? [];
+  const hasSpouse = !!(client.spouseFirstName || (editing && form.spouseFirstName));
+  const householdName = client.spouseFirstName ? `The ${client.lastName} Household` : `${client.firstName} ${client.lastName}`;
+  const ageFromDob = (dob: string | null | undefined) => {
+    if (!dob) return null;
+    const d = new Date(dob);
+    if (isNaN(d.getTime())) return null;
+    const diff = Date.now() - d.getTime();
+    return Math.floor(diff / (365.25 * 24 * 3600 * 1000));
+  };
+
   return (
-    <div className="p-6 max-w-4xl mx-auto">
-      {/* Back + header */}
+    <div className="p-6 max-w-6xl mx-auto">
+      {/* ── Back + Title bar ─────────────────────────────────────────────── */}
       <div className="flex items-center gap-3 mb-6">
         <button onClick={onBack} className="text-gray-400 hover:text-gray-700 transition-colors">
           <ChevronRight className="w-4 h-4 rotate-180" />
@@ -351,8 +367,8 @@ function ClientDetail({ client, onBack, onPlanSelect, onUpdate, level }: { clien
             {initials(client.firstName, client.lastName)}
           </div>
           <div>
-            <h1 className="text-xl font-bold text-gray-900">{client.firstName} {client.lastName}</h1>
-            <p className="text-sm text-gray-400">{client.province} · {client.occupation ?? "Occupation not set"}</p>
+            <h1 className="text-xl font-bold text-gray-900">{householdName}</h1>
+            <p className="text-sm text-gray-400">{client.province ?? "—"} · {hasSpouse ? "2 adults" : "1 adult"}{dependants.length ? ` · ${dependants.length} ${dependants.length === 1 ? "dependant" : "dependants"}` : ""}</p>
           </div>
         </div>
         <div className="ml-auto flex gap-2">
@@ -371,157 +387,243 @@ function ClientDetail({ client, onBack, onPlanSelect, onUpdate, level }: { clien
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-5 mb-6">
-        {/* Personal Info */}
-        <Card>
-          <div className="flex items-center gap-2 mb-4">
-            <User className="w-4 h-4 text-[#0c1e3a]" />
-            <h2 className="font-bold text-gray-900">Personal Information</h2>
+      {/* ── Single full-width Household card ─────────────────────────────── */}
+      <Card className="!p-0 overflow-hidden mb-6">
+        {/* Card header strip */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+          <div className="flex items-center gap-2.5">
+            <div className="w-7 h-7 bg-[#0c1e3a]/5 rounded-lg flex items-center justify-center">
+              <Users className="w-3.5 h-3.5 text-[#0c1e3a]" />
+            </div>
+            <h2 className="text-sm font-bold uppercase tracking-wider text-gray-700">Household Profile</h2>
           </div>
-          {editing ? (
-            <div className="grid grid-cols-2 gap-3">
-              <Input label="First Name"  value={form.firstName ?? ""} onChange={v => u("firstName", v)} />
-              <Input label="Last Name"   value={form.lastName ?? ""}  onChange={v => u("lastName", v)} />
-              <Input label="Email" type="email" value={form.email ?? ""} onChange={v => u("email", v)} />
-              <Input label="Phone"       value={form.phone ?? ""}     onChange={v => u("phone", v)} />
-              <DobInput label="Date of Birth" value={form.dateOfBirth ?? ""} onChange={v => u("dateOfBirth", v)} />
-              <Select label="Province"   value={form.province ?? "ON"} onChange={v => u("province", v)} options={PROVINCES} />
-              <Input label="Occupation"  value={form.occupation ?? ""} onChange={v => u("occupation", v)} />
-              <Input label="Annual Income" type="number" value={form.annualIncome ?? ""} onChange={v => u("annualIncome", v)} />
-              <Select label="Pension Type" value={(form as any).pensionType ?? ""} onChange={v => u("pensionType", v)} options={["", "DBPP", "DCPP", "Group RRSP", "DPSP", "No Pension"]} />
-              <Input label="Retirement Age" type="number" value={String(form.retirementAge ?? "")} onChange={v => u("retirementAge", +v)} />
-              <Input label="Desired Retirement Income" type="number" value={form.desiredRetirementIncome ?? ""} onChange={v => u("desiredRetirementIncome", v)} />
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 gap-y-3 gap-x-5">
-              <Field label="Email"     value={client.email} />
-              <Field label="Phone"     value={client.phone} />
-              <Field label="DOB"       value={client.dateOfBirth} />
-              <Field label="Province"  value={client.province} />
-              <Field label="Occupation" value={client.occupation} />
-              <Field label="Annual Income" value={fmt$(client.annualIncome)} />
-              <Field label="Pension Type" value={(client as any).pensionType} />
-              <Field label="Retirement Age" value={client.retirementAge} />
-              <Field label="Desired Income" value={fmt$(client.desiredRetirementIncome)} />
-            </div>
-          )}
-        </Card>
-
-        {/* Spouse / Family */}
-        <Card>
-          <div className="flex items-center gap-2 mb-4">
-            <Users className="w-4 h-4 text-[#0c1e3a]" />
-            <h2 className="font-bold text-gray-900">Spouse / Family</h2>
-          </div>
-          {editing ? (
-            <div className="grid grid-cols-2 gap-3">
-              <Input label="Spouse First Name" value={form.spouseFirstName ?? ""} onChange={v => u("spouseFirstName", v)} />
-              <Input label="Spouse Last Name"  value={form.spouseLastName ?? ""}  onChange={v => u("spouseLastName", v)} />
-              <DobInput label="Spouse DOB" value={form.spouseDateOfBirth ?? ""} onChange={v => u("spouseDateOfBirth", v)} />
-              <Input label="Spouse Occupation" value={form.spouseOccupation ?? ""} onChange={v => u("spouseOccupation", v)} />
-              <Input label="Spouse Income" type="number" value={form.spouseAnnualIncome ?? ""} onChange={v => u("spouseAnnualIncome", v)} />
-              <Input label="Spouse Retirement Age" type="number" value={String(form.spouseRetirementAge ?? "")} onChange={v => u("spouseRetirementAge", +v)} />
-              <Select label="Spouse Pension Type" value={(form as any).spousePensionType ?? ""} onChange={v => u("spousePensionType", v)} options={["", "DBPP", "DCPP", "Group RRSP", "DPSP", "No Pension"]} />
-              <Input label="Spouse Desired Income" type="number" value={form.spouseDesiredRetirementIncome ?? ""} onChange={v => u("spouseDesiredRetirementIncome", v)} />
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 gap-y-3 gap-x-5">
-              <Field label="Name"       value={client.spouseFirstName ? `${client.spouseFirstName} ${client.spouseLastName}` : null} />
-              <Field label="DOB"        value={client.spouseDateOfBirth} />
-              <Field label="Occupation"        value={client.spouseOccupation} />
-              <Field label="Income"            value={fmt$(client.spouseAnnualIncome)} />
-              <Field label="Retirement Age"    value={client.spouseRetirementAge} />
-              <Field label="Pension Type"      value={(client as any).spousePensionType} />
-              <Field label="Desired Income"    value={fmt$(client.spouseDesiredRetirementIncome)} />
-            </div>
-          )}
-          {editing && (
-            <div className="mt-4">
-              <Textarea label="Notes" value={form.notes ?? ""} onChange={v => u("notes", v)} />
-            </div>
-            )}
-		{/* Dependants */}
-		<div className="mt-4 border-t border-gray-100 pt-4">
-  		<div className="flex items-center justify-between mb-2">
-    <h3 className="text-sm font-bold text-gray-700">Dependants</h3>
-    {editing && (
-      <button type="button" onClick={() => u("dependants", [...((form.dependants as any[]) ?? []), { name: "", dob: "", relationship: "Child" }])}
-        className="text-xs text-[#0c1e3a] font-semibold hover:underline">+ Add</button>
-    )}
-  </div>
-  {((editing ? form.dependants : client.dependants) as any[] ?? []).map((d: any, i: number) => (
-    editing ? (
-      <div key={i} className="grid grid-cols-3 gap-2 mb-2 items-end">
-        <Input label="Name" value={d.name} onChange={v => { const deps = [...((form.dependants as any[]) ?? [])]; deps[i] = { ...deps[i], name: v }; u("dependants", deps); }} />
-        <DobInput label="DOB" value={d.dob ?? ""} onChange={v => { const deps = [...((form.dependants as any[]) ?? [])]; deps[i] = { ...deps[i], dob: v }; u("dependants", deps); }} />
-        <div className="flex items-end gap-1">
-          <Select label="Relation" value={d.relationship ?? "Child"} onChange={v => { const deps = [...((form.dependants as any[]) ?? [])]; deps[i] = { ...deps[i], relationship: v }; u("dependants", deps); }} options={["Child", "Parent", "Sibling", "Other"]} />
-          <button type="button" onClick={() => u("dependants", (form.dependants as any[]).filter((_: any, idx: number) => idx !== i))} className="mb-1 text-red-400 hover:text-red-600"><Trash2 className="w-3.5 h-3.5" /></button>
+          <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">
+            {hasSpouse ? "Joint File" : "Single File"}
+          </span>
         </div>
-      </div>
-    ) : (
-      <div key={i} className="flex gap-4 text-sm text-gray-600 py-1">
-        <span className="font-semibold">{d.name}</span>
-        <span className="text-gray-400">{d.relationship}</span>
-        <span className="text-gray-400">{d.dob}</span>
-      </div>
-    )
-  ))}
-  {((editing ? form.dependants : client.dependants) as any[] ?? []).length === 0 && !editing && (
-    <p className="text-sm text-gray-400">No dependants on file</p>
-)}
-</div>
-        </Card>
-      </div>
-  
+
+        {/* Adults — primary + spouse side by side */}
+        <div className={cn(
+          "grid",
+          (hasSpouse || editing) ? "grid-cols-1 lg:grid-cols-2 lg:divide-x divide-gray-100" : "grid-cols-1",
+        )}>
+          {/* ── Primary ── */}
+          <PersonPanel
+            roleLabel="Primary Client"
+            avatarBg={avatarBg(client.firstName + client.lastName)}
+            avatarInitials={initials(client.firstName, client.lastName)}
+            displayName={`${client.firstName} ${client.lastName}`}
+            displaySubtitle={[client.occupation, ageFromDob(client.dateOfBirth) ? `age ${ageFromDob(client.dateOfBirth)}` : null].filter(Boolean).join(" · ") || "Occupation not set"}
+            editing={editing}
+            edit={
+              <div className="grid grid-cols-2 gap-3">
+                <Input label="First Name"  value={form.firstName ?? ""} onChange={v => u("firstName", v)} />
+                <Input label="Last Name"   value={form.lastName ?? ""}  onChange={v => u("lastName", v)} />
+                <Input label="Email" type="email" value={form.email ?? ""} onChange={v => u("email", v)} />
+                <Input label="Phone"       value={form.phone ?? ""}     onChange={v => u("phone", v)} />
+                <DobInput label="Date of Birth" value={form.dateOfBirth ?? ""} onChange={v => u("dateOfBirth", v)} />
+                <Select label="Province"   value={form.province ?? "ON"} onChange={v => u("province", v)} options={PROVINCES} />
+                <Input label="Occupation"  value={form.occupation ?? ""} onChange={v => u("occupation", v)} />
+                <Input label="Annual Income" type="number" value={form.annualIncome ?? ""} onChange={v => u("annualIncome", v)} />
+                <Select label="Pension Type" value={(form as any).pensionType ?? ""} onChange={v => u("pensionType", v)} options={["", "DBPP", "DCPP", "Group RRSP", "DPSP", "No Pension"]} />
+                <Input label="Retirement Age" type="number" value={String(form.retirementAge ?? "")} onChange={v => u("retirementAge", +v)} />
+                <Input label="Desired Retirement Income" type="number" value={form.desiredRetirementIncome ?? ""} onChange={v => u("desiredRetirementIncome", v)} />
+              </div>
+            }
+            view={
+              <dl className="grid grid-cols-2 gap-y-3 gap-x-6">
+                <ExecField label="Email"          value={client.email} />
+                <ExecField label="Phone"          value={client.phone} />
+                <ExecField label="Date of Birth"  value={client.dateOfBirth} />
+                <ExecField label="Province"       value={client.province} />
+                <ExecField label="Occupation"     value={client.occupation} />
+                <ExecField label="Annual Income"  value={fmt$(client.annualIncome)} mono />
+                <ExecField label="Pension"        value={(client as any).pensionType} />
+                <ExecField label="Retirement Age" value={client.retirementAge} mono />
+                <ExecField label="Desired Income" value={fmt$(client.desiredRetirementIncome)} mono />
+              </dl>
+            }
+          />
+
+          {/* ── Spouse ── */}
+          {(hasSpouse || editing) ? (
+            <PersonPanel
+              roleLabel="Spouse / Partner"
+              avatarBg={avatarBg((client.spouseFirstName ?? "") + (client.spouseLastName ?? ""))}
+              avatarInitials={initials(client.spouseFirstName ?? "", client.spouseLastName ?? "")}
+              displayName={`${client.spouseFirstName ?? ""} ${client.spouseLastName ?? ""}`.trim()}
+              displaySubtitle={[client.spouseOccupation, ageFromDob(client.spouseDateOfBirth) ? `age ${ageFromDob(client.spouseDateOfBirth)}` : null].filter(Boolean).join(" · ") || "Occupation not set"}
+              editing={editing}
+              edit={
+                <div className="grid grid-cols-2 gap-3">
+                  <Input label="Spouse First Name" value={form.spouseFirstName ?? ""} onChange={v => u("spouseFirstName", v)} />
+                  <Input label="Spouse Last Name"  value={form.spouseLastName ?? ""}  onChange={v => u("spouseLastName", v)} />
+                  <DobInput label="Spouse DOB" value={form.spouseDateOfBirth ?? ""} onChange={v => u("spouseDateOfBirth", v)} />
+                  <Input label="Spouse Occupation" value={form.spouseOccupation ?? ""} onChange={v => u("spouseOccupation", v)} />
+                  <Input label="Spouse Income" type="number" value={form.spouseAnnualIncome ?? ""} onChange={v => u("spouseAnnualIncome", v)} />
+                  <Input label="Spouse Retirement Age" type="number" value={String(form.spouseRetirementAge ?? "")} onChange={v => u("spouseRetirementAge", +v)} />
+                  <Select label="Spouse Pension Type" value={(form as any).spousePensionType ?? ""} onChange={v => u("spousePensionType", v)} options={["", "DBPP", "DCPP", "Group RRSP", "DPSP", "No Pension"]} />
+                  <Input label="Spouse Desired Income" type="number" value={form.spouseDesiredRetirementIncome ?? ""} onChange={v => u("spouseDesiredRetirementIncome", v)} />
+                </div>
+              }
+              view={
+                <dl className="grid grid-cols-2 gap-y-3 gap-x-6">
+                  <ExecField label="Date of Birth"  value={client.spouseDateOfBirth} />
+                  <ExecField label="Occupation"     value={client.spouseOccupation} />
+                  <ExecField label="Annual Income"  value={fmt$(client.spouseAnnualIncome)} mono />
+                  <ExecField label="Pension"        value={(client as any).spousePensionType} />
+                  <ExecField label="Retirement Age" value={client.spouseRetirementAge} mono />
+                  <ExecField label="Desired Income" value={fmt$(client.spouseDesiredRetirementIncome)} mono />
+                </dl>
+              }
+            />
+          ) : (
+            !editing && (
+              <div className="px-6 py-8 flex flex-col items-center justify-center text-center border-t lg:border-t-0 border-gray-100">
+                <div className="w-10 h-10 rounded-full border-2 border-dashed border-gray-200 flex items-center justify-center text-gray-300 mb-2">
+                  <UserPlus className="w-4 h-4" />
+                </div>
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-0.5">No Spouse on File</p>
+                <button onClick={() => setEditing(true)} className="text-xs text-[#0c1e3a] font-semibold hover:underline">Add spouse details</button>
+              </div>
+            )
+          )}
+        </div>
+
+        {/* ── Dependants strip ─────────────────────────────────────────── */}
+        <div className="px-6 py-4 border-t border-gray-100 bg-gray-50/40">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <Baby className="w-3.5 h-3.5 text-gray-400" />
+              <h3 className="text-[11px] font-bold uppercase tracking-wider text-gray-500">Children & Dependants</h3>
+              {dependants.length > 0 && (
+                <span className="text-[11px] text-gray-400 font-medium">· {dependants.length}</span>
+              )}
+            </div>
+            {editing && (
+              <button
+                type="button"
+                onClick={() => u("dependants", [...((form.dependants as any[]) ?? []), { name: "", dob: "", relationship: "Child" }])}
+                className="flex items-center gap-1 text-xs font-semibold text-[#0c1e3a] hover:underline"
+              >
+                <Plus className="w-3 h-3" /> Add Dependant
+              </button>
+            )}
+          </div>
+
+          {editing ? (
+            // Edit mode — full row inputs
+            <div className="space-y-2">
+              {dependants.length === 0 && (
+                <p className="text-xs text-gray-400 italic">No dependants — click "Add Dependant" to add a child or other family member.</p>
+              )}
+              {dependants.map((d: any, i: number) => (
+                <div key={i} className="grid grid-cols-12 gap-2 items-end bg-white rounded-lg border border-gray-100 p-3">
+                  <div className="col-span-5">
+                    <Input label="Name" value={d.name ?? ""} onChange={v => { const deps = [...dependants]; deps[i] = { ...deps[i], name: v }; u("dependants", deps); }} />
+                  </div>
+                  <div className="col-span-3">
+                    <DobInput label="DOB" value={d.dob ?? ""} onChange={v => { const deps = [...dependants]; deps[i] = { ...deps[i], dob: v }; u("dependants", deps); }} />
+                  </div>
+                  <div className="col-span-3">
+                    <Select label="Relation" value={d.relationship ?? "Child"} onChange={v => { const deps = [...dependants]; deps[i] = { ...deps[i], relationship: v }; u("dependants", deps); }} options={["Child", "Parent", "Sibling", "Other"]} />
+                  </div>
+                  <div className="col-span-1 flex justify-end">
+                    <button type="button" onClick={() => u("dependants", dependants.filter((_: any, idx: number) => idx !== i))} className="mb-1 text-red-400 hover:text-red-600 p-1">
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : dependants.length === 0 ? (
+            <p className="text-xs text-gray-400 italic">No dependants on file</p>
+          ) : (
+            // View mode — horizontal row of executive avatar pills
+            <div className="flex flex-wrap gap-2">
+              {dependants.map((d: any, i: number) => {
+                const age = ageFromDob(d.dob);
+                return (
+                  <div key={i} className="flex items-center gap-2.5 bg-white border border-gray-100 rounded-lg pl-1.5 pr-3 py-1.5">
+                    <div className={`w-7 h-7 rounded-md ${avatarBg(d.name ?? "?")} flex items-center justify-center text-white text-[11px] font-bold flex-shrink-0`}>
+                      {initials(d.name?.split(" ")[0] ?? "", d.name?.split(" ")[1] ?? "")}
+                    </div>
+                    <div className="flex flex-col leading-tight">
+                      <span className="text-xs font-bold text-gray-800">{d.name || "Unnamed"}</span>
+                      <span className="text-[10px] text-gray-400 font-medium">
+                        {(d.relationship ?? "Child")}{age !== null ? ` · age ${age}` : ""}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* ── Notes (always visible if present, editable in edit mode) ─── */}
+        {(editing || client.notes) && (
+          <div className="px-6 py-4 border-t border-gray-100">
+            <div className="flex items-center gap-2 mb-2">
+              <FileText className="w-3.5 h-3.5 text-gray-400" />
+              <h3 className="text-[11px] font-bold uppercase tracking-wider text-gray-500">Advisor Notes</h3>
+            </div>
+            {editing ? (
+              <Textarea label="" value={form.notes ?? ""} onChange={v => u("notes", v)} />
+            ) : (
+              <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{client.notes}</p>
+            )}
+          </div>
+        )}
+      </Card>
     </div>
   );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Dashboard Tab — summary for selected client + plan
+// PersonPanel — one column of the Household card (Primary or Spouse)
 // ─────────────────────────────────────────────────────────────────────────────
-function DashboardTab({ clientId }: { clientId: number }) {
-  const [ov, setOv] = useState<Overview | null>(null);
-  useEffect(() => { api.get<Overview>(`/api/clients/${clientId}/overview`).then(setOv); }, [clientId]);
-  if (!ov) return <div className="p-6 text-gray-400">Loading…</div>;
-
-  const stats = [
-    { label: "Net Worth",       value: fmt$(ov.netWorth),      color: ov.netWorth >= 0 ? "text-emerald-600" : "text-red-500", bg: ov.netWorth >= 0 ? "bg-emerald-50" : "bg-red-50" },
-    { label: "Total Assets",    value: fmt$(ov.totalAssets),   color: "text-blue-600",   bg: "bg-blue-50" },
-    { label: "Total Liabilities", value: fmt$(ov.totalLiabilities), color: "text-red-500", bg: "bg-red-50" },
-    { label: "Total Debt",      value: fmt$(ov.totalDebt),     color: "text-orange-600", bg: "bg-orange-50" },
-  ];
-
-  const counts = [
-    { label: "Retirement Plans",    value: ov.retirementProjections },
-    { label: "Insurance Analyses",  value: ov.insuranceAnalyses },
-    { label: "Education Plans",     value: ov.educationPlans },
-    { label: "Tax Notes",           value: ov.taxNotes },
-    { label: "Estate Notes",        value: ov.estateNotes },
-    { label: "AI Recommendations",  value: ov.aiRecommendations },
-    { label: "Pending AI Actions",  value: ov.pendingAi },
-  ];
-
+function PersonPanel({ roleLabel, avatarBg, avatarInitials, displayName, displaySubtitle, editing, edit, view }: {
+  roleLabel: string;
+  avatarBg: string;
+  avatarInitials: string;
+  displayName: string;
+  displaySubtitle: string;
+  editing: boolean;
+  edit: React.ReactNode;
+  view: React.ReactNode;
+}) {
   return (
-    <div className="p-6 max-w-4xl mx-auto">
-      <h2 className="text-xl font-bold text-gray-900 mb-5">Dashboard</h2>
-      <div className="grid grid-cols-4 gap-4 mb-6">
-        {stats.map(s => (
-          <div key={s.label} className={`${s.bg} rounded-xl p-4 border border-white`}>
-            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">{s.label}</p>
-            <p className={`text-xl font-bold ${s.color}`}>{s.value}</p>
-          </div>
-        ))}
+    <div className="px-6 py-5">
+      <div className="flex items-center gap-3 mb-5 pb-4 border-b border-gray-100">
+        <div className={`w-12 h-12 rounded-xl ${avatarBg} flex items-center justify-center text-white text-base font-bold shadow-sm`}>
+          {avatarInitials}
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-0.5">{roleLabel}</p>
+          <h3 className="text-base font-bold text-gray-900 truncate">{displayName || "—"}</h3>
+          <p className="text-xs text-gray-400 truncate">{displaySubtitle}</p>
+        </div>
       </div>
-      <div className="grid grid-cols-4 gap-3">
-        {counts.map(c => (
-          <div key={c.label} className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
-            <p className="text-2xl font-bold text-gray-900">{c.value}</p>
-            <p className="text-xs text-gray-400 mt-1">{c.label}</p>
-          </div>
-        ))}
-      </div>
+      {editing ? edit : view}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ExecField — refined "executive" read-only field. Label small, value bold.
+// ─────────────────────────────────────────────────────────────────────────────
+function ExecField({ label, value, mono = false }: { label: string; value: string | number | null | undefined; mono?: boolean }) {
+  const v = value === null || value === undefined || value === "" ? "—" : value;
+  const isEmpty = v === "—";
+  return (
+    <div className="min-w-0">
+      <dt className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 mb-0.5">{label}</dt>
+      <dd className={cn(
+        "text-sm font-semibold truncate",
+        isEmpty ? "text-gray-300" : "text-gray-800",
+        mono && !isEmpty && "font-mono tabular-nums",
+      )}>{v}</dd>
     </div>
   );
 }
@@ -724,133 +826,6 @@ function InsuranceTab({ clientId }: { clientId: number }) {
                 </div>
               </div>
               {a.notes && <p className="text-xs text-gray-500 pt-3 border-t border-gray-100">{a.notes}</p>}
-            </Card>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// RESP Tab
-// ─────────────────────────────────────────────────────────────────────────────
-function RespTab({ clientId, client }: { clientId: number; client?: any }) {
-  const [rows, setRows]     = useState<EduPlan[]>([]);
-  const [showForm, setShowForm] = useState(false);
-  const [form, setForm]     = useState({ childName:"", childDob:"", currentRespBalance:"", annualContribution:"", targetAmount:"", notes:"" });
-  const [busy, setBusy]     = useState(false);
-  const [netWorth, setNetWorth] = useState<any[]>([]);
-  const [editingId, setEditingId]   = useState<number|null>(null);
-  const [editForm, setEditForm]     = useState<any>({});
-
-  const load = () => api.get<EduPlan[]>(`/api/clients/${clientId}/education`).then(setRows);
-  useEffect(() => {
-    load();
-    api.get<any[]>(`/api/clients/${clientId}/net-worth`).then(setNetWorth);
-  }, [clientId]);
-
-  function prefillFromClient() {
-    const deps: any[] = Array.isArray(client?.dependants) ? client.dependants : [];
-    const totalResp = netWorth.filter((e:any) => e.category === "RESP").reduce((s:number, e:any) => s + Number(e.value||0), 0);
-    if (deps.length === 0) {
-      setForm(f => ({ ...f, currentRespBalance: String(totalResp||"") }));
-    } else if (deps.length === 1) {
-      setForm(f => ({ ...f, childName: deps[0].name??"", childDob: deps[0].dob??"", currentRespBalance: String(totalResp||"") }));
-    } else {
-      // Multiple children — combine names, split balance
-      const names = deps.map((d:any) => d.name).filter(Boolean).join(", ");
-      const perChild = Math.round(totalResp / deps.length);
-      setForm(f => ({ ...f, childName: names, currentRespBalance: String(perChild||"") }));
-    }
-    setShowForm(true);
-  }
-
-  async function add() {
-    setBusy(true);
-    try { await api.post(`/api/clients/${clientId}/education`, form); await load(); setShowForm(false); }
-    catch (e: any) { alert(e.message); }
-    finally { setBusy(false); }
-  }
-
-  async function del(id: number) {
-    if (!confirm("Delete?")) return;
-    await api.delete(`/api/education/${id}`); await load();
-  }
-  function startEdit(e: any) {
-    setEditingId(e.id);
-    setEditForm({ childName: e.childName, childDob: e.childDob ?? "", currentRespBalance: e.currentRespBalance ?? "", annualContribution: e.annualContribution ?? "", targetAmount: e.targetAmount ?? "", notes: e.notes ?? "" });
-  }
-  async function patch() {
-    if (!editingId) return;
-    setBusy(true);
-    try { await api.patch(`/api/education/${editingId}`, editForm); await load(); setEditingId(null); }
-    catch (e: any) { alert(e.message); }
-    finally { setBusy(false); }
-  }
-
-  return (
-    <div className="p-6 max-w-4xl mx-auto">
-      <SectionHeader title="RESP / Education Savings" onAdd={prefillFromClient} />
-
-      {showForm && (
-        <Card className="mb-5">
-          <h3 className="font-bold text-gray-800 mb-4">Add Child / RESP</h3>
-          <div className="grid grid-cols-3 gap-3 mb-3">
-            <Input label="Child's Name"  value={form.childName}  onChange={v => setForm(f=>({...f,childName:v}))} />
-            <DobInput label="Date of Birth" value={form.childDob} onChange={v => setForm(f=>({...f,childDob:v}))} />
-            <Input label="Current RESP Balance ($)" type="number" value={form.currentRespBalance} onChange={v => setForm(f=>({...f,currentRespBalance:v}))} />
-          </div>
-          <div className="grid grid-cols-3 gap-3 mb-3">
-            <Input label="Annual Contribution ($)" type="number" value={form.annualContribution} onChange={v => setForm(f=>({...f,annualContribution:v}))} />
-            <Input label="Target Amount ($)" type="number" value={form.targetAmount} onChange={v => setForm(f=>({...f,targetAmount:v}))} />
-            <Input label="Notes" value={form.notes} onChange={v => setForm(f=>({...f,notes:v}))} />
-          </div>
-          <div className="flex gap-2 justify-end">
-            <button onClick={() => setShowForm(false)} className="text-sm text-gray-500 px-4 py-2">Cancel</button>
-            <button onClick={add} disabled={busy||!form.childName} className="bg-[#0c1e3a] hover:bg-[#0e2a4a] disabled:opacity-50 text-white text-sm font-semibold px-4 py-2 rounded-lg">{busy ? "Saving…" : "Add"}</button>
-          </div>
-        </Card>
-      )}
-
-      {rows.length === 0 && !showForm ? (
-        <Card><p className="text-center text-gray-400 py-8">No RESP plans yet. Add a child to get started.</p></Card>
-      ) : (
-        <div className="grid grid-cols-2 gap-4">
-          {rows.map(e => (
-            <Card key={e.id}>
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="font-bold text-gray-900">{e.childName}</h3>
-                <div className="flex gap-2">
-                  <button onClick={() => startEdit(e)} className="text-gray-300 hover:text-blue-500"><Pencil className="w-4 h-4" /></button>
-                  <button onClick={() => del(e.id)} className="text-gray-300 hover:text-red-500"><Trash2 className="w-4 h-4" /></button>
-                </div>
-              </div>
-              {editingId === e.id ? (
-                <div>
-                  <div className="grid grid-cols-3 gap-3 mb-3">
-                    <Input label="Child's Name" value={editForm.childName} onChange={v => setEditForm((f:any)=>({...f,childName:v}))} />
-                    <DobInput label="Date of Birth" value={editForm.childDob} onChange={v => setEditForm((f:any)=>({...f,childDob:v}))} />
-                    <Input label="Current Balance ($)" type="number" value={editForm.currentRespBalance} onChange={v => setEditForm((f:any)=>({...f,currentRespBalance:v}))} />
-                    <Input label="Annual Contribution ($)" type="number" value={editForm.annualContribution} onChange={v => setEditForm((f:any)=>({...f,annualContribution:v}))} />
-                    <Input label="Target Amount ($)" type="number" value={editForm.targetAmount} onChange={v => setEditForm((f:any)=>({...f,targetAmount:v}))} />
-                    <Input label="Notes" value={editForm.notes} onChange={v => setEditForm((f:any)=>({...f,notes:v}))} />
-                  </div>
-                  <div className="flex gap-2 justify-end">
-                    <button onClick={() => setEditingId(null)} className="text-sm text-gray-500 px-4 py-2">Cancel</button>
-                    <button onClick={patch} disabled={busy} className="bg-[#0c1e3a] text-white text-sm font-semibold px-4 py-2 rounded-lg disabled:opacity-50">{busy ? "Saving…" : "Save"}</button>
-                  </div>
-                </div>
-              ) : (
-                <div className="grid grid-cols-2 gap-3">
-                  <Field label="Date of Birth"       value={e.childDob} />
-                  <Field label="Current Balance"     value={fmt$(e.currentRespBalance)} />
-                  <Field label="Annual Contribution" value={fmt$(e.annualContribution)} />
-                  <Field label="Target"              value={fmt$(e.targetAmount)} />
-                  <Field label="Projected Balance"   value={fmt$(e.projectedBalance)} />
-                  <Field label="CESG Grant"           value={fmt$(e.cespGrant)} />
-                </div>
-              )}
             </Card>
           ))}
         </div>
@@ -1137,20 +1112,20 @@ function AiTab({ clientId }: { clientId: number }) {
 // ─────────────────────────────────────────────────────────────────────────────
 // Overview Tab
 // ─────────────────────────────────────────────────────────────────────────────
-function OverviewTab({ clientId, onTabChange }: { clientId: number; onTabChange: (t: Tab) => void }) {
+function OverviewTab({ clientId, onTabChange }: { clientId: number; onTabChange: (t: Tab, nwSubtab?: string) => void }) {
   const [ov, setOv] = useState<Overview | null>(null);
   useEffect(() => { api.get<Overview>(`/api/clients/${clientId}/overview`).then(setOv); }, [clientId]);
   if (!ov) return <div className="p-6 text-gray-400">Loading…</div>;
 
-  const cards = [
-    { label: "Net Worth",        value: fmt$(ov.netWorth),        color: ov.netWorth >= 0 ? "text-emerald-600":"text-red-500",  bg: ov.netWorth >= 0 ? "bg-emerald-50":"bg-red-50",   tab: "networth" as Tab },
-    { label: "Total Assets",     value: fmt$(ov.totalAssets),     color: "text-blue-600",   bg: "bg-blue-50",    tab: "networth" as Tab },
-    { label: "Total Liabilities",value: fmt$(ov.totalLiabilities),color: "text-red-500",    bg: "bg-red-50",     tab: "networth" as Tab },
-    { label: "Total Debt",       value: fmt$(ov.totalDebt),       color: "text-orange-600", bg: "bg-orange-50",  tab: "debt" as Tab },
-    { label: "Retirement Plans", value: String(ov.retirementProjections), color: "text-violet-600", bg: "bg-violet-50", tab: "retirement" as Tab },
-    { label: "Insurance Analyses",value: String(ov.insuranceAnalyses), color: "text-purple-600", bg: "bg-purple-50", tab: "insurance" as Tab },
-    { label: "Education Plans",  value: String(ov.educationPlans),color: "text-teal-600",   bg: "bg-teal-50",    tab: "resp" as Tab },
-    { label: "AI Recommendations",value: String(ov.aiRecommendations),color: "text-pink-600",bg: "bg-pink-50",  tab: "ai" as Tab },
+  const cards: { label: string; value: string; color: string; bg: string; tab: Tab; nwSubtab?: string }[] = [
+    { label: "Net Worth",        value: fmt$(ov.netWorth),        color: ov.netWorth >= 0 ? "text-emerald-600":"text-red-500",  bg: ov.netWorth >= 0 ? "bg-emerald-50":"bg-red-50",   tab: "networth" },
+    { label: "Total Assets",     value: fmt$(ov.totalAssets),     color: "text-blue-600",   bg: "bg-blue-50",    tab: "networth", nwSubtab: "assets" },
+    { label: "Total Liabilities",value: fmt$(ov.totalLiabilities),color: "text-red-500",    bg: "bg-red-50",     tab: "networth", nwSubtab: "liabilities" },
+    { label: "Total Debt",       value: fmt$(ov.totalDebt),       color: "text-orange-600", bg: "bg-orange-50",  tab: "networth", nwSubtab: "liabilities" },
+    { label: "Retirement Plans", value: String(ov.retirementProjections), color: "text-violet-600", bg: "bg-violet-50", tab: "retirementhub" },
+    { label: "Insurance Analyses",value: String(ov.insuranceAnalyses), color: "text-purple-600", bg: "bg-purple-50", tab: "protection" },
+    { label: "Education Plans",  value: String(ov.educationPlans),color: "text-teal-600",   bg: "bg-teal-50",    tab: "networth", nwSubtab: "education" },
+    { label: "AI Recommendations",value: String(ov.aiRecommendations),color: "text-pink-600",bg: "bg-pink-50",  tab: "ai" },
   ];
 
   return (
@@ -1158,7 +1133,7 @@ function OverviewTab({ clientId, onTabChange }: { clientId: number; onTabChange:
       <h2 className="text-xl font-bold text-gray-900 mb-5">Financial Overview</h2>
       <div className="grid grid-cols-4 gap-4">
         {cards.map(c => (
-          <button key={c.label} onClick={() => onTabChange(c.tab)}
+          <button key={c.label} onClick={() => onTabChange(c.tab, c.nwSubtab)}
             className={`${c.bg} rounded-xl p-4 text-left hover:opacity-90 transition-opacity border border-white hover:shadow-sm`}>
             <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">{c.label}</p>
             <p className={`text-xl font-bold ${c.color}`}>{c.value}</p>
@@ -1216,7 +1191,7 @@ async function save() {
     finally { setBusy(false); }
   }
 
-  const INPUT = "w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm pr-11 focus:outline-none focus:ring-2 focus:ring-cyan-500/30 focus:border-cyan-500";
+  const INPUT = "fp-input pr-11";
 
   return (
     <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
@@ -1335,6 +1310,7 @@ export default function App() {
   const [showForceReset, setShowForceReset] = useState(!!user?.mustResetPassword);
   const [showChangePw, setShowChangePw]     = useState(false);
   const [tab, setTab] = useState<Tab>(user?.role === "ga" ? "agents" : "clients");
+  const [nwSubtabHint, setNwSubtabHint] = useState<string | undefined>(undefined);
   const [person, setPerson] = useState<"primary"|"spouse"|"combined">("primary");
   const [client, setClient]       = useState<Client | null>(null);
   const [plan, setPlan]           = useState<Plan | null>(null);
@@ -1349,7 +1325,7 @@ export default function App() {
   function selectPlan(p: Plan) {
     setPlan(p);
     setShowClientDetail(false);
-    setTab(level === "standard" ? "fna" : "planning");
+    setTab(level === "standard" ? "protection" : "fp");
   }
 
   function backToClients() {
@@ -1359,19 +1335,18 @@ export default function App() {
 
   const clientName = client ? `${client.firstName} ${client.lastName}` : undefined;
   const hasSpouse = !!client?.spouseFirstName;
-  const PERSON_TABS: Tab[] = ["retirement", "goals", "pension", "insurance", "tax"];
-  const showPersonTabs = client && hasSpouse && PERSON_TABS.includes(tab);
+  // Person toggle is rendered by HubShell inside each hub / PlanningDocFlow.
   return (
     <VoiceProvider>
-    <div className="flex h-screen overflow-hidden bg-gray-50">
-      <Sidebar activeTab={tab} onTab={t => { if (t === "clients") { setShowClientDetail(false); } setTab(t as any); setPerson("primary"); }} clientName={clientName} role={role} level={level} />
+    <div className="flex h-screen overflow-hidden bg-slate-100">
+      <Sidebar activeTab={tab} onTab={t => { if (t === "clients") { setShowClientDetail(false); } setTab(t as any); setPerson("primary"); setNwSubtabHint(undefined); }} clientName={clientName} role={role} level={level} />
 
       {/* Main content */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Top bar */}
-        <header className="flex-shrink-0 h-11 bg-white border-b border-gray-200 flex items-center px-5 justify-between">
+        <header className="flex-shrink-0 h-12 bg-white/60 backdrop-blur-md border-b border-slate-200/80 flex items-center px-5 justify-between">
           <div className="flex items-center gap-3">
-           <span className="text-xs font-bold text-[#0c1e3a] tracking-wide border-r border-gray-200 pr-3 mr-1">
+           <span className="text-[11px] font-bold tracking-[0.14em] uppercase text-brand-gradient border-r border-slate-200 pr-3 mr-1">
              Knights of Columbus
           </span>
             {client && (
@@ -1381,29 +1356,37 @@ export default function App() {
                 </div>
                 <button
                   onClick={() => { setTab("clients"); setShowClientDetail(true); }}
-                  className="text-sm font-semibold text-gray-800 hover:text-[#0c1e3a] hover:underline transition-colors"
+                  className="text-sm font-semibold text-slate-800 hover:text-cyan-600 hover:underline transition-colors"
                   title="Edit client">
                   {client.spouseFirstName ? `${client.lastName} Family` : `${client.firstName} ${client.lastName}`}
                 </button>
-                {plan && <><span className="text-gray-300">·</span><span className="text-sm text-gray-500">{plan.name}</span></>}
+                {plan && <><span className="text-slate-300">·</span><span className="text-sm text-slate-500">{plan.name}</span></>}
               </>
             )}
-            {!client && <span className="text-sm font-semibold text-gray-500">Financial Planning</span>}
+            {!client && <span className="text-sm font-semibold text-slate-500">Financial Planning</span>}
           </div>
           <div className="flex items-center gap-3">
-            <span className="text-xs text-gray-400">{user?.firmName ?? `${user?.firstName} ${user?.lastName}`}</span>
-            <button onClick={() => setShowChangePw(true)} title="Change password" className="text-gray-300 hover:text-gray-600 transition-colors">
+            {client && (
+              <MeetingRecorderTrigger
+                clientId={client.id}
+                clientName={client.spouseFirstName ? `${client.lastName} Family` : `${client.firstName} ${client.lastName}`}
+                onRecordsCreated={() => queryClient.invalidateQueries()}
+              />
+            )}
+            <span className="text-xs text-slate-500 font-medium">{user?.firmName ?? `${user?.firstName} ${user?.lastName}`}</span>
+            <button onClick={() => setShowChangePw(true)} title="Change password" className="text-slate-400 hover:text-cyan-600 transition-colors">
               <KeyRound className="w-4 h-4" />
             </button>
-            <button onClick={() => { setTab("agents"); logout(); }} title="Sign out" className="text-gray-300 hover:text-gray-600 transition-colors">
+            <button onClick={() => { setTab("agents"); logout(); }} title="Sign out" className="text-slate-400 hover:text-rose-500 transition-colors">
               <LogOut className="w-4 h-4" />
             </button>
           </div>
          {showForceReset && <ChangePasswordModal forceReset onClose={() => setShowForceReset(false)} />}
         </header>
 
-        {/* Content */}
-        <div className="flex-1 overflow-y-auto">
+        {/* Content — wrap in fp-insightled so EVERY tab gets the
+            light-grey page + dark-card treatment (sidebar/header are outside) */}
+        <div key={tab} className="flex-1 overflow-y-auto fp-insightled animate-in fade-in duration-300">
           {tab === "clients" && !showClientDetail && (
             <ClientsTab onSelect={selectClient} />
           )}
@@ -1412,109 +1395,73 @@ export default function App() {
           )}
           {tab !== "admin" && tab !== "agents" && tab !== "clients" && !client && (
             <div className="flex flex-col items-center justify-center h-full text-center p-8">
-              <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mb-4">
-                <Users className="w-8 h-8 text-gray-400" />
+              <div className="w-16 h-16 bg-white border border-slate-200/80 rounded-2xl flex items-center justify-center mb-4 shadow-sm">
+                <Users className="w-8 h-8 text-slate-400" />
               </div>
-              <h2 className="text-lg font-bold text-gray-700 mb-1">Select a Client</h2>
-              <p className="text-sm text-gray-400 mb-4">Choose a client from the Clients tab to view their financial plan</p>
-              <button onClick={() => setTab("agents")} className="text-sm font-semibold text-white bg-[#0c1e3a] hover:bg-[#0e2a4a] px-4 py-2 rounded-lg">
+              <h2 className="text-lg font-bold text-slate-800 mb-1">Select a Client</h2>
+              <p className="text-sm text-slate-500 mb-4">Choose a client from the Clients tab to view their financial plan</p>
+              <button onClick={() => setTab("agents")} className="text-sm font-semibold text-white bg-brand-gradient hover:bg-brand-gradient-hover px-4 py-2 rounded-lg shadow-sm transition-all">
                 Go to Clients
               </button>
             </div>
           )}
-          {tab === "planning" && client && (
-            <QueryClientProvider client={queryClient}>
-              <FinancialPlanningContent initialClientId={client.id} />
-            </QueryClientProvider>
-          )}
-          {tab === "financialplan" && client && (
-            <div className="flex-1 overflow-y-auto p-6">
-              <FinancialPlanTab clientId={client.id} clientName={client.firstName} />
-            </div>
-          )}
-          {showPersonTabs && (
-            <div className="px-6 pt-5 pb-0">
-              <div className="flex gap-1 bg-gray-100 rounded-xl p-1 w-fit border border-gray-200">
-                <button onClick={() => setPerson("primary")}
-                  className={`px-4 py-1.5 rounded-lg text-sm font-semibold transition-colors ${person === "primary" ? "bg-white shadow text-[#0c1e3a] border border-gray-200" : "text-gray-500 hover:text-gray-800"}`}>
-                  {client.firstName}
-                </button>
-                <button onClick={() => setPerson("spouse")}
-                  className={`px-4 py-1.5 rounded-lg text-sm font-semibold transition-colors ${person === "spouse" ? "bg-white shadow text-purple-700 border border-gray-200" : "text-gray-500 hover:text-gray-800"}`}>
-                  {client.spouseFirstName}
-                </button>
-                <button onClick={() => setPerson("combined")}
-                  className={`px-4 py-1.5 rounded-lg text-sm font-semibold transition-colors ${person === "combined" ? "bg-white shadow text-blue-700 border border-gray-200" : "text-gray-500 hover:text-gray-800"}`}>
-                  Combined
-                </button>
-              </div>
-            </div>
-          )}
-
           {tab === "admin"   && <AdminPanel />}
+          {tab === "agents"  && <AgentsTab />}
+          {tab === "dashboard" && client && <InsightLedDashboard clientId={client.id} client={client} onNavigate={(t) => { const [tabKey, subtab] = t.split(":"); setTab(tabKey as Tab); setNwSubtabHint(subtab); }} />}
 
-{tab === "agents"  && <AgentsTab />}
-{tab === "dashboard" && client && <DashboardTab clientId={client.id} />}
-{tab === "letters"   && client && <LettersTab clientId={client.id} client={client} />}
-{tab === "reports"   && client && <ReportsTab clientId={client.id} />}
-{tab === "fna" && client && (
-  <QueryClientProvider client={queryClient}>
-    <FnaTabNew clientId={client.id} planId={null} client={client} />
-  </QueryClientProvider>
-)}
+          {/* ── Merged Insight-Led hubs ─────────────────────────────────────────
+              Each hub provides its own dark Insight-Led shell with sub-tabs.
+              They render outside PlanningDocFlow because the hub is the shell. */}
+          {tab === "protection" && client && (
+            <ProtectionHub clientId={client.id} client={client} person={person} onPersonChange={setPerson} />
+          )}
+          {tab === "retirementhub" && client && (
+            <RetirementHub clientId={client.id} client={client} person={person} onPersonChange={setPerson} />
+          )}
+          {tab === "taxestate" && client && (
+            <TaxEstateHub clientId={client.id} client={client} person={person} onPersonChange={setPerson} />
+          )}
+          {tab === "documents" && client && (
+            <DocumentsHub clientId={client.id} client={client} />
+          )}
+          {tab === "fp" && client && (
+            <FinancialPlanHub clientId={client.id} client={client} />
+          )}
 
-{/* Planning tabs — wrapped in Document Flow shell */}
-{PLANNING_TABS.includes(tab as PlanningTab) && client && (
-  <PlanningDocFlow
-    tab={tab as PlanningTab}
-    onTabChange={t => { setTab(t as any); setPerson("primary"); }}
-    clientId={client.id}
-    clientName={client.spouseFirstName
-      ? `${client.lastName} Family`
-      : `${client.firstName} ${client.lastName}`}
-      client={client} 
-  >
-    {tab === "networth"   && <NetWorthTabNew clientId={client.id} client={client} />}
-
-    {tab === "retirement" && (
-      <QueryClientProvider client={queryClient}>
-        <RetirementTabNew clientId={client.id} clientName={client.firstName} />
-      </QueryClientProvider>
-    )}
-
-    {tab === "pension" && <PensionTab clientId={client.id} client={client} person={person} />}
-
-    {tab === "insurance" && <PoliciesTab clientId={client.id} client={client} person={person} />}
-
-    {tab === "resp" && <RespTabNew clientId={client.id} client={client} />}
-
-    {tab === "expenses" && (
-      <QueryClientProvider client={queryClient}>
-        <ExpensesTab clientId={client.id} />
-      </QueryClientProvider>
-    )}
-
-    {tab === "goals" && <GoalsTab clientId={client.id} client={client} />}
-
-    {tab === "tax" && (
-      <QueryClientProvider client={queryClient}>
-        <TaxTabNew clientId={client.id} client={client} person={person} />
-      </QueryClientProvider>
-    )}
-
-    {tab === "estate" && (
-      <QueryClientProvider client={queryClient}>
-        <EstateTabNew clientId={client.id} planId={null} client={client} />
-      </QueryClientProvider>
-    )}
-
-    {tab === "ai" && (
-      <QueryClientProvider client={queryClient}>
-        <AITab clientId={client.id} />
-      </QueryClientProvider>
-    )}
-  </PlanningDocFlow>
-)}
+          {/* ── Simple themed tabs — kept in PlanningDocFlow for voice/recording ── */}
+          {PLANNING_TABS.includes(tab as PlanningTab) && client && (
+            <div className="fp-insightled h-full">
+              <PlanningDocFlow
+                tab={tab as PlanningTab}
+                clientId={client.id}
+                clientName={client.spouseFirstName
+                  ? `${client.lastName} Family`
+                  : `${client.firstName} ${client.lastName}`}
+                client={client}
+                initialNwSubtab={tab === "networth" ? nwSubtabHint : undefined}
+                personToggle={tab === "goals" && hasSpouse ? {
+                  person,
+                  onPersonChange: setPerson,
+                  primaryLabel: client.firstName,
+                  spouseLabel: client.spouseFirstName!,
+                  showCombined: true,
+                } : undefined}
+              >
+                {tab === "networth" && <NetWorthTabNew clientId={client.id} client={client} />}
+                {tab === "goals"    && <GoalsTab clientId={client.id} client={client} />}
+                {tab === "expenses" && (
+                  <QueryClientProvider client={queryClient}>
+                    <ExpensesTab clientId={client.id} />
+                  </QueryClientProvider>
+                )}
+                {tab === "ai" && (
+                  <QueryClientProvider client={queryClient}>
+                    <AITab clientId={client.id} />
+                  </QueryClientProvider>
+                )}
+              </PlanningDocFlow>
+            </div>
+          )}
 
         </div>
       </div>

@@ -3,12 +3,15 @@
  * Net Worth, Retirement, Insurance, RESP, Debt tabs
  * — all support adding multiple rows before saving
  */
-import { useState, useEffect } from "react";
+import { useState, useEffect, useContext } from "react";
+import { NWSubtabCtx } from "../components/layout/PlanningDocFlow";
 import { api } from "../lib/api";
 import { fmt$, fmtPct, cn } from "../lib/utils";
-import { Plus, Trash2, Save, X, Pencil } from "lucide-react";
+import { Plus, Trash2, Save, X, Pencil, Mic } from "lucide-react";
 import { DrawdownTab } from "../components/planning/DrawdownTab";
+import { VoiceAddDialog } from "../components/VoiceAddDialog";
 import { MonteCarloResults } from "../components/MonteCarloResults";
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
 
 // ── Shared mini components ────────────────────────────────────────────────────
 const TH = ({ children }: { children?: React.ReactNode }) =>(
@@ -18,7 +21,7 @@ const TD = ({ children, right }: { children: React.ReactNode; right?: boolean })
   <td className={cn("px-3 py-2.5 text-sm", right && "text-right")}>{children}</td>
 );
 function Card({ children, className }: { children?: React.ReactNode; className?: string }) {
-  return <div className={cn("bg-white rounded-xl border border-slate-200 shadow-sm", className)}>{children}</div>;
+  return <div className={cn("bg-white rounded-xl border border-gray-200 shadow-sm", className)}>{children}</div>;
 }
 function SummaryBar({ items }: { items: { label: string; value: string; color: string; bg: string }[] }) {
   return (
@@ -35,72 +38,94 @@ function SummaryBar({ items }: { items: { label: string; value: string; color: s
 function InlineInput({ value, onChange, type = "text", placeholder, className, maxLength }: { value: string; onChange: (v: string) => void; type?: string; placeholder?: string; className?: string; maxLength?: number }) {
   return (
     <input type={type} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} maxLength={maxLength}
-      className={cn("border border-slate-200 rounded-lg px-2 py-1.5 text-sm w-full focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500", className)} />
+      className={cn("border border-gray-200 rounded-lg px-2 py-1.5 text-sm w-full focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500", className)} />
   );
 }
 function InlineSelect({ value, onChange, options }: { value: string; onChange: (v: string) => void; options: string[] }) {
   return (
     <select value={value} onChange={e => onChange(e.target.value)}
-      className="border border-slate-200 rounded-lg px-2 py-1.5 text-sm w-full focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 bg-white">
+      className="border border-gray-200 rounded-lg px-2 py-1.5 text-sm w-full focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 bg-white">
       {options.map(o => <option key={o}>{o}</option>)}
     </select>
   );
 }
 
 const PROVINCES = ["AB","BC","MB","NB","NL","NS","NT","NU","ON","PE","QC","SK","YT"];
-const NW_ASSET_CATS = ["RRSP","TFSA","Non-Registered", "RESP", "Real Estate","Business","Pension","Cash/Bank","ESU","RSU","Other Asset"];
+// Note: Pension lives in the Retirement Hub (Pension sub-tab); RESP lives in the
+// Net Worth → Education sub-tab. They are intentionally absent from the Assets list.
+const NW_ASSET_CATS = ["Principal Residence","Real Estate (other)","RRSP","TFSA","Non-Registered","Cash / Bank","Business","Employer Stock Options","Other Asset"];
+const NW_ASSET_COLORS: Record<string, string> = {
+  "Principal Residence":     "#22d3ee",
+  "Real Estate (other)":     "#60a5fa",
+  "RRSP":                    "#34d399",
+  "TFSA":                    "#fbbf24",
+  "Non-Registered":          "#c084fc",
+  "Cash / Bank":             "#06b6d4",
+  "Business":                "#a78bfa",
+  "Employer Stock Options":  "#fb923c",
+  "Other Asset":             "#f43f5e",
+};
 const NW_LIAB_CATS  = ["Mortgage","HELOC","Car Loan","Credit Card","Student Loan","Line of Credit","Other Liability"];
 const DEBT_TYPES    = ["mortgage","heloc","car_loan","credit_card","student_loan","line_of_credit","other"];
 const PENSION_TYPES = ["DBPP","DCPP","Self-Directed","Matching Contributions"];
+const HOLDING_TYPES = ["Mutual Funds","Stock","GIC","Annuity"];
+const PROPERTY_TYPES = ["Family Occupied","Cottage","Rental Property"];
 
 // ── NET WORTH ─────────────────────────────────────────────────────────────────
 interface NWEntry { id: number; type: string; category: string; name: string; owner: string; value: string; notes: string | null; metadata: any; }
 type NWDraft = {
   type: "asset"|"liability"; category: string; name: string; owner: string; value: string; notes: string;
-  // RRSP extras
   isSpousal: boolean; rrspContributor: string;
-  // Pension extras
   pensionType: string; matchPct: string;
-   // Liability extras
   monthlyPayment: string;
-  // RESP extras
   respBeneficiary: string;
+  holdingType: string;
+  jointWithSpouse: boolean;
+  stockOptionType: string;
+  propertyType: string;
+  purchasePrice: string;
+  rentalIncome: string;
+  rentalExpenses: string;
+  mortgageBalance: string;       // For Principal Residence / Real Estate (other) — auto-creates a linked Mortgage liability
+  mortgageMonthlyPayment: string;
 };
 
 function emptyDraft(type: "asset"|"liability"): NWDraft {
-  return { type, category: type === "asset" ? "RRSP" : "Mortgage", name: "", owner: "primary", value: "", notes: "", isSpousal: false, rrspContributor: "", pensionType: "DBPP", matchPct: "", monthlyPayment: "", respBeneficiary: "" };
+  return {
+    type, category: type === "asset" ? "Principal Residence" : "Mortgage",
+    name: "", owner: "primary", value: "", notes: "",
+    isSpousal: false, rrspContributor: "",
+    pensionType: "DBPP", matchPct: "",
+    monthlyPayment: "",
+    respBeneficiary: "",
+    holdingType: "",
+    jointWithSpouse: false,
+    stockOptionType: "RSU",
+    propertyType: "Family Occupied",
+    purchasePrice: "",
+    rentalIncome: "",
+    rentalExpenses: "",
+    mortgageBalance: "",
+    mortgageMonthlyPayment: "",
+  };
 }
 
-// Conditional extra fields based on category
+const SELECT_CLS = "border border-[var(--border-light)] bg-[rgba(255,255,255,0.04)] text-[var(--text-primary)] rounded px-2 py-1 text-xs focus:outline-none focus:border-[var(--accent-cyan)] focus:ring-1 focus:ring-[var(--accent-cyan)]/20";
+
 function ExtraFields({ draft, onChange, spouseName, dependants }: { draft: NWDraft; onChange: (k: keyof NWDraft, v: any) => void; spouseName: string; dependants?: any[] }) {
-  if (draft.category === "RESP") {
-    const deps = Array.isArray(dependants) ? dependants : [];
-    const options = [{ value: "all", label: "All Children" }, ...deps.map((d: any) => ({ value: d.name ?? "", label: d.name ?? "" }))];
-    return (
-      <div className="flex items-center gap-3 mt-1">
-        <span className="text-xs text-gray-500">Beneficiary:</span>
-        <select value={draft.respBeneficiary} onChange={e => onChange("respBeneficiary", e.target.value)}
-          className="border border-slate-200 rounded px-2 py-1 text-xs">
-          <option value="">Select beneficiary</option>
-          {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-        </select>
-        <span className="text-[10px] text-gray-400">(Owner = subscriber/parent; Beneficiary = child)</span>
-      </div>
-    );
-  }
+  const elems: React.ReactNode[] = [];
+
   if (draft.category === "RRSP") {
-    return (
-      <div className="flex items-center gap-3 mt-1">
-        <label className="flex items-center gap-1.5 text-xs text-gray-600 cursor-pointer">
-          <input type="checkbox" checked={draft.isSpousal} onChange={e => onChange("isSpousal", e.target.checked)}
-            className="w-3.5 h-3.5 rounded border-slate-300" />
+    elems.push(
+      <div key="spousal" className="flex items-center gap-3">
+        <label className="flex items-center gap-1.5 text-xs text-[var(--text-secondary)] cursor-pointer">
+          <input type="checkbox" checked={draft.isSpousal} onChange={e => onChange("isSpousal", e.target.checked)} className="w-3.5 h-3.5 rounded accent-[var(--accent-cyan)]" />
           Spousal RRSP
         </label>
         {draft.isSpousal && (
           <div className="flex items-center gap-1.5">
-            <span className="text-xs text-gray-500">Contributor:</span>
-            <select value={draft.rrspContributor} onChange={e => onChange("rrspContributor", e.target.value)}
-              className="border border-slate-200 rounded px-2 py-1 text-xs w-full">
+            <span className="text-xs text-[var(--text-tertiary)]">Contributor:</span>
+            <select value={draft.rrspContributor} onChange={e => onChange("rrspContributor", e.target.value)} className={SELECT_CLS}>
               <option value="">Select contributor</option>
               <option value="client">Client</option>
               <option value="spouse">Spouse</option>
@@ -110,76 +135,219 @@ function ExtraFields({ draft, onChange, spouseName, dependants }: { draft: NWDra
       </div>
     );
   }
-  if (draft.category === "Pension") {
-    return (
-      <div className="flex items-center gap-3 mt-1">
+
+  if (["RRSP","TFSA","Non-Registered"].includes(draft.category)) {
+    elems.push(
+      <div key="holdingType" className="flex items-center gap-1.5">
+        <span className="text-xs text-[var(--text-tertiary)]">Type:</span>
+        <select value={draft.holdingType} onChange={e => onChange("holdingType", e.target.value)} className={SELECT_CLS}>
+          <option value="">Select type…</option>
+          {HOLDING_TYPES.map(t => <option key={t}>{t}</option>)}
+        </select>
+      </div>
+    );
+  }
+
+  if (draft.category === "Non-Registered" && spouseName) {
+    elems.push(
+      <label key="joint" className="flex items-center gap-1.5 text-xs text-[var(--text-secondary)] cursor-pointer">
+        <input type="checkbox" checked={draft.jointWithSpouse} onChange={e => onChange("jointWithSpouse", e.target.checked)} className="w-3.5 h-3.5 rounded accent-[var(--accent-cyan)]" />
+        Jointly held with spouse
+        <span className="text-[10px] text-[var(--text-tertiary)]">(sets owner to Joint)</span>
+      </label>
+    );
+  }
+
+  if (draft.category === "Employer Stock Options") {
+    elems.push(
+      <div key="stockopt" className="flex items-center gap-1.5">
+        <span className="text-xs text-[var(--text-tertiary)]">Sub-type:</span>
+        <select value={draft.stockOptionType} onChange={e => onChange("stockOptionType", e.target.value)} className={SELECT_CLS}>
+          <option value="RSU">RSU — Restricted Stock Unit</option>
+          <option value="ESU">ESU — Employee Stock Unit</option>
+        </select>
+      </div>
+    );
+  }
+
+  if (draft.category === "Principal Residence") {
+    elems.push(
+      <div key="realestate-pr" className="flex flex-wrap items-center gap-3">
         <div className="flex items-center gap-1.5">
-          <span className="text-xs text-gray-500">Type:</span>
-          <InlineSelect value={draft.pensionType} onChange={v => onChange("pensionType", v)} options={PENSION_TYPES} />
+          <span className="text-xs text-[var(--text-tertiary)]">Mortgage balance ($):</span>
+          <InlineInput value={draft.mortgageBalance} onChange={v => onChange("mortgageBalance", v)} type="number" placeholder="0" className="w-28" />
         </div>
-        {draft.pensionType === "Matching Contributions" && (
-          <div className="flex items-center gap-1.5">
-            <span className="text-xs text-gray-500">Match up to:</span>
-            <InlineInput value={draft.matchPct} onChange={v => onChange("matchPct", v)} placeholder="e.g. 4%" className="w-20" />
-          </div>
+        <div className="flex items-center gap-1.5">
+          <span className="text-xs text-[var(--text-tertiary)]">Monthly payment ($):</span>
+          <InlineInput value={draft.mortgageMonthlyPayment} onChange={v => onChange("mortgageMonthlyPayment", v)} type="number" placeholder="0" className="w-28" />
+        </div>
+        {Number(draft.mortgageBalance) > 0 && (
+          <span className="text-[10px] text-[var(--accent-cyan)] italic">Adds a linked Mortgage to the Liabilities tab</span>
         )}
       </div>
     );
   }
-  return null;
+
+  if (draft.category === "Real Estate (other)") {
+    elems.push(
+      <div key="realestate-other" className="flex flex-wrap items-center gap-3">
+        <div className="flex items-center gap-1.5">
+          <span className="text-xs text-[var(--text-tertiary)]">Property type:</span>
+          <select value={draft.propertyType} onChange={e => onChange("propertyType", e.target.value)} className={SELECT_CLS}>
+            {PROPERTY_TYPES.map(t => <option key={t}>{t}</option>)}
+          </select>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <span className="text-xs text-[var(--text-tertiary)]">Purchase price ($):</span>
+          <InlineInput value={draft.purchasePrice} onChange={v => onChange("purchasePrice", v)} type="number" placeholder="0" className="w-28" />
+        </div>
+        <div className="flex items-center gap-1.5">
+          <span className="text-xs text-[var(--text-tertiary)]">Mortgage balance ($):</span>
+          <InlineInput value={draft.mortgageBalance} onChange={v => onChange("mortgageBalance", v)} type="number" placeholder="0" className="w-28" />
+        </div>
+        <div className="flex items-center gap-1.5">
+          <span className="text-xs text-[var(--text-tertiary)]">Monthly payment ($):</span>
+          <InlineInput value={draft.mortgageMonthlyPayment} onChange={v => onChange("mortgageMonthlyPayment", v)} type="number" placeholder="0" className="w-28" />
+        </div>
+        {draft.propertyType === "Rental Property" && (
+          <>
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs text-[var(--text-tertiary)]">Annual rental income ($):</span>
+              <InlineInput value={draft.rentalIncome} onChange={v => onChange("rentalIncome", v)} type="number" placeholder="0" className="w-28" />
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs text-[var(--text-tertiary)]">Annual expenses ($):</span>
+              <InlineInput value={draft.rentalExpenses} onChange={v => onChange("rentalExpenses", v)} type="number" placeholder="0" className="w-28" />
+            </div>
+          </>
+        )}
+        {Number(draft.mortgageBalance) > 0 && (
+          <span className="text-[10px] text-[var(--accent-cyan)] italic">Adds a linked Mortgage to the Liabilities tab</span>
+        )}
+      </div>
+    );
+  }
+
+  if (!elems.length) return null;
+  return <div className="flex flex-wrap gap-3 mt-2 pt-1 border-t border-[var(--border-subtle)]">{elems}</div>;
 }
+
+type NWEditForm = Partial<NWEntry & {
+  isSpousal: boolean; rrspContributor: string; pensionType: string; matchPct: string;
+  monthlyPayment: string; respBeneficiary: string;
+  holdingType: string; jointWithSpouse: boolean; stockOptionType: string;
+  propertyType: string; purchasePrice: string; rentalIncome: string; rentalExpenses: string;
+}>;
+
+function normalizeCat(e: NWEntry): NWEntry {
+  if (e.category === "ESU" || e.category === "RSU") {
+    return { ...e, category: "Employer Stock Options", metadata: { ...(e.metadata ?? {}), stockOptionType: e.category } };
+  }
+  return e;
+}
+
+const LABEL_CLS = "text-[10px] text-[var(--text-tertiary)] uppercase font-semibold block mb-0.5";
+const EDIT_SELECT_CLS = "border border-[var(--border-light)] bg-[rgba(255,255,255,0.04)] text-[var(--text-primary)] rounded-lg px-2 py-1.5 text-sm w-full focus:outline-none focus:border-[var(--accent-cyan)]";
 
 export function NetWorthTab({ clientId, client }: { clientId: number; client?: { firstName: string; lastName: string; spouseFirstName?: string | null; spouseLastName?: string | null } }) {
   const [entries, setEntries] = useState<NWEntry[]>([]);
   const [drafts, setDrafts]   = useState<NWDraft[]>([]);
   const [saving, setSaving]   = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
-  const [simResult, setSimResult] = useState<any>(null);
-  const [editForm, setEditForm]   = useState<Partial<NWEntry & { isSpousal: boolean; rrspContributor: string; pensionType: string; matchPct: string; monthlyPayment: string; respBeneficiary: string }>>({});
+  const { sub: nwTab } = useContext(NWSubtabCtx);
+  const [editForm, setEditForm] = useState<NWEditForm>({});
 
-  const spouseName = client?.spouseFirstName ? `${client.spouseFirstName} ${client.spouseLastName ?? ""}`.trim() : "";
+  const spouseName  = client?.spouseFirstName ? `${client.spouseFirstName} ${client.spouseLastName ?? ""}`.trim() : "";
   const primaryName = client ? `${client.firstName} ${client.lastName}` : "Primary";
-  const ownerOptions = spouseName ? [primaryName, spouseName, "Joint"] : [primaryName];
 
-  const load = () => api.get<NWEntry[]>(`/api/clients/${clientId}/net-worth`).then(setEntries);
+  const load = () => api.get<NWEntry[]>(`/api/clients/${clientId}/net-worth`).then(raw => setEntries(raw.map(normalizeCat)));
   useEffect(() => { load(); }, [clientId]);
 
   const assets = entries.filter(e => e.type === "asset");
   const liabs  = entries.filter(e => e.type === "liability");
   const totalA = assets.reduce((s, e) => s + Number(e.value), 0);
   const totalL = liabs.reduce((s, e) => s + Number(e.value), 0);
+  const netWorth = totalA - totalL;
 
   function addDraft(type: "asset"|"liability") { setDrafts(d => [...d, emptyDraft(type)]); }
+  function addVoiceDraft(type: "asset"|"liability", parsed: Record<string, string>) {
+    const base = emptyDraft(type);
+    const cats = type === "asset" ? NW_ASSET_CATS : NW_LIAB_CATS;
+    // Snap category to one of the allowed values (case-insensitive). If the
+    // model returns a value that doesn't match any allowed enum, fall back to
+    // the safe default ("Other Asset" / "Other Liability") rather than
+    // persisting the raw string — that would produce an invalid category in
+    // the DB and break category-grouped charts/totals.
+    const safeFallback = type === "asset" ? "Other Asset" : "Other Liability";
+    let category: string = base.category || safeFallback;
+    if (parsed.category) {
+      const match = cats.find(c => c.toLowerCase() === parsed.category.toLowerCase());
+      category = match ?? safeFallback;
+    }
+    const merged: NWDraft = {
+      ...base,
+      category,
+      name:   parsed.name   ?? base.name,
+      owner:  (parsed.owner === "spouse" || parsed.owner === "joint" ? parsed.owner : "primary"),
+      value:  String(parsed.value ?? "").replace(/[^0-9.]/g, "") || base.value,
+      notes:  parsed.notes  ?? base.notes,
+      monthlyPayment:         parsed.monthlyPayment         ?? base.monthlyPayment,
+      mortgageBalance:        parsed.mortgageBalance        ?? base.mortgageBalance,
+      mortgageMonthlyPayment: parsed.mortgageMonthlyPayment ?? base.mortgageMonthlyPayment,
+    };
+    setDrafts(d => [...d, merged]);
+  }
   function updateDraft(i: number, k: keyof NWDraft, v: any) { setDrafts(d => d.map((x, idx) => idx === i ? { ...x, [k]: v } : x)); }
   function removeDraft(i: number) { setDrafts(d => d.filter((_, idx) => idx !== i)); }
+  const [voiceOpen, setVoiceOpen] = useState<null | "asset" | "liability">(null);
 
   function startEdit(e: NWEntry) {
     const m = (e.metadata ?? {}) as any;
+    const cat = e.category === "ESU" || e.category === "RSU" ? "Employer Stock Options" : e.category;
     setEditingId(+e.id);
     setEditForm({
-      ...e,
-      notes: e.notes ?? "",
-      isSpousal: !!m.spousal,
-      rrspContributor: m.contributor ?? "",
-      pensionType: m.pensionType ?? "DBPP",
-      matchPct: m.matchPct ?? "",
-      monthlyPayment: m.monthlyPayment ?? "",
-      respBeneficiary: m.respBeneficiary ?? "",
+      ...e, category: cat, notes: e.notes ?? "",
+      isSpousal: !!m.spousal, rrspContributor: m.contributor ?? "",
+      pensionType: m.pensionType ?? "DBPP", matchPct: m.matchPct ?? "",
+      monthlyPayment: m.monthlyPayment ?? "", respBeneficiary: m.respBeneficiary ?? "",
+      holdingType: m.holdingType ?? "",
+      jointWithSpouse: e.owner === "joint",
+      stockOptionType: m.stockOptionType ?? (e.category === "ESU" ? "ESU" : "RSU"),
+      propertyType: m.propertyType ?? "Family Occupied",
+      purchasePrice: m.purchasePrice ? String(m.purchasePrice) : "",
+      rentalIncome: m.rentalIncome ? String(m.rentalIncome) : "",
+      rentalExpenses: m.rentalExpenses ? String(m.rentalExpenses) : "",
     });
+  }
+
+  function buildMeta(form: NWEditForm): Record<string,any> {
+    const m: any = {};
+    const cat = form.category ?? "";
+    if (cat === "RRSP" && form.isSpousal) { m.spousal = true; m.contributor = form.rrspContributor; }
+    if ((form as any).monthlyPayment) m.monthlyPayment = (form as any).monthlyPayment;
+    if (["RRSP","TFSA","Non-Registered"].includes(cat) && form.holdingType) m.holdingType = form.holdingType;
+    if (cat === "Employer Stock Options" && form.stockOptionType) m.stockOptionType = form.stockOptionType;
+    if (cat === "Real Estate (other)") {
+      if (form.propertyType) m.propertyType = form.propertyType;
+      if (form.purchasePrice) m.purchasePrice = form.purchasePrice;
+      if (form.propertyType === "Rental Property") {
+        if (form.rentalIncome) m.rentalIncome = form.rentalIncome;
+        if (form.rentalExpenses) m.rentalExpenses = form.rentalExpenses;
+      }
+    }
+    return m;
   }
 
   async function saveEdit() {
     if (!editingId || !editForm.value) return;
     setSaving(true);
     try {
-      const m: any = {};
-      if (editForm.category === "RRSP" && editForm.isSpousal) { m.spousal = true; m.contributor = editForm.rrspContributor; }
-      if (editForm.category === "Pension") { m.pensionType = editForm.pensionType; if (editForm.matchPct) m.matchPct = editForm.matchPct; }
-      if ((editForm as any).monthlyPayment) m.monthlyPayment = (editForm as any).monthlyPayment;
-      if ((editForm as any).respBeneficiary) m.respBeneficiary = (editForm as any).respBeneficiary;
+      const m = buildMeta(editForm);
+      let owner = editForm.owner ?? "primary";
+      if (editForm.jointWithSpouse && editForm.category === "Non-Registered") owner = "joint";
       await api.put(`/api/net-worth/${editingId}`, {
         category: editForm.category, name: editForm.name || editForm.category,
-        owner: editForm.owner, value: editForm.value, notes: editForm.notes || null,
+        owner, value: editForm.value, notes: editForm.notes || null,
         metadata: Object.keys(m).length ? m : null,
       });
       setEditingId(null); setEditForm({});
@@ -187,27 +355,57 @@ export function NetWorthTab({ clientId, client }: { clientId: number; client?: {
     } finally { setSaving(false); }
   }
 
-async function saveAll() {
-  const valid = drafts.filter(d => d.value);
-  if (!valid.length) return;
-  setSaving(true);
-  try {
-    await Promise.all(valid.map(d => {
-      const m: any = {};
-      if (d.category === "RRSP" && d.isSpousal) { m.spousal = true; m.contributor = d.rrspContributor; }
-      if (d.category === "Pension") { m.pensionType = d.pensionType; if (d.matchPct) m.matchPct = d.matchPct; }
-      if (d.category === "RESP" && d.respBeneficiary) m.respBeneficiary = d.respBeneficiary;
-      return api.post(`/api/clients/${clientId}/net-worth`, {
-        type: d.type, category: d.category,
-        name: d.name || d.category, owner: d.owner,
-        value: d.value, notes: d.notes || null,
-        metadata: Object.keys(m).length ? m : null,
-      });
-    }));
-    setDrafts([]);
-    await load();
-  } finally { setSaving(false); }
-}
+  function isDraftSavable(d: NWDraft) {
+    const isProperty = d.category === "Principal Residence" || d.category === "Real Estate (other)";
+    if (isProperty) {
+      // Property is savable if user filled in market value, purchase price, or mortgage balance
+      return Number(d.value || 0) > 0 || Number(d.purchasePrice || 0) > 0 || Number(d.mortgageBalance || 0) > 0;
+    }
+    return Boolean(d.value);
+  }
+
+  async function saveAll() {
+    const valid = drafts.filter(isDraftSavable);
+    if (!valid.length) return;
+    setSaving(true);
+    try {
+      await Promise.all(valid.map(async d => {
+        const m = buildMeta(d as any);
+        let owner = d.owner;
+        if (d.jointWithSpouse && d.category === "Non-Registered") owner = "joint";
+        const propName = d.name || d.category;
+        const isProperty = d.category === "Principal Residence" || d.category === "Real Estate (other)";
+        const mortgageVal = Number(d.mortgageBalance || 0);
+        // For properties, fall back to purchase price if user didn't fill in market value
+        const assetValue = isProperty && !Number(d.value || 0) && Number(d.purchasePrice || 0) > 0
+          ? d.purchasePrice
+          : d.value;
+
+        // 1. Create the asset/liability entry
+        await api.post(`/api/clients/${clientId}/net-worth`, {
+          type: d.type, category: d.category,
+          name: propName, owner,
+          value: assetValue, notes: d.notes || null,
+          metadata: Object.keys(m).length ? m : null,
+        });
+
+        // 2. If this is a property with a mortgage, also auto-create a linked Mortgage liability
+        if (isProperty && mortgageVal > 0) {
+          const mortgageMeta: any = { linkedAssetName: propName };
+          if (d.mortgageMonthlyPayment) mortgageMeta.monthlyPayment = d.mortgageMonthlyPayment;
+          await api.post(`/api/clients/${clientId}/net-worth`, {
+            type: "liability", category: "Mortgage",
+            name: `Mortgage — ${propName}`, owner,
+            value: String(mortgageVal),
+            notes: `Linked to ${propName}`,
+            metadata: mortgageMeta,
+          });
+        }
+      }));
+      setDrafts([]);
+      await load();
+    } finally { setSaving(false); }
+  }
 
   async function del(id: number) {
     if (!confirm("Delete this entry?")) return;
@@ -219,227 +417,437 @@ async function saveAll() {
   }
 
   function metaBadge(entry: NWEntry) {
-    const m = entry.metadata as any;
-    if (!m) return null;
-    if (entry.category === "RRSP" && m.spousal) return <span className="text-[10px] bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded-full">Spousal · {m.contributor}</span>;
-    if (entry.category === "Pension" && m.pensionType) return <span className="text-[10px] bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-full">{m.pensionType}{m.matchPct ? ` · ${m.matchPct}` : ""}</span>;
-    return null;
+    const m = (entry.metadata ?? {}) as any;
+    const chips: React.ReactNode[] = [];
+    if (entry.category === "RRSP" && m.spousal)
+      chips.push(<span key="sp" className="text-[10px] bg-[var(--accent-cyan)]/10 text-[var(--accent-cyan)] px-1.5 py-0.5 rounded font-mono">Spousal · {m.contributor}</span>);
+    if (m.linkedAssetName && entry.category === "Mortgage")
+      chips.push(<span key="lnk" className="text-[10px] bg-[var(--accent-cyan)]/10 text-[var(--accent-cyan)] px-1.5 py-0.5 rounded font-mono">↪ {m.linkedAssetName}</span>);
+    if (m.holdingType)
+      chips.push(<span key="ht" className="text-[10px] bg-[var(--accent-cyan)]/10 text-[var(--accent-cyan)] px-1.5 py-0.5 rounded font-mono">{m.holdingType}</span>);
+    if (entry.category === "Employer Stock Options" && m.stockOptionType)
+      chips.push(<span key="st" className="text-[10px] bg-white/[0.06] text-[var(--text-secondary)] px-1.5 py-0.5 rounded font-mono">{m.stockOptionType}</span>);
+    if (entry.owner === "joint")
+      chips.push(<span key="joint" className="text-[10px] bg-[var(--accent-cyan)]/10 text-[var(--accent-cyan)] px-1.5 py-0.5 rounded font-mono">Joint</span>);
+    if (m.propertyType)
+      chips.push(<span key="pt" className="text-[10px] bg-white/[0.06] text-[var(--text-secondary)] px-1.5 py-0.5 rounded font-mono">{m.propertyType}</span>);
+    if (m.rentalIncome) {
+      const net = Number(m.rentalIncome) - Number(m.rentalExpenses || 0);
+      chips.push(<span key="rent" className="text-[10px] bg-[var(--accent-green)]/10 text-[var(--accent-green)] px-1.5 py-0.5 rounded font-mono">Rental {net >= 0 ? "+" : ""}{fmt$(net)}/yr</span>);
+    }
+    if (!chips.length) return null;
+    return <div className="flex flex-wrap gap-1 mt-0.5">{chips}</div>;
+  }
+
+  if (nwTab === "education") {
+    return <RespTab clientId={clientId} client={client} />;
+  }
+
+  const isAssets = nwTab === "assets";
+  const activeRows = isAssets ? assets : liabs;
+  const activeCats = isAssets ? NW_ASSET_CATS : NW_LIAB_CATS;
+  const activeDrafts = drafts.filter(d => d.type === (isAssets ? "asset" : "liability"));
+  const colCount = isAssets ? 6 : 7;
+
+  if (nwTab === "education") {
+    return <EducationSubTab clientId={clientId} client={client} />;
   }
 
   return (
-    <div className="p-6 max-w-5xl mx-auto">
-      <SummaryBar items={[
-        { label: "Total Assets",      value: fmt$(totalA),          color: "text-emerald-600", bg: "bg-emerald-50" },
-        { label: "Total Liabilities", value: fmt$(totalL),          color: "text-red-500",     bg: "bg-red-50" },
-        { label: "Net Worth",         value: fmt$(totalA - totalL), color: totalA - totalL >= 0 ? "text-blue-600" : "text-red-500", bg: totalA - totalL >= 0 ? "bg-blue-50" : "bg-red-50" },
-      ]} />
+    <div>
+      {/* ── Table ───────────────────────────────────────────────────────────── */}
+      <div className="mt-5 border border-[var(--border-subtle)] rounded-xl overflow-hidden">
+        <div className="px-4 py-3 flex items-center justify-between border-b border-[var(--border-subtle)] bg-[var(--bg-card)]">
+          <h3 className="font-semibold text-[var(--text-primary)] text-sm">
+            {isAssets ? "Assets" : "Liabilities"}
+          </h3>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setVoiceOpen(isAssets ? "asset" : "liability")}
+              title={`Voice add ${isAssets ? "asset" : "liability"}`}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-full border border-[var(--border-light)] text-[var(--text-secondary)] hover:text-[var(--accent-cyan)] hover:border-[var(--accent-cyan)] text-xs font-semibold transition-colors"
+            >
+              <Mic className="w-3.5 h-3.5" /> Voice
+            </button>
+            <button
+              onClick={() => addDraft(isAssets ? "asset" : "liability")}
+              className="flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-[var(--accent-cyan)] to-[var(--accent-blue)] text-[var(--bg-base)] text-sm font-semibold hover:opacity-90 transition-opacity"
+            >
+              <Plus className="w-4 h-4" /> Add {isAssets ? "Asset" : "Liability"}
+            </button>
+          </div>
+        </div>
 
-      {/* Assets */}
-      {(["asset","liability"] as const).map(type => {
-        const rows = type === "asset" ? assets : liabs;
-        const total = type === "asset" ? totalA : totalL;
-        const cats = type === "asset" ? NW_ASSET_CATS : NW_LIAB_CATS;
-        const draftRows = drafts.filter(d => d.type === type);
-        return (
-          <Card key={type} className="mb-5">
-            <div className="p-4 border-b border-slate-100 flex items-center justify-between">
-              <div>
-                <h3 className="font-bold text-gray-800">{type === "asset" ? "Assets" : "Liabilities"}</h3>
-                <p className={`text-lg font-bold ${type === "asset" ? "text-emerald-600" : "text-red-500"}`}>{fmt$(total)}</p>
-              </div>
-              <button onClick={() => addDraft(type)} className="flex items-center gap-1.5 text-sm font-semibold text-white bg-brand-gradient hover:bg-brand-gradient-hover px-3 py-1.5 rounded-lg">
-                <Plus className="w-3.5 h-3.5" /> Add {type === "asset" ? "Asset" : "Liability"}
-              </button>
-            </div>
-            <table className="w-full text-sm">
-              <thead className="bg-slate-50 border-b border-slate-100">
-                <tr>
-                  <TH>Owner</TH><TH>Category</TH><TH>Name / Description</TH>
-                  <TH>{type === "asset" ? "Value" : "Balance Owing"}</TH>
-                 {type === "liability" && <TH>Monthly Pmt</TH>}
-                  <TH>Notes</TH><TH></TH>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {rows.map(e => editingId === +e.id ? (   
-                // ── Edit mode ──────────────────────────────────────────
-                  <tr key={e.id} className="bg-amber-50/50 border-b border-amber-100">
-                    <td colSpan={type === "liability" ? 7 : 6} className="px-3 py-2">
-                      <div className="grid grid-cols-5 gap-2 mb-1">
-                        <div>
-                          <label className="text-[10px] text-gray-400 uppercase font-semibold block mb-0.5">Owner</label>
-                          <select value={editForm.owner ?? "primary"} onChange={e => setEditForm(f => ({...f, owner: e.target.value}))}
-                            className="border border-amber-300 rounded-lg px-2 py-1.5 text-sm w-full bg-white focus:outline-none focus:ring-2 focus:ring-amber-400/30">
-                            <option value="primary">{primaryName}</option>
-                            {spouseName && <option value="spouse">{spouseName}</option>}
-                            {spouseName && <option value="joint">Joint</option>}
+        {voiceOpen && (
+          <VoiceAddDialog
+            title={`Voice-Add ${voiceOpen === "asset" ? "Asset" : "Liability"}`}
+            moduleId={`net-worth-${voiceOpen}`}
+            prompt={voiceOpen === "asset"
+              ? `Try: "TFSA at TD worth twenty-five thousand, jointly with spouse"`
+              : `Try: "RBC mortgage balance 320 thousand, monthly payment 1850"`}
+            fieldSchema={[
+              { key: "category", label: "Category",
+                description: `Type of ${voiceOpen}`,
+                enum: voiceOpen === "asset" ? NW_ASSET_CATS : NW_LIAB_CATS },
+              { key: "name",  label: "Name",  description: "Description (e.g. 'TD TFSA')" },
+              { key: "value", label: voiceOpen === "asset" ? "Value" : "Balance",
+                description: "Amount in dollars, number only" },
+              { key: "owner", label: "Owner", description: "Who owns it",
+                enum: ["primary", "spouse", "joint"] },
+              ...(voiceOpen === "liability" ? [
+                { key: "monthlyPayment", label: "Monthly Pmt",
+                  description: "Monthly payment, number only" }
+              ] : []),
+              { key: "notes", label: "Notes", description: "Free-form notes" },
+            ]}
+            onConfirm={(fields) => { addVoiceDraft(voiceOpen, fields); setVoiceOpen(null); }}
+            onClose={() => setVoiceOpen(null)}
+          />
+        )}
+
+        <table className="w-full text-sm">
+          <thead className="bg-[var(--bg-card)]/60 border-b border-[var(--border-subtle)]">
+            <tr>
+              <TH>Owner</TH><TH>Category</TH><TH>Name / Description</TH>
+              <TH>{isAssets ? "Value" : "Balance Owing"}</TH>
+              {!isAssets && <TH>Monthly Pmt</TH>}
+              <TH>Notes</TH><TH></TH>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-[var(--border-subtle)]">
+
+            {activeRows.map(e => editingId === +e.id ? (
+              // ── Edit mode ──────────────────────────────────────────────────
+              <tr key={e.id} className="bg-[var(--accent-cyan)]/[0.03] border-b border-[var(--accent-cyan)]/10">
+                <td colSpan={colCount} className="px-3 py-3">
+                  <div className="grid grid-cols-5 gap-2 mb-1">
+                    <div>
+                      <label className={LABEL_CLS}>Owner</label>
+                      <select
+                        value={editForm.owner ?? "primary"}
+                        onChange={ev => setEditForm(f => ({...f, owner: ev.target.value}))}
+                        disabled={editForm.jointWithSpouse && editForm.category === "Non-Registered"}
+                        className={cn(EDIT_SELECT_CLS, editForm.jointWithSpouse && editForm.category === "Non-Registered" && "opacity-50")}
+                      >
+                        <option value="primary">{primaryName}</option>
+                        {spouseName && <option value="spouse">{spouseName}</option>}
+                        {spouseName && <option value="joint">Joint</option>}
+                      </select>
+                    </div>
+                    <div>
+                      <label className={LABEL_CLS}>Category</label>
+                      <InlineSelect value={editForm.category ?? ""} onChange={v => setEditForm(f => ({...f, category: v}))} options={activeCats} />
+                    </div>
+                    <div>
+                      <label className={LABEL_CLS}>Name / Description</label>
+                      <InlineInput value={editForm.name ?? ""} onChange={v => setEditForm(f => ({...f, name: v}))} />
+                    </div>
+                    <div>
+                      <label className={LABEL_CLS}>{isAssets ? "Market Value ($)" : "Balance ($)"}</label>
+                      <InlineInput value={String(editForm.value ?? "")} onChange={v => setEditForm(f => ({...f, value: v}))} type="number" />
+                    </div>
+                    {!isAssets && (
+                      <div>
+                        <label className={LABEL_CLS}>Monthly Pmt ($)</label>
+                        <InlineInput value={String(editForm.monthlyPayment ?? "")} onChange={v => setEditForm(f => ({...f, monthlyPayment: v}))} type="number" />
+                      </div>
+                    )}
+                    <div className="flex gap-1 items-end">
+                      <div className="flex-1">
+                        <label className={LABEL_CLS}>Notes</label>
+                        <InlineInput value={editForm.notes ?? ""} onChange={v => setEditForm(f => ({...f, notes: v}))} />
+                      </div>
+                      <div className="flex gap-1 mb-1.5">
+                        <button onClick={saveEdit} disabled={saving} title="Save" className="text-[var(--accent-cyan)] hover:text-[var(--accent-cyan)]/80"><Save className="w-4 h-4" /></button>
+                        <button onClick={() => { setEditingId(null); setEditForm({}); }} title="Cancel" className="text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"><X className="w-4 h-4" /></button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* ── Category extras in edit mode ────────────────────────── */}
+                  <div className="flex flex-wrap gap-3 mt-2 pt-1.5 border-t border-[var(--border-subtle)]">
+                    {["RRSP","TFSA","Non-Registered"].includes(editForm.category ?? "") && (
+                      <>
+                        {editForm.category === "RRSP" && (
+                          <>
+                            <label className="flex items-center gap-1.5 text-xs text-[var(--text-secondary)] cursor-pointer">
+                              <input type="checkbox" checked={!!editForm.isSpousal} onChange={ev => setEditForm(f => ({...f, isSpousal: ev.target.checked}))} className="w-3.5 h-3.5 rounded accent-[var(--accent-cyan)]" />
+                              Spousal RRSP
+                            </label>
+                            {editForm.isSpousal && (
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-xs text-[var(--text-tertiary)]">Contributor:</span>
+                                <select value={editForm.rrspContributor ?? ""} onChange={ev => setEditForm(f => ({...f, rrspContributor: ev.target.value}))} className={SELECT_CLS}>
+                                  <option value="">Select…</option>
+                                  <option value="client">Client</option>
+                                  <option value="spouse">Spouse</option>
+                                </select>
+                              </div>
+                            )}
+                          </>
+                        )}
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-xs text-[var(--text-tertiary)]">Type:</span>
+                          <select value={editForm.holdingType ?? ""} onChange={ev => setEditForm(f => ({...f, holdingType: ev.target.value}))} className={SELECT_CLS}>
+                            <option value="">Select type…</option>
+                            {HOLDING_TYPES.map(t => <option key={t}>{t}</option>)}
                           </select>
                         </div>
-                        <div>
-                          <label className="text-[10px] text-gray-400 uppercase font-semibold block mb-0.5">Category</label>
-                          <InlineSelect value={editForm.category ?? ""} onChange={v => setEditForm(f => ({...f, category: v}))} options={cats} />
+                        {editForm.category === "Non-Registered" && spouseName && (
+                          <label className="flex items-center gap-1.5 text-xs text-[var(--text-secondary)] cursor-pointer">
+                            <input type="checkbox" checked={!!editForm.jointWithSpouse} onChange={ev => setEditForm(f => ({...f, jointWithSpouse: ev.target.checked, owner: ev.target.checked ? "joint" : f.owner}))} className="w-3.5 h-3.5 rounded accent-[var(--accent-cyan)]" />
+                            Jointly held with spouse
+                          </label>
+                        )}
+                      </>
+                    )}
+                    {editForm.category === "Employer Stock Options" && (
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-xs text-[var(--text-tertiary)]">Sub-type:</span>
+                        <select value={editForm.stockOptionType ?? "RSU"} onChange={ev => setEditForm(f => ({...f, stockOptionType: ev.target.value}))} className={SELECT_CLS}>
+                          <option value="RSU">RSU — Restricted Stock Unit</option>
+                          <option value="ESU">ESU — Employee Stock Unit</option>
+                        </select>
+                      </div>
+                    )}
+                    {editForm.category === "Principal Residence" && (
+                      <span className="text-[10px] text-[var(--text-tertiary)] italic">
+                        Mortgage is managed as a separate Mortgage liability. Edit it on the Liabilities tab.
+                      </span>
+                    )}
+                    {editForm.category === "Real Estate (other)" && (
+                      <>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-xs text-[var(--text-tertiary)]">Property type:</span>
+                          <select
+                            value={editForm.propertyType ?? "Family Occupied"}
+                            onChange={ev => setEditForm(f => ({...f, propertyType: ev.target.value}))}
+                            className={SELECT_CLS}
+                          >
+                            {PROPERTY_TYPES.map(t => <option key={t}>{t}</option>)}
+                          </select>
                         </div>
-                        <div>
-                          <label className="text-[10px] text-gray-400 uppercase font-semibold block mb-0.5">Name</label>
-                          <InlineInput value={editForm.name ?? ""} onChange={v => setEditForm(f => ({...f, name: v}))} />
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-xs text-[var(--text-tertiary)]">Purchase price ($):</span>
+                          <InlineInput value={editForm.purchasePrice ?? ""} onChange={v => setEditForm(f => ({...f, purchasePrice: v}))} type="number" placeholder="0" className="w-28" />
                         </div>
-                        <div>
-                          <label className="text-[10px] text-gray-400 uppercase font-semibold block mb-0.5">{type === "asset" ? "Value ($)" : "Balance ($)"}</label>
-                          <InlineInput value={String(editForm.value ?? "")} onChange={v => setEditForm(f => ({...f, value: v}))} type="number" />
-                        </div>
-                        {type === "liability" && (
-                          <div>
-                            <label className="text-[10px] text-gray-400 uppercase font-semibold block mb-0.5">Monthly Pmt ($)</label>
-                            <InlineInput value={String((editForm as any).monthlyPayment ?? "")} onChange={v => setEditForm(f => ({...f, monthlyPayment: v}))} type="number" />
+                        {editForm.propertyType === "Rental Property" && (
+                          <>
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-xs text-[var(--text-tertiary)]">Annual rental income ($):</span>
+                              <InlineInput value={editForm.rentalIncome ?? ""} onChange={v => setEditForm(f => ({...f, rentalIncome: v}))} type="number" placeholder="0" className="w-28" />
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-xs text-[var(--text-tertiary)]">Annual expenses ($):</span>
+                              <InlineInput value={editForm.rentalExpenses ?? ""} onChange={v => setEditForm(f => ({...f, rentalExpenses: v}))} type="number" placeholder="0" className="w-28" />
+                            </div>
+                          </>
+                        )}
+                        <span className="text-[10px] text-[var(--text-tertiary)] italic">
+                          Mortgage is managed separately on the Liabilities tab.
+                        </span>
+                      </>
+                    )}
+                  </div>
+                </td>
+              </tr>
+            ) : (
+              // ── View mode ──────────────────────────────────────────────────
+              <tr key={e.id} className="hover:bg-white/[0.02] cursor-pointer group transition-colors" onClick={() => startEdit(e)}>
+                <TD><span className="text-xs text-[var(--text-tertiary)]">{ownerLabel(e)}</span></TD>
+                <TD>
+                  <div className="flex flex-col gap-0.5">
+                    <span className="text-xs px-2 py-0.5 rounded bg-white/[0.06] text-[var(--text-secondary)] w-fit">{e.category}</span>
+                    {metaBadge(e)}
+                  </div>
+                </TD>
+                <TD><span className="font-medium text-[var(--text-primary)]">{e.name}</span></TD>
+                <TD right>
+                  <span className={`font-semibold font-mono ${isAssets ? "text-[var(--accent-green)]" : "text-[var(--accent-rose)]"}`}>
+                    {fmt$(e.value)}
+                  </span>
+                </TD>
+                {!isAssets && <TD><span className="text-[var(--text-tertiary)] text-xs font-mono">{e.metadata?.monthlyPayment ? fmt$(e.metadata.monthlyPayment) : "—"}</span></TD>}
+                <TD><span className="text-[var(--text-tertiary)] text-xs">{e.notes ?? ""}</span></TD>
+                <TD>
+                  <div className="flex items-center gap-2">
+                    <Pencil className="w-3.5 h-3.5 text-[var(--text-tertiary)]/30 group-hover:text-[var(--accent-cyan)] transition-colors" />
+                    <button onClick={ev => { ev.stopPropagation(); del(e.id); }} className="text-[var(--text-tertiary)]/30 hover:text-[var(--accent-rose)] transition-colors">
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </TD>
+              </tr>
+            ))}
+
+            {/* ── Draft rows ────────────────────────────────────────────────── */}
+            {activeDrafts.map(d => {
+              const ri = drafts.indexOf(d);
+              return (
+                <tr key={ri} className="bg-[var(--accent-cyan)]/[0.03] border-b border-[var(--accent-cyan)]/10">
+                  <td colSpan={colCount} className="px-3 py-3">
+                    <div className="grid grid-cols-5 gap-2 mb-1">
+                      <div>
+                        <label className={LABEL_CLS}>Owner</label>
+                        <select
+                          value={d.jointWithSpouse && d.category === "Non-Registered" ? "joint" : d.owner}
+                          onChange={ev => updateDraft(ri, "owner", ev.target.value)}
+                          disabled={d.jointWithSpouse && d.category === "Non-Registered"}
+                          className={cn(EDIT_SELECT_CLS, d.jointWithSpouse && d.category === "Non-Registered" && "opacity-50")}
+                        >
+                          <option value="primary">{primaryName}</option>
+                          {spouseName && <option value="spouse">{spouseName}</option>}
+                          {spouseName && <option value="joint">Joint</option>}
+                        </select>
+                      </div>
+                      <div>
+                        <label className={LABEL_CLS}>Category</label>
+                        <InlineSelect value={d.category} onChange={v => updateDraft(ri, "category", v)} options={activeCats} />
+                      </div>
+                      <div>
+                        <label className={LABEL_CLS}>Name / Description</label>
+                        <InlineInput value={d.name} onChange={v => updateDraft(ri, "name", v)} placeholder={d.category} />
+                      </div>
+                      <div>
+                        {!isAssets && (
+                          <div className="mb-1">
+                            <label className={LABEL_CLS}>Monthly Pmt ($)</label>
+                            <InlineInput value={d.monthlyPayment} onChange={v => updateDraft(ri, "monthlyPayment", v)} type="number" placeholder="0" />
                           </div>
                         )}
-                        <div className="flex gap-1 items-end">
-                          <div className="flex-1">
-                            <label className="text-[10px] text-gray-400 uppercase font-semibold block mb-0.5">Notes</label>
-                            <InlineInput value={editForm.notes ?? ""} onChange={v => setEditForm(f => ({...f, notes: v}))} />
-                          </div>
-                       
-                          <div className="flex gap-1 mb-1.5">
-                            <button onClick={saveEdit} disabled={saving} title="Save" className="text-emerald-500 hover:text-emerald-700"><Save className="w-4 h-4" /></button>
-                            <button onClick={() => { setEditingId(null); setEditForm({}); }} title="Cancel" className="text-gray-400 hover:text-gray-600"><X className="w-4 h-4" /></button>
-                          </div>
-                        </div>
+                        <label className={LABEL_CLS}>{isAssets ? "Market Value ($)" : "Balance Owing ($)"}</label>
+                        <InlineInput value={d.value} onChange={v => updateDraft(ri, "value", v)} type="number" placeholder="0" />
                       </div>
-                      {/* Conditional extras in edit mode */}
-                      {editForm.category === "RRSP" && (
-                        <div className="flex items-center gap-3 mt-1">
-                          <label className="flex items-center gap-1.5 text-xs text-gray-600 cursor-pointer">
-                            <input type="checkbox" checked={!!editForm.isSpousal} onChange={ev => setEditForm(f => ({...f, isSpousal: ev.target.checked}))} className="w-3.5 h-3.5 rounded" />
-                            Spousal RRSP
-                          </label>
-                          {editForm.isSpousal && (
-                            <select value={editForm.rrspContributor ?? ""} onChange={e => setEditForm(f => ({ ...f, rrspContributor: e.target.value }))}
-                              className="border border-slate-200 rounded px-2 py-1 text-xs w-full">
-                              <option value="">Select contributor</option>
-                              <option value="client">Client</option>
-                              <option value="spouse">Spouse</option>
-                            </select>
-                          )}
+                      <div className="flex gap-1 items-end">
+                        <div className="flex-1">
+                          <label className={LABEL_CLS}>Notes</label>
+                          <InlineInput value={d.notes} onChange={v => updateDraft(ri, "notes", v)} placeholder="optional" />
                         </div>
-                      )}
-{editForm.category === "Pension" && (
-                        <div className="flex items-center gap-3 mt-1">
-                          <InlineSelect value={editForm.pensionType ?? "DBPP"} onChange={v => setEditForm(f => ({...f, pensionType: v}))} options={PENSION_TYPES} />
-                          {editForm.pensionType === "Matching Contributions" && (
-                            <InlineInput value={editForm.matchPct ?? ""} onChange={v => setEditForm(f => ({...f, matchPct: v}))} placeholder="Match %" className="w-20" />
-                          )}
-                        </div>
-                      )}
-                      {editForm.category === "RESP" && (
-                        <div className="flex items-center gap-3 mt-1">
-                          <span className="text-xs text-gray-500">Beneficiary:</span>
-                          <select value={(editForm as any).respBeneficiary ?? ""} onChange={e => setEditForm(f => ({...f, respBeneficiary: e.target.value}))}
-                            className="border border-slate-200 rounded px-2 py-1 text-xs">
-                            <option value="">Select beneficiary</option>
-                            <option value="all">All Children</option>
-                            {Array.isArray((client as any)?.dependants) && (client as any).dependants.map((d: any) => (
-                              <option key={d.name} value={d.name}>{d.name}</option>
-                            ))}
-                          </select>
-                        </div>
-                      )}
-                    </td>
-                  </tr>
-                ) : (
-                  // ── View mode ──────────────────────────────────────────
-                  <tr key={e.id} className="hover:bg-slate-50 cursor-pointer group" onClick={() => startEdit(e)}>
-                    <TD><span className="text-xs text-gray-500">{ownerLabel(e)}</span></TD>
-                    <TD>
-                      <div className="flex flex-col gap-1">
-                        <span className="bg-slate-100 text-gray-600 text-xs px-2 py-0.5 rounded-full w-fit">{e.category}</span>
-                        {metaBadge(e)}
+                        <button onClick={() => removeDraft(ri)} className="text-[var(--text-tertiary)]/50 hover:text-[var(--accent-rose)] mb-1.5 transition-colors"><X className="w-4 h-4" /></button>
                       </div>
-                    </TD>
-                    <TD><span className="font-medium text-gray-800">{e.name}</span></TD>
-                    <TD right><span className="font-semibold">{fmt$(e.value)}</span></TD>
-                    {type === "liability" && <TD><span className="text-gray-400 text-xs">{e.metadata?.monthlyPayment ? fmt$(e.metadata.monthlyPayment) : ""}</span></TD>}
-                    <TD><span className="text-gray-400 text-xs">{e.notes ?? ""}</span></TD>
-                    <TD>
-                      <div className="flex items-center gap-2">
-                        <Pencil className="w-3.5 h-3.5 text-gray-300 group-hover:text-blue-400 transition-colors" />
-                        <button onClick={ev => { ev.stopPropagation(); del(e.id); }} className="text-gray-300 hover:text-red-500"><Trash2 className="w-3.5 h-3.5" /></button>
-                      </div>
-                    </TD>
-                  </tr>
-                ))}
+                    </div>
+                    <ExtraFields draft={d} onChange={(k, v) => updateDraft(ri, k, v)} spouseName={spouseName} dependants={Array.isArray((client as any)?.dependants) ? (client as any).dependants : []} />
+                  </td>
+                </tr>
+              );
+            })}
 
-                {/* Draft rows */}
-                {draftRows.map(d => {
-                  const ri = drafts.indexOf(d);
-                  return (
-                    <tr key={ri} className="bg-blue-50/50 border-b border-blue-100">
-                      <td colSpan={type === "liability" ? 7 : 6} className="px-3 py-2">
-                        <div className="grid grid-cols-5 gap-2 mb-1">
-                          {/* Owner */}
-                          <div>
-                            <label className="text-[10px] text-gray-400 uppercase font-semibold block mb-0.5">Owner</label>
-                            <select value={d.owner} onChange={e => updateDraft(ri, "owner", e.target.value)}
-                              className="border border-slate-200 rounded-lg px-2 py-1.5 text-sm w-full focus:outline-none focus:ring-2 focus:ring-cyan-500/20 bg-white">
-                              <option value="primary">{primaryName}</option>
-                              {spouseName && <option value="spouse">{spouseName}</option>}
-                              {spouseName && <option value="joint">Joint</option>}
-                            </select>
-                          </div>
-                          {/* Category */}
-                          <div>
-                            <label className="text-[10px] text-gray-400 uppercase font-semibold block mb-0.5">Category</label>
-                            <InlineSelect value={d.category} onChange={v => updateDraft(ri, "category", v)} options={cats} />
-                          </div>
-                          {/* Name */}
-                          <div>
-                            <label className="text-[10px] text-gray-400 uppercase font-semibold block mb-0.5">Name / Description</label>
-                            <InlineInput value={d.name} onChange={v => updateDraft(ri, "name", v)} placeholder={d.category} />
-                          </div>
-                          {/* Value */}
-                          <div>
-                             {d.type === "liability" && (
-                            <div>
-                              <label className="text-[10px] text-gray-400 uppercase font-semibold block mb-0.5">Monthly Pmt ($)</label>
-                              <InlineInput value={d.monthlyPayment} onChange={v => updateDraft(ri, "monthlyPayment", v)} type="number" placeholder="0" />
-                            </div>
-                          )}
-                            <label className="text-[10px] text-gray-400 uppercase font-semibold block mb-0.5">{type === "asset" ? "Value ($)" : "Balance Owing ($)"}</label>
-                            <InlineInput value={d.value} onChange={v => updateDraft(ri, "value", v)} type="number" placeholder="0" />
-                          </div>
-                          {/* Notes + remove */}
-                          <div className="flex gap-1 items-end">
-                            <div className="flex-1">
-                              <label className="text-[10px] text-gray-400 uppercase font-semibold block mb-0.5">Notes</label>
-                              <InlineInput value={d.notes} onChange={v => updateDraft(ri, "notes", v)} placeholder="optional" />
-                            </div>
-                            <button onClick={() => removeDraft(ri)} className="text-gray-300 hover:text-red-500 mb-1.5"><X className="w-4 h-4" /></button>
-                          </div>
-                        </div>
-                        {/* Conditional extra fields */}
-                        <ExtraFields draft={d} onChange={(k, v) => updateDraft(ri, k, v)} spouseName={spouseName} dependants={Array.isArray((client as any)?.dependants) ? (client as any).dependants : []} />
-                      </td>
-                    </tr>
-                  );
-                })}
+            {activeRows.length === 0 && activeDrafts.length === 0 && (
+              <tr>
+                <td colSpan={colCount} className="px-4 py-8 text-center text-[var(--text-tertiary)] text-sm">
+                  No {isAssets ? "assets" : "liabilities"} yet — click <span className="text-[var(--accent-cyan)]">Add {isAssets ? "Asset" : "Liability"}</span> to add one
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
 
-                {rows.length === 0 && draftRows.length === 0 && (
-                  <tr><td colSpan={type === "liability" ? 7 : 6} className="px-4 py-6 text-center text-gray-400 text-sm">No {type}s yet — click Add to add one</td></tr>
-                )}
-              </tbody>
-            </table>
-          </Card>
-        );
-      })}
-
+      {/* ── Save / discard ─────────────────────────────────────────────────── */}
       {drafts.length > 0 && (
-        <div className="flex justify-end gap-2 mt-2">
-          <button onClick={() => setDrafts([])} className="text-sm text-gray-500 px-4 py-2 border border-slate-200 rounded-lg hover:bg-slate-50">Discard All</button>
+        <div className="flex justify-end gap-2 mt-4">
+          <button onClick={() => setDrafts([])} className="text-sm text-[var(--text-tertiary)] px-4 py-2 border border-[var(--border-light)] rounded-lg hover:bg-white/5 transition-colors">
+            Discard All
+          </button>
           <button onClick={saveAll} disabled={saving}
-            className="flex items-center gap-1.5 bg-brand-gradient hover:bg-brand-gradient-hover disabled:opacity-50 text-white text-sm font-semibold px-5 py-2 rounded-lg">
-            <Save className="w-3.5 h-3.5" /> {saving ? "Saving…" : `Save ${drafts.filter(d=>d.value).length} Entries`}
+            className="flex items-center gap-1.5 bg-[var(--accent-cyan)] text-[var(--bg-base)] text-sm font-semibold px-5 py-2 rounded-lg disabled:opacity-50 hover:bg-[var(--accent-cyan)]/90 transition-colors">
+            <Save className="w-3.5 h-3.5" /> {saving ? "Saving…" : `Save ${drafts.filter(isDraftSavable).length} Entries`}
           </button>
         </div>
       )}
+
+      {/* ── KPI tiles ───────────────────────────────────────────────────────── */}
+      <div className="grid grid-cols-2 gap-3 mt-5 mb-5">
+        {isAssets ? (
+          <>
+            <div className="fp-insightled-card p-4">
+              <p className="text-xs font-semibold text-[var(--text-tertiary)] uppercase tracking-wide mb-1">Total Assets</p>
+              <p className="text-2xl font-bold text-[var(--accent-green)] font-mono">{fmt$(totalA)}</p>
+            </div>
+            <div className="fp-insightled-card p-4">
+              <p className="text-xs font-semibold text-[var(--text-tertiary)] uppercase tracking-wide mb-1">Net Worth</p>
+              <p className={`text-2xl font-bold font-mono ${netWorth >= 0 ? "text-[var(--text-primary)]" : "text-[var(--accent-rose)]"}`}>{fmt$(netWorth)}</p>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="fp-insightled-card p-4">
+              <p className="text-xs font-semibold text-[var(--text-tertiary)] uppercase tracking-wide mb-1">Total Liabilities</p>
+              <p className="text-2xl font-bold text-[var(--accent-rose)] font-mono">{fmt$(totalL)}</p>
+            </div>
+            <div className="fp-insightled-card p-4">
+              <p className="text-xs font-semibold text-[var(--text-tertiary)] uppercase tracking-wide mb-1">Net Worth</p>
+              <p className={`text-2xl font-bold font-mono ${netWorth >= 0 ? "text-[var(--text-primary)]" : "text-[var(--accent-rose)]"}`}>{fmt$(netWorth)}</p>
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* ── Asset Allocation Donut Chart ────────────────────────────────────── */}
+      {isAssets && totalA > 0 && (() => {
+        const chartData = NW_ASSET_CATS
+          .map(cat => ({
+            name: cat,
+            value: assets.filter(a => a.category === cat).reduce((s, a) => s + Number(a.value), 0),
+            color: NW_ASSET_COLORS[cat] ?? "#6b7280",
+          }))
+          .filter(d => d.value > 0);
+
+        const CustomTooltip = ({ active, payload }: any) => {
+          if (!active || !payload?.length) return null;
+          const d = payload[0].payload;
+          const pct = totalA > 0 ? (d.value / totalA) * 100 : 0;
+          return (
+            <div className="rounded-lg px-3 py-2 text-xs shadow-lg"
+              style={{ background: "#1c1f26", border: "1px solid rgba(255,255,255,0.12)" }}>
+              <div className="font-semibold mb-0.5" style={{ color: d.color }}>{d.name}</div>
+              <div style={{ color: "#f0f2f5" }}>{fmt$(d.value)}</div>
+              <div style={{ color: "#a1a8b3" }}>{pct.toFixed(1)}% of total</div>
+            </div>
+          );
+        };
+
+        return (
+          <div className="fp-insightled-card p-5 mb-5">
+            <p className="text-xs font-semibold text-[var(--text-tertiary)] uppercase tracking-wide mb-4">Asset Allocation</p>
+            <div className="flex flex-col sm:flex-row items-center gap-6">
+              <div style={{ width: 200, height: 200, flexShrink: 0 }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={chartData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={58}
+                      outerRadius={90}
+                      paddingAngle={2}
+                      dataKey="value"
+                      startAngle={90}
+                      endAngle={-270}
+                    >
+                      {chartData.map((entry, i) => (
+                        <Cell key={i} fill={entry.color} stroke="transparent" />
+                      ))}
+                    </Pie>
+                    <Tooltip content={<CustomTooltip />} />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="flex flex-wrap gap-x-5 gap-y-2 flex-1">
+                {chartData.map(d => (
+                  <div key={d.name} className="flex items-center gap-2 min-w-[160px]">
+                    <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: d.color }} />
+                    <span className="text-xs text-[var(--text-secondary)] flex-1 truncate">{d.name}</span>
+                    <span className="text-xs font-mono text-[var(--text-tertiary)]">
+                      {totalA > 0 ? ((d.value / totalA) * 100).toFixed(1) : "0.0"}%
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }
@@ -714,10 +1122,10 @@ export function RetirementTab({ clientId, client, person = "primary" }: { client
  return (
     <div className="p-6 max-w-5xl mx-auto">
       {simResult && <MonteCarloResults result={simResult} onClose={() => setSimResult(null)} onPrint={() => window.print()} />}
-      <div className="flex gap-1 mb-5 border-b border-slate-200">
+      <div className="flex gap-1 mb-5 border-b border-gray-200">
         {(["projections","drawdown"] as const).map(key => (
           <button key={key} onClick={() => setActiveSubTab(key)}
-            className={`px-4 py-2 text-sm font-semibold rounded-t-lg transition-colors ${activeSubTab === key ? "bg-white border border-b-white border-slate-200 text-blue-600 -mb-px" : "text-gray-500 hover:text-gray-700"}`}>
+            className={`px-4 py-2 text-sm font-semibold rounded-t-lg transition-colors ${activeSubTab === key ? "bg-white border border-b-white border-gray-200 text-[#0c1e3a] -mb-px" : "text-gray-500 hover:text-gray-700"}`}>
             {key === "projections" ? "Retirement Projections" : "Drawdown Strategies"}
           </button>
         ))}
@@ -733,7 +1141,7 @@ export function RetirementTab({ clientId, client, person = "primary" }: { client
             {simulating ? "Running..." : "Retirement Checkup"}
           </button>
           <button onClick={addDraft}
-            className="flex items-center gap-1.5 text-sm font-semibold text-white bg-brand-gradient hover:bg-brand-gradient-hover px-3 py-1.5 rounded-lg">
+            className="flex items-center gap-1.5 text-sm font-semibold text-white bg-[#0c1e3a] hover:bg-[#0e2a4a] px-3 py-1.5 rounded-lg">
             <Plus className="w-3.5 h-3.5" /> Add Projection
           </button>
         </div>
@@ -759,14 +1167,14 @@ export function RetirementTab({ clientId, client, person = "primary" }: { client
                     <label className="text-xs font-semibold text-gray-500 mb-1 block">{l}</label>
                     <input type={t} step="any" value={(d as any)[k]}
                       onChange={e => setDrafts(x => x.map((x2, idx) => idx === i ? { ...x2, [k]: e.target.value } : x2))}
-                      className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm" />
+                      className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm" />
                   </div>
                 ))}
                 <div>
                   <label className="text-xs font-semibold text-gray-500 mb-1 block">CPP Start Age</label>
                   <select value={(d as any).cppStartAge}
                     onChange={e => setDrafts(x => x.map((x2, idx) => idx === i2 ? { ...x2, cppStartAge: e.target.value } : x2))}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm bg-white">
+                    className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm bg-white">
                     {[60,61,62,63,64,65,66,67,68,69,70,71].map(age => {
                       const monthsDiff = (age - 65) * 12;
                       const pct = monthsDiff < 0 ? monthsDiff * 0.6 : monthsDiff * 0.7;
@@ -779,7 +1187,7 @@ export function RetirementTab({ clientId, client, person = "primary" }: { client
                   <label className="text-xs font-semibold text-gray-500 mb-1 block">OAS Start Age</label>
                   <select value={(d as any).oasStartAge}
                     onChange={e => setDrafts(x => x.map((x2, idx) => idx === i2 ? { ...x2, oasStartAge: e.target.value } : x2))}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm bg-white">
+                    className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm bg-white">
                     {[65,66,67,68,69,70].map(age => {
                       const pct = (age - 65) * 7.2;
                       return <option key={age} value={age}>{age} — {pct > 0 ? `+${pct.toFixed(0)}% enhanced` : "standard"}</option>;
@@ -791,9 +1199,9 @@ export function RetirementTab({ clientId, client, person = "primary" }: { client
             );
           })}
           <div className="flex justify-end gap-2">
-            <button onClick={() => { setDrafts([]); setEditingId(null); }} className="text-sm text-gray-500 px-4 py-2 border border-slate-200 rounded-lg">Cancel</button>
+            <button onClick={() => { setDrafts([]); setEditingId(null); }} className="text-sm text-gray-500 px-4 py-2 border border-gray-200 rounded-lg">Cancel</button>
             <button onClick={saveAll} disabled={saving}
-              className="flex items-center gap-1.5 bg-brand-gradient hover:bg-brand-gradient-hover disabled:opacity-50 text-white text-sm font-semibold px-5 py-2 rounded-lg">
+              className="flex items-center gap-1.5 bg-[#0c1e3a] hover:bg-[#0e2a4a] disabled:opacity-50 text-white text-sm font-semibold px-5 py-2 rounded-lg">
               <Save className="w-3.5 h-3.5" /> {saving ? "Saving..." : editingId ? "Save Changes" : `Save ${drafts.length} Projection${drafts.length > 1 ? "s" : ""}`}
             </button>
           </div>
@@ -832,7 +1240,7 @@ export function RetirementTab({ clientId, client, person = "primary" }: { client
                   const hasDesired = desired > 0;
 
                   return (
-                    <div key={p.id} className="border border-slate-100 rounded-xl p-4">
+                    <div key={p.id} className="border border-gray-100 rounded-xl p-4">
                       {/* Header */}
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center gap-2 flex-wrap">
@@ -845,7 +1253,7 @@ export function RetirementTab({ clientId, client, person = "primary" }: { client
                           )}
                         </div>
                         <div className="flex gap-1">
-                          <button onClick={() => startEdit(p)} className="p-1 text-gray-300 hover:text-blue-600"><Pencil className="w-3.5 h-3.5" /></button>
+                          <button onClick={() => startEdit(p)} className="p-1 text-gray-300 hover:text-[#0c1e3a]"><Pencil className="w-3.5 h-3.5" /></button>
                           <button onClick={() => del(p.id)} className="p-1 text-gray-300 hover:text-red-500"><Trash2 className="w-3.5 h-3.5" /></button>
                         </div>
                       </div>
@@ -862,7 +1270,7 @@ export function RetirementTab({ clientId, client, person = "primary" }: { client
                           <p className="text-lg font-bold text-purple-700">{hasDesired ? `${fmt$(desired)}/yr` : "—"}</p>
                           <p className="text-[10px] text-purple-400 mt-0.5">retirement target</p>
                         </div>
-                        <div className={`rounded-xl p-3 ${!hasDesired ? "bg-slate-50" : gap >= 0 ? "bg-emerald-50" : "bg-red-50"}`}>
+                        <div className={`rounded-xl p-3 ${!hasDesired ? "bg-gray-50" : gap >= 0 ? "bg-emerald-50" : "bg-red-50"}`}>
                           <p className={`text-[10px] font-bold uppercase ${!hasDesired ? "text-gray-400" : gap >= 0 ? "text-emerald-600" : "text-red-600"}`}>
                             {!hasDesired ? "Shortfall" : gap >= 0 ? "Surplus" : "Shortfall"}
                           </p>
@@ -873,7 +1281,7 @@ export function RetirementTab({ clientId, client, person = "primary" }: { client
                             {!hasDesired ? "set desired income" : "per year"}
                           </p>
                         </div>
-                        <div className="bg-slate-50 rounded-xl p-3">
+                        <div className="bg-gray-50 rounded-xl p-3">
                           <p className="text-[10px] font-bold text-gray-500 uppercase">Portfolio Drawdown</p>
                           <p className="text-lg font-bold text-gray-700">{fmt$(drawdown)}/yr</p>
                           <p className="text-[10px] text-gray-400 mt-0.5">4% rule on projected balance</p>
@@ -904,7 +1312,7 @@ export function RetirementTab({ clientId, client, person = "primary" }: { client
                             {oasAge > 65 && <span className="ml-1">(+{((oasAge - 65) * 7.2).toFixed(0)}% enhanced)</span>}
                           </p>
                         </div>
-                        <div className="col-span-2 bg-slate-50 rounded-xl p-3">
+                        <div className="col-span-2 bg-gray-50 rounded-xl p-3">
                           <p className="text-[10px] font-bold text-gray-500 uppercase mb-1.5">Current Portfolio</p>
                           <div className="grid grid-cols-3 gap-2">
                             <div>
@@ -976,7 +1384,7 @@ export function InsuranceTab({ clientId }: { clientId: number }) {
       <div className="flex items-center justify-between mb-5">
         <h2 className="text-xl font-bold text-gray-900">Insurance Analyses</h2>
         <button onClick={() => setDrafts(d => [...d, emptyIns()])}
-          className="flex items-center gap-1.5 text-sm font-semibold text-white bg-brand-gradient hover:bg-brand-gradient-hover px-3 py-1.5 rounded-lg">
+          className="flex items-center gap-1.5 text-sm font-semibold text-white bg-[#0c1e3a] hover:bg-[#0e2a4a] px-3 py-1.5 rounded-lg">
           <Plus className="w-3.5 h-3.5" /> Add Analysis
         </button>
       </div>
@@ -1008,9 +1416,9 @@ export function InsuranceTab({ clientId }: { clientId: number }) {
 
       {drafts.length > 0 && (
         <div className="flex justify-end gap-2 mb-5">
-          <button onClick={() => setDrafts([])} className="text-sm text-gray-500 px-4 py-2 border border-slate-200 rounded-lg">Discard</button>
+          <button onClick={() => setDrafts([])} className="text-sm text-gray-500 px-4 py-2 border border-gray-200 rounded-lg">Discard</button>
           <button onClick={saveAll} disabled={saving}
-            className="flex items-center gap-1.5 bg-brand-gradient hover:bg-brand-gradient-hover disabled:opacity-50 text-white text-sm font-semibold px-5 py-2 rounded-lg">
+            className="flex items-center gap-1.5 bg-[#0c1e3a] hover:bg-[#0e2a4a] disabled:opacity-50 text-white text-sm font-semibold px-5 py-2 rounded-lg">
             <Save className="w-3.5 h-3.5" /> {saving ? "Saving…" : `Save ${drafts.length} Analysis`}
           </button>
         </div>
@@ -1030,7 +1438,7 @@ export function InsuranceTab({ clientId }: { clientId: number }) {
               {[["Life Insurance","existingLifeCoverage","recommendedLife","lifeGap"],
                 ["Disability","existingDisability","recommendedDisability","disabilityGap"],
                 ["Critical Illness","existingCriticalIllness","recommendedCriticalIllness","criticalIllnessGap"]].map(([title,ex,rec,gap]) => (
-                <div key={title} className="bg-slate-50 rounded-lg p-3">
+                <div key={title} className="bg-gray-50 rounded-lg p-3">
                   <p className="text-xs font-bold text-gray-400 uppercase mb-2">{title}</p>
                   <div className="space-y-1 text-xs">
                     <div className="flex justify-between"><span className="text-gray-500">Existing</span><span className="font-medium">{fmt$((a as any)[ex])}</span></div>
@@ -1047,12 +1455,13 @@ export function InsuranceTab({ clientId }: { clientId: number }) {
   );
 }
 
-// ── RESP ──────────────────────────────────────────────────────────────────────
+// ── RESP / EDUCATION ──────────────────────────────────────────────────────────
 interface EduPlan { id: number; childName: string; childDob: string|null; currentRespBalance: string|null; annualContribution: string|null; targetAmount: string|null; projectedBalance: string|null; cespGrant: string|null; notes: string|null; }
 type EduDraft = { childName: string; childDob: string; currentRespBalance: string; annualContribution: string; targetAmount: string; notes: string; };
 const emptyEdu = (): EduDraft => ({ childName:"", childDob:"", currentRespBalance:"", annualContribution:"2500", targetAmount:"", notes:"" });
 
-export function RespTab({ clientId, client }: { clientId: number; client?: any }) {
+// Dark-themed education sub-tab used inside the Net Worth hub
+function EducationSubTab({ clientId, client }: { clientId: number; client?: any }) {
   const [rows, setRows]     = useState<EduPlan[]>([]);
   const [drafts, setDrafts] = useState<EduDraft[]>([]);
   const [saving, setSaving] = useState(false);
@@ -1077,6 +1486,18 @@ export function RespTab({ clientId, client }: { clientId: number; client?: any }
       const newDrafts = deps.map((dep: any) => ({ ...emptyEdu(), childName: dep.name ?? "", childDob: dep.dob ?? "", currentRespBalance: String(perChild || "") }));
       setDrafts(d => [...d, ...newDrafts]);
     }
+  }
+  const [voiceOpen, setVoiceOpen] = useState(false);
+  function addVoiceDraft(parsed: Record<string, string>) {
+    setDrafts(d => [...d, {
+      ...emptyEdu(),
+      childName:          parsed.childName          ?? "",
+      childDob:           parsed.childDob           ?? "",
+      currentRespBalance: parsed.currentRespBalance ?? "",
+      annualContribution: parsed.annualContribution ?? "2500",
+      targetAmount:       parsed.targetAmount       ?? "",
+      notes:              parsed.notes              ?? "",
+    }]);
   }
 
   function updateDraft(i: number, k: keyof EduDraft, v: string) { setDrafts(d => d.map((x, idx) => idx === i ? { ...x, [k]: v } : x)); }
@@ -1105,69 +1526,156 @@ export function RespTab({ clientId, client }: { clientId: number; client?: any }
     updateDraft(i,"childDob",f);
   }
 
+  const totalResp = rows.reduce((s, r) => s + Number(r.currentRespBalance || 0), 0);
+  const totalTarget = rows.reduce((s, r) => s + Number(r.targetAmount || 0), 0);
+
   return (
-    <div className="p-6 max-w-5xl mx-auto">
-      <div className="flex items-center justify-between mb-5">
-        <h2 className="text-xl font-bold text-gray-900">RESP / Education Savings</h2>
-        <button onClick={addDraft}
-          className="flex items-center gap-1.5 text-sm font-semibold text-white bg-brand-gradient hover:bg-brand-gradient-hover px-3 py-1.5 rounded-lg">
-          <Plus className="w-3.5 h-3.5" /> Add Child
-        </button>
+    <div>
+      {/* KPI tiles */}
+      <div className="grid grid-cols-2 gap-3 mt-5 mb-5">
+        <div className="fp-insightled-card p-4">
+          <p className="text-xs font-semibold text-[var(--text-tertiary)] uppercase tracking-wide mb-1">Total RESP Balance</p>
+          <p className="text-2xl font-bold text-[var(--accent-cyan)] font-mono">{fmt$(totalResp)}</p>
+        </div>
+        <div className="fp-insightled-card p-4">
+          <p className="text-xs font-semibold text-[var(--text-tertiary)] uppercase tracking-wide mb-1">Total Target</p>
+          <p className="text-2xl font-bold text-[var(--text-primary)] font-mono">{totalTarget ? fmt$(totalTarget) : "—"}</p>
+        </div>
       </div>
 
-      {drafts.map((d, i) => (
-        <Card key={i} className="mb-4 p-5 border-blue-200 bg-blue-50/20">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-bold text-gray-800">New RESP {drafts.length > 1 ? `#${i+1}` : ""}</h3>
-            <button onClick={() => setDrafts(x => x.filter((_,idx)=>idx!==i))} className="text-gray-400 hover:text-red-500"><X className="w-4 h-4" /></button>
+      {/* Table header */}
+      <div className="border border-[var(--border-subtle)] rounded-xl overflow-hidden">
+        <div className="px-4 py-3 flex items-center justify-between border-b border-[var(--border-subtle)] bg-[var(--bg-card)]">
+          <h3 className="font-semibold text-[var(--text-primary)] text-sm">Children's Education Plans</h3>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setVoiceOpen(true)}
+              title="Voice add child"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-full border border-[var(--border-light)] text-[var(--text-secondary)] hover:text-[var(--accent-cyan)] hover:border-[var(--accent-cyan)] text-xs font-semibold transition-colors"
+            >
+              <Mic className="w-3.5 h-3.5" /> Voice
+            </button>
+            <button
+              onClick={addDraft}
+              className="flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-[var(--accent-cyan)] to-[var(--accent-blue)] text-[var(--bg-base)] text-sm font-semibold hover:opacity-90 transition-opacity"
+            >
+              <Plus className="w-4 h-4" /> Add Child
+            </button>
           </div>
-          <div className="grid grid-cols-3 gap-3">
-            <div><label className="text-xs font-semibold text-gray-500 mb-1 block">Child's Name</label>
-              <InlineInput value={d.childName} onChange={v => updateDraft(i,"childName",v)} /></div>
-            <div><label className="text-xs font-semibold text-gray-500 mb-1 block">Date of Birth</label>
-              <InlineInput value={d.childDob} onChange={v => handleDob(i,v)} placeholder="YYYY-MM-DD" maxLength={10} /></div>
-            <div><label className="text-xs font-semibold text-gray-500 mb-1 block">Current Balance ($)</label>
-              <InlineInput value={d.currentRespBalance} onChange={v => updateDraft(i,"currentRespBalance",v)} type="number" /></div>
-            <div><label className="text-xs font-semibold text-gray-500 mb-1 block">Annual Contribution ($)</label>
-              <InlineInput value={d.annualContribution} onChange={v => updateDraft(i,"annualContribution",v)} type="number" /></div>
-            <div><label className="text-xs font-semibold text-gray-500 mb-1 block">Target Amount ($)</label>
-              <InlineInput value={d.targetAmount} onChange={v => updateDraft(i,"targetAmount",v)} type="number" /></div>
-            <div><label className="text-xs font-semibold text-gray-500 mb-1 block">Notes</label>
-              <InlineInput value={d.notes} onChange={v => updateDraft(i,"notes",v)} /></div>
-          </div>
-        </Card>
-      ))}
+        </div>
 
+        {voiceOpen && (
+          <VoiceAddDialog
+            title="Voice-Add Education Plan"
+            moduleId="education-plan"
+            prompt={`Try: "Sarah, born June 12 2015, RESP balance 12 thousand, contributing twenty-five hundred a year, target sixty thousand"`}
+            fieldSchema={[
+              { key: "childName",          label: "Child Name", description: "Full first name" },
+              { key: "childDob",           label: "DOB",        description: "Date of birth (YYYY-MM-DD)" },
+              { key: "currentRespBalance", label: "RESP Balance", description: "Current RESP balance, number only" },
+              { key: "annualContribution", label: "Annual Contrib", description: "Annual contribution, number only" },
+              { key: "targetAmount",       label: "Target", description: "Target amount, number only" },
+              { key: "notes",              label: "Notes", description: "Free-form notes" },
+            ]}
+            onConfirm={(fields) => { addVoiceDraft(fields); setVoiceOpen(false); }}
+            onClose={() => setVoiceOpen(false)}
+          />
+        )}
+
+        <table className="w-full text-sm">
+          <thead className="bg-[var(--bg-card)]/60 border-b border-[var(--border-subtle)]">
+            <tr>
+              {["Child", "Date of Birth", "RESP Balance", "Annual Contrib", "Target", "CESG", "Projected", "Notes", ""].map(h => (
+                <th key={h} className="text-left px-3 py-2 text-xs font-semibold text-[var(--text-tertiary)] uppercase tracking-wide">{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-[var(--border-subtle)]">
+            {rows.map(r => (
+              <tr key={r.id} className="hover:bg-white/[0.02] transition-colors">
+                <td className="px-3 py-2.5 font-medium text-[var(--text-primary)]">{r.childName}</td>
+                <td className="px-3 py-2.5 text-[var(--text-secondary)] font-mono text-xs">{r.childDob ?? "—"}</td>
+                <td className="px-3 py-2.5 font-semibold font-mono text-[var(--accent-cyan)]">{fmt$(r.currentRespBalance)}</td>
+                <td className="px-3 py-2.5 font-mono text-[var(--text-secondary)]">{fmt$(r.annualContribution)}</td>
+                <td className="px-3 py-2.5 font-mono text-[var(--text-secondary)]">{r.targetAmount ? fmt$(r.targetAmount) : "—"}</td>
+                <td className="px-3 py-2.5 font-mono text-[var(--accent-green)]">{r.cespGrant ? fmt$(r.cespGrant) : "—"}</td>
+                <td className="px-3 py-2.5 font-mono text-[var(--text-secondary)]">{r.projectedBalance ? fmt$(r.projectedBalance) : "—"}</td>
+                <td className="px-3 py-2.5 text-[var(--text-tertiary)] text-xs">{r.notes ?? ""}</td>
+                <td className="px-3 py-2.5">
+                  <button onClick={() => del(r.id)} className="text-[var(--text-tertiary)]/30 hover:text-[var(--accent-rose)] transition-colors">
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </td>
+              </tr>
+            ))}
+
+            {/* Draft rows */}
+            {drafts.map((d, i) => (
+              <tr key={`draft-${i}`} className="bg-[var(--accent-cyan)]/[0.03] border-b border-[var(--accent-cyan)]/10">
+                <td className="px-3 py-2">
+                  <input value={d.childName} onChange={e => updateDraft(i,"childName",e.target.value)} placeholder="Child name"
+                    className="w-full bg-[var(--bg-base)] border border-[var(--border-light)] rounded px-2 py-1 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-cyan)]" />
+                </td>
+                <td className="px-3 py-2">
+                  <input value={d.childDob} onChange={e => handleDob(i,e.target.value)} placeholder="YYYY-MM-DD" maxLength={10}
+                    className="w-28 bg-[var(--bg-base)] border border-[var(--border-light)] rounded px-2 py-1 text-xs text-[var(--text-primary)] font-mono focus:outline-none focus:border-[var(--accent-cyan)]" />
+                </td>
+                <td className="px-3 py-2">
+                  <input value={d.currentRespBalance} onChange={e => updateDraft(i,"currentRespBalance",e.target.value)} type="number" placeholder="0"
+                    className="w-28 bg-[var(--bg-base)] border border-[var(--border-light)] rounded px-2 py-1 text-xs text-[var(--text-primary)] font-mono focus:outline-none focus:border-[var(--accent-cyan)]" />
+                </td>
+                <td className="px-3 py-2">
+                  <input value={d.annualContribution} onChange={e => updateDraft(i,"annualContribution",e.target.value)} type="number" placeholder="2500"
+                    className="w-24 bg-[var(--bg-base)] border border-[var(--border-light)] rounded px-2 py-1 text-xs text-[var(--text-primary)] font-mono focus:outline-none focus:border-[var(--accent-cyan)]" />
+                </td>
+                <td className="px-3 py-2">
+                  <input value={d.targetAmount} onChange={e => updateDraft(i,"targetAmount",e.target.value)} type="number" placeholder="0"
+                    className="w-24 bg-[var(--bg-base)] border border-[var(--border-light)] rounded px-2 py-1 text-xs text-[var(--text-primary)] font-mono focus:outline-none focus:border-[var(--accent-cyan)]" />
+                </td>
+                <td className="px-3 py-2 text-[var(--text-tertiary)] text-xs">auto</td>
+                <td className="px-3 py-2 text-[var(--text-tertiary)] text-xs">—</td>
+                <td className="px-3 py-2">
+                  <input value={d.notes} onChange={e => updateDraft(i,"notes",e.target.value)} placeholder="Notes"
+                    className="w-28 bg-[var(--bg-base)] border border-[var(--border-light)] rounded px-2 py-1 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-cyan)]" />
+                </td>
+                <td className="px-3 py-2">
+                  <button onClick={() => setDrafts(x => x.filter((_,idx)=>idx!==i))} className="text-[var(--text-tertiary)]/50 hover:text-[var(--accent-rose)] transition-colors">
+                    <X className="w-4 h-4" />
+                  </button>
+                </td>
+              </tr>
+            ))}
+
+            {rows.length === 0 && drafts.length === 0 && (
+              <tr>
+                <td colSpan={9} className="px-4 py-8 text-center text-[var(--text-tertiary)] text-sm">
+                  No education plans yet — click <span className="text-[var(--accent-cyan)]">Add Child</span> to get started
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Save / discard */}
       {drafts.length > 0 && (
-        <div className="flex justify-end gap-2 mb-5">
-          <button onClick={() => setDrafts([])} className="text-sm text-gray-500 px-4 py-2 border border-slate-200 rounded-lg">Discard</button>
+        <div className="flex justify-end gap-2 mt-4">
+          <button onClick={() => setDrafts([])} className="text-sm text-[var(--text-tertiary)] px-4 py-2 border border-[var(--border-light)] rounded-lg hover:bg-white/5 transition-colors">
+            Discard All
+          </button>
           <button onClick={saveAll} disabled={saving || !drafts.some(d => d.childName)}
-            className="flex items-center gap-1.5 bg-brand-gradient hover:bg-brand-gradient-hover disabled:opacity-50 text-white text-sm font-semibold px-5 py-2 rounded-lg">
+            className="flex items-center gap-1.5 bg-[var(--accent-cyan)] text-[var(--bg-base)] text-sm font-semibold px-5 py-2 rounded-lg disabled:opacity-50 hover:bg-[var(--accent-cyan)]/90 transition-colors">
             <Save className="w-3.5 h-3.5" /> {saving ? "Saving…" : `Save ${drafts.filter(d=>d.childName).length} Child${drafts.filter(d=>d.childName).length !== 1 ? "ren" : ""}`}
           </button>
         </div>
       )}
-
-      {rows.length === 0 && drafts.length === 0 && (
-        <Card className="p-8 text-center text-gray-400">No RESP plans yet. Add a child to get started.</Card>
-      )}
-      <div className="grid grid-cols-2 gap-4">
-        {rows.map(e => (
-          <Card key={e.id} className="p-5">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="font-bold text-gray-900">{e.childName}</h3>
-              <button onClick={() => del(e.id)} className="text-gray-300 hover:text-red-500"><Trash2 className="w-4 h-4" /></button>
-            </div>
-            <div className="grid grid-cols-2 gap-2 text-sm">
-              {[["DOB",e.childDob],["Balance",fmt$(e.currentRespBalance)],["Annual Contrib",fmt$(e.annualContribution)],["Target",fmt$(e.targetAmount)],["Projected",fmt$(e.projectedBalance)],["CESG",fmt$(e.cespGrant)]].map(([l,v]) => (
-                <div key={l}><p className="text-[10px] text-gray-400 uppercase font-semibold">{l}</p><p className="font-semibold text-gray-800">{v ?? "—"}</p></div>
-              ))}
-            </div>
-          </Card>
-        ))}
-      </div>
     </div>
   );
+}
+
+/** @deprecated Use EducationSubTab (rendered inside NetWorthTab) instead. Kept for API compatibility. */
+export function RespTab({ clientId, client }: { clientId: number; client?: any }) {
+  return <EducationSubTab clientId={clientId} client={client} />;
 }
 
 // ── DEBT ──────────────────────────────────────────────────────────────────────
@@ -1210,7 +1718,7 @@ export function DebtTab({ clientId }: { clientId: number }) {
           {rows.length > 0 && <p className="text-sm font-bold text-red-500">Total: {fmt$(totalDebt)}</p>}
         </div>
         <button onClick={() => setDrafts(d => [...d, emptyDebt()])}
-          className="flex items-center gap-1.5 text-sm font-semibold text-white bg-brand-gradient hover:bg-brand-gradient-hover px-3 py-1.5 rounded-lg">
+          className="flex items-center gap-1.5 text-sm font-semibold text-white bg-[#0c1e3a] hover:bg-[#0e2a4a] px-3 py-1.5 rounded-lg">
           <Plus className="w-3.5 h-3.5" /> Add Debt
         </button>
       </div>
@@ -1240,9 +1748,9 @@ export function DebtTab({ clientId }: { clientId: number }) {
             </tbody>
           </table>
           <div className="flex justify-end gap-2 p-3">
-            <button onClick={() => setDrafts([])} className="text-sm text-gray-500 px-4 py-2 border border-slate-200 rounded-lg">Discard</button>
+            <button onClick={() => setDrafts([])} className="text-sm text-gray-500 px-4 py-2 border border-gray-200 rounded-lg">Discard</button>
             <button onClick={saveAll} disabled={saving || !drafts.some(d => d.name && d.balance)}
-              className="flex items-center gap-1.5 bg-brand-gradient hover:bg-brand-gradient-hover disabled:opacity-50 text-white text-sm font-semibold px-5 py-2 rounded-lg">
+              className="flex items-center gap-1.5 bg-[#0c1e3a] hover:bg-[#0e2a4a] disabled:opacity-50 text-white text-sm font-semibold px-5 py-2 rounded-lg">
               <Save className="w-3.5 h-3.5" /> {saving ? "Saving…" : `Save ${drafts.filter(d=>d.name&&d.balance).length} Debts`}
             </button>
           </div>
@@ -1255,14 +1763,14 @@ export function DebtTab({ clientId }: { clientId: number }) {
       {rows.length > 0 && (
         <Card>
           <table className="w-full text-sm">
-            <thead className="bg-slate-50 border-b border-slate-200">
+            <thead className="bg-gray-50 border-b border-gray-200">
               <tr><TH>Name</TH><TH>Type</TH><TH>Balance</TH><TH>Rate</TH><TH>Min Payment</TH><TH>Strategy</TH><TH></TH></tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-gray-100">
               {rows.map(d => (
-                <tr key={d.id} className="hover:bg-slate-50">
+                <tr key={d.id} className="hover:bg-gray-50">
                   <TD><span className="font-medium text-gray-800">{d.name}</span></TD>
-                  <TD><span className="bg-slate-100 text-gray-600 text-xs px-2 py-0.5 rounded-full">{d.type.replace("_"," ")}</span></TD>
+                  <TD><span className="bg-gray-100 text-gray-600 text-xs px-2 py-0.5 rounded-full">{d.type.replace("_"," ")}</span></TD>
                   <TD right><span className="font-bold text-red-500">{fmt$(d.balance)}</span></TD>
                   <TD right>{fmtPct(d.interestRate)}</TD>
                   <TD right>{fmt$(d.minimumPayment)}</TD>
@@ -1270,7 +1778,7 @@ export function DebtTab({ clientId }: { clientId: number }) {
                   <TD><button onClick={() => del(d.id)} className="text-gray-300 hover:text-red-500"><Trash2 className="w-3.5 h-3.5" /></button></TD>
                 </tr>
               ))}
-              <tr className="border-t-2 border-slate-300 bg-slate-50">
+              <tr className="border-t-2 border-gray-300 bg-gray-50">
                 <td colSpan={2} className="px-3 py-3 font-bold text-gray-900 text-sm">Total</td>
                 <td className="px-3 py-3 text-right font-bold text-red-500 text-sm">{fmt$(totalDebt)}</td>
                 <td colSpan={4}></td>

@@ -10,7 +10,10 @@ class ErrorBoundary extends Component<{children:ReactNode;fallback?:ReactNode},{
 import { useQuery } from "@tanstack/react-query";
 import { RetirementTab } from "@/components/planning/RetirementProjectionForm";
 import {
-  useClientPlans, useNetWorthEntries, useCreateNetWorthEntry, useDeleteNetWorthEntry,
+  useClientPlans, useNetWorthEntries, useCreateNetWorthEntry, useUpdateNetWorthEntry, useDeleteNetWorthEntry,
+} from "../hooks/use-plans";
+import { NetWorthPremiumMock } from "@/components/planning/NetWorthPremiumMock";
+import {
   useRetirementProjections, useCreateRetirementProjection, useDeleteRetirementProjection,
   useInsuranceAnalyses, useCreateInsuranceWorksheet,
   useEducationSavings, useCreateEducationSaving, useDeleteEducationSaving,
@@ -167,10 +170,10 @@ function OverviewTab({ clientId, onTabChange }: { clientId: number; onTabChange?
 }
 
 // ── Net Worth Tab ─────────────────────────────────────────────────────────────
-
 function NetWorthTab({ clientId }: { clientId: number }) {
   const { data: entries = [] } = useNetWorthEntries(clientId);
   const createEntry = useCreateNetWorthEntry();
+  const updateEntry = useUpdateNetWorthEntry(clientId);
   const deleteEntry = useDeleteNetWorthEntry(clientId);
   const [showAdd, setShowAdd] = useState(false);
   const [addType, setAddType] = useState<"asset" | "liability">("asset");
@@ -178,12 +181,6 @@ function NetWorthTab({ clientId }: { clientId: number }) {
 
   const assetCats = ["Liquid Assets", "Registered Investments (RRSP/TFSA)", "Non-Registered Investments", "Real Estate", "Business Assets", "Personal Property", "Other"];
   const liabilityCats = ["Mortgages", "Car Loans", "Student Loans", "Credit Cards", "Lines of Credit", "Business Loans", "Other Liabilities"];
-
-  const assets = entries.filter((e: { type: string }) => e.type === "asset");
-  const liabilities = entries.filter((e: { type: string }) => e.type === "liability");
-  const totalAssets = assets.reduce((s: number, e: { value: string }) => s + parseFloat(e.value || "0"), 0);
-  const totalLiabilities = liabilities.reduce((s: number, e: { value: string }) => s + parseFloat(e.value || "0"), 0);
-  const netWorth = totalAssets - totalLiabilities;
 
   const handleAdd = async () => {
     try {
@@ -198,71 +195,21 @@ function NetWorthTab({ clientId }: { clientId: number }) {
       else { alert("Error: " + data.message); }
     } catch(e: any) { alert("Failed: " + e.message); }
   };
+
   return (
-    <div className="space-y-6 animate-in fade-in duration-300">
-      <div className="flex justify-between items-center">
-        <h2 className="text-xl font-display font-bold">Net Worth Statement</h2>
-        <button onClick={() => setShowAdd(true)} data-testid="button-fp-add-nw" className="flex items-center space-x-2 px-4 py-2 bg-secondary text-secondary-foreground font-semibold rounded-xl hover:bg-secondary/90 transition-colors shadow-sm">
-          <Plus className="w-4 h-4" /><span>Add Entry</span>
-        </button>
-      </div>
-
-      <div className="grid grid-cols-3 gap-4">
-        <div className="border border-green-200 rounded-2xl p-5 bg-green-50/50" data-testid="fp-total-assets">
-          <p className="text-xs font-semibold text-green-600 uppercase tracking-wider">Total Assets</p>
-          <p className="text-2xl font-bold text-green-700 mt-1">{fmt$(totalAssets)}</p>
-        </div>
-        <div className="border border-red-200 rounded-2xl p-5 bg-red-50/50" data-testid="fp-total-liabilities">
-          <p className="text-xs font-semibold text-red-500 uppercase tracking-wider">Total Liabilities</p>
-          <p className="text-2xl font-bold text-red-600 mt-1">{fmt$(totalLiabilities)}</p>
-        </div>
-        <div className={`border rounded-2xl p-5 ${netWorth >= 0 ? "border-primary/30 bg-primary/5" : "border-red-300 bg-red-50"}`} data-testid="fp-net-worth">
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Net Worth</p>
-          <p className={`text-2xl font-bold mt-1 ${netWorth >= 0 ? "text-primary" : "text-red-600"}`}>{netWorth >= 0 ? "" : "-"}{fmt$(netWorth)}</p>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="border border-border rounded-2xl p-6">
-          <h3 className="text-lg font-bold font-display text-green-700 mb-4">Assets</h3>
-          {assets.map((item: { id: number; name: string; value: string; category: string }) => (
-            <div key={item.id} className="flex items-center justify-between py-2 px-3 rounded-lg hover:bg-muted/50 group" data-testid={`fp-nw-${item.id}`}>
-              <div>
-                <span className="text-sm font-medium">{item.name}</span>
-                <span className="text-xs text-muted-foreground ml-2">({item.category})</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <span className="text-sm font-semibold text-green-600">{fmt$(parseFloat(item.value))}</span>
-                <button onClick={() => deleteEntry.mutate(item.id)} data-testid={`button-fp-del-nw-${item.id}`} className="opacity-0 group-hover:opacity-100 p-1 hover:bg-red-50 rounded"><Trash2 className="w-3 h-3 text-red-400" /></button>
-              </div>
-            </div>
-          ))}
-          {assets.length === 0 && <p className="text-sm text-muted-foreground text-center py-4">No assets added yet.</p>}
-        </div>
-
-        <div className="border border-border rounded-2xl p-6">
-          <h3 className="text-lg font-bold font-display text-red-600 mb-4">Liabilities</h3>
-          {liabilities.map((item: { id: number; name: string; value: string; category: string }) => (
-            <div key={item.id} className="flex items-center justify-between py-2 px-3 rounded-lg hover:bg-muted/50 group" data-testid={`fp-nw-${item.id}`}>
-              <div>
-                <span className="text-sm font-medium">{item.name}</span>
-                <span className="text-xs text-muted-foreground ml-2">({item.category})</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <span className="text-sm font-semibold text-red-500">{fmt$(parseFloat(item.value))}</span>
-                <button onClick={() => deleteEntry.mutate(item.id)} data-testid={`button-fp-del-nw-${item.id}`} className="opacity-0 group-hover:opacity-100 p-1 hover:bg-red-50 rounded"><Trash2 className="w-3 h-3 text-red-400" /></button>
-              </div>
-            </div>
-          ))}
-          {liabilities.length === 0 && <p className="text-sm text-muted-foreground text-center py-4">No liabilities added yet.</p>}
-        </div>
-      </div>
+    <>
+      <NetWorthPremiumMock
+        entries={entries as any}
+        onDelete={(id) => deleteEntry.mutate(id)}
+        onAdd={() => setShowAdd(true)}
+        onUpdate={(id, value) => updateEntry.mutate({ id, data: { value } })}
+      />
 
       {showAdd && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl w-full max-w-md shadow-2xl p-6">
             <h2 className="text-2xl font-display font-bold mb-6">Add Net Worth Entry</h2>
-            <form onSubmit={handleAdd} className="space-y-4" data-testid="form-fp-add-nw">
+            <form onSubmit={(e) => { e.preventDefault(); handleAdd(); }} className="space-y-4" data-testid="form-fp-add-nw">
               <div className="flex space-x-2">
                 <button type="button" onClick={() => setAddType("asset")} data-testid="button-fp-type-asset" className={`flex-1 py-2 rounded-xl font-semibold text-sm ${addType === "asset" ? "bg-green-100 text-green-700 border-2 border-green-300" : "bg-muted text-muted-foreground"}`}>Asset</button>
                 <button type="button" onClick={() => setAddType("liability")} data-testid="button-fp-type-liability" className={`flex-1 py-2 rounded-xl font-semibold text-sm ${addType === "liability" ? "bg-red-100 text-red-600 border-2 border-red-300" : "bg-muted text-muted-foreground"}`}>Liability</button>
@@ -278,13 +225,13 @@ function NetWorthTab({ clientId }: { clientId: number }) {
               <div><label className="text-sm font-semibold">Value ($)</label><input type="number" step="0.01" required value={form.value} onChange={e => setForm({ ...form, value: e.target.value })} data-testid="input-fp-nw-value" className="w-full px-4 py-3 rounded-xl border mt-1" /></div>
               <div className="pt-4 flex justify-end space-x-3">
                 <button type="button" onClick={() => setShowAdd(false)} className="px-6 py-3 rounded-xl font-semibold text-muted-foreground hover:bg-muted">Cancel</button>
-                <button type="button" onClick={() => handleAdd()} disabled={createEntry.isPending} data-testid="button-fp-submit-nw" className="px-6 py-3 rounded-xl font-semibold bg-primary text-primary-foreground">{createEntry.isPending ? "Adding..." : "Add Entry"}</button>
+                <button type="submit" disabled={createEntry.isPending} data-testid="button-fp-submit-nw" className="px-6 py-3 rounded-xl font-semibold bg-primary text-primary-foreground">{createEntry.isPending ? "Adding..." : "Add Entry"}</button>
               </div>
             </form>
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }
 
@@ -509,7 +456,7 @@ function buildDefaultFromNW() {
             </div>
             <div className="flex items-center gap-1">
               <button onClick={() => { if (a.worksheetData) { setForm({ ...defaultWs, ...a.worksheetData }); } else { setForm({ ...defaultWs, primaryName: a.primaryName ?? "", primaryAge: a.primaryAge ? String(a.primaryAge) : "", spouseName: a.spouseName ?? "", spouseAge: a.spouseAge ? String(a.spouseAge) : "" }); } setViewingId(a.id); setShowWorksheet(true); }} className="p-1.5 text-primary hover:bg-primary/10 rounded-lg" title="Open"><Eye className="w-4 h-4" /></button>
-              <button onClick={async () => { const token = localStorage.getItem("fp_token"); const res = await fetch(`/api/reports/${clientId}/fna/${a.id}`, { headers: { Authorization: `Bearer ${token}` } }); const html = await res.text(); const blob = new Blob([html], { type: "text/html" }); window.open(URL.createObjectURL(blob), "_blank"); }} className="p-1.5 text-gray-500 hover:bg-slate-100 rounded-lg" title="Report"><Printer className="w-4 h-4" /></button>
+              <button onClick={async () => { const token = localStorage.getItem("fp_token"); const res = await fetch(`/api/reports/${clientId}/fna/${a.id}`, { headers: { Authorization: `Bearer ${token}` } }); const html = await res.text(); const blob = new Blob([html], { type: "text/html" }); window.open(URL.createObjectURL(blob), "_blank"); }} className="p-1.5 text-gray-500 hover:bg-gray-100 rounded-lg" title="Report"><Printer className="w-4 h-4" /></button>
               <button onClick={() => { if (confirm("Delete this analysis?")) deleteAnalysis.mutate(a.id); }} className="p-1.5 text-red-400 hover:bg-red-50 rounded-lg" title="Delete"><Trash2 className="w-4 h-4" /></button>
             </div>
           </div>
@@ -1174,7 +1121,7 @@ function RrspRoomPanel({ clientId, prefill, person = "primary", primaryLabel = "
           <strong>RRSP Room Tracker</strong> — Calculates available contribution room using the CRA 18% formula with carry-forward.
         </div>
         <button onClick={openNew}
-          className="flex items-center gap-1.5 text-sm font-semibold text-white bg-brand-gradient hover:bg-brand-gradient-hover px-4 py-2 rounded-xl whitespace-nowrap">
+          className="flex items-center gap-1.5 text-sm font-semibold text-white bg-[#0c1e3a] hover:bg-[#0e2a4a] px-4 py-2 rounded-xl whitespace-nowrap">
           <Plus className="w-4 h-4" /> New Analysis
         </button>
       </div>
@@ -1182,7 +1129,7 @@ function RrspRoomPanel({ clientId, prefill, person = "primary", primaryLabel = "
       {showForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg">
-            <div className="flex items-center justify-between p-5 border-b border-slate-100">
+            <div className="flex items-center justify-between p-5 border-b border-gray-100">
               <h3 className="text-lg font-bold text-gray-900">{editingId ? "Edit" : "New"} RRSP Analysis — {personLabel}</h3>
               <button onClick={() => setShowForm(false)} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
             </div>
@@ -1190,7 +1137,7 @@ function RrspRoomPanel({ clientId, prefill, person = "primary", primaryLabel = "
               <div>
                 <label className="text-xs font-semibold text-gray-500 block mb-1">Label</label>
                 <input value={form.label} onChange={e => setForm(f => ({ ...f, label: e.target.value }))}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm" />
+                  className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm" />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 {[
@@ -1205,15 +1152,15 @@ function RrspRoomPanel({ clientId, prefill, person = "primary", primaryLabel = "
                     <label className="text-xs font-semibold text-gray-500 block mb-1">{label}</label>
                     <input type="number" step="any" value={(form as any)[key]}
                       onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
-                      className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm" placeholder="0" />
+                      className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm" placeholder="0" />
                   </div>
                 ))}
               </div>
             </div>
-            <div className="flex gap-3 justify-end p-5 border-t border-slate-100">
+            <div className="flex gap-3 justify-end p-5 border-t border-gray-100">
               <button onClick={() => setShowForm(false)} className="text-sm text-gray-500 px-4 py-2">Cancel</button>
               <button onClick={save} disabled={saving}
-                className="flex items-center gap-1.5 bg-brand-gradient hover:bg-brand-gradient-hover disabled:opacity-50 text-white text-sm font-semibold px-5 py-2.5 rounded-xl">
+                className="flex items-center gap-1.5 bg-[#0c1e3a] hover:bg-[#0e2a4a] disabled:opacity-50 text-white text-sm font-semibold px-5 py-2.5 rounded-xl">
                 <Save className="w-3.5 h-3.5" /> {saving ? "Saving…" : "Calculate & Save"}
               </button>
             </div>
@@ -1223,7 +1170,7 @@ function RrspRoomPanel({ clientId, prefill, person = "primary", primaryLabel = "
 
       {loading ? <div className="text-center py-8 text-gray-400 text-sm">Loading…</div>
       : analyses.length === 0 ? (
-        <div className="text-center py-12 border-2 border-dashed border-slate-200 rounded-2xl">
+        <div className="text-center py-12 border-2 border-dashed border-gray-200 rounded-2xl">
           <p className="text-gray-500 font-semibold">No RRSP analyses yet for {personLabel}</p>
           <p className="text-sm text-gray-400 mt-1">Click New Analysis to calculate contribution room</p>
         </div>
@@ -1232,7 +1179,7 @@ function RrspRoomPanel({ clientId, prefill, person = "primary", primaryLabel = "
           {analyses.map((a: any) => {
             const r = a.resultData;
             return (
-              <div key={a.id} className="bg-white border border-slate-200 rounded-xl p-5">
+              <div key={a.id} className="bg-white border border-gray-200 rounded-xl p-5">
                 <div className="flex items-center justify-between mb-4">
                   <div>
                     <h3 className="font-bold text-gray-900">{a.label || "RRSP Analysis"}</h3>
@@ -1347,7 +1294,7 @@ function TfsaRoomPanel({ clientId, prefill, person = "primary", primaryLabel = "
           <strong>TFSA Room Tracker</strong> — Calculates available TFSA contribution room and projects tax-free growth advantage.
         </div>
         <button onClick={openNew}
-          className="flex items-center gap-1.5 text-sm font-semibold text-white bg-brand-gradient hover:bg-brand-gradient-hover px-4 py-2 rounded-xl whitespace-nowrap">
+          className="flex items-center gap-1.5 text-sm font-semibold text-white bg-[#0c1e3a] hover:bg-[#0e2a4a] px-4 py-2 rounded-xl whitespace-nowrap">
           <Plus className="w-4 h-4" /> New Analysis
         </button>
       </div>
@@ -1355,7 +1302,7 @@ function TfsaRoomPanel({ clientId, prefill, person = "primary", primaryLabel = "
       {showForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg">
-            <div className="flex items-center justify-between p-5 border-b border-slate-100">
+            <div className="flex items-center justify-between p-5 border-b border-gray-100">
               <h3 className="text-lg font-bold text-gray-900">{editingId ? "Edit" : "New"} TFSA Analysis — {personLabel}</h3>
               <button onClick={() => setShowForm(false)} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
             </div>
@@ -1363,7 +1310,7 @@ function TfsaRoomPanel({ clientId, prefill, person = "primary", primaryLabel = "
               <div>
                 <label className="text-xs font-semibold text-gray-500 block mb-1">Label</label>
                 <input value={form.label} onChange={e => setForm(f => ({ ...f, label: e.target.value }))}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm" />
+                  className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm" />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 {[
@@ -1379,15 +1326,15 @@ function TfsaRoomPanel({ clientId, prefill, person = "primary", primaryLabel = "
                     <label className="text-xs font-semibold text-gray-500 block mb-1">{label}</label>
                     <input type="number" step="any" value={(form as any)[key]}
                       onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
-                      className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm" placeholder="0" />
+                      className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm" placeholder="0" />
                   </div>
                 ))}
               </div>
             </div>
-            <div className="flex gap-3 justify-end p-5 border-t border-slate-100">
+            <div className="flex gap-3 justify-end p-5 border-t border-gray-100">
               <button onClick={() => setShowForm(false)} className="text-sm text-gray-500 px-4 py-2">Cancel</button>
               <button onClick={save} disabled={saving}
-                className="flex items-center gap-1.5 bg-brand-gradient hover:bg-brand-gradient-hover disabled:opacity-50 text-white text-sm font-semibold px-5 py-2.5 rounded-xl">
+                className="flex items-center gap-1.5 bg-[#0c1e3a] hover:bg-[#0e2a4a] disabled:opacity-50 text-white text-sm font-semibold px-5 py-2.5 rounded-xl">
                 <Save className="w-3.5 h-3.5" /> {saving ? "Saving…" : "Calculate & Save"}
               </button>
             </div>
@@ -1397,7 +1344,7 @@ function TfsaRoomPanel({ clientId, prefill, person = "primary", primaryLabel = "
 
       {loading ? <div className="text-center py-8 text-gray-400 text-sm">Loading…</div>
       : analyses.length === 0 ? (
-        <div className="text-center py-12 border-2 border-dashed border-slate-200 rounded-2xl">
+        <div className="text-center py-12 border-2 border-dashed border-gray-200 rounded-2xl">
           <p className="text-gray-500 font-semibold">No TFSA analyses yet for {personLabel}</p>
           <p className="text-sm text-gray-400 mt-1">Click New Analysis to calculate contribution room</p>
         </div>
@@ -1406,7 +1353,7 @@ function TfsaRoomPanel({ clientId, prefill, person = "primary", primaryLabel = "
           {analyses.map((a: any) => {
             const r = a.resultData;
             return (
-              <div key={a.id} className="bg-white border border-slate-200 rounded-xl p-5">
+              <div key={a.id} className="bg-white border border-gray-200 rounded-xl p-5">
                 <div className="flex items-center justify-between mb-4">
                   <div>
                     <h3 className="font-bold text-gray-900">{a.label || "TFSA Analysis"}</h3>
@@ -1538,7 +1485,7 @@ function TaxProjectionPanel({ clientId, prefillPrimary, prefillSpouse, person = 
           <strong>Tax Projection</strong> — Year-by-year tax, wealth, and retirement income projection with RRSP/TFSA drawdown strategy.
         </div>
         <button onClick={openNew}
-          className="flex items-center gap-1.5 text-sm font-semibold text-white bg-brand-gradient hover:bg-brand-gradient-hover px-4 py-2 rounded-xl whitespace-nowrap">
+          className="flex items-center gap-1.5 text-sm font-semibold text-white bg-[#0c1e3a] hover:bg-[#0e2a4a] px-4 py-2 rounded-xl whitespace-nowrap">
           <Plus className="w-4 h-4" /> New Projection
         </button>
       </div>
@@ -1546,7 +1493,7 @@ function TaxProjectionPanel({ clientId, prefillPrimary, prefillSpouse, person = 
       {showForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between p-5 border-b border-slate-100">
+            <div className="flex items-center justify-between p-5 border-b border-gray-100">
               <h3 className="text-lg font-bold text-gray-900">{editingId ? "Edit" : "New"} Tax Projection — {personLabel}</h3>
               <button onClick={() => setShowForm(false)} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
             </div>
@@ -1554,7 +1501,7 @@ function TaxProjectionPanel({ clientId, prefillPrimary, prefillSpouse, person = 
               <div>
                 <label className="text-xs font-semibold text-gray-500 block mb-1">Label</label>
                 <input value={form.label} onChange={e => setForm(f => ({ ...f, label: e.target.value }))}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm" />
+                  className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm" />
               </div>
               <div className="grid grid-cols-4 gap-3">
                 {[
@@ -1565,18 +1512,18 @@ function TaxProjectionPanel({ clientId, prefillPrimary, prefillSpouse, person = 
                     <label className="text-xs font-semibold text-gray-500 block mb-1">{label}</label>
                     <input type="number" value={(form as any)[key]}
                       onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
-                      className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm" />
+                      className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm" />
                   </div>
                 ))}
                 <div>
                   <label className="text-xs font-semibold text-gray-500 block mb-1">Province</label>
                   <select value={form.province} onChange={e => setForm(f => ({ ...f, province: e.target.value }))}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm">
+                    className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm">
                     {provinces.map(p => <option key={p} value={p}>{p}</option>)}
                   </select>
                 </div>
               </div>
-              <div className="border-t border-slate-100 pt-3">
+              <div className="border-t border-gray-100 pt-3">
                 <p className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">Income</p>
                 <div className="grid grid-cols-3 gap-3">
                   {[
@@ -1593,12 +1540,12 @@ function TaxProjectionPanel({ clientId, prefillPrimary, prefillSpouse, person = 
                       <label className="text-xs font-semibold text-gray-500 block mb-1">{label}</label>
                       <input type="number" step="any" value={(form as any)[key]}
                         onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
-                        className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm" />
+                        className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm" />
                     </div>
                   ))}
                 </div>
               </div>
-              <div className="border-t border-slate-100 pt-3">
+              <div className="border-t border-gray-100 pt-3">
                 <p className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">Assets</p>
                 <div className="grid grid-cols-3 gap-3">
                   {[
@@ -1616,16 +1563,16 @@ function TaxProjectionPanel({ clientId, prefillPrimary, prefillSpouse, person = 
                       <label className="text-xs font-semibold text-gray-500 block mb-1">{label}</label>
                       <input type="number" step="any" value={(form as any)[key]}
                         onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
-                        className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm" />
+                        className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm" />
                     </div>
                   ))}
                 </div>
               </div>
             </div>
-            <div className="flex gap-3 justify-end p-5 border-t border-slate-100">
+            <div className="flex gap-3 justify-end p-5 border-t border-gray-100">
               <button onClick={() => setShowForm(false)} className="text-sm text-gray-500 px-4 py-2">Cancel</button>
               <button onClick={save} disabled={saving}
-                className="flex items-center gap-1.5 bg-brand-gradient hover:bg-brand-gradient-hover disabled:opacity-50 text-white text-sm font-semibold px-5 py-2.5 rounded-xl">
+                className="flex items-center gap-1.5 bg-[#0c1e3a] hover:bg-[#0e2a4a] disabled:opacity-50 text-white text-sm font-semibold px-5 py-2.5 rounded-xl">
                 <Save className="w-3.5 h-3.5" /> {saving ? "Saving…" : "Calculate & Save"}
               </button>
             </div>
@@ -1635,7 +1582,7 @@ function TaxProjectionPanel({ clientId, prefillPrimary, prefillSpouse, person = 
 
       {loading ? <div className="text-center py-8 text-gray-400 text-sm">Loading…</div>
       : analyses.length === 0 ? (
-        <div className="text-center py-12 border-2 border-dashed border-slate-200 rounded-2xl">
+        <div className="text-center py-12 border-2 border-dashed border-gray-200 rounded-2xl">
           <p className="text-gray-500 font-semibold">No tax projections yet for {personLabel}</p>
           <p className="text-sm text-gray-400 mt-1">Click New Projection to model lifetime tax and wealth</p>
         </div>
@@ -1645,7 +1592,7 @@ function TaxProjectionPanel({ clientId, prefillPrimary, prefillSpouse, person = 
             const r = a.resultData;
             const s = r?.summary;
             return (
-              <div key={a.id} className="bg-white border border-slate-200 rounded-xl p-5">
+              <div key={a.id} className="bg-white border border-gray-200 rounded-xl p-5">
                 <div className="flex items-center justify-between mb-4">
                   <div>
                     <h3 className="font-bold text-gray-900">{a.label || "Tax Projection"}</h3>
@@ -1681,9 +1628,9 @@ function TaxProjectionPanel({ clientId, prefillPrimary, prefillSpouse, person = 
                       {showTable === a.id ? "Hide" : "Show"} Year-by-Year Table
                     </button>
                     {showTable === a.id && r.projections && (
-                      <div className="mt-3 overflow-x-auto border border-slate-200 rounded-xl">
+                      <div className="mt-3 overflow-x-auto border border-gray-200 rounded-xl">
                         <table className="w-full text-xs">
-                          <thead className="bg-slate-50">
+                          <thead className="bg-gray-50">
                             <tr>
                               {["Year","Age","Phase","Total Income","Fed Tax","Prov Tax","Total Tax","After-Tax","Total Wealth"].map(h => (
                                 <th key={h} className="px-3 py-2 text-left font-semibold text-gray-500">{h}</th>
@@ -1692,7 +1639,7 @@ function TaxProjectionPanel({ clientId, prefillPrimary, prefillSpouse, person = 
                           </thead>
                           <tbody>
                             {(r.projections as any[]).map((p: any, i: number) => (
-                              <tr key={i} className="border-t border-slate-100 hover:bg-slate-50">
+                              <tr key={i} className="border-t border-gray-100 hover:bg-gray-50">
                                 <td className="px-3 py-1.5">{p.year}</td>
                                 <td className="px-3 py-1.5">{p.age}</td>
                                 <td className="px-3 py-1.5 capitalize">{p.phase}</td>
@@ -1861,7 +1808,7 @@ function CapitalGainsPanel({ clientId, client, person = "primary" }: {
           <span className="ml-2 text-xs bg-green-100 text-green-700 font-semibold px-2 py-0.5 rounded-full">Rate increase cancelled Mar 21, 2025</span>
         </div>
         <button onClick={openNew}
-          className="flex items-center gap-1.5 text-sm font-semibold text-white bg-brand-gradient hover:bg-brand-gradient-hover px-4 py-2 rounded-xl whitespace-nowrap">
+          className="flex items-center gap-1.5 text-sm font-semibold text-white bg-[#0c1e3a] hover:bg-[#0e2a4a] px-4 py-2 rounded-xl whitespace-nowrap">
           <Plus className="w-4 h-4" /> New Analysis
         </button>
       </div>
@@ -1869,7 +1816,7 @@ function CapitalGainsPanel({ clientId, client, person = "primary" }: {
       {showForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between p-5 border-b border-slate-100">
+            <div className="flex items-center justify-between p-5 border-b border-gray-100">
               <h3 className="text-lg font-bold text-gray-900">{editingId ? "Edit" : "New"} Capital Gains Analysis — {personLabel}</h3>
               <button onClick={() => setShowForm(false)} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
             </div>
@@ -1877,14 +1824,14 @@ function CapitalGainsPanel({ clientId, client, person = "primary" }: {
               <div>
                 <label className="text-xs font-semibold text-gray-500 block mb-1">Label</label>
                 <input value={form.label} onChange={e => setForm(f => ({ ...f, label: e.target.value }))}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm" />
+                  className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm" />
               </div>
               <div className="grid grid-cols-3 gap-3">
                 <div>
                   <label className="text-xs font-semibold text-gray-500 block mb-1">Province</label>
                   <select value={form.province}
                     onChange={e => setForm(f => ({ ...f, province: e.target.value, marginalRate: String((PROVINCE_RATES[e.target.value] ?? 53.53).toFixed(2)) }))}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm">
+                    className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm">
                     {provinces.map(p => <option key={p} value={p}>{p}</option>)}
                   </select>
                 </div>
@@ -1892,13 +1839,13 @@ function CapitalGainsPanel({ clientId, client, person = "primary" }: {
                   <label className="text-xs font-semibold text-gray-500 block mb-1">Marginal Tax Rate (%)</label>
                   <input type="number" step="0.1" value={form.marginalRate}
                     onChange={e => setForm(f => ({ ...f, marginalRate: e.target.value }))}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm" />
+                    className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm" />
                 </div>
                 <div>
                   <label className="text-xs font-semibold text-gray-500 block mb-1">Prior Year Losses ($)</label>
                   <input type="number" value={form.carryForwardLoss}
                     onChange={e => setForm(f => ({ ...f, carryForwardLoss: e.target.value }))}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm" placeholder="0" />
+                    className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm" placeholder="0" />
                 </div>
               </div>
 
@@ -1906,13 +1853,13 @@ function CapitalGainsPanel({ clientId, client, person = "primary" }: {
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Positions</label>
-                  <button onClick={addPosition} className="flex items-center gap-1 text-xs font-semibold text-blue-600 hover:underline">
+                  <button onClick={addPosition} className="flex items-center gap-1 text-xs font-semibold text-[#0c1e3a] hover:underline">
                     <Plus className="w-3.5 h-3.5" /> Add Position
                   </button>
                 </div>
-                <div className="border border-slate-200 rounded-xl overflow-hidden">
+                <div className="border border-gray-200 rounded-xl overflow-hidden">
                   <table className="w-full text-sm">
-                    <thead className="bg-slate-50 border-b border-slate-200">
+                    <thead className="bg-gray-50 border-b border-gray-200">
                       <tr>
                         <th className="px-3 py-2 text-left text-xs font-semibold text-gray-500">Type</th>
                         <th className="px-3 py-2 text-left text-xs font-semibold text-gray-500">Symbol</th>
@@ -1923,28 +1870,28 @@ function CapitalGainsPanel({ clientId, client, person = "primary" }: {
                         <th className="px-3 py-2"></th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100">
+                    <tbody className="divide-y divide-gray-100">
                       {form.positions.map((pos, i) => {
                         const gain = Number(pos.fmv || 0) - Number(pos.acb || 0);
                         return (
-                          <tr key={i} className="hover:bg-slate-50">
+                          <tr key={i} className="hover:bg-gray-50">
                             <td className="px-3 py-2">
                               <select value={pos.type} onChange={e => updatePos(i, "type", e.target.value)}
-                                className="border border-slate-200 rounded-lg px-2 py-1.5 text-xs w-full">
+                                className="border border-gray-200 rounded-lg px-2 py-1.5 text-xs w-full">
                                 {ASSET_TYPES.map(t => <option key={t.key} value={t.key}>{t.label}</option>)}
                               </select>
                             </td>
                             <td className="px-3 py-2">
                               <input value={pos.symbol} onChange={e => updatePos(i, "symbol", e.target.value)}
-                                className="border border-slate-200 rounded-lg px-2 py-1.5 text-xs w-full" placeholder="e.g. XIC.TO" />
+                                className="border border-gray-200 rounded-lg px-2 py-1.5 text-xs w-full" placeholder="e.g. XIC.TO" />
                             </td>
                             <td className="px-3 py-2">
                               <input type="number" value={pos.acb} onChange={e => updatePos(i, "acb", e.target.value)}
-                                className="border border-slate-200 rounded-lg px-2 py-1.5 text-xs w-full text-right" placeholder="0" />
+                                className="border border-gray-200 rounded-lg px-2 py-1.5 text-xs w-full text-right" placeholder="0" />
                             </td>
                             <td className="px-3 py-2">
                               <input type="number" value={pos.fmv} onChange={e => updatePos(i, "fmv", e.target.value)}
-                                className="border border-slate-200 rounded-lg px-2 py-1.5 text-xs w-full text-right" placeholder="0" />
+                                className="border border-gray-200 rounded-lg px-2 py-1.5 text-xs w-full text-right" placeholder="0" />
                             </td>
                             <td className="px-3 py-2 text-right">
                               {(pos.acb || pos.fmv) && (
@@ -1989,10 +1936,10 @@ function CapitalGainsPanel({ clientId, client, person = "primary" }: {
                 </div>
               )}
             </div>
-            <div className="flex gap-3 justify-end p-5 border-t border-slate-100">
+            <div className="flex gap-3 justify-end p-5 border-t border-gray-100">
               <button onClick={() => setShowForm(false)} className="text-sm text-gray-500 px-4 py-2">Cancel</button>
               <button onClick={save} disabled={saving}
-                className="flex items-center gap-1.5 bg-brand-gradient hover:bg-brand-gradient-hover disabled:opacity-50 text-white text-sm font-semibold px-5 py-2.5 rounded-xl">
+                className="flex items-center gap-1.5 bg-[#0c1e3a] hover:bg-[#0e2a4a] disabled:opacity-50 text-white text-sm font-semibold px-5 py-2.5 rounded-xl">
                 <Save className="w-3.5 h-3.5" /> {saving ? "Saving…" : "Calculate & Save"}
               </button>
             </div>
@@ -2002,7 +1949,7 @@ function CapitalGainsPanel({ clientId, client, person = "primary" }: {
 
       {loading ? <div className="text-center py-8 text-gray-400 text-sm">Loading…</div>
       : analyses.length === 0 ? (
-        <div className="text-center py-12 border-2 border-dashed border-slate-200 rounded-2xl">
+        <div className="text-center py-12 border-2 border-dashed border-gray-200 rounded-2xl">
           <p className="text-gray-500 font-semibold">No capital gains analyses yet for {personLabel}</p>
           <p className="text-sm text-gray-400 mt-1">Click New Analysis to calculate gains, losses and LCGE</p>
         </div>
@@ -2018,7 +1965,7 @@ function CapitalGainsPanel({ clientId, client, person = "primary" }: {
             const net = Math.max(0, gains - losses - Number(inp?.carryForwardLoss || 0) - lcge);
             const tax = net * 0.5 * (Number(inp?.marginalRate || 53.53) / 100);
             return (
-              <div key={a.id} className="bg-white border border-slate-200 rounded-xl p-5">
+              <div key={a.id} className="bg-white border border-gray-200 rounded-xl p-5">
                 <div className="flex items-center justify-between mb-4">
                   <div>
                     <h3 className="font-bold text-gray-900">{a.label || "Capital Gains Analysis"}</h3>
@@ -2132,7 +2079,7 @@ function IncomeSplittingPanel({ clientId, prefill, person = "primary", primaryLa
           <strong>Income Splitting Optimizer</strong> — Finds the best strategy: pension split (T1032), spousal RRSP, CPP sharing, or prescribed rate loan.
         </div>
         <button onClick={openNew}
-          className="flex items-center gap-1.5 text-sm font-semibold text-white bg-brand-gradient hover:bg-brand-gradient-hover px-4 py-2 rounded-xl whitespace-nowrap">
+          className="flex items-center gap-1.5 text-sm font-semibold text-white bg-[#0c1e3a] hover:bg-[#0e2a4a] px-4 py-2 rounded-xl whitespace-nowrap">
           <Plus className="w-4 h-4" /> New Analysis
         </button>
       </div>
@@ -2140,7 +2087,7 @@ function IncomeSplittingPanel({ clientId, prefill, person = "primary", primaryLa
       {showForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg">
-            <div className="flex items-center justify-between p-5 border-b border-slate-100">
+            <div className="flex items-center justify-between p-5 border-b border-gray-100">
               <h3 className="text-lg font-bold text-gray-900">{editingId ? "Edit" : "New"} Income Splitting Analysis</h3>
               <button onClick={() => setShowForm(false)} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
             </div>
@@ -2148,46 +2095,46 @@ function IncomeSplittingPanel({ clientId, prefill, person = "primary", primaryLa
               <div>
                 <label className="text-xs font-semibold text-gray-500 block mb-1">Label</label>
                 <input value={form.label} onChange={e => setForm(f => ({ ...f, label: e.target.value }))}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm" />
+                  className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm" />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-xs font-semibold text-gray-500 block mb-1">{primaryLabel} Income ($)</label>
                   <input type="number" value={form.higherIncome}
                     onChange={e => setForm(f => ({ ...f, higherIncome: e.target.value }))}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm" placeholder="0" />
+                    className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm" placeholder="0" />
                 </div>
                 <div>
                   <label className="text-xs font-semibold text-gray-500 block mb-1">{spouseLabel} Income ($)</label>
                   <input type="number" value={form.lowerIncome}
                     onChange={e => setForm(f => ({ ...f, lowerIncome: e.target.value }))}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm" placeholder="0" />
+                    className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm" placeholder="0" />
                 </div>
                 <div>
                   <label className="text-xs font-semibold text-gray-500 block mb-1">Eligible Pension Income ($)</label>
                   <input type="number" value={form.pensionIncome}
                     onChange={e => setForm(f => ({ ...f, pensionIncome: e.target.value }))}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm" placeholder="0" />
+                    className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm" placeholder="0" />
                 </div>
                 <div>
                   <label className="text-xs font-semibold text-gray-500 block mb-1">Age (older spouse)</label>
                   <input type="number" value={form.age}
                     onChange={e => setForm(f => ({ ...f, age: e.target.value }))}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm" />
+                    className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm" />
                 </div>
                 <div className="col-span-2">
                   <label className="text-xs font-semibold text-gray-500 block mb-1">Province</label>
                   <select value={form.province} onChange={e => setForm(f => ({ ...f, province: e.target.value }))}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm">
+                    className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm">
                     {provinces.map(p => <option key={p} value={p}>{p}</option>)}
                   </select>
                 </div>
               </div>
             </div>
-            <div className="flex gap-3 justify-end p-5 border-t border-slate-100">
+            <div className="flex gap-3 justify-end p-5 border-t border-gray-100">
               <button onClick={() => setShowForm(false)} className="text-sm text-gray-500 px-4 py-2">Cancel</button>
               <button onClick={save} disabled={saving}
-                className="flex items-center gap-1.5 bg-brand-gradient hover:bg-brand-gradient-hover disabled:opacity-50 text-white text-sm font-semibold px-5 py-2.5 rounded-xl">
+                className="flex items-center gap-1.5 bg-[#0c1e3a] hover:bg-[#0e2a4a] disabled:opacity-50 text-white text-sm font-semibold px-5 py-2.5 rounded-xl">
                 <Save className="w-3.5 h-3.5" /> {saving ? "Saving…" : "Calculate & Save"}
               </button>
             </div>
@@ -2197,7 +2144,7 @@ function IncomeSplittingPanel({ clientId, prefill, person = "primary", primaryLa
 
       {loading ? <div className="text-center py-8 text-gray-400 text-sm">Loading…</div>
       : analyses.length === 0 ? (
-        <div className="text-center py-12 border-2 border-dashed border-slate-200 rounded-2xl">
+        <div className="text-center py-12 border-2 border-dashed border-gray-200 rounded-2xl">
           <p className="text-gray-500 font-semibold">No income splitting analyses yet</p>
           <p className="text-sm text-gray-400 mt-1">Click New Analysis to find the optimal strategy</p>
         </div>
@@ -2206,7 +2153,7 @@ function IncomeSplittingPanel({ clientId, prefill, person = "primary", primaryLa
           {analyses.map((a: any) => {
             const r = a.resultData;
             return (
-              <div key={a.id} className="bg-white border border-slate-200 rounded-xl p-5">
+              <div key={a.id} className="bg-white border border-gray-200 rounded-xl p-5">
                 <div className="flex items-center justify-between mb-4">
                   <div>
                     <h3 className="font-bold text-gray-900">{a.label || "Income Splitting"}</h3>
@@ -2238,7 +2185,7 @@ function IncomeSplittingPanel({ clientId, prefill, person = "primary", primaryLa
                       </div>
                     </div>
                     {r.details && (
-                      <p className="text-xs text-gray-500 bg-slate-50 rounded-lg p-3">{r.details}</p>
+                      <p className="text-xs text-gray-500 bg-gray-50 rounded-lg p-3">{r.details}</p>
                     )}
                   </>
                 )}
@@ -2455,7 +2402,7 @@ export function AITab({ clientId }: { clientId: number }) {
   const priorityOrder: Record<string, number> = { high: 0, medium: 1, low: 2 };
 
   const priorityBadge = (priority: string) => {
-    const colors: Record<string, string> = { high: "bg-red-100 text-red-700", medium: "bg-yellow-100 text-yellow-700", low: "bg-green-100 text-green-700" };
+    const colors: Record<string, string> = { high: "bg-[var(--accent-rose)]/10 text-[var(--accent-rose)]", medium: "bg-[var(--accent-amber)]/10 text-[var(--accent-amber)]", low: "bg-[var(--accent-green)]/10 text-[var(--accent-green)]" };
     return <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${colors[priority] || colors.medium}`}>{priority}</span>;
   };
 
@@ -2476,15 +2423,15 @@ export function AITab({ clientId }: { clientId: number }) {
   };
 
   return (
-    <div className="space-y-4 animate-in fade-in duration-300">
+    <div className="fp-insightled space-y-4 animate-in fade-in duration-300 p-6">
       {/* Header */}
       <div className="flex justify-between items-center">
-        <h2 className="text-xl font-display font-bold">AI Recommendations</h2>
+        <h2 className="text-xl font-display font-bold text-gray-900">AI Recommendations</h2>
         <button
           onClick={() => generateRecs.mutate(clientId)}
           disabled={generateRecs.isPending}
           data-testid="button-fp-generate-ai"
-          className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold rounded-xl hover:opacity-90 transition-opacity shadow-sm disabled:opacity-50"
+          className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-[var(--accent-cyan)] to-[var(--accent-purple)] text-[#0f1115] font-semibold rounded-xl hover:opacity-90 transition-opacity shadow-sm disabled:opacity-50"
         >
           <Sparkles className="w-4 h-4" />
           <span>{generateRecs.isPending ? "Analyzing..." : "Generate Insights"}</span>
@@ -2493,17 +2440,17 @@ export function AITab({ clientId }: { clientId: number }) {
 
       {/* Generating spinner */}
       {generateRecs.isPending && (
-        <div className="border border-purple-200 rounded-2xl p-5 bg-purple-50/50 text-center">
-          <div className="w-7 h-7 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
-          <p className="text-purple-700 font-medium text-sm">Analyzing client's financial data…</p>
+        <div className="border border-[var(--accent-purple)]/25 rounded-2xl p-5 bg-[var(--accent-purple)]/[0.07] text-center">
+          <div className="w-7 h-7 border-4 border-[var(--accent-purple)] border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+          <p className="text-[var(--accent-purple)] font-medium text-sm">Analyzing client's financial data…</p>
         </div>
       )}
 
       {/* Empty state */}
       {sessions.length === 0 && !generateRecs.isPending && (
-        <div className="text-center py-12 border border-dashed border-border rounded-2xl">
-          <Brain className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
-          <p className="text-muted-foreground text-sm">No recommendations yet. Click "Generate Insights" to analyse this client's financial data.</p>
+        <div className="text-center py-12 border border-dashed border-[var(--border-subtle)] rounded-2xl">
+          <Brain className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+          <p className="text-gray-400 text-sm">No recommendations yet. Click "Generate Insights" to analyse this client's financial data.</p>
         </div>
       )}
 
@@ -2518,30 +2465,30 @@ export function AITab({ clientId }: { clientId: number }) {
           : date.toLocaleDateString("en-CA", { weekday: "short", year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
 
         return (
-          <div key={runId} className="border border-border rounded-2xl overflow-hidden">
+          <div key={runId} className="border border-[var(--border-subtle)] rounded-2xl overflow-hidden fp-insightled-card">
             {/* Session header — always visible, 2-3 lines high */}
-            <div className="px-5 py-4 bg-muted/30 flex items-start justify-between gap-4">
+            <div className="px-5 py-4 bg-[var(--bg-panel)] flex items-start justify-between gap-4 border-b border-[var(--border-subtle)]">
               <button
                 onClick={() => toggleExpanded(runId)}
                 className="flex-1 min-w-0 text-left"
                 data-testid={`session-header-${runId}`}
               >
                 <div className="flex items-center gap-2 mb-1">
-                  <Sparkles className="w-3.5 h-3.5 text-purple-500 shrink-0" />
-                  <span className="text-sm font-semibold text-gray-900">{dateStr}</span>
+                  <Sparkles className="w-3.5 h-3.5 text-[var(--accent-purple)] shrink-0" />
+                  <span className="text-sm font-semibold text-[var(--text-primary)]">{dateStr}</span>
                   <ChevronDown className={`w-4 h-4 text-muted-foreground shrink-0 transition-transform ${open ? "rotate-180" : ""}`} />
                 </div>
-                <div className="flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
+                <div className="flex items-center gap-3 text-xs text-gray-400 flex-wrap">
                   <span>{recs.length} recommendation{recs.length !== 1 ? "s" : ""}</span>
-                  {summary.high    > 0 && <span className="text-red-600 font-medium">{summary.high} high priority</span>}
-                  {summary.medium  > 0 && <span className="text-yellow-600">{summary.medium} medium</span>}
-                  {summary.low     > 0 && <span className="text-green-600">{summary.low} low</span>}
-                  {summary.completed > 0 && <span className="text-gray-400">{summary.completed} completed</span>}
+                  {summary.high    > 0 && <span className="text-red-400 font-medium">{summary.high} high priority</span>}
+                  {summary.medium  > 0 && <span className="text-amber-400">{summary.medium} medium</span>}
+                  {summary.low     > 0 && <span className="text-[var(--accent-green)]">{summary.low} low</span>}
+                  {summary.completed > 0 && <span className="text-gray-500">{summary.completed} completed</span>}
                 </div>
               </button>
               <button
                 onClick={() => deleteSession(runId)}
-                className="p-1.5 hover:bg-red-50 rounded-lg shrink-0 mt-0.5"
+                className="p-1.5 hover:bg-[var(--accent-rose)]/10 rounded-lg shrink-0 mt-0.5"
                 title="Delete this session"
                 data-testid={`button-delete-session-${runId}`}
               >
@@ -2551,11 +2498,11 @@ export function AITab({ clientId }: { clientId: number }) {
 
             {/* Recommendations — shown when expanded */}
             {open && (
-              <div className="divide-y divide-border/50">
+              <div className="divide-y divide-gray-100">
                 {sorted.map((rec) => (
                   <div
                     key={rec.id}
-                    className={`px-5 py-4 ${rec.status === "completed" ? "bg-muted/20 opacity-70" : rec.status === "dismissed" ? "bg-muted/10 opacity-50" : ""}`}
+                    className={`px-5 py-4 ${rec.status === "completed" ? "opacity-60" : rec.status === "dismissed" ? "opacity-40" : ""}`}
                     data-testid={`card-fp-ai-${rec.id}`}
                   >
                     <div className="flex items-start justify-between gap-3">
@@ -2563,27 +2510,27 @@ export function AITab({ clientId }: { clientId: number }) {
                         {statusIcon(rec.status)}
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap mb-1">
-                            <span className="font-semibold text-sm">{rec.title}</span>
+                            <span className="font-semibold text-sm text-gray-900">{rec.title}</span>
                             {priorityBadge(rec.priority)}
-                            <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded uppercase">{rec.category}</span>
+                            <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded uppercase">{rec.category}</span>
                           </div>
-                          <p className="text-sm text-muted-foreground leading-relaxed">{rec.content}</p>
+                          <p className="text-sm text-gray-400 leading-relaxed">{rec.content}</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-1 shrink-0">
                         {rec.status === "pending" && (
                           <>
-                            <button onClick={() => updateRec.mutate({ id: rec.id, data: { status: "in_progress" } })} data-testid={`button-fp-ai-start-${rec.id}`} className="text-xs px-2.5 py-1 rounded-lg bg-blue-50 text-blue-600 font-medium hover:bg-blue-100">Start</button>
-                            <button onClick={() => updateRec.mutate({ id: rec.id, data: { status: "dismissed" } })} data-testid={`button-fp-ai-dismiss-${rec.id}`} className="text-xs px-2.5 py-1 rounded-lg bg-muted text-muted-foreground font-medium hover:bg-muted/80">Dismiss</button>
+                            <button onClick={() => updateRec.mutate({ id: rec.id, data: { status: "in_progress" } })} data-testid={`button-fp-ai-start-${rec.id}`} className="text-xs px-2.5 py-1 rounded-lg bg-[var(--accent-blue)]/10 text-[var(--accent-blue)] font-medium hover:bg-[var(--accent-blue)]/20">Start</button>
+                            <button onClick={() => updateRec.mutate({ id: rec.id, data: { status: "dismissed" } })} data-testid={`button-fp-ai-dismiss-${rec.id}`} className="text-xs px-2.5 py-1 rounded-lg bg-white/5 text-[var(--text-tertiary)] font-medium hover:bg-white/10">Dismiss</button>
                           </>
                         )}
                         {rec.status === "in_progress" && (
-                          <button onClick={() => updateRec.mutate({ id: rec.id, data: { status: "completed" } })} data-testid={`button-fp-ai-complete-${rec.id}`} className="text-xs px-2.5 py-1 rounded-lg bg-green-50 text-green-600 font-medium hover:bg-green-100">Complete</button>
+                          <button onClick={() => updateRec.mutate({ id: rec.id, data: { status: "completed" } })} data-testid={`button-fp-ai-complete-${rec.id}`} className="text-xs px-2.5 py-1 rounded-lg bg-[var(--accent-green)]/10 text-[var(--accent-green)] font-medium hover:bg-[var(--accent-green)]/20">Complete</button>
                         )}
                         {rec.status === "completed" && (
-                          <button onClick={() => updateRec.mutate({ id: rec.id, data: { status: "pending" } })} className="text-xs px-2.5 py-1 rounded-lg bg-muted text-muted-foreground font-medium hover:bg-muted/80">Reopen</button>
+                          <button onClick={() => updateRec.mutate({ id: rec.id, data: { status: "pending" } })} className="text-xs px-2.5 py-1 rounded-lg bg-white/5 text-[var(--text-tertiary)] font-medium hover:bg-white/10">Reopen</button>
                         )}
-                        <button onClick={() => { if (confirm("Delete this recommendation?")) deleteRec.mutate(rec.id); }} data-testid={`button-fp-del-ai-${rec.id}`} className="p-1 hover:bg-red-50 rounded ml-1"><Trash2 className="w-3 h-3 text-red-400" /></button>
+                        <button onClick={() => { if (confirm("Delete this recommendation?")) deleteRec.mutate(rec.id); }} data-testid={`button-fp-del-ai-${rec.id}`} className="p-1 hover:bg-[var(--accent-rose)]/10 rounded ml-1"><Trash2 className="w-3 h-3 text-[var(--accent-rose)]" /></button>
                       </div>
                     </div>
                   </div>
@@ -2693,7 +2640,7 @@ const { data: plans = [] } = useClientPlans(selectedClientId ?? 0);
             {selectedClient && ["retirement", "tax", "dashboard"].includes(activeTab) && (
               <div className="flex gap-1 mb-5 bg-muted/40 rounded-xl p-1 border border-border w-fit">
                 <button onClick={() => setPerson("primary")}
-                  className={`px-4 py-1.5 rounded-lg text-sm font-semibold transition-colors ${person === "primary" ? "bg-white shadow text-blue-600 border border-border" : "text-muted-foreground hover:text-foreground"}`}>
+                  className={`px-4 py-1.5 rounded-lg text-sm font-semibold transition-colors ${person === "primary" ? "bg-white shadow text-[#0c1e3a] border border-border" : "text-muted-foreground hover:text-foreground"}`}>
                   {(selectedClient as any).firstName ?? "Client"}
                 </button>
                 {(selectedClient as any).spouseFirstName && (

@@ -76,11 +76,19 @@ const TD = ({ children, right }: { children: React.ReactNode; right?: boolean })
   <td className={`px-4 py-3 text-sm ${right ? "text-right" : ""}`}>{children}</td>
 );
 
-const INPUT = "w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500";
+const INPUT = "fp-input";
 
-const emptyPlan = (owner = "primary", retirementAge = 65): any => ({
-  pensionType: "dbpp", subscriberOwner: owner, employerName: "", accrualRate: "0.02",
-  yearsOfService: "", projectedYearsAtRetirement: "", bestAverageEarnings: "",
+const PENSION_TYPE_MAP: Record<string, string> = {
+  "DBPP": "dbpp",
+  "DCPP": "dcpp",
+  "Group RRSP": "group_rrsp",
+  "DPSP": "dpsp",
+};
+
+const emptyPlan = (owner = "primary", retirementAge = 65, pensionType = "dbpp", salary: string | number | null = ""): any => ({
+  pensionType, subscriberOwner: owner, employerName: "", accrualRate: "0.02",
+  yearsOfService: "", projectedYearsAtRetirement: "",
+  bestAverageEarnings: salary ? String(salary) : "",
   currentBalance: "", employerMatchPct: "", retirementAge,
   indexingType: "none", indexingRate: "", bridgeBenefit: "",
   bridgeBenefitEndAge: 65, survivorBenefitPct: "0.60", isVested: true, notes: "",
@@ -128,9 +136,13 @@ export function PensionTab({ clientId, client, person = "primary" }: {
   const upd = (k: string, v: any) => setForm((f: any) => ({ ...f, [k]: v }));
 
   function openNew() {
-    const retAge = activePerson === "primary" ? (client?.retirementAge ?? 65) : (client?.spouseRetirementAge ?? 65);
+    const isPrimary = activePerson === "primary";
+    const retAge = isPrimary ? (client?.retirementAge ?? 65) : (client?.spouseRetirementAge ?? 65);
+    const rawType = isPrimary ? client?.pensionType : client?.spousePensionType;
+    const pType = (rawType && PENSION_TYPE_MAP[rawType]) || "dbpp";
+    const salary = isPrimary ? client?.annualIncome : client?.spouseAnnualIncome;
     setEditingId(null);
-    setForm(emptyPlan(activePerson, retAge));
+    setForm(emptyPlan(activePerson, retAge, pType, salary));
     setShowForm(true);
   }
 
@@ -173,7 +185,7 @@ export function PensionTab({ clientId, client, person = "primary" }: {
         { label: "DBPP income / yr",  value: dbppIncome > 0 ? fmt$(dbppIncome) : "—",    color: "text-blue-600",    bg: "bg-blue-50"    },
         { label: "DC / GRSP balance", value: totalDCPP  > 0 ? fmt$(totalDCPP)  : "—",    color: "text-violet-600",  bg: "bg-violet-50"  },
         { label: "DC drawdown / yr",  value: dcppDrawdown > 0 ? fmt$(dcppDrawdown) : "—", color: "text-emerald-600", bg: "bg-emerald-50" },
-        { label: "Plans on file",     value: String(filteredPlans.length),                color: "text-gray-700",    bg: "bg-slate-100"   },
+        { label: "Plans on file",     value: String(filteredPlans.length),                color: "text-gray-700",    bg: "bg-gray-100"   },
       ]} />
 
       {/* Header */}
@@ -185,22 +197,22 @@ export function PensionTab({ clientId, client, person = "primary" }: {
           </p>
         </div>
         <button onClick={openNew}
-          className="flex items-center gap-2 bg-brand-gradient hover:bg-brand-gradient-hover text-white text-sm font-semibold px-4 py-2 rounded-xl transition-colors">
+          className="flex items-center gap-2 bg-[#0c1e3a] hover:bg-[#0e2a4a] text-white text-sm font-semibold px-4 py-2 rounded-xl transition-colors">
           <Plus className="w-4 h-4" /> Add Plan
         </button>
       </div>
 
       {/* Table */}
       {filteredPlans.length === 0 ? (
-        <div className="text-center py-16 border-2 border-dashed border-slate-200 rounded-2xl">
+        <div className="text-center py-16 border-2 border-dashed border-gray-200 rounded-2xl">
           <Building2 className="w-10 h-10 text-gray-300 mx-auto mb-3" />
           <p className="text-gray-500 font-semibold">No pension plans on file</p>
           <p className="text-sm text-gray-400 mt-1">Add DBPP, DCPP, Group RRSP, or DPSP plans</p>
         </div>
       ) : (
-        <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+        <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
           <table className="w-full text-sm">
-            <thead className="bg-slate-50 border-b border-slate-200">
+            <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
                 <TH>Type</TH>
                 <TH>Owner</TH>
@@ -212,13 +224,13 @@ export function PensionTab({ clientId, client, person = "primary" }: {
                 <TH></TH>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-gray-100">
               {filteredPlans.map(p => {
                 const income = p.pensionType === "dbpp" ? calcDBPPAnnual(p) : calcDCPPDrawdown(p);
                 return (
-                  <tr key={p.id} className="hover:bg-slate-50 transition-colors">
+                  <tr key={p.id} className="hover:bg-gray-50 transition-colors">
                     <TD>
-                      <span className="bg-brand-tint text-blue-600 text-xs font-semibold px-2 py-0.5 rounded-full">
+                      <span className="bg-[#0c1e3a]/10 text-[#0c1e3a] text-xs font-semibold px-2 py-0.5 rounded-full">
                         {pensionLabel(p.pensionType)}
                       </span>
                     </TD>
@@ -247,13 +259,13 @@ export function PensionTab({ clientId, client, person = "primary" }: {
                       </span>
                     </TD>
                     <TD>
-                      <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${p.isVested ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-gray-500"}`}>
+                      <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${p.isVested ? "bg-emerald-100 text-emerald-700" : "bg-gray-100 text-gray-500"}`}>
                         {p.isVested ? "Vested" : "Not vested"}
                       </span>
                     </TD>
                     <TD>
                       <div className="flex gap-1">
-                        <button onClick={() => openEdit(p)} className="p-1.5 text-gray-400 hover:text-blue-600 transition-colors">
+                        <button onClick={() => openEdit(p)} className="p-1.5 text-gray-400 hover:text-[#0c1e3a] transition-colors">
                           <Pencil className="w-3.5 h-3.5" />
                         </button>
                         <button onClick={() => del(p.id)} className="p-1.5 text-gray-400 hover:text-red-500 transition-colors">
@@ -278,14 +290,14 @@ export function PensionTab({ clientId, client, person = "primary" }: {
 
       {/* Form Modal */}
       {showForm && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl my-4">
-            <div className="flex justify-between items-center px-6 pt-6 pb-4 border-b border-slate-100">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-2xl my-4">
+            <div className="flex justify-between items-center px-6 pt-6 pb-4 border-b border-gray-100">
               <h2 className="text-lg font-bold text-gray-900">{editingId ? "Edit Plan" : "Add Pension Plan"}</h2>
               <button onClick={() => setShowForm(false)} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
             </div>
 
-            <div className="px-6 py-5 space-y-5">
+            <div className="px-6 py-6 space-y-6">
               {/* Type + Owner */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
@@ -390,7 +402,7 @@ export function PensionTab({ clientId, client, person = "primary" }: {
               <div className="grid grid-cols-2 gap-3 items-start">
                 <label className="flex items-center gap-2 cursor-pointer pt-1">
                   <input type="checkbox" checked={!!form.isVested} onChange={e => upd("isVested", e.target.checked)}
-                    className="w-4 h-4 rounded border-slate-300 text-cyan-600 focus:ring-cyan-500" />
+                    className="w-4 h-4 rounded border-gray-300 text-cyan-600 focus:ring-cyan-500" />
                   <span className="text-sm font-medium text-gray-700">Plan is vested</span>
                 </label>
                 <div>
@@ -416,7 +428,7 @@ export function PensionTab({ clientId, client, person = "primary" }: {
             <div className="flex justify-end gap-3 px-6 pb-6">
               <button onClick={() => setShowForm(false)} className="px-4 py-2.5 text-sm font-semibold text-gray-500 hover:text-gray-700">Cancel</button>
               <button onClick={save} disabled={busy}
-                className="flex items-center gap-2 px-6 py-2.5 bg-brand-gradient hover:bg-brand-gradient-hover disabled:opacity-50 text-white text-sm font-semibold rounded-xl transition-colors">
+                className="flex items-center gap-2 px-6 py-2.5 bg-[#0c1e3a] hover:bg-[#0e2a4a] disabled:opacity-50 text-white text-sm font-semibold rounded-xl transition-colors">
                 <Save className="w-4 h-4" /> {busy ? "Saving…" : editingId ? "Save Changes" : "Add Plan"}
               </button>
             </div>

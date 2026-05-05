@@ -6,7 +6,7 @@ import { Sidebar, type Tab } from "../components/Sidebar";
 import { PlanningDocFlow, PLANNING_TABS, type PlanningTab } from "../components/layout/PlanningDocFlow";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "../lib/queryClient";
-import { NetWorthTab as NetWorthTabNew } from "./FinancialPlanning";
+import { NetWorthTab as NetWorthTabNew } from "./MultiEntryTabs";
 import { AITab } from "./FinancialPlanning";
 import { AdminPanel } from "./AdminPanel"
 import { AgentsTab } from "./AgentsTab";
@@ -1763,7 +1763,7 @@ export default function App() {
                   showCombined: true,
                 } : undefined}
               >
-                {tab === "networth" && <NetWorthTabNew clientId={client.id} />}
+                {tab === "networth" && <NetWorthTabNew clientId={client.id} client={client} />}
                 {tab === "goals"    && <GoalsTab clientId={client.id} client={client} />}
                 {tab === "expenses" && (
                   <QueryClientProvider client={queryClient}>

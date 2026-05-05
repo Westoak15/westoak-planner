@@ -203,56 +203,92 @@ function Textarea({ label, value, onChange }: { label: string; value: string; on
 // ── ClientCard — advisor context layer ───────────────────────────────────────
 
 
-function ClientCard({ client: c, onSelect, onDelete }: { client: Client; onSelect: (c: Client) => void; onDelete: (id: number) => void }) {
+function ClientCard({ client: c, onSelect, onDelete, onStatusChange }: {
+  client: Client;
+  onSelect: (c: Client) => void;
+  onDelete: (id: number) => void;
+  onStatusChange?: (id: number, needsAttention: boolean) => void;
+}) {
   const [ov, setOv] = useState<Overview | null>(null);
 
   useEffect(() => {
-    api.get<Overview>(`/api/clients/${c.id}/overview`).then(setOv).catch(() => {});
+    api.get<Overview>(`/api/clients/${c.id}/overview`).then(data => {
+      setOv(data);
+      const needs = data.pendingAi > 0 || data.retirementProjections === 0 || data.insuranceAnalyses === 0;
+      onStatusChange?.(c.id, needs);
+    }).catch(() => {});
   }, [c.id]);
 
   const nw = ov ? ov.netWorth : null;
   const nwFmt = nw !== null
-    ? (Math.abs(nw) >= 1_000_000
-        ? `$${(nw / 1_000_000).toFixed(1)}M`
-        : `$${Math.round(nw / 1000)}K`)
+    ? (Math.abs(nw) >= 1_000_000 ? `$${(nw / 1_000_000).toFixed(1)}M` : `$${Math.round(nw / 1000)}K`)
     : null;
 
-  const flag = ov && ov.pendingAi > 0
-    ? { label: `${ov.pendingAi} AI action${ov.pendingAi > 1 ? "s" : ""} pending`, color: "text-amber-600" }
-    : ov && ov.retirementProjections === 0
-    ? { label: "No retirement plan", color: "text-slate-400" }
+  const actionCount = ov
+    ? ov.pendingAi + (ov.retirementProjections === 0 ? 1 : 0) + (ov.insuranceAnalyses === 0 ? 1 : 0)
+    : 0;
+
+  const needsAttention = actionCount > 0;
+
+  // Status badge
+  const statusBadge = needsAttention
+    ? { label: "Needs Review", cls: "bg-amber-100 text-amber-700" }
+    : ov
+    ? { label: "On Track", cls: "bg-green-100 text-green-700" }
     : null;
+
+  // Micro-insights
+  const insights: string[] = [];
+  if (ov) {
+    if (ov.retirementProjections === 0) insights.push("No retirement plan");
+    if (ov.insuranceAnalyses === 0) insights.push("Insurance gap");
+    if (ov.pendingAi > 0) insights.push(`${ov.pendingAi} AI action${ov.pendingAi > 1 ? "s" : ""}`);
+  }
 
   return (
     <div
       onClick={() => onSelect(c)}
-      className="group bg-white border border-slate-200 rounded-2xl p-5 hover:shadow-md hover:-translate-y-[1px] transition-all duration-200 cursor-pointer"
+      className="group bg-white border border-slate-200 rounded-xl p-4 hover:shadow-md hover:border-slate-300 transition-all duration-200 cursor-pointer"
     >
-      <div className="flex justify-between items-center">
-        <div className="flex items-center gap-4">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
           <div className={`w-10 h-10 rounded-full ${avatarBg(c.firstName + c.lastName)} flex items-center justify-center text-white text-sm font-semibold flex-shrink-0 shadow-sm`}>
             {initials(c.firstName, c.lastName)}
           </div>
           <div>
-            <p className="font-medium text-slate-900">{c.firstName} {c.lastName}</p>
-            <p className="text-xs text-slate-500">
-              {nwFmt ? <>Net Worth: <span className="font-medium text-slate-700">{nwFmt}</span></> : c.province || "—"}
-              {ov && ov.retirementProjections > 0 && (
-                <> · <span className="text-blue-600">{ov.retirementProjections} retirement plan{ov.retirementProjections > 1 ? "s" : ""}</span></>
+            <p className="font-semibold text-slate-900">{c.firstName} {c.lastName}</p>
+            <div className="flex items-center gap-2 mt-1">
+              {statusBadge && (
+                <span className={`text-xs px-2 py-0.5 rounded font-medium ${statusBadge.cls}`}>{statusBadge.label}</span>
               )}
-              {!nwFmt && c.email && <> · {c.email}</>}
-            </p>
+              {nwFmt && <span className="text-xs text-slate-500">Net Worth: <span className="font-medium text-slate-700">{nwFmt}</span></span>}
+            </div>
+            {insights.length > 0 && (
+              <p className="text-xs text-slate-400 mt-0.5">{insights.join(" • ")}</p>
+            )}
           </div>
         </div>
+
         <div className="flex items-center gap-3">
-          {flag && <span className={`text-xs font-medium ${flag.color}`}>⚠ {flag.label}</span>}
+          {actionCount > 0 ? (
+            <div className="text-right">
+              <p className="text-sm font-medium text-amber-600">{actionCount} action{actionCount > 1 ? "s" : ""} needed</p>
+              <button
+                onClick={e => { e.stopPropagation(); onSelect(c); }}
+                className="text-xs text-blue-600 hover:underline"
+              >
+                Review →
+              </button>
+            </div>
+          ) : ov ? (
+            <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-slate-500 transition" />
+          ) : null}
           <button
             onClick={e => { e.stopPropagation(); onDelete(c.id); }}
             className="opacity-0 group-hover:opacity-100 p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-md transition"
           >
             <Trash2 className="w-4 h-4" />
           </button>
-          <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-slate-500 transition" />
         </div>
       </div>
     </div>
@@ -266,6 +302,15 @@ function ClientsTab({ onSelect }: { onSelect: (c: Client) => void }) {
   const [showNew, setShowNew] = useState(false);
   const [form, setForm]       = useState({ firstName:"", lastName:"", email:"", phone:"", province:"ON" });
   const [busy, setBusy]       = useState(false);
+  const [attentionIds, setAttentionIds] = useState<Set<number>>(new Set());
+
+  const handleStatusChange = (id: number, needsAttention: boolean) => {
+    setAttentionIds(prev => {
+      const next = new Set(prev);
+      if (needsAttention) next.add(id); else next.delete(id);
+      return next;
+    });
+  };
 
   const load = useCallback(() => {
     const qs = search ? `?search=${encodeURIComponent(search)}` : "";
@@ -327,12 +372,32 @@ function ClientsTab({ onSelect }: { onSelect: (c: Client) => void }) {
           {search ? "No clients match" : "No clients yet — add your first client"}
         </div>
       ) : (
-        <div className="space-y-3">
-          {clients.map(c => (
-            <ClientCard key={c.id} client={c} onSelect={onSelect} onDelete={(id) => {
-              if (confirm("Delete client?")) api.delete(`/api/clients/${id}`).then(() => window.location.reload());
-            }} />
-          ))}
+        <div className="space-y-6">
+          {(() => {
+            const attention = clients.filter(c => attentionIds.has(c.id));
+            const onTrack   = clients.filter(c => !attentionIds.has(c.id));
+            const makeCard  = (c: Client) => (
+              <ClientCard key={c.id} client={c} onSelect={onSelect} onStatusChange={handleStatusChange} onDelete={(id) => {
+                if (confirm("Delete client?")) api.delete(`/api/clients/${id}`).then(() => window.location.reload());
+              }} />
+            );
+            return (
+              <>
+                {attention.length > 0 && (
+                  <div>
+                    <p className="text-xs font-semibold text-amber-600 uppercase tracking-wide mb-2">⚠ Needs Attention</p>
+                    <div className="space-y-2">{attention.map(makeCard)}</div>
+                  </div>
+                )}
+                {onTrack.length > 0 && (
+                  <div>
+                    {attention.length > 0 && <p className="text-xs font-semibold text-green-600 uppercase tracking-wide mb-2">✓ On Track</p>}
+                    <div className="space-y-2">{onTrack.map(makeCard)}</div>
+                  </div>
+                )}
+              </>
+            );
+          })()}
         </div>
       )}
     </div>

@@ -494,13 +494,14 @@ export function InsightLedDashboard({ clientId, client, onNavigate }: InsightLed
                         ))}
                       </Pie>
                       <Tooltip
+                        wrapperStyle={{ zIndex: 50 }}
                         contentStyle={{ backgroundColor: "#ffffff", border: "1px solid rgba(15,23,42,0.1)", borderRadius: "8px", boxShadow: "0 8px 24px rgba(15,23,42,0.08)", color: "#0f172a" }}
                         itemStyle={{ fontFamily: "Space Mono" }}
                         formatter={(value: number) => formatCurrency(value)}
                       />
                     </PieChart>
                   </ResponsiveContainer>
-                  <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none" style={{ height: "100%" }}>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none" style={{ height: "100%", zIndex: 0 }}>
                     <span className="text-[10px] text-[var(--text-secondary)] uppercase tracking-wider">Invested</span>
                     <span className="text-lg font-bold font-mono text-[var(--accent-blue)]">{investedPct}%</span>
                   </div>

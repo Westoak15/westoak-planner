@@ -175,7 +175,7 @@ function Card({ label, value, color }: any) {
   };
 
   return (
-    <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm hover:shadow-md hover:-translate-y-[1px] transition-all duration-200">
+    <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow duration-200">
       <p className="text-sm text-slate-500">{label}</p>
       <p className={`text-2xl font-semibold mt-1 ${colorMap[color]}`}>
         ${value.toLocaleString()}

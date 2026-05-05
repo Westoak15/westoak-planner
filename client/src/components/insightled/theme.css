@@ -60,6 +60,7 @@
   color: #0f172a;
   border: 1px solid rgb(226 232 240 / 0.8) !important;
   border-radius: 0.75rem;
+  contain: layout style;
 }
 
 /* Optional gradient top edge (opt-in via .fp-card-accent class) */

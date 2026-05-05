@@ -1,6 +1,8 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { api } from "../lib/api";
 import React, { useState, useMemo, useEffect, useRef, Component, type ReactNode } from "react";
+import { PieChart, Pie, Cell, Tooltip } from "recharts";
+import { InlineEdit } from "@/components/ui/InlineEdit";
 // trying to force build this file
 class ErrorBoundary extends Component<{children:ReactNode;fallback?:ReactNode},{error:boolean}> {
   state = { error: false };
@@ -9,12 +11,8 @@ class ErrorBoundary extends Component<{children:ReactNode;fallback?:ReactNode},{
 }
 import { useQuery } from "@tanstack/react-query";
 import { RetirementTab } from "@/components/planning/RetirementProjectionForm";
-import { InlineEdit } from "@/components/ui/InlineEdit";
 import {
-  useClientPlans, useNetWorthEntries, useCreateNetWorthEntry, useUpdateNetWorthEntry, useDeleteNetWorthEntry,
-} from "../hooks/use-plans";
-import { NetWorthPremiumMock } from "@/components/planning/NetWorthPremiumMock";
-import {
+  useClientPlans, useNetWorthEntries, useCreateNetWorthEntry, useDeleteNetWorthEntry, useUpdateNetWorthEntry,
   useRetirementProjections, useCreateRetirementProjection, useDeleteRetirementProjection,
   useInsuranceAnalyses, useCreateInsuranceWorksheet,
   useEducationSavings, useCreateEducationSaving, useDeleteEducationSaving,
@@ -171,62 +169,77 @@ function OverviewTab({ clientId, onTabChange }: { clientId: number; onTabChange?
 }
 
 // ── Net Worth Tab ─────────────────────────────────────────────────────────────
-function NetWorthRow({ item, onUpdate, onDelete }: { item: any; onUpdate: (id: number, data: any) => void; onDelete: (id: number) => void }) {
-  const [open, setOpen] = useState(false);
+
+const NW_CAT_COLORS: Record<string, string> = {
+  "Liquid Assets": "#3b82f6", "Registered Investments (RRSP/TFSA)": "#10b981",
+  "Non-Registered Investments": "#8b5cf6", "Real Estate": "#f59e0b",
+  "Business Assets": "#ef4444", "Personal Property": "#06b6d4", "Other": "#94a3b8",
+  "Mortgages": "#dc2626", "Car Loans": "#f97316", "Student Loans": "#a78bfa",
+  "Credit Cards": "#fb7185", "Lines of Credit": "#fbbf24", "Business Loans": "#64748b",
+  "Other Liabilities": "#94a3b8",
+};
+
+function NetWorthItem({ item, onUpdate, onDelete }: { item: any; onUpdate: (id: number, data: any) => void; onDelete: (id: number) => void }) {
   const isAsset = item.type === "asset";
   const val = parseFloat(item.value || "0");
-  const fmt = (n: number) => `$${Math.round(n).toLocaleString("en-CA")}`;
-
+  const fmtVal = (n: number) => `$${Math.round(n).toLocaleString("en-CA")}`;
   return (
-    <div className={`border-b border-slate-100 last:border-0`}>
-      <div
-        onClick={() => setOpen(o => !o)}
-        className="flex justify-between items-center py-2.5 px-3 cursor-pointer hover:bg-slate-50 rounded-lg transition-colors group -mx-1"
-      >
-        <div className="flex items-center gap-2 min-w-0">
-          <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${isAsset ? "bg-emerald-400" : "bg-red-400"}`} />
-          <span
-            className="text-sm font-medium text-slate-900 truncate"
-            onClick={e => e.stopPropagation()}
-          >
-            <InlineEdit
-              value={item.name}
-              onSave={v => onUpdate(item.id, { name: v })}
-              className="text-sm font-medium"
-              placeholder="Name"
-            />
-          </span>
-          <span className="text-xs text-slate-400 hidden group-hover:inline truncate max-w-[120px]">{item.category}</span>
+    <div className="group flex justify-between items-center px-5 py-3 hover:bg-slate-50 transition-colors">
+      <div className="flex items-center gap-3 min-w-0">
+        <div className="min-w-0">
+          <div className="text-sm font-medium text-slate-900" onClick={e => e.stopPropagation()}>
+            <InlineEdit value={item.name} onSave={v => onUpdate(item.id, { name: v })} placeholder="Name" />
+          </div>
+          {item.owner && (
+            <span className="text-[10px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded mt-0.5 inline-block">{item.owner}</span>
+          )}
         </div>
-        <div className="flex items-center gap-2 flex-shrink-0 ml-2">
-          <span
-            className={`text-sm font-semibold ${isAsset ? "text-emerald-600" : "text-red-500"}`}
-            onClick={e => e.stopPropagation()}
-          >
-            <InlineEdit
-              value={val.toFixed(0)}
-              type="number"
-              onSave={v => onUpdate(item.id, { value: v })}
-              format={(v) => `${isAsset ? "" : "−"}$${Math.round(Number(v)).toLocaleString("en-CA")}`}
-              inputClassName="w-28 text-right"
-            />
-          </span>
-          <button
-            onClick={e => { e.stopPropagation(); if (confirm("Delete?")) onDelete(item.id); }}
-            className="opacity-0 group-hover:opacity-100 p-1 text-slate-300 hover:text-red-500 transition"
-          >
+      </div>
+      <div className="flex items-center gap-2 flex-shrink-0">
+        <div className={`text-sm font-semibold ${isAsset ? "text-emerald-600" : "text-red-500"}`} onClick={e => e.stopPropagation()}>
+          <InlineEdit
+            value={val.toFixed(0)} type="number"
+            onSave={v => onUpdate(item.id, { value: v })}
+            format={v => `${isAsset ? "" : "−"}${fmtVal(Number(v))}`}
+            inputClassName="w-28 text-right"
+          />
+        </div>
+        <div className="opacity-0 group-hover:opacity-100 flex gap-1 transition">
+          <button onClick={() => onDelete(item.id)} className="p-1 text-slate-300 hover:text-red-500 transition" data-testid={`button-fp-del-nw-${item.id}`}>
             <Trash2 className="w-3.5 h-3.5" />
           </button>
         </div>
       </div>
-      {open && (
-        <div className="px-4 pb-3 pt-1 ml-3 text-xs text-slate-500 space-y-1 border-l-2 border-slate-100">
-          <div className="flex gap-6">
-            <span>Category: <span className="text-slate-700">{item.category}</span></span>
-            {item.owner && <span>Owner: <span className="text-slate-700">{item.owner}</span></span>}
-            <span className={`font-medium ${isAsset ? "text-emerald-600" : "text-red-500"}`}>{fmt(val)}</span>
+    </div>
+  );
+}
+
+function NetWorthSection({ title, total, color, isAsset, children, onAdd }: {
+  title: string; total: number; color: string; isAsset: boolean; children: React.ReactNode; onAdd: () => void;
+}) {
+  const [open, setOpen] = useState(true);
+  const fmtVal = (n: number) => `$${Math.round(n).toLocaleString("en-CA")}`;
+  return (
+    <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden hover:shadow-sm transition-shadow">
+      <div onClick={() => setOpen(o => !o)} className="flex justify-between items-center px-5 py-4 cursor-pointer hover:bg-slate-50 transition-colors">
+        <div className="flex items-center gap-3">
+          <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: color }} />
+          <div>
+            <p className="font-semibold text-slate-900 text-sm">{title}</p>
+            <p className="text-xs text-slate-400">{open ? "Click to collapse" : "Click to expand"}</p>
           </div>
-          {item.notes && <p className="text-slate-400 italic">{item.notes}</p>}
+        </div>
+        <div className="flex items-center gap-3">
+          <p className={`text-base font-semibold ${isAsset ? "text-emerald-600" : "text-red-500"}`}>{isAsset ? "" : "−"}{fmtVal(total)}</p>
+          <span className="text-slate-300 text-sm">{open ? "−" : "+"}</span>
+        </div>
+      </div>
+      {open && (
+        <div className="border-t border-slate-100">
+          {children}
+          <button onClick={e => { e.stopPropagation(); onAdd(); }} className="w-full px-5 py-2 text-xs text-blue-600 hover:bg-blue-50 text-left transition-colors border-t border-slate-50">
+            + Add to {title}
+          </button>
         </div>
       )}
     </div>
@@ -234,23 +247,41 @@ function NetWorthRow({ item, onUpdate, onDelete }: { item: any; onUpdate: (id: n
 }
 
 function NetWorthTab({ clientId }: { clientId: number }) {
-  const { data: entries = [] } = useNetWorthEntries(clientId);
+  const { data: rawEntries = [] } = useNetWorthEntries(clientId);
+  const entries = rawEntries as any[];
   const createEntry = useCreateNetWorthEntry();
   const updateEntry = useUpdateNetWorthEntry(clientId);
   const deleteEntry = useDeleteNetWorthEntry(clientId);
   const [showAdd, setShowAdd] = useState(false);
   const [addType, setAddType] = useState<"asset" | "liability">("asset");
+  const [presetCat, setPresetCat] = useState("");
   const [form, setForm] = useState({ category: "", name: "", value: "" });
 
   const assetCats = ["Liquid Assets", "Registered Investments (RRSP/TFSA)", "Non-Registered Investments", "Real Estate", "Business Assets", "Personal Property", "Other"];
   const liabilityCats = ["Mortgages", "Car Loans", "Student Loans", "Credit Cards", "Lines of Credit", "Business Loans", "Other Liabilities"];
 
-  const assets      = (entries as any[]).filter(e => e.type === "asset");
-  const liabilities = (entries as any[]).filter(e => e.type === "liability");
+  const assets      = entries.filter(e => e.type === "asset");
+  const liabilities = entries.filter(e => e.type === "liability");
   const totalAssets      = assets.reduce((s, e) => s + parseFloat(e.value || "0"), 0);
   const totalLiabilities = liabilities.reduce((s, e) => s + parseFloat(e.value || "0"), 0);
   const netWorth = totalAssets - totalLiabilities;
-  const fmt = (n: number) => `$${Math.round(n).toLocaleString("en-CA")}`;
+
+  const fmtBig = (n: number) => Math.abs(n) >= 1_000_000 ? `$${(n/1_000_000).toFixed(2)}M` : `$${Math.round(n).toLocaleString("en-CA")}`;
+
+  const assetGroups   = assetCats.map(cat => ({ cat, items: assets.filter((e: any) => e.category === cat), total: 0 }))
+    .map(g => ({ ...g, total: g.items.reduce((s: number, e: any) => s + parseFloat(e.value || "0"), 0) }))
+    .filter(g => g.items.length > 0);
+  const liabGroups    = liabilityCats.map(cat => ({ cat, items: liabilities.filter((e: any) => e.category === cat), total: 0 }))
+    .map(g => ({ ...g, total: g.items.reduce((s: number, e: any) => s + parseFloat(e.value || "0"), 0) }))
+    .filter(g => g.items.length > 0);
+
+  const pieData = assetGroups.map(g => ({ name: g.cat.split(" ")[0], full: g.cat, value: Math.round(g.total) })).filter(d => d.value > 0);
+
+  function openAdd(type: "asset" | "liability", cat = "") {
+    setAddType(type); setPresetCat(cat);
+    setForm({ category: cat, name: "", value: "" });
+    setShowAdd(true);
+  }
 
   const handleAdd = async () => {
     try {
@@ -267,114 +298,144 @@ function NetWorthTab({ clientId }: { clientId: number }) {
   };
 
   return (
-    <div className="max-w-5xl mx-auto px-6 py-6 space-y-6">
-
-      {/* Header */}
+    <div className="max-w-6xl mx-auto px-6 py-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-semibold text-slate-900">Net Worth</h1>
           <p className="text-sm text-slate-500">{entries.length} entr{entries.length !== 1 ? "ies" : "y"}</p>
         </div>
-        <button onClick={() => setShowAdd(true)}
+        <button onClick={() => openAdd("asset")} data-testid="button-fp-add-nw"
           className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-cyan-500 text-white text-sm font-semibold px-4 py-2 rounded-xl shadow-sm hover:shadow-md transition">
           <Plus className="w-4 h-4" /> Add Entry
         </button>
       </div>
 
-      {/* Summary cards */}
+      {/* Hero summary */}
       <div className="grid grid-cols-3 gap-4">
-        <div className="bg-white border border-slate-200 rounded-xl p-4">
-          <p className="text-xs text-slate-500">Total Assets</p>
-          <p className="text-xl font-semibold text-emerald-600 mt-1">{fmt(totalAssets)}</p>
+        <div className={`bg-white border-2 rounded-xl p-5 ${netWorth >= 0 ? "border-blue-200 bg-blue-50/30" : "border-red-200 bg-red-50/30"}`} data-testid="fp-net-worth">
+          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Net Worth</p>
+          <p className={`text-2xl font-bold mt-1 ${netWorth >= 0 ? "text-blue-600" : "text-red-600"}`}>{fmtBig(netWorth)}</p>
         </div>
-        <div className="bg-white border border-slate-200 rounded-xl p-4">
-          <p className="text-xs text-slate-500">Total Liabilities</p>
-          <p className="text-xl font-semibold text-red-500 mt-1">{fmt(totalLiabilities)}</p>
+        <div className="bg-white border border-slate-200 rounded-xl p-5" data-testid="fp-total-assets">
+          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Total Assets</p>
+          <p className="text-2xl font-bold text-emerald-600 mt-1">{fmtBig(totalAssets)}</p>
         </div>
-        <div className={`bg-white border rounded-xl p-4 ${netWorth >= 0 ? "border-slate-200" : "border-red-200"}`}>
-          <p className="text-xs text-slate-500">Net Worth</p>
-          <p className={`text-xl font-semibold mt-1 ${netWorth >= 0 ? "text-blue-600" : "text-red-600"}`}>{fmt(netWorth)}</p>
+        <div className="bg-white border border-slate-200 rounded-xl p-5" data-testid="fp-total-liabilities">
+          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Total Liabilities</p>
+          <p className="text-2xl font-bold text-red-500 mt-1">{fmtBig(totalLiabilities)}</p>
         </div>
       </div>
 
       {entries.length === 0 ? (
         <div className="text-center py-16 border-2 border-dashed border-slate-200 rounded-2xl">
           <p className="text-slate-500 font-semibold">No entries yet</p>
-          <button onClick={() => setShowAdd(true)} className="mt-3 text-blue-600 text-sm hover:underline">Add your first asset</button>
+          <button onClick={() => openAdd("asset")} className="mt-3 text-blue-600 text-sm hover:underline">Add your first asset</button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          {/* Assets */}
-          <div className="bg-white border border-slate-200 rounded-2xl p-5">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-semibold text-emerald-700 uppercase tracking-wide">Assets</h3>
-              <span className="text-xs text-slate-400">{fmt(totalAssets)}</span>
-            </div>
-            {assets.length === 0 ? (
-              <p className="text-xs text-slate-400 py-4 text-center">No assets — <button onClick={() => { setAddType("asset"); setShowAdd(true); }} className="text-blue-600 hover:underline">add one</button></p>
-            ) : (
-              assets.map(e => (
-                <NetWorthRow
-                  key={e.id}
-                  item={e}
-                  onUpdate={(id, data) => updateEntry.mutate({ id, data })}
-                  onDelete={id => deleteEntry.mutate(id)}
-                />
-              ))
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* LEFT — grouped sections */}
+          <div className="lg:col-span-2 space-y-4">
+            {assetGroups.length > 0 && (
+              <div className="space-y-3">
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Assets</p>
+                {assetGroups.map(({ cat, items, total }) => (
+                  <NetWorthSection key={cat} title={cat} total={total} color={NW_CAT_COLORS[cat] ?? "#94a3b8"} isAsset onAdd={() => openAdd("asset", cat)}>
+                    {items.map((e: any) => (
+                      <NetWorthItem key={e.id} item={e}
+                        onUpdate={(id, data) => updateEntry.mutate({ id, data })}
+                        onDelete={id => { if (confirm("Delete?")) deleteEntry.mutate(id); }}
+                      />
+                    ))}
+                  </NetWorthSection>
+                ))}
+              </div>
+            )}
+            {liabGroups.length > 0 && (
+              <div className="space-y-3">
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Liabilities</p>
+                {liabGroups.map(({ cat, items, total }) => (
+                  <NetWorthSection key={cat} title={cat} total={total} color={NW_CAT_COLORS[cat] ?? "#94a3b8"} isAsset={false} onAdd={() => openAdd("liability", cat)}>
+                    {items.map((e: any) => (
+                      <NetWorthItem key={e.id} item={e}
+                        onUpdate={(id, data) => updateEntry.mutate({ id, data })}
+                        onDelete={id => { if (confirm("Delete?")) deleteEntry.mutate(id); }}
+                      />
+                    ))}
+                  </NetWorthSection>
+                ))}
+              </div>
             )}
           </div>
 
-          {/* Liabilities */}
-          <div className="bg-white border border-slate-200 rounded-2xl p-5">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-semibold text-red-600 uppercase tracking-wide">Liabilities</h3>
-              <span className="text-xs text-slate-400">{fmt(totalLiabilities)}</span>
+          {/* RIGHT — allocation chart */}
+          <div className="space-y-4">
+            <div className="bg-white border border-slate-200 rounded-2xl p-5">
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-3">Asset Allocation</p>
+              {pieData.length > 0 ? (
+                <>
+                  <PieChart width={220} height={160}>
+                    <Pie data={pieData} cx={110} cy={75} innerRadius={45} outerRadius={68} paddingAngle={2} dataKey="value">
+                      {pieData.map(entry => <Cell key={entry.name} fill={NW_CAT_COLORS[entry.full] ?? "#94a3b8"} />)}
+                    </Pie>
+                    <Tooltip wrapperStyle={{ zIndex: 50 }} contentStyle={{ backgroundColor: "#fff", border: "1px solid #e2e8f0", borderRadius: "8px", fontSize: "11px" }} formatter={(v: number, _: any, p: any) => [`$${Math.round(v).toLocaleString("en-CA")}`, p?.payload?.full ?? ""]} />
+                  </PieChart>
+                  <div className="space-y-1.5 mt-1">
+                    {pieData.map(d => (
+                      <div key={d.name} className="flex items-center justify-between text-xs">
+                        <div className="flex items-center gap-2">
+                          <div className="w-2 h-2 rounded-full" style={{ backgroundColor: NW_CAT_COLORS[d.full] ?? "#94a3b8" }} />
+                          <span className="text-slate-600 truncate max-w-[100px]">{d.full.split("(")[0].trim()}</span>
+                        </div>
+                        <span className="font-medium text-slate-900">{fmtBig(d.value)}</span>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              ) : <p className="text-xs text-slate-400 text-center py-8">Add assets to see allocation</p>}
             </div>
-            {liabilities.length === 0 ? (
-              <p className="text-xs text-slate-400 py-4 text-center">No liabilities — <button onClick={() => { setAddType("liability"); setShowAdd(true); }} className="text-blue-600 hover:underline">add one</button></p>
-            ) : (
-              liabilities.map(e => (
-                <NetWorthRow
-                  key={e.id}
-                  item={e}
-                  onUpdate={(id, data) => updateEntry.mutate({ id, data })}
-                  onDelete={id => deleteEntry.mutate(id)}
-                />
-              ))
-            )}
+            <div className="bg-white border border-slate-200 rounded-2xl p-4 space-y-1">
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-2">Quick Add</p>
+              {["Real Estate", "Registered Investments (RRSP/TFSA)", "Liquid Assets"].map(cat => (
+                <button key={cat} onClick={() => openAdd("asset", cat)} className="w-full text-left text-xs text-slate-600 hover:text-blue-600 hover:bg-blue-50 px-3 py-1.5 rounded-lg transition">+ {cat.split(" ")[0]}</button>
+              ))}
+              <div className="border-t border-slate-100 pt-2 mt-1">
+                {["Mortgages", "Credit Cards"].map(cat => (
+                  <button key={cat} onClick={() => openAdd("liability", cat)} className="w-full text-left text-xs text-slate-500 hover:text-red-600 hover:bg-red-50 px-3 py-1.5 rounded-lg transition">+ {cat}</button>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       )}
 
-      {/* Add modal */}
       {showAdd && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[200] flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl p-6">
-            <h2 className="text-lg font-bold mb-5 text-slate-900">Add Net Worth Entry</h2>
+            <h2 className="text-lg font-bold mb-5 text-slate-900">Add {addType === "asset" ? "Asset" : "Liability"}</h2>
             <div className="space-y-4">
               <div className="flex gap-2">
-                <button type="button" onClick={() => setAddType("asset")} className={`flex-1 py-2 rounded-xl font-semibold text-sm transition ${addType === "asset" ? "bg-emerald-100 text-emerald-700 border-2 border-emerald-300" : "bg-slate-100 text-slate-500 border border-slate-200"}`}>Asset</button>
-                <button type="button" onClick={() => setAddType("liability")} className={`flex-1 py-2 rounded-xl font-semibold text-sm transition ${addType === "liability" ? "bg-red-100 text-red-600 border-2 border-red-300" : "bg-slate-100 text-slate-500 border border-slate-200"}`}>Liability</button>
+                <button type="button" onClick={() => setAddType("asset")} className={`flex-1 py-2 rounded-xl font-semibold text-sm transition ${addType === "asset" ? "bg-emerald-100 text-emerald-700 border-2 border-emerald-300" : "bg-slate-100 text-slate-500"}`}>Asset</button>
+                <button type="button" onClick={() => setAddType("liability")} className={`flex-1 py-2 rounded-xl font-semibold text-sm transition ${addType === "liability" ? "bg-red-100 text-red-600 border-2 border-red-300" : "bg-slate-100 text-slate-500"}`}>Liability</button>
               </div>
               <div>
                 <label className="text-sm font-semibold text-slate-600 block mb-1">Category</label>
-                <select required value={form.category} onChange={e => setForm({ ...form, category: e.target.value })} className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400">
+                <select value={form.category} onChange={e => setForm({ ...form, category: e.target.value })} data-testid="select-fp-nw-cat" className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400">
                   <option value="">-- Select --</option>
                   {(addType === "asset" ? assetCats : liabilityCats).map(c => <option key={c} value={c}>{c}</option>)}
                 </select>
               </div>
               <div>
                 <label className="text-sm font-semibold text-slate-600 block mb-1">Description</label>
-                <input required value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" />
+                <input required value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} data-testid="input-fp-nw-name" className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" />
               </div>
               <div>
                 <label className="text-sm font-semibold text-slate-600 block mb-1">Value ($)</label>
-                <input type="number" step="0.01" required value={form.value} onChange={e => setForm({ ...form, value: e.target.value })} className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" />
+                <input type="number" step="0.01" required value={form.value} onChange={e => setForm({ ...form, value: e.target.value })} data-testid="input-fp-nw-value" className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" />
               </div>
             </div>
             <div className="flex justify-end gap-3 mt-5">
               <button onClick={() => setShowAdd(false)} className="px-5 py-2.5 rounded-xl font-semibold text-slate-500 hover:bg-slate-100">Cancel</button>
-              <button onClick={handleAdd} disabled={createEntry.isPending || !form.category || !form.name || !form.value}
+              <button onClick={handleAdd} disabled={createEntry.isPending || !form.category || !form.name || !form.value} data-testid="button-fp-submit-nw"
                 className="px-5 py-2.5 rounded-xl font-semibold bg-gradient-to-r from-blue-600 to-cyan-500 text-white hover:shadow-md disabled:opacity-50 transition">
                 {createEntry.isPending ? "Adding…" : "Add Entry"}
               </button>
@@ -385,6 +446,7 @@ function NetWorthTab({ clientId }: { clientId: number }) {
     </div>
   );
 }
+
 
 // ── Scenario preview for module tabs ─────────────────────────────────────────
 
@@ -1821,33 +1883,11 @@ function TaxProjectionPanel({ clientId, prefillPrimary, prefillSpouse, person = 
 // PANEL: Capital Gains Analysis
 // ============================================================================
 
-// Top provincial bracket rates (2025) + federal top = combined top marginal rate
-// Federal top bracket: 33% (>$253,414)
-const FEDERAL_TOP = 0.33;
-const PROV_TOP: Record<string, number> = {
-  ON: 0.1316, BC: 0.2050, AB: 0.15,  QC: 0.2575, MB: 0.174,
-  SK: 0.145,  NS: 0.2100, NB: 0.195, PE: 0.1900, NL: 0.218,
-  YT: 0.150,  NT: 0.1405, NU: 0.115,
+const PROVINCE_RATES: Record<string, number> = {
+  ON: 53.53, BC: 53.50, AB: 48.00, QC: 53.31, MB: 50.40,
+  SK: 47.50, NS: 54.00, NB: 52.50, PE: 51.37, NL: 51.30,
+  YT: 48.00, NT: 47.05, NU: 44.50,
 };
-
-// Compute marginal rate from income using actual 2025 brackets
-function computeMarginalRate(income: number, province: string): number {
-  // Federal brackets 2025
-  const fed = income <= 57375 ? 0.15 : income <= 114750 ? 0.205 : income <= 177882 ? 0.26 : income <= 253414 ? 0.29 : 0.33;
-  // Provincial top bracket (simplified — uses top rate for high incomes, otherwise province default)
-  const prov = PROV_TOP[province] ?? 0.1316;
-  return Math.round((fed + prov) * 10000) / 100; // returns as percentage
-}
-
-// Capital-gain-eligible NW categories
-const CG_CATEGORIES = ["Real Estate", "Business Assets", "Cottage", "Rental Property", "Stocks"];
-
-// Map NW category → asset type for LCGE / inclusion logic
-function categoryToAssetType(cat: string): string {
-  if (cat === "Real Estate" || cat === "Cottage" || cat === "Rental Property") return "realestate";
-  if (cat === "Business Assets") return "smallbiz";
-  return "stock";
-}
 
 function CapitalGainsPanel({ clientId, client, person = "primary" }: {
   clientId: number; client?: any; person?: string;
@@ -1860,11 +1900,12 @@ function CapitalGainsPanel({ clientId, client, person = "primary" }: {
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [saving, setSaving]     = useState(false);
-  const [nwEntries, setNwEntries] = useState<any[]>([]);
+  const [result, setResult]     = useState<any>(null);
+  const [showResult, setShowResult] = useState<number | null>(null);
 
   const provinces = ["ON","BC","AB","QC","MB","SK","NS","NB","PE","NL","YT","NT","NU"];
   const ASSET_TYPES = [
-    { key: "stock",      label: "Non-Registered / Stock" },
+    { key: "stock",      label: "Stock / ETF" },
     { key: "realestate", label: "Real Estate" },
     { key: "smallbiz",   label: "Small Business Shares" },
     { key: "farmfish",   label: "Farm / Fishing Property" },
@@ -1873,21 +1914,12 @@ function CapitalGainsPanel({ clientId, client, person = "primary" }: {
   const LCGE_TYPES = ["smallbiz", "farmfish"];
   const LCGE_LIMIT = 1250000;
 
-  // Compute income for this person
-  const personIncome = person === "spouse"
-    ? Number(client?.spouseAnnualIncome ?? 0)
-    : Number(client?.annualIncome ?? 0);
-
-  const defaultProvince = client?.province ?? "ON";
-  const defaultRate = computeMarginalRate(personIncome, defaultProvince);
-
   const emptyForm = () => ({
     label: `Capital Gains — ${personLabel} — ${new Date().getFullYear()}`,
-    province: defaultProvince,
-    income: String(personIncome),
-    marginalRate: String(defaultRate),
+    province: client?.province ?? "ON",
+    marginalRate: String((PROVINCE_RATES[client?.province ?? "ON"] ?? 53.53).toFixed(2)),
     carryForwardLoss: "0",
-    positions: [] as { type: string; name: string; category: string; acb: string; fmv: string; lcgeEligible: boolean }[],
+    positions: [{ type: "stock", symbol: "", acb: "", fmv: "", lcgeEligible: false }],
   });
 
   const [form, setForm] = useState(emptyForm());
@@ -1895,48 +1927,30 @@ function CapitalGainsPanel({ clientId, client, person = "primary" }: {
   const load = async () => {
     setLoading(true);
     try {
-      const [data, nw] = await Promise.all([
-        api.get<any[]>(`/api/tax/client/${clientId}/analyses?type=capgains`),
-        api.get<any[]>(`/api/clients/${clientId}/net-worth`),
-      ]);
+      const data = await api.get<any[]>(`/api/tax/client/${clientId}/analyses?type=capgains`);
       setAnalyses(data.filter((a: any) => a.owner === owner));
-      setNwEntries(nw);
     } catch { setAnalyses([]); }
     finally { setLoading(false); }
   };
 
   useEffect(() => { load(); }, [clientId, owner]);
 
-  // Build asset rows from NW entries for this person
-  const cgAssets = nwEntries.filter(e =>
-    e.type === "asset" &&
-    CG_CATEGORIES.includes(e.category) &&
-    (!e.owner || e.owner === "primary" || e.owner === owner || owner === "joint")
-  );
-
   const openNew = () => {
     setEditingId(null);
-    // Pre-populate from NW assets
-    const prePositions = cgAssets.map(e => ({
-      type: categoryToAssetType(e.category),
-      name: e.name,
-      category: e.category,
-      acb: "",
-      fmv: String(Math.round(Number(e.value))),
-      lcgeEligible: LCGE_TYPES.includes(categoryToAssetType(e.category)),
-    }));
-    setForm({ ...emptyForm(), positions: prePositions.length > 0 ? prePositions : [{ type: "realestate", name: "", category: "Real Estate", acb: "", fmv: "", lcgeEligible: false }] });
+    setForm(emptyForm());
+    setResult(null);
     setShowForm(true);
   };
 
   const openEdit = (a: any) => {
     setEditingId(a.id);
-    setForm({ label: a.label ?? "", income: String(personIncome), ...a.inputData });
+    setForm({ label: a.label ?? "", ...a.inputData });
+    setResult(a.resultData ?? null);
     setShowForm(true);
   };
 
   const addPosition = () =>
-    setForm(f => ({ ...f, positions: [...f.positions, { type: "realestate", name: "", category: "Real Estate", acb: "", fmv: "", lcgeEligible: false }] }));
+    setForm(f => ({ ...f, positions: [...f.positions, { type: "stock", symbol: "", acb: "", fmv: "", lcgeEligible: false }] }));
 
   const removePosition = (i: number) =>
     setForm(f => ({ ...f, positions: f.positions.filter((_, idx) => idx !== i) }));
@@ -1967,7 +1981,7 @@ function CapitalGainsPanel({ clientId, client, person = "primary" }: {
     try {
       const input = {
         positions: form.positions.map(p => ({
-          symbol: p.name || p.category || p.type,
+          symbol: p.symbol || p.type,
           acb: Number(p.acb), fmv: Number(p.fmv),
           lcgeEligible: p.lcgeEligible,
         })),
@@ -1980,7 +1994,7 @@ function CapitalGainsPanel({ clientId, client, person = "primary" }: {
       );
       const payload = {
         type: "capgains", owner, label: form.label,
-        inputData: { province: form.province, marginalRate: form.marginalRate, income: form.income, carryForwardLoss: form.carryForwardLoss, positions: form.positions },
+        inputData: { province: form.province, marginalRate: form.marginalRate, carryForwardLoss: form.carryForwardLoss, positions: form.positions },
         resultData: calcResult,
       };
       if (editingId) await api.patch(`/api/tax/tax-analyses/${editingId}`, payload);
@@ -2007,14 +2021,14 @@ function CapitalGainsPanel({ clientId, client, person = "primary" }: {
           <span className="ml-2 text-xs bg-green-100 text-green-700 font-semibold px-2 py-0.5 rounded-full">Rate increase cancelled Mar 21, 2025</span>
         </div>
         <button onClick={openNew}
-          className="flex items-center gap-1.5 text-sm font-semibold text-white bg-gradient-to-r from-blue-600 to-cyan-500 hover:shadow-md px-4 py-2 rounded-xl whitespace-nowrap shadow-sm transition">
+          className="flex items-center gap-1.5 text-sm font-semibold text-white bg-[#0c1e3a] hover:bg-[#0e2a4a] px-4 py-2 rounded-xl whitespace-nowrap">
           <Plus className="w-4 h-4" /> New Analysis
         </button>
       </div>
 
       {showForm && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/40 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between p-5 border-b border-gray-100">
               <h3 className="text-lg font-bold text-gray-900">{editingId ? "Edit" : "New"} Capital Gains Analysis — {personLabel}</h3>
               <button onClick={() => setShowForm(false)} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
@@ -2025,35 +2039,20 @@ function CapitalGainsPanel({ clientId, client, person = "primary" }: {
                 <input value={form.label} onChange={e => setForm(f => ({ ...f, label: e.target.value }))}
                   className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm" />
               </div>
-              <div className="grid grid-cols-4 gap-3">
+              <div className="grid grid-cols-3 gap-3">
                 <div>
                   <label className="text-xs font-semibold text-gray-500 block mb-1">Province</label>
                   <select value={form.province}
-                    onChange={e => {
-                      const newRate = computeMarginalRate(Number(form.income || 0), e.target.value);
-                      setForm(f => ({ ...f, province: e.target.value, marginalRate: String(newRate) }));
-                    }}
+                    onChange={e => setForm(f => ({ ...f, province: e.target.value, marginalRate: String((PROVINCE_RATES[e.target.value] ?? 53.53).toFixed(2)) }))}
                     className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm">
                     {provinces.map(p => <option key={p} value={p}>{p}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className="text-xs font-semibold text-gray-500 block mb-1">Annual Income ($)</label>
-                  <input type="number" value={form.income}
-                    onChange={e => {
-                      const newRate = computeMarginalRate(Number(e.target.value), form.province);
-                      setForm(f => ({ ...f, income: e.target.value, marginalRate: String(newRate) }));
-                    }}
-                    className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm" placeholder="0" />
-                </div>
-                <div>
-                  <label className="text-xs font-semibold text-gray-500 block mb-1">Marginal Rate (%)</label>
-                  <div className="flex items-center gap-2">
-                    <input type="number" step="0.1" value={form.marginalRate}
-                      onChange={e => setForm(f => ({ ...f, marginalRate: e.target.value }))}
-                      className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm" />
-                    <span className="text-xs text-slate-400 whitespace-nowrap">2025 tables</span>
-                  </div>
+                  <label className="text-xs font-semibold text-gray-500 block mb-1">Marginal Tax Rate (%)</label>
+                  <input type="number" step="0.1" value={form.marginalRate}
+                    onChange={e => setForm(f => ({ ...f, marginalRate: e.target.value }))}
+                    className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm" />
                 </div>
                 <div>
                   <label className="text-xs font-semibold text-gray-500 block mb-1">Prior Year Losses ($)</label>
@@ -2063,12 +2062,12 @@ function CapitalGainsPanel({ clientId, client, person = "primary" }: {
                 </div>
               </div>
 
-              {/* Assets table */}
+              {/* Positions table */}
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Assets</label>
-                  <button onClick={addPosition} className="flex items-center gap-1 text-xs font-semibold text-blue-600 hover:underline">
-                    <Plus className="w-3.5 h-3.5" /> Add Asset
+                  <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Positions</label>
+                  <button onClick={addPosition} className="flex items-center gap-1 text-xs font-semibold text-[#0c1e3a] hover:underline">
+                    <Plus className="w-3.5 h-3.5" /> Add Position
                   </button>
                 </div>
                 <div className="border border-gray-200 rounded-xl overflow-hidden">
@@ -2076,8 +2075,7 @@ function CapitalGainsPanel({ clientId, client, person = "primary" }: {
                     <thead className="bg-gray-50 border-b border-gray-200">
                       <tr>
                         <th className="px-3 py-2 text-left text-xs font-semibold text-gray-500">Type</th>
-                        <th className="px-3 py-2 text-left text-xs font-semibold text-gray-500">Category</th>
-                        <th className="px-3 py-2 text-left text-xs font-semibold text-gray-500">Name</th>
+                        <th className="px-3 py-2 text-left text-xs font-semibold text-gray-500">Symbol</th>
                         <th className="px-3 py-2 text-right text-xs font-semibold text-gray-500">ACB ($)</th>
                         <th className="px-3 py-2 text-right text-xs font-semibold text-gray-500">FMV ($)</th>
                         <th className="px-3 py-2 text-right text-xs font-semibold text-gray-500">Gain/Loss</th>
@@ -2097,12 +2095,8 @@ function CapitalGainsPanel({ clientId, client, person = "primary" }: {
                               </select>
                             </td>
                             <td className="px-3 py-2">
-                              <input value={pos.category} onChange={e => updatePos(i, "category", e.target.value)}
-                                className="border border-gray-200 rounded-lg px-2 py-1.5 text-xs w-full" placeholder="e.g. Real Estate" />
-                            </td>
-                            <td className="px-3 py-2">
-                              <input value={pos.name} onChange={e => updatePos(i, "name", e.target.value)}
-                                className="border border-gray-200 rounded-lg px-2 py-1.5 text-xs w-full" placeholder="e.g. Cottage" />
+                              <input value={pos.symbol} onChange={e => updatePos(i, "symbol", e.target.value)}
+                                className="border border-gray-200 rounded-lg px-2 py-1.5 text-xs w-full" placeholder="e.g. XIC.TO" />
                             </td>
                             <td className="px-3 py-2">
                               <input type="number" value={pos.acb} onChange={e => updatePos(i, "acb", e.target.value)}
@@ -2136,11 +2130,6 @@ function CapitalGainsPanel({ clientId, client, person = "primary" }: {
                     </tbody>
                   </table>
                 </div>
-                {cgAssets.length > 0 && form.positions.length === 0 && (
-                  <p className="text-xs text-blue-600 mt-2 cursor-pointer hover:underline" onClick={() => openNew()}>
-                    ↑ Assets from Net Worth will auto-populate when you click New Analysis
-                  </p>
-                )}
               </div>
 
               {/* Live preview */}
@@ -2163,7 +2152,7 @@ function CapitalGainsPanel({ clientId, client, person = "primary" }: {
             <div className="flex gap-3 justify-end p-5 border-t border-gray-100">
               <button onClick={() => setShowForm(false)} className="text-sm text-gray-500 px-4 py-2">Cancel</button>
               <button onClick={save} disabled={saving}
-                className="flex items-center gap-1.5 bg-gradient-to-r from-blue-600 to-cyan-500 hover:shadow-md disabled:opacity-50 text-white text-sm font-semibold px-5 py-2.5 rounded-xl">
+                className="flex items-center gap-1.5 bg-[#0c1e3a] hover:bg-[#0e2a4a] disabled:opacity-50 text-white text-sm font-semibold px-5 py-2.5 rounded-xl">
                 <Save className="w-3.5 h-3.5" /> {saving ? "Saving…" : "Calculate & Save"}
               </button>
             </div>
@@ -2193,7 +2182,7 @@ function CapitalGainsPanel({ clientId, client, person = "primary" }: {
                 <div className="flex items-center justify-between mb-4">
                   <div>
                     <h3 className="font-bold text-gray-900">{a.label || "Capital Gains Analysis"}</h3>
-                    <p className="text-xs text-gray-400 mt-0.5">{positions.length} asset{positions.length !== 1 ? "s" : ""} · {inp?.province ?? "ON"} · {new Date(a.createdAt).toLocaleDateString("en-CA")} · {inp?.marginalRate ?? "—"}% marginal rate</p>
+                    <p className="text-xs text-gray-400 mt-0.5">{positions.length} position{positions.length !== 1 ? "s" : ""} · {inp?.province ?? "ON"} · {new Date(a.createdAt).toLocaleDateString("en-CA")}</p>
                   </div>
                   <div className="flex gap-1">
                     <button onClick={() => openEdit(a)} className="p-1.5 text-gray-300 hover:text-blue-500"><Pencil className="w-3.5 h-3.5" /></button>
@@ -2626,7 +2615,7 @@ export function AITab({ clientId }: { clientId: number }) {
   const priorityOrder: Record<string, number> = { high: 0, medium: 1, low: 2 };
 
   const priorityBadge = (priority: string) => {
-    const colors: Record<string, string> = { high: "bg-[var(--accent-rose)]/10 text-[var(--accent-rose)]", medium: "bg-[var(--accent-amber)]/10 text-[var(--accent-amber)]", low: "bg-[var(--accent-green)]/10 text-[var(--accent-green)]" };
+    const colors: Record<string, string> = { high: "bg-red-100 text-red-700", medium: "bg-yellow-100 text-yellow-700", low: "bg-green-100 text-green-700" };
     return <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${colors[priority] || colors.medium}`}>{priority}</span>;
   };
 
@@ -2647,15 +2636,15 @@ export function AITab({ clientId }: { clientId: number }) {
   };
 
   return (
-    <div className="fp-insightled space-y-4 animate-in fade-in duration-300 p-6">
+    <div className="space-y-4 animate-in fade-in duration-300">
       {/* Header */}
       <div className="flex justify-between items-center">
-        <h2 className="text-xl font-display font-bold text-gray-900">AI Recommendations</h2>
+        <h2 className="text-xl font-display font-bold">AI Recommendations</h2>
         <button
           onClick={() => generateRecs.mutate(clientId)}
           disabled={generateRecs.isPending}
           data-testid="button-fp-generate-ai"
-          className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-[var(--accent-cyan)] to-[var(--accent-purple)] text-[#0f1115] font-semibold rounded-xl hover:opacity-90 transition-opacity shadow-sm disabled:opacity-50"
+          className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold rounded-xl hover:opacity-90 transition-opacity shadow-sm disabled:opacity-50"
         >
           <Sparkles className="w-4 h-4" />
           <span>{generateRecs.isPending ? "Analyzing..." : "Generate Insights"}</span>
@@ -2664,17 +2653,17 @@ export function AITab({ clientId }: { clientId: number }) {
 
       {/* Generating spinner */}
       {generateRecs.isPending && (
-        <div className="border border-[var(--accent-purple)]/25 rounded-2xl p-5 bg-[var(--accent-purple)]/[0.07] text-center">
-          <div className="w-7 h-7 border-4 border-[var(--accent-purple)] border-t-transparent rounded-full animate-spin mx-auto mb-2" />
-          <p className="text-[var(--accent-purple)] font-medium text-sm">Analyzing client's financial data…</p>
+        <div className="border border-purple-200 rounded-2xl p-5 bg-purple-50/50 text-center">
+          <div className="w-7 h-7 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+          <p className="text-purple-700 font-medium text-sm">Analyzing client's financial data…</p>
         </div>
       )}
 
       {/* Empty state */}
       {sessions.length === 0 && !generateRecs.isPending && (
-        <div className="text-center py-12 border border-dashed border-[var(--border-subtle)] rounded-2xl">
-          <Brain className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-          <p className="text-gray-400 text-sm">No recommendations yet. Click "Generate Insights" to analyse this client's financial data.</p>
+        <div className="text-center py-12 border border-dashed border-border rounded-2xl">
+          <Brain className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
+          <p className="text-muted-foreground text-sm">No recommendations yet. Click "Generate Insights" to analyse this client's financial data.</p>
         </div>
       )}
 
@@ -2689,30 +2678,30 @@ export function AITab({ clientId }: { clientId: number }) {
           : date.toLocaleDateString("en-CA", { weekday: "short", year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
 
         return (
-          <div key={runId} className="border border-[var(--border-subtle)] rounded-2xl overflow-hidden fp-insightled-card">
+          <div key={runId} className="border border-border rounded-2xl overflow-hidden">
             {/* Session header — always visible, 2-3 lines high */}
-            <div className="px-5 py-4 bg-[var(--bg-panel)] flex items-start justify-between gap-4 border-b border-[var(--border-subtle)]">
+            <div className="px-5 py-4 bg-muted/30 flex items-start justify-between gap-4">
               <button
                 onClick={() => toggleExpanded(runId)}
                 className="flex-1 min-w-0 text-left"
                 data-testid={`session-header-${runId}`}
               >
                 <div className="flex items-center gap-2 mb-1">
-                  <Sparkles className="w-3.5 h-3.5 text-[var(--accent-purple)] shrink-0" />
-                  <span className="text-sm font-semibold text-[var(--text-primary)]">{dateStr}</span>
+                  <Sparkles className="w-3.5 h-3.5 text-purple-500 shrink-0" />
+                  <span className="text-sm font-semibold text-gray-900">{dateStr}</span>
                   <ChevronDown className={`w-4 h-4 text-muted-foreground shrink-0 transition-transform ${open ? "rotate-180" : ""}`} />
                 </div>
-                <div className="flex items-center gap-3 text-xs text-gray-400 flex-wrap">
+                <div className="flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
                   <span>{recs.length} recommendation{recs.length !== 1 ? "s" : ""}</span>
-                  {summary.high    > 0 && <span className="text-red-400 font-medium">{summary.high} high priority</span>}
-                  {summary.medium  > 0 && <span className="text-amber-400">{summary.medium} medium</span>}
-                  {summary.low     > 0 && <span className="text-[var(--accent-green)]">{summary.low} low</span>}
-                  {summary.completed > 0 && <span className="text-gray-500">{summary.completed} completed</span>}
+                  {summary.high    > 0 && <span className="text-red-600 font-medium">{summary.high} high priority</span>}
+                  {summary.medium  > 0 && <span className="text-yellow-600">{summary.medium} medium</span>}
+                  {summary.low     > 0 && <span className="text-green-600">{summary.low} low</span>}
+                  {summary.completed > 0 && <span className="text-gray-400">{summary.completed} completed</span>}
                 </div>
               </button>
               <button
                 onClick={() => deleteSession(runId)}
-                className="p-1.5 hover:bg-[var(--accent-rose)]/10 rounded-lg shrink-0 mt-0.5"
+                className="p-1.5 hover:bg-red-50 rounded-lg shrink-0 mt-0.5"
                 title="Delete this session"
                 data-testid={`button-delete-session-${runId}`}
               >
@@ -2722,11 +2711,11 @@ export function AITab({ clientId }: { clientId: number }) {
 
             {/* Recommendations — shown when expanded */}
             {open && (
-              <div className="divide-y divide-gray-100">
+              <div className="divide-y divide-border/50">
                 {sorted.map((rec) => (
                   <div
                     key={rec.id}
-                    className={`px-5 py-4 ${rec.status === "completed" ? "opacity-60" : rec.status === "dismissed" ? "opacity-40" : ""}`}
+                    className={`px-5 py-4 ${rec.status === "completed" ? "bg-muted/20 opacity-70" : rec.status === "dismissed" ? "bg-muted/10 opacity-50" : ""}`}
                     data-testid={`card-fp-ai-${rec.id}`}
                   >
                     <div className="flex items-start justify-between gap-3">
@@ -2734,27 +2723,27 @@ export function AITab({ clientId }: { clientId: number }) {
                         {statusIcon(rec.status)}
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap mb-1">
-                            <span className="font-semibold text-sm text-gray-900">{rec.title}</span>
+                            <span className="font-semibold text-sm">{rec.title}</span>
                             {priorityBadge(rec.priority)}
-                            <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded uppercase">{rec.category}</span>
+                            <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded uppercase">{rec.category}</span>
                           </div>
-                          <p className="text-sm text-gray-400 leading-relaxed">{rec.content}</p>
+                          <p className="text-sm text-muted-foreground leading-relaxed">{rec.content}</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-1 shrink-0">
                         {rec.status === "pending" && (
                           <>
-                            <button onClick={() => updateRec.mutate({ id: rec.id, data: { status: "in_progress" } })} data-testid={`button-fp-ai-start-${rec.id}`} className="text-xs px-2.5 py-1 rounded-lg bg-[var(--accent-blue)]/10 text-[var(--accent-blue)] font-medium hover:bg-[var(--accent-blue)]/20">Start</button>
-                            <button onClick={() => updateRec.mutate({ id: rec.id, data: { status: "dismissed" } })} data-testid={`button-fp-ai-dismiss-${rec.id}`} className="text-xs px-2.5 py-1 rounded-lg bg-white/5 text-[var(--text-tertiary)] font-medium hover:bg-white/10">Dismiss</button>
+                            <button onClick={() => updateRec.mutate({ id: rec.id, data: { status: "in_progress" } })} data-testid={`button-fp-ai-start-${rec.id}`} className="text-xs px-2.5 py-1 rounded-lg bg-blue-50 text-blue-600 font-medium hover:bg-blue-100">Start</button>
+                            <button onClick={() => updateRec.mutate({ id: rec.id, data: { status: "dismissed" } })} data-testid={`button-fp-ai-dismiss-${rec.id}`} className="text-xs px-2.5 py-1 rounded-lg bg-muted text-muted-foreground font-medium hover:bg-muted/80">Dismiss</button>
                           </>
                         )}
                         {rec.status === "in_progress" && (
-                          <button onClick={() => updateRec.mutate({ id: rec.id, data: { status: "completed" } })} data-testid={`button-fp-ai-complete-${rec.id}`} className="text-xs px-2.5 py-1 rounded-lg bg-[var(--accent-green)]/10 text-[var(--accent-green)] font-medium hover:bg-[var(--accent-green)]/20">Complete</button>
+                          <button onClick={() => updateRec.mutate({ id: rec.id, data: { status: "completed" } })} data-testid={`button-fp-ai-complete-${rec.id}`} className="text-xs px-2.5 py-1 rounded-lg bg-green-50 text-green-600 font-medium hover:bg-green-100">Complete</button>
                         )}
                         {rec.status === "completed" && (
-                          <button onClick={() => updateRec.mutate({ id: rec.id, data: { status: "pending" } })} className="text-xs px-2.5 py-1 rounded-lg bg-white/5 text-[var(--text-tertiary)] font-medium hover:bg-white/10">Reopen</button>
+                          <button onClick={() => updateRec.mutate({ id: rec.id, data: { status: "pending" } })} className="text-xs px-2.5 py-1 rounded-lg bg-muted text-muted-foreground font-medium hover:bg-muted/80">Reopen</button>
                         )}
-                        <button onClick={() => { if (confirm("Delete this recommendation?")) deleteRec.mutate(rec.id); }} data-testid={`button-fp-del-ai-${rec.id}`} className="p-1 hover:bg-[var(--accent-rose)]/10 rounded ml-1"><Trash2 className="w-3 h-3 text-[var(--accent-rose)]" /></button>
+                        <button onClick={() => { if (confirm("Delete this recommendation?")) deleteRec.mutate(rec.id); }} data-testid={`button-fp-del-ai-${rec.id}`} className="p-1 hover:bg-red-50 rounded ml-1"><Trash2 className="w-3 h-3 text-red-400" /></button>
                       </div>
                     </div>
                   </div>

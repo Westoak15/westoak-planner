@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { api } from "../lib/api";
+import { InlineEdit } from "@/components/ui/InlineEdit";
 import {
   Target, Plus, Trash2, Pencil, X, Save, TrendingDown, TrendingUp,
   RefreshCw, Home, Car, GraduationCap, Plane, Shield, Star, DollarSign,
@@ -146,7 +147,7 @@ function GoalTimeline({ goals, clientAge }: { goals: Goal[]; clientAge?: number 
 
 // ── Goal Card ────────────────────────────────────────────────────────────────
 
-function GoalCard({ goal, onEdit, onDelete }: { goal: Goal; onEdit: () => void; onDelete: () => void }) {
+function GoalCard({ goal, onEdit, onDelete, onInlineUpdate }: { goal: Goal; onEdit: () => void; onDelete: () => void; onInlineUpdate: (id: number, data: Partial<Goal>) => void }) {
   const typeInfo  = GOAL_TYPES.find(t => t.key === goal.goalType) ?? GOAL_TYPES[7];
   const Icon      = typeInfo.icon;
   const priority  = PRIORITY_LABELS[goal.priority ?? 3];
@@ -154,9 +155,17 @@ function GoalCard({ goal, onEdit, onDelete }: { goal: Goal; onEdit: () => void; 
   const isOutflow = goal.cashflowType === "outflow" || goal.cashflowType === "recurring_expense";
   const hasProgress = goal.cashflowType === "savings_target" && goal.targetAmount && Number(goal.targetAmount) > 0;
   const pct = hasProgress ? Math.min(100, (Number(goal.currentAmount || 0) / Number(goal.targetAmount)) * 100) : 0;
+  const [notesOpen, setNotesOpen] = useState(false);
+  const [notes, setNotes] = useState(goal.notes ?? "");
+  const [notesSaving, setNotesSaving] = useState(false);
+
+  async function saveNotes() {
+    setNotesSaving(true);
+    try { await onInlineUpdate(goal.id, { notes }); } finally { setNotesSaving(false); }
+  }
 
   return (
-    <div className={`bg-white border rounded-2xl p-5 hover:shadow-md hover:-translate-y-[1px] transition-all duration-200 ${goal.projectionImpact ? "border-cyan-300 ring-1 ring-cyan-200" : "border-slate-200"}`}>
+    <div className={`bg-white border rounded-2xl p-5 hover:shadow-sm transition-shadow ${goal.projectionImpact ? "border-cyan-300 ring-1 ring-cyan-200" : "border-slate-200"}`}>
       {/* Header */}
       <div className="flex items-start justify-between gap-2 mb-4">
         <div className="flex items-center gap-3 min-w-0">
@@ -164,7 +173,14 @@ function GoalCard({ goal, onEdit, onDelete }: { goal: Goal; onEdit: () => void; 
             <Icon className={`w-5 h-5 ${isOutflow ? "text-rose-500" : "text-blue-500"}`} />
           </div>
           <div className="min-w-0">
-            <p className="font-semibold text-slate-900 text-sm truncate">{goal.title}</p>
+            <div className="font-semibold text-slate-900 text-sm" onClick={e => e.stopPropagation()}>
+              <InlineEdit
+                value={goal.title}
+                onSave={v => onInlineUpdate(goal.id, { title: v } as any)}
+                className="font-semibold text-slate-900 text-sm"
+                placeholder="Goal title"
+              />
+            </div>
             <p className="text-xs text-slate-500">{typeInfo.label}</p>
           </div>
         </div>
@@ -180,13 +196,21 @@ function GoalCard({ goal, onEdit, onDelete }: { goal: Goal; onEdit: () => void; 
         </div>
       </div>
 
-      {/* Key numbers */}
+      {/* Key numbers — inline editable */}
       <div className="grid grid-cols-2 gap-2 mb-4">
         {goal.cashflowType === "recurring_expense" ? (
           <>
             <div className="bg-slate-50 rounded-xl px-3 py-2">
               <p className="text-[10px] text-slate-500 mb-0.5">Annual Cost</p>
-              <p className="text-sm font-bold text-slate-900 font-mono">{fmt$(goal.annualAmount)}</p>
+              <div className="text-sm font-bold text-slate-900 font-mono" onClick={e => e.stopPropagation()}>
+                <InlineEdit
+                  value={goal.annualAmount ?? "0"}
+                  type="number"
+                  format={v => fmt$(Number(v))}
+                  onSave={v => onInlineUpdate(goal.id, { annualAmount: v } as any)}
+                  inputClassName="w-28"
+                />
+              </div>
             </div>
             <div className="bg-slate-50 rounded-xl px-3 py-2">
               <p className="text-[10px] text-slate-500 mb-0.5">Timeline</p>
@@ -199,19 +223,34 @@ function GoalCard({ goal, onEdit, onDelete }: { goal: Goal; onEdit: () => void; 
               <p className="text-[10px] text-slate-500 mb-0.5">
                 {goal.cashflowType === "inflow" ? "Expected Inflow" : "Target Amount"}
               </p>
-              <p className={`text-sm font-bold font-mono ${isOutflow ? "text-rose-500" : goal.cashflowType === "inflow" ? "text-emerald-600" : "text-slate-900"}`}>
-                {isOutflow && goal.cashflowType !== "inflow" ? "−" : ""}{fmt$(goal.targetAmount)}
-              </p>
+              <div className={`text-sm font-bold font-mono ${isOutflow ? "text-rose-500" : goal.cashflowType === "inflow" ? "text-emerald-600" : "text-slate-900"}`} onClick={e => e.stopPropagation()}>
+                <InlineEdit
+                  value={goal.targetAmount ?? "0"}
+                  type="number"
+                  format={v => `${isOutflow && goal.cashflowType !== "inflow" ? "−" : ""}${fmt$(Number(v))}`}
+                  onSave={v => onInlineUpdate(goal.id, { targetAmount: v } as any)}
+                  inputClassName="w-28"
+                />
+              </div>
             </div>
             <div className="bg-slate-50 rounded-xl px-3 py-2">
               <p className="text-[10px] text-slate-500 mb-0.5">Target Year</p>
-              <p className="text-sm font-bold text-slate-900 font-mono">{goal.targetYear ?? "—"}</p>
+              <div className="text-sm font-bold text-slate-900 font-mono" onClick={e => e.stopPropagation()}>
+                <InlineEdit
+                  value={String(goal.targetYear ?? "")}
+                  type="number"
+                  format={v => String(v) || "—"}
+                  onSave={v => onInlineUpdate(goal.id, { targetYear: Number(v) } as any)}
+                  inputClassName="w-20"
+                  placeholder="Year"
+                />
+              </div>
             </div>
           </>
         )}
       </div>
 
-      {/* Progress bar for savings targets */}
+      {/* Progress bar */}
       {hasProgress && (
         <div className="mb-3">
           <div className="flex justify-between text-[10px] text-slate-500 mb-1">
@@ -231,19 +270,44 @@ function GoalCard({ goal, onEdit, onDelete }: { goal: Goal; onEdit: () => void; 
         </p>
       )}
 
-      {/* Footer */}
+      {/* Footer + expand toggle */}
       <div className="flex items-center justify-between mt-3 pt-3 border-t border-slate-100">
         <span className={`text-xs font-medium px-2 py-0.5 rounded-md border ${priority.color}`}>
           {priority.label}
         </span>
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-2">
           {goal.fundingSource && goal.fundingSource !== "automatic" && (
             <span className="text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md">
               {FUNDING_SOURCES.find(f => f.key === goal.fundingSource)?.label ?? goal.fundingSource}
             </span>
           )}
+          <button
+            onClick={() => setNotesOpen(o => !o)}
+            className="text-xs text-blue-600 hover:underline"
+          >
+            {notesOpen ? "Hide notes" : (goal.notes ? "Notes ↓" : "+ Notes")}
+          </button>
         </div>
       </div>
+
+      {/* Expand — notes */}
+      {notesOpen && (
+        <div className="mt-3 space-y-2">
+          <textarea
+            value={notes}
+            onChange={e => setNotes(e.target.value)}
+            placeholder="Add advisor notes, assumptions, follow-up items…"
+            rows={3}
+            className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-blue-400 outline-none transition resize-none"
+          />
+          <div className="flex justify-end gap-2">
+            <button onClick={() => { setNotes(goal.notes ?? ""); setNotesOpen(false); }} className="text-xs text-slate-500 hover:text-slate-700">Cancel</button>
+            <button onClick={saveNotes} disabled={notesSaving} className="text-xs text-blue-600 font-semibold hover:underline disabled:opacity-50">
+              {notesSaving ? "Saving…" : "Save notes"}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -582,12 +646,13 @@ function GoalForm({
 
 // ── Summary Bar ──────────────────────────────────────────────────────────────
 
-function Stat({ label, value, sub, color = "text-slate-900" }: { label: string; value: string | number; sub?: string; color?: string }) {
+function Stat({ label, value, color = "text-slate-900" }: any) {
   return (
-    <div className="bg-white border border-slate-200 rounded-xl p-4 hover:shadow-md hover:-translate-y-[1px] transition-all duration-200">
+    <div className="bg-white border border-slate-200 rounded-xl p-4">
       <p className="text-xs text-slate-500">{label}</p>
-      <p className={`text-xl font-semibold mt-1 ${color}`}>{value}</p>
-      {sub && <p className="text-[10px] text-slate-400 mt-0.5">{sub}</p>}
+      <p className={`text-xl font-semibold mt-1 ${color}`}>
+        {value}
+      </p>
     </div>
   );
 }
@@ -611,10 +676,10 @@ function GoalsSummary({ goals }: { goals: Goal[] }) {
 
   return (
     <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-5">
-      <Stat label="Total Goals"        value={goals.length}        sub="active"                         color="text-slate-900" />
-      <Stat label="Projected Outflows" value={fmt$(totalOutflows)} sub="major purchases + recurring"    color="text-red-500" />
-      <Stat label="Expected Inflows"   value={fmt$(totalInflows)}  sub="windfalls + receipts"           color="text-emerald-600" />
-      <Stat label="In Monte Carlo"     value={inPlan}              sub={`${fmt$(totalMonthly)}/mo saved`} color="text-blue-600" />
+      <Stat label="Total Goals"        value={goals.length}        color="text-slate-900" />
+      <Stat label="Projected Outflows" value={fmt$(totalOutflows)} color="text-red-500" />
+      <Stat label="Expected Inflows"   value={fmt$(totalInflows)}  color="text-emerald-600" />
+      <Stat label="In Monte Carlo"     value={inPlan}              color="text-blue-600" />
     </div>
   );
 }
@@ -680,6 +745,13 @@ export function GoalsTab({ clientId, client }: { clientId: number; client?: any 
       await load();
     } catch (e: any) { alert(e.message); }
     finally { setBusy(false); }
+  }
+
+  async function inlineUpdate(id: number, data: Partial<Goal>) {
+    try {
+      await api.patch(`/api/goals/${id}`, data);
+      setGoals(prev => prev.map(g => g.id === id ? { ...g, ...data } : g));
+    } catch (e: any) { alert(e.message); }
   }
 
   async function del(id: number) {
@@ -811,7 +883,7 @@ export function GoalsTab({ clientId, client }: { clientId: number; client?: any 
           {filtered
             .sort((a, b) => (a.priority ?? 3) - (b.priority ?? 3))
             .map(g => (
-              <GoalCard key={g.id} goal={g} onEdit={() => openEdit(g)} onDelete={() => del(g.id)} />
+              <GoalCard key={g.id} goal={g} onEdit={() => openEdit(g)} onDelete={() => del(g.id)} onInlineUpdate={inlineUpdate} />
             ))}
         </div>
       )}
@@ -825,7 +897,7 @@ export function GoalsTab({ clientId, client }: { clientId: number; client?: any 
           </summary>
           <div className="bg-white border border-slate-200 rounded-2xl p-5 space-y-4 mt-3 opacity-60">
             {completed.map(g => (
-              <GoalCard key={g.id} goal={g} onEdit={() => openEdit(g)} onDelete={() => del(g.id)} />
+              <GoalCard key={g.id} goal={g} onEdit={() => openEdit(g)} onDelete={() => del(g.id)} onInlineUpdate={inlineUpdate} />
             ))}
           </div>
         </details>

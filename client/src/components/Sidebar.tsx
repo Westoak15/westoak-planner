@@ -7,7 +7,7 @@ import { cn } from "../lib/utils";
 
 export type Tab =
   | "admin" | "agents"
-  | "clients" | "dashboard"
+  | "clients" | "overview" | "dashboard"
   | "networth" | "goals"
   | "retirementhub" | "protection"
   | "expenses"
@@ -26,7 +26,8 @@ const ALL_TABS: { key: Tab; label: string; icon: any; dividerBefore?: boolean; g
   { key: "admin",         label: "Admin",          icon: Settings, gaOnly: true },
   { key: "agents",        label: "Agents",         icon: UserCheck, dividerBefore: true, gaOnly: true },
   { key: "clients",       label: "Clients",        icon: Users },
-  { key: "dashboard",     label: "Dashboard",      icon: LayoutDashboard, dividerBefore: true },
+  { key: "overview",      label: "Overview",       icon: LayoutDashboard, dividerBefore: true },
+  { key: "dashboard",     label: "Dashboard",      icon: LayoutDashboard },
   { key: "networth",      label: "Net Worth",      icon: Scale },
   { key: "goals",         label: "Goals",          icon: Target },
   { key: "retirementhub", label: "Retirement",     icon: PiggyBank },
@@ -40,7 +41,7 @@ const ALL_TABS: { key: Tab; label: string; icon: any; dividerBefore?: boolean; g
 
 const STANDARD_TABS: Tab[] = ["clients", "networth", "protection", "documents"];
 const PLAN_TABS: Tab[] = [
-  "dashboard", "networth", "goals", "retirementhub", "protection",
+  "overview", "dashboard", "networth", "goals", "retirementhub", "protection",
   "expenses", "taxestate", "ai", "documents", "fp"
 ];
 const NO_CLIENT_TABS: Tab[] = ["clients", "admin", "agents"];

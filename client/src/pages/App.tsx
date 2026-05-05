@@ -21,6 +21,7 @@ import { DocumentsHub } from "../components/DocumentsHub";
 import { FinancialPlanHub } from "../components/FinancialPlanHub";
 import { fmt$, fmtPct, initials, avatarBg, cn } from "../lib/utils";
 import { VoiceProvider, useVoice, labelToKey } from "../contexts/VoiceContext";
+import { ClientOverview } from "./ClientOverview";
 import { MeetingRecorderTrigger } from "../components/MeetingRecorder";
 import {
   Plus, Pencil, Trash2, X, Check, ChevronRight, Search,
@@ -1392,11 +1393,22 @@ export default function App() {
   const [client, setClient]       = useState<Client | null>(null);
   const [plan, setPlan]           = useState<Plan | null>(null);
   const [showClientDetail, setShowClientDetail] = useState(false);
+  const [clientOv, setClientOv]   = useState<Overview | null>(null);
+
+  // Refresh overview when client changes
+  useEffect(() => {
+    if (client) {
+      api.get<Overview>(`/api/clients/${client.id}/overview`).then(setClientOv).catch(() => {});
+    } else {
+      setClientOv(null);
+    }
+  }, [client?.id]);
 
   function selectClient(c: Client) {
     setClient(c);
     setPlan(null);
     setShowClientDetail(true);
+    setTab("overview" as Tab);
   }
 
   function selectPlan(p: Plan) {
@@ -1464,6 +1476,21 @@ export default function App() {
         {/* Content — wrap in fp-insightled so EVERY tab gets the
             light-grey page + dark-card treatment (sidebar/header are outside) */}
         <div key={tab} className="flex-1 overflow-y-auto fp-insightled animate-in fade-in duration-300">
+          {/* Global context bar — shown when a client is selected and not on overview/clients */}
+          {client && !["clients", "overview", "dashboard"].includes(tab) && (
+            <div className="flex justify-between items-center bg-white border-b border-slate-200 px-6 py-2">
+              <button onClick={() => setTab("overview" as Tab)} className="text-sm font-medium text-slate-700 hover:text-blue-600 transition flex items-center gap-1.5">
+                <span>{client.firstName}{client.spouseFirstName ? ` & ${client.spouseFirstName}` : ""} {client.lastName}</span>
+              </button>
+              {clientOv && (
+                <div className="flex gap-4 text-xs text-slate-500">
+                  <span>Net Worth: <span className={`font-medium ${clientOv.netWorth >= 0 ? "text-emerald-600" : "text-red-500"}`}>{Math.abs(clientOv.netWorth) >= 1_000_000 ? `$${(clientOv.netWorth/1_000_000).toFixed(2)}M` : `$${Math.round(clientOv.netWorth/1000)}K`}</span></span>
+                  {clientOv.retirementProjections > 0 && <span className="text-blue-600">{clientOv.retirementProjections} retirement plan{clientOv.retirementProjections > 1 ? "s" : ""}</span>}
+                  {clientOv.pendingAi > 0 && <span className="text-amber-600">⚠ {clientOv.pendingAi} AI pending</span>}
+                </div>
+              )}
+            </div>
+          )}
           {tab === "clients" && !showClientDetail && (
             <ClientsTab onSelect={selectClient} />
           )}
@@ -1484,6 +1511,7 @@ export default function App() {
           )}
           {tab === "admin"   && <AdminPanel />}
           {tab === "agents"  && <AgentsTab />}
+          {tab === "overview" && client && <ClientOverview client={client} onNavigate={(t) => setTab(t as Tab)} />}
           {tab === "dashboard" && client && <InsightLedDashboard clientId={client.id} client={client} onNavigate={(t) => { const [tabKey, subtab] = t.split(":"); setTab(tabKey as Tab); setNwSubtabHint(subtab); }} />}
 
           {/* ── Merged Insight-Led hubs ─────────────────────────────────────────

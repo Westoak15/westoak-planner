@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus, Trash2, Pencil } from "lucide-react";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid } from "recharts";
@@ -59,7 +59,7 @@ function Metric({ label, value, color = "text-slate-900" }: { label: string; val
   );
 }
 
-export function ExpensesTab({ clientId }: { clientId: number }) {
+export function ExpensesTab({ clientId, addTrigger = 0 }: { clientId: number; addTrigger?: number }) {
   const qc = useQueryClient();
   const key = ["expenses", clientId];
 
@@ -72,11 +72,30 @@ export function ExpensesTab({ clientId }: { clientId: number }) {
   const updateExp = useMutation({ mutationFn: ({ id, ...d }: any) => apiReq("PATCH", `/api/clients/${clientId}/expenses/${id}`, d), onSuccess: () => qc.invalidateQueries({ queryKey: key }) });
   const deleteExp = useMutation({ mutationFn: (id: number) => apiReq("DELETE", `/api/clients/${clientId}/expenses/${id}`), onSuccess: () => qc.invalidateQueries({ queryKey: key }) });
 
+  // Listen for global quick-add event (triggered by A key)
+  useEffect(() => {
+    function handler(e: Event) {
+      const detail = (e as CustomEvent).detail;
+      if (detail?.tab === "expenses") { resetForm(); setShowForm(true); }
+    }
+    window.addEventListener("fp:quickadd", handler);
+    return () => window.removeEventListener("fp:quickadd", handler);
+  }, []);
+
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<number | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
   const [hovered, setHovered] = useState<string | null>(null);
+  const [kbIndex, setKbIndex] = useState(0);
   const [form, setForm] = useState({ category: "Housing", description: "", monthlyAmount: "", isEssential: true, includeInRetirement: true, retirementAdjustmentPct: "100", notes: "" });
+
+  // Global A key trigger
+  useEffect(() => {
+    if (addTrigger > 0) { resetForm(); setShowForm(true); }
+  }, [addTrigger]);
+
+  // ref populated after sortedCats declared below
+  const sortedCatsRef = useRef<{ cat: string; items: Expense[]; total: number; retTotal: number }[]>([]);
 
   // Derived
   const totalMonthly      = expenses.reduce((s, e) => s + parseFloat(e.monthlyAmount || "0"), 0);
@@ -96,6 +115,24 @@ export function ExpensesTab({ clientId }: { clientId: number }) {
       retTotal: items.filter(e => e.includeInRetirement).reduce((s, e) => s + parseFloat(e.monthlyAmount || "0") * (e.retirementAdjustmentPct || 100) / 100, 0),
     }))
     .sort((a, b) => b.total - a.total);
+
+  // Keep ref in sync for keyboard handler
+  sortedCatsRef.current = sortedCats;
+
+  // Arrow nav for category list
+  useEffect(() => {
+    function handler(e: KeyboardEvent) {
+      if (showForm) return;
+      const target = e.target as HTMLElement;
+      if (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.tagName === "SELECT") return;
+      const cats = sortedCatsRef.current;
+      if (e.key === "ArrowDown") { e.preventDefault(); setKbIndex(i => Math.min(i + 1, cats.length - 1)); }
+      if (e.key === "ArrowUp")   { e.preventDefault(); setKbIndex(i => Math.max(i - 1, 0)); }
+      if (e.key === "Enter")     { e.preventDefault(); const cat = cats[kbIndex]?.cat; if (cat) setSelected(s => s === cat ? null : cat); }
+    }
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [showForm, kbIndex]);
 
   const pieData = sortedCats.map(({ cat, total }) => ({ name: cat, value: Math.round(total) }));
 
@@ -177,10 +214,11 @@ export function ExpensesTab({ clientId }: { clientId: number }) {
             <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Categories</p>
             <p className="text-xs text-slate-400">{sortedCats.length}</p>
           </div>
-          {sortedCats.map(({ cat, items, total, retTotal }) => {
+          {sortedCats.map(({ cat, items, total, retTotal }, catI) => {
             const pct    = totalMonthly > 0 ? Math.round((total / totalMonthly) * 100) : 0;
-            const isActive  = activeCat === cat;
+            const isActive   = activeCat === cat;
             const isSelected = selected === cat;
+            const isKbFocus  = kbIndex === catI;
             return (
               <div
                 key={cat}
@@ -188,7 +226,7 @@ export function ExpensesTab({ clientId }: { clientId: number }) {
                 onMouseEnter={() => setHovered(cat)}
                 onMouseLeave={() => setHovered(null)}
                 className={`px-4 py-3 border-b border-slate-100 cursor-pointer transition-colors ${
-                  isSelected ? "bg-blue-50 border-l-2 border-l-blue-500" : isActive ? "bg-slate-50" : "hover:bg-slate-50"
+                  isSelected ? "bg-blue-50 border-l-2 border-l-blue-500" : isKbFocus ? "bg-slate-100 ring-1 ring-inset ring-slate-300" : isActive ? "bg-slate-50" : "hover:bg-slate-50"
                 }`}
               >
                 <div className="flex items-center justify-between">

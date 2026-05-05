@@ -155,13 +155,22 @@ export function ClientOverview({ client, onNavigate }: { client: Client; onNavig
     <div className="max-w-6xl mx-auto px-6 py-6 space-y-6">
 
       {/* Header */}
-      <div>
-        <h1 className="text-xl font-semibold text-slate-900">{householdName} Household</h1>
-        <p className="text-sm text-slate-500">
-          {client.province ?? "—"}
-          {client.annualIncome ? ` · Income: ${fmt(Number(client.annualIncome))}` : ""}
-          {client.spouseAnnualIncome ? ` + ${fmt(Number(client.spouseAnnualIncome))}` : ""}
-        </p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-xl font-semibold text-slate-900">{householdName} Household</h1>
+          <p className="text-sm text-slate-500">
+            {client.province ?? "—"}
+            {client.annualIncome ? ` · Income: ${fmt(Number(client.annualIncome))}` : ""}
+            {client.spouseAnnualIncome ? ` + ${fmt(Number(client.spouseAnnualIncome))}` : ""}
+          </p>
+        </div>
+        {/* Quick actions */}
+        <div className="flex items-center gap-2">
+          <button onClick={() => onNavigate("expenses")} className="flex items-center gap-1.5 text-xs font-medium bg-white border border-slate-200 text-slate-600 hover:border-blue-400 hover:text-blue-600 px-3 py-1.5 rounded-lg transition">+ Expense</button>
+          <button onClick={() => onNavigate("goals")} className="flex items-center gap-1.5 text-xs font-medium bg-white border border-slate-200 text-slate-600 hover:border-blue-400 hover:text-blue-600 px-3 py-1.5 rounded-lg transition">+ Goal</button>
+          <button onClick={() => onNavigate("networth")} className="flex items-center gap-1.5 text-xs font-medium bg-white border border-slate-200 text-slate-600 hover:border-blue-400 hover:text-blue-600 px-3 py-1.5 rounded-lg transition">+ Asset</button>
+          <button onClick={() => onNavigate("retirementhub")} className="flex items-center gap-1.5 text-xs font-medium bg-gradient-to-r from-blue-600 to-cyan-500 text-white px-3 py-1.5 rounded-lg shadow-sm hover:shadow-md transition">+ Projection</button>
+        </div>
       </div>
 
       {/* Key metrics */}

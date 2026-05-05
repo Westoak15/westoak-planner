@@ -206,11 +206,12 @@ function Textarea({ label, value, onChange }: { label: string; value: string; on
 // ── ClientCard — advisor context layer ───────────────────────────────────────
 
 
-function ClientCard({ client: c, onSelect, onDelete, onStatusChange }: {
+function ClientCard({ client: c, onSelect, onDelete, onStatusChange, keyboardActive }: {
   client: Client;
   onSelect: (c: Client) => void;
   onDelete: (id: number) => void;
   onStatusChange?: (id: number, needsAttention: boolean) => void;
+  keyboardActive?: boolean;
 }) {
   const [ov, setOv] = useState<Overview | null>(null);
 
@@ -251,7 +252,7 @@ function ClientCard({ client: c, onSelect, onDelete, onStatusChange }: {
   return (
     <div
       onClick={() => onSelect(c)}
-      className="group bg-white border border-slate-200 rounded-xl p-4 hover:shadow-md hover:border-slate-300 transition-all duration-200 cursor-pointer"
+      className={`group bg-white border rounded-xl p-4 hover:shadow-md hover:border-slate-300 transition-all duration-200 cursor-pointer ${keyboardActive ? "border-blue-400 ring-2 ring-blue-200 shadow-md" : "border-slate-200"}`}
     >
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -306,6 +307,20 @@ function ClientsTab({ onSelect }: { onSelect: (c: Client) => void }) {
   const [form, setForm]       = useState({ firstName:"", lastName:"", email:"", phone:"", province:"ON" });
   const [busy, setBusy]       = useState(false);
   const [attentionIds, setAttentionIds] = useState<Set<number>>(new Set());
+  const [navIdx, setNavIdx]   = useState(-1);
+
+  // Arrow key + enter navigation for client list
+  useEffect(() => {
+    function handler(e: KeyboardEvent) {
+      const target = e.target as HTMLElement;
+      if (target.tagName === "INPUT" || target.tagName === "TEXTAREA") return;
+      if (e.key === "ArrowDown") { e.preventDefault(); setNavIdx(i => Math.min(i + 1, clients.length - 1)); }
+      if (e.key === "ArrowUp")   { e.preventDefault(); setNavIdx(i => Math.max(i - 1, 0)); }
+      if (e.key === "Enter" && navIdx >= 0 && clients[navIdx]) { onSelect(clients[navIdx]); }
+    }
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [clients, navIdx, onSelect]);
 
   const handleStatusChange = (id: number, needsAttention: boolean) => {
     setAttentionIds(prev => {
@@ -379,11 +394,14 @@ function ClientsTab({ onSelect }: { onSelect: (c: Client) => void }) {
           {(() => {
             const attention = clients.filter(c => attentionIds.has(c.id));
             const onTrack   = clients.filter(c => !attentionIds.has(c.id));
-            const makeCard  = (c: Client) => (
-              <ClientCard key={c.id} client={c} onSelect={onSelect} onStatusChange={handleStatusChange} onDelete={(id) => {
-                if (confirm("Delete client?")) api.delete(`/api/clients/${id}`).then(() => window.location.reload());
-              }} />
-            );
+            const makeCard  = (c: Client) => {
+              const idx = clients.indexOf(c);
+              return (
+                <ClientCard key={c.id} client={c} onSelect={onSelect} onStatusChange={handleStatusChange} keyboardActive={idx === navIdx} onDelete={(id) => {
+                  if (confirm("Delete client?")) api.delete(`/api/clients/${id}`).then(() => window.location.reload());
+                }} />
+              );
+            };
             return (
               <>
                 {attention.length > 0 && (
@@ -1463,6 +1481,26 @@ export default function App() {
   const [showClientDetail, setShowClientDetail] = useState(false);
   const [clientOv, setClientOv]   = useState<Overview | null>(null);
   const [commandOpen, setCommandOpen] = useState(false);
+  const [clientNavIdx, setClientNavIdx] = useState(0);
+
+  // Context-aware "A" = quick add for current tab
+  function contextAdd() {
+    if (!client) return;
+    const addMap: Partial<Record<Tab, Tab>> = {
+      networth:      "networth",
+      goals:         "goals",
+      expenses:      "expenses",
+      retirementhub: "retirementhub",
+      protection:    "protection",
+    };
+    // Navigate to the tab and fire a custom event the tab can listen to
+    const dest = addMap[tab];
+    if (dest) {
+      window.dispatchEvent(new CustomEvent("fp:quickadd", { detail: { tab: dest } }));
+    }
+  }
+  const [focusMode, setFocusMode]     = useState(false);
+  const [globalAddTrigger, setGlobalAddTrigger] = useState(0);
 
   // ── Global hotkeys ──────────────────────────────────────────────────────────
   const cmdActions: CommandAction[] = [
@@ -1485,6 +1523,8 @@ export default function App() {
   useHotkeys({
     "mod+k": () => setCommandOpen(true),
     "g": () => {}, // handled by sequential keys below
+    "a": () => { if (!commandOpen) contextAdd(); },
+    "f": () => setFocusMode((f: boolean) => !f),
   });
 
   // Sequential G+key navigation
@@ -1551,6 +1591,17 @@ export default function App() {
     <VoiceProvider>
     <div className="flex h-screen overflow-hidden bg-slate-100">
       <CommandPalette open={commandOpen} onClose={() => setCommandOpen(false)} actions={cmdActions} />
+      {focusMode && (
+        <div
+          className="fixed inset-0 z-[150] bg-black/20 backdrop-blur-[1px]"
+          onClick={() => setFocusMode(false)}
+          title="Click to exit focus mode"
+        >
+          <div className="absolute top-4 right-4 text-xs text-white/70 bg-black/40 px-2 py-1 rounded">
+            Focus mode — press <kbd className="font-mono">F</kbd> or click to exit
+          </div>
+        </div>
+      )}
       <Sidebar activeTab={tab} onTab={t => { if (t === "clients") { setShowClientDetail(false); } setTab(t as any); setPerson("primary"); setNwSubtabHint(undefined); }} clientName={clientName} role={role} level={level} />
 
       {/* Main content */}
@@ -1687,7 +1738,7 @@ export default function App() {
                 {tab === "goals"    && <GoalsTab clientId={client.id} client={client} />}
                 {tab === "expenses" && (
                   <QueryClientProvider client={queryClient}>
-                    <ExpensesTab clientId={client.id} />
+                    <ExpensesTab clientId={client.id} addTrigger={tab === "expenses" ? globalAddTrigger : 0} />
                   </QueryClientProvider>
                 )}
                 {tab === "ai" && (

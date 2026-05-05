@@ -199,6 +199,65 @@ function Textarea({ label, value, onChange }: { label: string; value: string; on
 // ─────────────────────────────────────────────────────────────────────────────
 // Clients Tab
 // ─────────────────────────────────────────────────────────────────────────────
+// ── ClientCard — advisor context layer ───────────────────────────────────────
+
+
+function ClientCard({ client: c, onSelect, onDelete }: { client: Client; onSelect: (c: Client) => void; onDelete: (id: number) => void }) {
+  const [ov, setOv] = useState<Overview | null>(null);
+
+  useEffect(() => {
+    api.get<Overview>(`/api/clients/${c.id}/overview`).then(setOv).catch(() => {});
+  }, [c.id]);
+
+  const nw = ov ? ov.netWorth : null;
+  const nwFmt = nw !== null
+    ? (Math.abs(nw) >= 1_000_000
+        ? `$${(nw / 1_000_000).toFixed(1)}M`
+        : `$${Math.round(nw / 1000)}K`)
+    : null;
+
+  const flag = ov && ov.pendingAi > 0
+    ? { label: `${ov.pendingAi} AI action${ov.pendingAi > 1 ? "s" : ""} pending`, color: "text-amber-600" }
+    : ov && ov.retirementProjections === 0
+    ? { label: "No retirement plan", color: "text-slate-400" }
+    : null;
+
+  return (
+    <div
+      onClick={() => onSelect(c)}
+      className="group bg-white border border-slate-200 rounded-2xl p-5 hover:shadow-md hover:-translate-y-[1px] transition-all duration-200 cursor-pointer"
+    >
+      <div className="flex justify-between items-center">
+        <div className="flex items-center gap-4">
+          <div className={`w-10 h-10 rounded-full ${avatarBg(c.firstName + c.lastName)} flex items-center justify-center text-white text-sm font-semibold flex-shrink-0 shadow-sm`}>
+            {initials(c.firstName, c.lastName)}
+          </div>
+          <div>
+            <p className="font-medium text-slate-900">{c.firstName} {c.lastName}</p>
+            <p className="text-xs text-slate-500">
+              {nwFmt ? <>Net Worth: <span className="font-medium text-slate-700">{nwFmt}</span></> : c.province || "—"}
+              {ov && ov.retirementProjections > 0 && (
+                <> · <span className="text-blue-600">{ov.retirementProjections} retirement plan{ov.retirementProjections > 1 ? "s" : ""}</span></>
+              )}
+              {!nwFmt && c.email && <> · {c.email}</>}
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center gap-3">
+          {flag && <span className={`text-xs font-medium ${flag.color}`}>⚠ {flag.label}</span>}
+          <button
+            onClick={e => { e.stopPropagation(); onDelete(c.id); }}
+            className="opacity-0 group-hover:opacity-100 p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-md transition"
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
+          <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-slate-500 transition" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function ClientsTab({ onSelect }: { onSelect: (c: Client) => void }) {
   const [clients, setClients] = useState<Client[]>([]);
   const [search, setSearch]   = useState("");
@@ -269,35 +328,9 @@ function ClientsTab({ onSelect }: { onSelect: (c: Client) => void }) {
       ) : (
         <div className="space-y-3">
           {clients.map(c => (
-            <div
-              key={c.id}
-              onClick={() => onSelect(c)}
-              className="group bg-white border border-slate-200 rounded-xl p-4 hover:shadow-md hover:border-slate-300 hover:-translate-y-[1px] transition-all duration-200 cursor-pointer flex justify-between items-center"
-            >
-              <div className="flex items-center gap-4">
-                <div className={`w-10 h-10 rounded-full ${avatarBg(c.firstName + c.lastName)} flex items-center justify-center text-white text-sm font-semibold flex-shrink-0 shadow-sm`}>
-                  {initials(c.firstName, c.lastName)}
-                </div>
-                <div>
-                  <p className="font-medium text-slate-900">{c.firstName} {c.lastName}</p>
-                  <p className="text-xs text-slate-500">
-                    {c.province || "—"}
-                    {c.email ? <> · <span className="text-blue-600">{c.email}</span></> : null}
-                    {c.phone ? <> · {c.phone}</> : null}
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={e => { e.stopPropagation(); if (confirm("Delete client?")) api.delete(`/api/clients/${c.id}`).then(() => window.location.reload()); }}
-                  className="opacity-0 group-hover:opacity-100 p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-md transition"
-                  title="Delete client"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-                <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-slate-500 transition" />
-              </div>
-            </div>
+            <ClientCard key={c.id} client={c} onSelect={onSelect} onDelete={(id) => {
+              if (confirm("Delete client?")) api.delete(`/api/clients/${id}`).then(() => window.location.reload());
+            }} />
           ))}
         </div>
       )}
@@ -355,10 +388,26 @@ function ClientDetail({ client, onBack, onPlanSelect, onUpdate, level }: { clien
     return Math.floor(diff / (365.25 * 24 * 3600 * 1000));
   };
 
+  const [ov, setOv] = useState<Overview | null>(null);
+
+  useEffect(() => {
+    api.get<Overview>(`/api/clients/${client.id}/overview`).then(setOv).catch(() => {});
+  }, [client.id]);
+
+  const nwFmt = (n: number) =>
+    Math.abs(n) >= 1_000_000 ? `$${(n / 1_000_000).toFixed(2)}M` : `$${Math.round(n / 1000).toLocaleString()}K`;
+
+  const insights: { msg: string; color: string }[] = [];
+  if (ov) {
+    if (ov.pendingAi > 0) insights.push({ msg: `${ov.pendingAi} AI recommendation${ov.pendingAi > 1 ? "s" : ""} awaiting review`, color: "amber" });
+    if (ov.retirementProjections === 0) insights.push({ msg: "No retirement projection on file — consider adding one", color: "blue" });
+    if (ov.insuranceAnalyses === 0) insights.push({ msg: "No insurance analysis on file — protection gap unknown", color: "red" });
+  }
+
   return (
-    <div className="p-6 max-w-6xl mx-auto">
+    <div className="p-6 max-w-6xl mx-auto space-y-6">
       {/* ── Back + Title bar ─────────────────────────────────────────────── */}
-      <div className="flex items-center gap-3 mb-6">
+      <div className="flex items-center gap-3">
         <button onClick={onBack} className="text-gray-400 hover:text-gray-700 transition-colors">
           <ChevronRight className="w-4 h-4 rotate-180" />
         </button>
@@ -386,6 +435,34 @@ function ClientDetail({ client, onBack, onPlanSelect, onUpdate, level }: { clien
           )}
         </div>
       </div>
+
+      {/* ── Top insight bar ───────────────────────────────────────────────── */}
+      {ov && (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {[
+            { label: "Net Worth",          value: nwFmt(ov.netWorth),            color: ov.netWorth >= 0 ? "text-emerald-600" : "text-red-500" },
+            { label: "Retirement Plans",   value: String(ov.retirementProjections), color: ov.retirementProjections > 0 ? "text-blue-600" : "text-slate-400" },
+            { label: "Insurance Analyses", value: String(ov.insuranceAnalyses),   color: ov.insuranceAnalyses > 0 ? "text-blue-600" : "text-red-500" },
+            { label: "Pending AI Actions", value: String(ov.pendingAi),           color: ov.pendingAi > 0 ? "text-amber-600" : "text-slate-400" },
+          ].map(s => (
+            <div key={s.label} className="bg-white border border-slate-200 rounded-xl p-4 hover:shadow-sm transition-all duration-200">
+              <p className="text-xs text-slate-500">{s.label}</p>
+              <p className={`text-xl font-semibold mt-1 ${s.color}`}>{s.value}</p>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* ── Advisor insights ─────────────────────────────────────────────── */}
+      {insights.map((ins, i) => (
+        <div key={i} className={`rounded-xl p-4 text-sm font-medium border ${
+          ins.color === "amber" ? "bg-amber-50 border-amber-100 text-amber-700"
+          : ins.color === "red"  ? "bg-red-50 border-red-100 text-red-700"
+          : "bg-blue-50 border-blue-100 text-blue-700"
+        }`}>
+          ⚠ {ins.msg}
+        </div>
+      ))}
 
       {/* ── Single full-width Household card ─────────────────────────────── */}
       <Card className="!p-0 overflow-hidden mb-6">
@@ -1344,7 +1421,7 @@ export default function App() {
       {/* Main content */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Top bar */}
-        <header className="flex-shrink-0 h-12 bg-white/60 backdrop-blur-md border-b border-slate-200/80 flex items-center px-5 justify-between">
+        <header className="flex-shrink-0 h-12 bg-white/60 backdrop-blur-md border-b border-slate-200/80 flex items-center px-5 justify-between relative z-10">
           <div className="flex items-center gap-3">
            <span className="text-[11px] font-bold tracking-[0.14em] uppercase text-brand-gradient border-r border-slate-200 pr-3 mr-1">
              Knights of Columbus

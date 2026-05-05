@@ -246,7 +246,7 @@ function NetWorthSection({ title, total, color, isAsset, children, onAdd }: {
   );
 }
 
-function NetWorthTab({ clientId }: { clientId: number }) {
+export function NetWorthTab({ clientId }: { clientId: number }) {
   const { data: rawEntries = [] } = useNetWorthEntries(clientId);
   const entries = rawEntries as any[];
   const createEntry = useCreateNetWorthEntry();

@@ -23,10 +23,13 @@ import { fmt$, fmtPct, initials, avatarBg, cn } from "../lib/utils";
 import { VoiceProvider, useVoice, labelToKey } from "../contexts/VoiceContext";
 import { ClientOverview } from "./ClientOverview";
 import { MeetingRecorderTrigger } from "../components/MeetingRecorder";
+import { useHotkeys } from "../hooks/useHotkeys";
+import { CommandPalette, type CommandAction } from "../components/ui/CommandPalette";
 import {
   Plus, Pencil, Trash2, X, Check, ChevronRight, Search,
-  User, Users, UserPlus, Baby, FileText, Home, Calendar, Briefcase, LogOut, Save, KeyRound, Eye, EyeOff,  Mic, MicOff, Loader2
- } from "lucide-react";
+  User, Users, UserPlus, Baby, FileText, Home, Calendar, Briefcase, LogOut, Save, KeyRound, Eye, EyeOff, Mic, MicOff, Loader2,
+  LayoutDashboard, PiggyBank, Shield, Receipt, Target, Brain, Scale
+} from "lucide-react";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -1459,6 +1462,60 @@ export default function App() {
   const [plan, setPlan]           = useState<Plan | null>(null);
   const [showClientDetail, setShowClientDetail] = useState(false);
   const [clientOv, setClientOv]   = useState<Overview | null>(null);
+  const [commandOpen, setCommandOpen] = useState(false);
+
+  // ── Global hotkeys ──────────────────────────────────────────────────────────
+  const cmdActions: CommandAction[] = [
+    // Navigation
+    { id: "nav-clients",    label: "Go to Clients",       group: "Navigate", icon: Users,          shortcut: "G C",   run: () => { setShowClientDetail(false); setTab("clients"); } },
+    { id: "nav-overview",   label: "Go to Overview",      group: "Navigate", icon: LayoutDashboard, shortcut: "G O",   run: () => client && setTab("overview" as Tab) },
+    { id: "nav-dashboard",  label: "Go to Dashboard",     group: "Navigate", icon: LayoutDashboard, shortcut: "G D",   run: () => client && setTab("dashboard") },
+    { id: "nav-retirement", label: "Go to Retirement",    group: "Navigate", icon: PiggyBank,       shortcut: "G R",   run: () => client && setTab("retirementhub") },
+    { id: "nav-protection", label: "Go to Protection",    group: "Navigate", icon: Shield,          shortcut: "G P",   run: () => client && setTab("protection") },
+    { id: "nav-cashflow",   label: "Go to Cash Flow",     group: "Navigate", icon: Receipt,         shortcut: "G F",   run: () => client && setTab("expenses") },
+    { id: "nav-goals",      label: "Go to Goals",         group: "Navigate", icon: Target,          shortcut: "G G",   run: () => client && setTab("goals") },
+    { id: "nav-networth",   label: "Go to Net Worth",     group: "Navigate", icon: Scale,           shortcut: "G N",   run: () => client && setTab("networth") },
+    { id: "nav-tax",        label: "Go to Tax & Estate",  group: "Navigate", icon: FileText,        shortcut: "G T",   run: () => client && setTab("taxestate") },
+    { id: "nav-ai",         label: "Go to AI Insights",   group: "Navigate", icon: Brain,           shortcut: "G A",   run: () => client && setTab("ai") },
+    { id: "nav-documents",  label: "Go to Documents",     group: "Navigate", icon: FileText,        shortcut: "G Doc", run: () => client && setTab("documents") },
+    // Actions
+    { id: "add-client",     label: "Add Client",          group: "Actions",  icon: Plus,            shortcut: "N",     run: () => { setShowClientDetail(false); setTab("clients"); } },
+  ].filter(a => !["nav-overview","nav-dashboard","nav-retirement","nav-protection","nav-cashflow","nav-goals","nav-networth","nav-tax","nav-ai","nav-documents"].includes(a.id) || !!client);
+
+  useHotkeys({
+    "mod+k": () => setCommandOpen(true),
+    "g": () => {}, // handled by sequential keys below
+  });
+
+  // Sequential G+key navigation
+  useEffect(() => {
+    let gPressed = false;
+    let gTimer: ReturnType<typeof setTimeout>;
+    function handler(e: KeyboardEvent) {
+      const target = e.target as HTMLElement;
+      if (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.tagName === "SELECT" || target.isContentEditable) return;
+      if (commandOpen) return;
+      if (e.key.toLowerCase() === "g" && !e.metaKey && !e.ctrlKey) {
+        gPressed = true;
+        clearTimeout(gTimer);
+        gTimer = setTimeout(() => { gPressed = false; }, 1000);
+        return;
+      }
+      if (gPressed) {
+        gPressed = false;
+        clearTimeout(gTimer);
+        const map: Record<string, Tab> = { c: "clients", o: "overview" as Tab, d: "dashboard", r: "retirementhub", p: "protection", f: "expenses", g: "goals", n: "networth", t: "taxestate", a: "ai" };
+        const dest = map[e.key.toLowerCase()];
+        if (dest) {
+          e.preventDefault();
+          if (dest === "clients") { setShowClientDetail(false); }
+          setTab(dest);
+        }
+      }
+    }
+    window.addEventListener("keydown", handler);
+    return () => { window.removeEventListener("keydown", handler); clearTimeout(gTimer); };
+  }, [client, commandOpen]);
 
   // Refresh overview when client changes
   useEffect(() => {
@@ -1493,6 +1550,7 @@ export default function App() {
   return (
     <VoiceProvider>
     <div className="flex h-screen overflow-hidden bg-slate-100">
+      <CommandPalette open={commandOpen} onClose={() => setCommandOpen(false)} actions={cmdActions} />
       <Sidebar activeTab={tab} onTab={t => { if (t === "clients") { setShowClientDetail(false); } setTab(t as any); setPerson("primary"); setNwSubtabHint(undefined); }} clientName={clientName} role={role} level={level} />
 
       {/* Main content */}
@@ -1520,6 +1578,14 @@ export default function App() {
             {!client && <span className="text-sm font-semibold text-slate-500">Financial Planning</span>}
           </div>
           <div className="flex items-center gap-3">
+            <button
+              onClick={() => setCommandOpen(true)}
+              className="hidden md:flex items-center gap-2 text-xs text-slate-400 bg-slate-100 hover:bg-slate-200 border border-slate-200 px-2.5 py-1 rounded-lg transition"
+              title="Command palette (⌘K)"
+            >
+              <Search className="w-3 h-3" />
+              <kbd className="font-mono text-[10px]">⌘K</kbd>
+            </button>
             {client && (
               <MeetingRecorderTrigger
                 clientId={client.id}

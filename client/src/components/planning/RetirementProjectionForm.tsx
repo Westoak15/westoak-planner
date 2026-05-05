@@ -197,6 +197,58 @@ function fmt(n: number) {
   return "$" + Math.abs(Math.round(n)).toLocaleString();
 }
 
+// ── EditableField (hybrid preview → click → edit) ────────────────────────────
+
+function EditableField({ label, value, onSave, type = "text", format, placeholder }: {
+  label: string;
+  value: string | number;
+  onSave: (v: string) => void;
+  type?: "text" | "number";
+  format?: (v: string) => string;
+  placeholder?: string;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [val, setVal] = useState(String(value));
+
+  React.useEffect(() => { if (!editing) setVal(String(value)); }, [value, editing]);
+
+  function commit(v: string) {
+    setEditing(false);
+    if (v !== String(value)) onSave(v);
+  }
+
+  const display = format ? format(String(value)) : String(value) || placeholder || "—";
+
+  return (
+    <div>
+      <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400 mb-1">{label}</p>
+      {editing ? (
+        <input
+          autoFocus
+          type={type}
+          value={val}
+          placeholder={placeholder}
+          onChange={e => setVal(e.target.value)}
+          onBlur={e => commit(e.target.value)}
+          onKeyDown={e => {
+            if (e.key === "Enter") { e.preventDefault(); commit(val); }
+            if (e.key === "Escape") { setEditing(false); setVal(String(value)); }
+          }}
+          className="w-full border border-blue-300 rounded-lg px-2 py-1.5 text-sm font-medium focus:ring-2 focus:ring-blue-400 outline-none transition"
+        />
+      ) : (
+        <p
+          onClick={() => setEditing(true)}
+          title="Click to edit"
+          className="text-sm font-semibold text-slate-900 cursor-pointer hover:bg-slate-100 px-1.5 py-0.5 rounded transition-colors -ml-1.5"
+        >
+          {display || <span className="text-slate-300 font-normal italic">Click to set</span>}
+        </p>
+      )}
+    </div>
+  );
+}
+
 // ── Section (collapsible) ─────────────────────────────────────────────────────
 
 function Section({ title, children, defaultOpen = false }: { title: string; children: React.ReactNode; defaultOpen?: boolean }) {
@@ -392,36 +444,16 @@ export function RetirementProjectionForm({ clientId, clientName, projection, onS
         )}
       </div>
 
-      {/* ── Core Inputs (always visible) ── */}
-      <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm transition-all duration-200 hover:shadow-md">
-        <p className="text-sm font-medium text-slate-600 mb-4">Retirement Setup</p>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div>
-            <label className="block text-xs text-slate-500 mb-1">Label (optional)</label>
-            <input type="text" value={f.label} onChange={set("label")} placeholder="e.g. Base case" className="fp-input" />
-          </div>
-          <div>
-            <label className="block text-xs text-slate-500 mb-1">Current age</label>
-            <input type="number" value={f.currentAge} onChange={set("currentAge")} className="fp-input" />
-          </div>
-          <div>
-            <label className="block text-xs text-slate-500 mb-1">Retirement age</label>
-            <input type="number" value={f.retirementAge} onChange={set("retirementAge")} className="fp-input" />
-          </div>
-          <div>
-            <label className="block text-xs text-slate-500 mb-1">Life expectancy</label>
-            <input type="number" value={f.lifeExpectancy} onChange={set("lifeExpectancy")} className="fp-input" />
-          </div>
-        </div>
-        <div className="mt-4 space-y-3">
-          <div>
-            <label className="block text-xs text-slate-500 mb-1">Desired annual income ($)</label>
-            <input type="number" value={f.desiredRetirementIncome} onChange={set("desiredRetirementIncome")} placeholder="75000" className="fp-input" />
-          </div>
-          <div>
-            <label className="block text-xs text-slate-500 mb-1">DB / other pension income / yr ($)</label>
-            <input type="number" value={f.pensionIncome} onChange={set("pensionIncome")} placeholder="0" className="fp-input" />
-          </div>
+      {/* ── Core Inputs — inline preview → click → edit ── */}
+      <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
+        <p className="text-sm font-medium text-slate-600 mb-4">Retirement Setup <span className="text-xs text-slate-400 font-normal">· click any field to edit</span></p>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-4">
+          <EditableField label="Label"            value={f.label}                    onSave={v => setF(p => ({ ...p, label: v }))}                       placeholder="e.g. Base case" />
+          <EditableField label="Current Age"      value={f.currentAge}               onSave={v => setF(p => ({ ...p, currentAge: Number(v) }))}          type="number" format={v => `${v} yrs`} />
+          <EditableField label="Retirement Age"   value={f.retirementAge}            onSave={v => setF(p => ({ ...p, retirementAge: Number(v) }))}       type="number" format={v => `${v} yrs`} />
+          <EditableField label="Life Expectancy"  value={f.lifeExpectancy}           onSave={v => setF(p => ({ ...p, lifeExpectancy: Number(v) }))}      type="number" format={v => `${v} yrs`} />
+          <EditableField label="Desired Income"   value={f.desiredRetirementIncome}  onSave={v => setF(p => ({ ...p, desiredRetirementIncome: v }))}     type="number" format={v => `$${Number(v).toLocaleString("en-CA")}/yr`} />
+          <EditableField label="Pension / DB"     value={f.pensionIncome}            onSave={v => setF(p => ({ ...p, pensionIncome: v }))}               type="number" format={v => `$${Number(v).toLocaleString("en-CA")}/yr`} />
         </div>
       </div>
 

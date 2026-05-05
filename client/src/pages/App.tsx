@@ -1763,7 +1763,11 @@ export default function App() {
                   showCombined: true,
                 } : undefined}
               >
-                {tab === "networth" && <NetWorthTabNew clientId={client.id} client={client} />}
+                {tab === "networth" && (
+                  <QueryClientProvider client={queryClient}>
+                    <NetWorthTabNew clientId={client.id} />
+                  </QueryClientProvider>
+                )}
                 {tab === "goals"    && <GoalsTab clientId={client.id} client={client} />}
                 {tab === "expenses" && (
                   <QueryClientProvider client={queryClient}>

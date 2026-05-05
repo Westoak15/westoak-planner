@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus, Trash2, Pencil } from "lucide-react";
-import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from "recharts";
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid } from "recharts";
 
 const EXPENSE_CATEGORIES = [
   "Housing", "Utilities", "Food & Groceries", "Transportation",
@@ -48,17 +48,16 @@ async function apiReq(method: string, path: string, body?: unknown) {
   return res.status === 204 ? null : res.json();
 }
 
-function Stat({ label, value, sub, color = "text-slate-900" }: { label: string; value: string; sub?: string; color?: string }) {
+const fmt = (n: number) => `$${Math.round(n).toLocaleString("en-CA")}`;
+
+function Metric({ label, value, color = "text-slate-900" }: { label: string; value: string; color?: string }) {
   return (
-    <div className="bg-white border border-slate-200 rounded-xl p-4">
-      <p className="text-xs text-slate-500">{label}</p>
-      <p className={`text-xl font-semibold mt-1 ${color}`}>{value}</p>
-      {sub && <p className="text-xs text-slate-400 mt-0.5">{sub}</p>}
+    <div className="text-right">
+      <p className="text-xs text-slate-400">{label}</p>
+      <p className={`text-sm font-semibold ${color}`}>{value}</p>
     </div>
   );
 }
-
-const fmt = (n: number) => `$${Math.round(n).toLocaleString("en-CA")}`;
 
 export function ExpensesTab({ clientId }: { clientId: number }) {
   const qc = useQueryClient();
@@ -75,29 +74,41 @@ export function ExpensesTab({ clientId }: { clientId: number }) {
 
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<number | null>(null);
-  const [openCat, setOpenCat] = useState<string | null>(null);
+  const [selected, setSelected] = useState<string | null>(null);
+  const [hovered, setHovered] = useState<string | null>(null);
   const [form, setForm] = useState({ category: "Housing", description: "", monthlyAmount: "", isEssential: true, includeInRetirement: true, retirementAdjustmentPct: "100", notes: "" });
 
-  const totalMonthly       = expenses.reduce((s, e) => s + parseFloat(e.monthlyAmount || "0"), 0);
-  const retirementMonthly  = expenses.filter(e => e.includeInRetirement).reduce((s, e) => s + parseFloat(e.monthlyAmount || "0") * (e.retirementAdjustmentPct || 100) / 100, 0);
-  const requiredPortfolio  = retirementMonthly * 12 / 0.04;
-  const byCategory         = expenses.reduce<Record<string, Expense[]>>((acc, e) => { if (!acc[e.category]) acc[e.category] = []; acc[e.category].push(e); return acc; }, {});
+  // Derived
+  const totalMonthly      = expenses.reduce((s, e) => s + parseFloat(e.monthlyAmount || "0"), 0);
+  const retirementMonthly = expenses.filter(e => e.includeInRetirement).reduce((s, e) => s + parseFloat(e.monthlyAmount || "0") * (e.retirementAdjustmentPct || 100) / 100, 0);
+  const requiredPortfolio = retirementMonthly * 12 / 0.04;
 
-  // Biggest category for actionability hint
-  const biggestCat = Object.entries(byCategory).sort((a, b) => {
-    const aTotal = a[1].reduce((s, e) => s + parseFloat(e.monthlyAmount || "0"), 0);
-    const bTotal = b[1].reduce((s, e) => s + parseFloat(e.monthlyAmount || "0"), 0);
-    return bTotal - aTotal;
-  })[0];
-  const biggestSaving = biggestCat ? biggestCat[1].reduce((s, e) => s + parseFloat(e.monthlyAmount || "0"), 0) * 0.10 * 12 / 0.04 : 0;
+  const byCategory = expenses.reduce<Record<string, Expense[]>>((acc, e) => {
+    if (!acc[e.category]) acc[e.category] = [];
+    acc[e.category].push(e); return acc;
+  }, {});
 
-  // Pie chart data
-  const pieData = Object.entries(byCategory).map(([cat, items]) => ({
-    name: cat,
-    value: Math.round(items.reduce((s, e) => s + parseFloat(e.monthlyAmount || "0"), 0)),
-  })).filter(d => d.value > 0).sort((a, b) => b.value - a.value);
+  const sortedCats = Object.entries(byCategory)
+    .map(([cat, items]) => ({
+      cat,
+      items,
+      total: items.reduce((s, e) => s + parseFloat(e.monthlyAmount || "0"), 0),
+      retTotal: items.filter(e => e.includeInRetirement).reduce((s, e) => s + parseFloat(e.monthlyAmount || "0") * (e.retirementAdjustmentPct || 100) / 100, 0),
+    }))
+    .sort((a, b) => b.total - a.total);
 
-  function resetForm() { setForm({ category: "Housing", description: "", monthlyAmount: "", isEssential: true, includeInRetirement: true, retirementAdjustmentPct: "100", notes: "" }); setEditing(null); setShowForm(false); }
+  const pieData = sortedCats.map(({ cat, total }) => ({ name: cat, value: Math.round(total) }));
+
+  const selectedCat = selected ? sortedCats.find(c => c.cat === selected) : sortedCats[0] ?? null;
+  const activeCat   = hovered ?? selected ?? null;
+
+  const biggestCat    = sortedCats[0];
+  const biggestSaving = biggestCat ? biggestCat.total * 0.10 * 12 / 0.04 : 0;
+
+  function resetForm() {
+    setForm({ category: "Housing", description: "", monthlyAmount: "", isEssential: true, includeInRetirement: true, retirementAdjustmentPct: "100", notes: "" });
+    setEditing(null); setShowForm(false);
+  }
 
   function startEdit(e: Expense) {
     setForm({ category: e.category, description: e.description || "", monthlyAmount: e.monthlyAmount, isEssential: e.isEssential, includeInRetirement: e.includeInRetirement, retirementAdjustmentPct: String(e.retirementAdjustmentPct || 100), notes: e.notes || "" });
@@ -106,225 +117,283 @@ export function ExpensesTab({ clientId }: { clientId: number }) {
 
   function handleSubmit() {
     const payload = { ...form, retirementAdjustmentPct: parseInt(form.retirementAdjustmentPct) || 100 };
-    if (editing !== null) {
-      updateExp.mutate({ id: editing, ...payload }, { onSuccess: resetForm });
-    } else {
-      createExp.mutate(payload, { onSuccess: resetForm });
-    }
+    if (editing !== null) updateExp.mutate({ id: editing, ...payload }, { onSuccess: resetForm });
+    else createExp.mutate(payload, { onSuccess: resetForm });
+  }
+
+  if (expenses.length === 0) {
+    return (
+      <div className="h-full flex flex-col bg-slate-50">
+        <div className="px-6 py-4 border-b border-slate-200 bg-white flex items-center justify-between">
+          <div>
+            <p className="text-xs text-slate-400">Cash Flow</p>
+            <p className="text-lg font-semibold text-slate-900">No expenses yet</p>
+          </div>
+          <button onClick={() => { resetForm(); setShowForm(true); }}
+            className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-cyan-500 text-white text-sm font-semibold px-4 py-2 rounded-xl shadow-sm hover:shadow-md transition">
+            <Plus className="w-4 h-4" /> Add Expense
+          </button>
+        </div>
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <p className="text-slate-500 font-semibold mb-2">Add household expenses to build your cash flow plan</p>
+            <button onClick={() => { resetForm(); setShowForm(true); }}
+              className="inline-flex items-center gap-1.5 bg-gradient-to-r from-blue-600 to-cyan-500 text-white text-sm font-semibold px-4 py-2 rounded-xl shadow-sm hover:shadow-md transition">
+              <Plus className="w-4 h-4" /> Add First Expense
+            </button>
+          </div>
+        </div>
+        {showForm && <ExpenseForm form={form} setForm={setForm} editing={editing} onSubmit={handleSubmit} onClose={resetForm} creating={createExp.isPending} updating={updateExp.isPending} />}
+      </div>
+    );
   }
 
   return (
-    <div className="max-w-5xl mx-auto px-6 py-6 space-y-6">
+    <div className="h-full flex flex-col bg-slate-50">
 
-      {/* Header */}
-      <div className="flex items-center justify-between">
+      {/* HEADER — command center */}
+      <div className="px-6 py-3 border-b border-slate-200 bg-white flex items-center justify-between flex-shrink-0">
         <div>
-          <h1 className="text-xl font-semibold text-slate-900">Cash Flow</h1>
-          <p className="text-sm text-slate-500">Monthly expenses and retirement income needs</p>
+          <p className="text-xs text-slate-400 uppercase tracking-wide">Cash Flow</p>
+          <p className="text-base font-semibold text-slate-900">Monthly Expenses</p>
         </div>
-        <button onClick={() => { resetForm(); setShowForm(true); }}
-          className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-cyan-500 text-white text-sm font-semibold px-4 py-2 rounded-xl shadow-sm hover:shadow-md transition">
-          <Plus className="w-4 h-4" /> Add Expense
-        </button>
-      </div>
-
-      {expenses.length === 0 ? (
-        <div className="text-center py-16 border-2 border-dashed border-slate-200 rounded-2xl">
-          <p className="text-slate-500 font-semibold">No expenses yet</p>
-          <p className="text-xs text-slate-400 mt-1">Add household expenses to build your plan</p>
+        <div className="flex items-center gap-8">
+          <Metric label="Monthly"   value={`${fmt(totalMonthly)}/mo`} />
+          <Metric label="Retirement" value={`${fmt(retirementMonthly)}/mo`} />
+          <Metric label="Required Portfolio" value={fmt(requiredPortfolio)} color="text-amber-600" />
           <button onClick={() => { resetForm(); setShowForm(true); }}
-            className="mt-4 inline-flex items-center gap-1.5 bg-gradient-to-r from-blue-600 to-cyan-500 text-white text-sm font-semibold px-4 py-2 rounded-xl shadow-sm hover:shadow-md transition">
-            <Plus className="w-4 h-4" /> Add First Expense
+            className="flex items-center gap-1.5 bg-gradient-to-r from-blue-600 to-cyan-500 text-white text-sm font-semibold px-3 py-1.5 rounded-lg shadow-sm hover:shadow-md transition">
+            <Plus className="w-3.5 h-3.5" /> Add
           </button>
         </div>
-      ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      </div>
 
-          {/* LEFT — sticky summary + chart + guardrail */}
-          <div className="lg:col-span-2 space-y-5">
+      {/* MAIN GRID */}
+      <div className="flex-1 grid overflow-hidden" style={{ gridTemplateColumns: "300px 1fr" }}>
 
-            {/* Stats — sticky */}
-            <div className="sticky top-0 z-10 pb-2 bg-slate-50">
-              <div className="grid grid-cols-3 gap-4">
-                <Stat label="Monthly Spend"      value={fmt(totalMonthly)}             sub={`${fmt(totalMonthly * 12)}/yr`} />
-                <Stat label="Retirement Spend"   value={`${fmt(retirementMonthly)}/mo`} sub={`${fmt(retirementMonthly * 12)}/yr`} />
-                <Stat label="Required Portfolio" value={fmt(requiredPortfolio)}         sub="at 4% rule" color={requiredPortfolio > 0 ? "text-amber-600" : "text-slate-900"} />
-              </div>
-            </div>
-
-            {/* Donut chart */}
-            <div className="bg-white border border-slate-200 rounded-2xl p-5">
-              <p className="text-sm font-medium text-slate-600 mb-3">Spending Breakdown</p>
-              <div style={{ height: 180 }}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie data={pieData} cx="50%" cy="50%" innerRadius={45} outerRadius={70} paddingAngle={2} dataKey="value">
-                      {pieData.map((entry) => (
-                        <Cell key={entry.name} fill={CAT_COLORS[entry.name] ?? "#94a3b8"} />
-                      ))}
-                    </Pie>
-                    <Tooltip
-                      wrapperStyle={{ zIndex: 50 }}
-                      contentStyle={{ backgroundColor: "#fff", border: "1px solid #e2e8f0", borderRadius: "8px" }}
-                      formatter={(value: number) => [`${fmt(value)}/mo`, ""]}
-                    />
-                    <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: "11px", paddingTop: "8px" }} />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-
-            {/* Guardrail */}
-            {retirementMonthly > 0 && (
-              <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5">
-                <p className="text-sm font-medium text-amber-700">Retirement Income Guardrail</p>
-                <p className="text-sm text-amber-600 mt-1">
-                  Your spending requires <strong>{fmt(requiredPortfolio)}</strong> invested (4% rule) to sustain <strong>{fmt(retirementMonthly * 12)}/yr</strong> in retirement.
-                </p>
-              </div>
-            )}
-
-            {/* Actionability hint */}
-            {biggestCat && biggestSaving > 0 && (
-              <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 text-sm text-blue-700">
-                Reducing <strong>{biggestCat[0]}</strong> by 10% lowers required portfolio by ~<strong>{fmt(biggestSaving)}</strong>.
-              </div>
-            )}
+        {/* LEFT — dense category list */}
+        <div className="border-r border-slate-200 bg-white overflow-y-auto">
+          <div className="px-4 py-2 border-b border-slate-100 flex items-center justify-between">
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Categories</p>
+            <p className="text-xs text-slate-400">{sortedCats.length}</p>
           </div>
-
-          {/* RIGHT — scrollable category list */}
-          <div className="bg-white border border-slate-200 rounded-2xl p-4 h-[600px] overflow-y-auto">
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-3">Categories</p>
-            {Object.entries(byCategory)
-              .sort((a, b) => {
-                const aTotal = a[1].reduce((s, e) => s + parseFloat(e.monthlyAmount || "0"), 0);
-                const bTotal = b[1].reduce((s, e) => s + parseFloat(e.monthlyAmount || "0"), 0);
-                return bTotal - aTotal;
-              })
-              .map(([cat, items]) => {
-                const catTotal = items.reduce((s, e) => s + parseFloat(e.monthlyAmount || "0"), 0);
-                const retTotal = items.filter(e => e.includeInRetirement).reduce((s, e) => s + parseFloat(e.monthlyAmount || "0") * (e.retirementAdjustmentPct || 100) / 100, 0);
-                const pct = totalMonthly > 0 ? Math.round((catTotal / totalMonthly) * 100) : 0;
-                const isOpen = openCat === cat;
-                return (
-                  <div key={cat} className="border-b border-slate-100 last:border-0">
-                    <div
-                      onClick={() => setOpenCat(isOpen ? null : cat)}
-                      className="py-3 cursor-pointer hover:bg-slate-50 px-2 rounded-lg transition -mx-2"
-                    >
-                      <div className="flex justify-between items-center">
-                        <div className="flex items-center gap-2 min-w-0">
-                          <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: CAT_COLORS[cat] ?? "#94a3b8" }} />
-                          <p className="text-sm font-medium text-slate-900 truncate">{cat}</p>
-                        </div>
-                        <p className="text-sm font-semibold text-blue-600 flex-shrink-0 ml-2">{fmt(catTotal)}/mo</p>
-                      </div>
-                      <div className="mt-1.5 flex items-center gap-2">
-                        <div className="flex-1 h-1 bg-slate-100 rounded overflow-hidden">
-                          <div className="h-full rounded" style={{ width: `${pct}%`, backgroundColor: CAT_COLORS[cat] ?? "#94a3b8" }} />
-                        </div>
-                        <span className="text-xs text-slate-400 flex-shrink-0">{pct}%</span>
-                      </div>
-                    </div>
-
-                    {/* Expanded detail */}
-                    {isOpen && (
-                      <div className="px-2 pb-3 space-y-1">
-                        <div className="flex justify-between text-xs text-slate-400 mb-2">
-                          <span>{fmt(catTotal * 12)}/yr</span>
-                          {retTotal !== catTotal && <span className="text-amber-600">{fmt(retTotal)}/mo in retirement</span>}
-                        </div>
-                        {items.map(e => (
-                          <div key={e.id} className="flex items-center justify-between py-1 group rounded px-1 hover:bg-slate-50">
-                            <div className="flex items-center gap-1.5 min-w-0">
-                              <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${e.isEssential ? "bg-red-400" : "bg-blue-400"}`} />
-                              <span className="text-xs text-slate-600 truncate">{e.description || cat}</span>
-                              {e.includeInRetirement && e.retirementAdjustmentPct !== 100 && (
-                                <span className="text-[10px] bg-amber-50 text-amber-600 px-1 py-0.5 rounded">{e.retirementAdjustmentPct}%</span>
-                              )}
-                            </div>
-                            <div className="flex items-center gap-1 flex-shrink-0">
-                              <span className="text-xs font-medium text-slate-700">{fmt(parseFloat(e.monthlyAmount))}</span>
-                              <button onClick={ev => { ev.stopPropagation(); startEdit(e); }} className="p-0.5 opacity-0 group-hover:opacity-100 text-slate-400 hover:text-blue-600"><Pencil className="w-3 h-3" /></button>
-                              <button onClick={ev => { ev.stopPropagation(); if (confirm("Delete?")) deleteExp.mutate(e.id); }} className="p-0.5 opacity-0 group-hover:opacity-100 text-slate-400 hover:text-red-500"><Trash2 className="w-3 h-3" /></button>
-                            </div>
-                          </div>
-                        ))}
-                        <button
-                          onClick={e => { e.stopPropagation(); resetForm(); setForm(f => ({ ...f, category: cat })); setShowForm(true); }}
-                          className="text-xs text-blue-600 hover:underline mt-1"
-                        >+ Add to {cat}</button>
-                      </div>
-                    )}
+          {sortedCats.map(({ cat, items, total, retTotal }) => {
+            const pct    = totalMonthly > 0 ? Math.round((total / totalMonthly) * 100) : 0;
+            const isActive  = activeCat === cat;
+            const isSelected = selected === cat;
+            return (
+              <div
+                key={cat}
+                onClick={() => setSelected(isSelected ? null : cat)}
+                onMouseEnter={() => setHovered(cat)}
+                onMouseLeave={() => setHovered(null)}
+                className={`px-4 py-3 border-b border-slate-100 cursor-pointer transition-colors ${
+                  isSelected ? "bg-blue-50 border-l-2 border-l-blue-500" : isActive ? "bg-slate-50" : "hover:bg-slate-50"
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: CAT_COLORS[cat] ?? "#94a3b8" }} />
+                    <span className="text-sm text-slate-700 truncate">{cat}</span>
                   </div>
-                );
-              })}
-          </div>
-
+                  <span className="text-sm font-semibold text-slate-900 ml-2 flex-shrink-0">{fmt(total)}</span>
+                </div>
+                <div className="flex items-center gap-2 mt-1.5">
+                  <div className="flex-1 h-1 bg-slate-100 rounded overflow-hidden">
+                    <div className="h-full rounded transition-all duration-300" style={{ width: `${pct}%`, backgroundColor: isActive ? CAT_COLORS[cat] ?? "#94a3b8" : "#cbd5e1" }} />
+                  </div>
+                  <span className="text-[10px] text-slate-400 flex-shrink-0">{pct}%</span>
+                </div>
+                <div className="flex justify-between text-[10px] text-slate-400 mt-0.5">
+                  <span>{fmt(total * 12)}/yr</span>
+                  {retTotal !== total && <span className="text-amber-500">{fmt(retTotal)}/mo ret.</span>}
+                </div>
+              </div>
+            );
+          })}
         </div>
-      )}
 
-      {/* Add/Edit form */}
-      {showForm && (
-        <div className="fixed inset-0 z-[200] flex">
-          <div className="flex-1 bg-black/40 backdrop-blur-sm" onClick={resetForm} />
-          <div className="w-full max-w-lg bg-white shadow-2xl flex flex-col h-full border-l border-slate-200">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200">
-              <h2 className="text-lg font-bold text-slate-900">{editing !== null ? "Edit Expense" : "Add Expense"}</h2>
-              <button onClick={resetForm} className="p-2 rounded-lg hover:bg-slate-100 text-slate-400"><Plus className="w-4 h-4 rotate-45" /></button>
+        {/* RIGHT — visual + analysis */}
+        <div className="overflow-y-auto p-5 space-y-5">
+
+          {/* Donut chart */}
+          <div className="bg-white border border-slate-200 rounded-xl p-4">
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-3">Spending Breakdown</p>
+            <div style={{ height: 200 }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={pieData}
+                    cx="40%" cy="50%"
+                    innerRadius={50} outerRadius={80}
+                    paddingAngle={2} dataKey="value"
+                    onMouseEnter={(_, i) => setHovered(pieData[i]?.name ?? null)}
+                    onMouseLeave={() => setHovered(null)}
+                  >
+                    {pieData.map((entry) => (
+                      <Cell
+                        key={entry.name}
+                        fill={CAT_COLORS[entry.name] ?? "#94a3b8"}
+                        opacity={activeCat && activeCat !== entry.name ? 0.35 : 1}
+                        stroke={activeCat === entry.name ? "#1e293b" : "transparent"}
+                        strokeWidth={1.5}
+                      />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    wrapperStyle={{ zIndex: 50 }}
+                    contentStyle={{ backgroundColor: "#fff", border: "1px solid #e2e8f0", borderRadius: "8px", fontSize: "12px" }}
+                    formatter={(value: number) => [`${fmt(value)}/mo`, ""]}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
             </div>
-            <div className="flex-1 overflow-y-auto px-6 py-6 space-y-5">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-semibold block mb-1 text-slate-600">Category</label>
-                  <select value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))} className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400">
-                    {EXPENSE_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
-                  </select>
+          </div>
+
+          {/* Drill-down — selected category */}
+          {selectedCat && (
+            <div className="bg-white border border-slate-200 rounded-xl p-4">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: CAT_COLORS[selectedCat.cat] ?? "#94a3b8" }} />
+                  <p className="text-sm font-semibold text-slate-900">{selectedCat.cat}</p>
                 </div>
-                <div>
-                  <label className="text-sm font-semibold block mb-1 text-slate-600">Monthly Amount ($)</label>
-                  <input type="number" min="0" step="10" value={form.monthlyAmount} onChange={e => setForm(f => ({ ...f, monthlyAmount: e.target.value }))} className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" placeholder="0" />
-                </div>
+                <button
+                  onClick={() => { resetForm(); setForm(f => ({ ...f, category: selectedCat.cat })); setShowForm(true); }}
+                  className="text-xs text-blue-600 hover:underline"
+                >+ Add</button>
               </div>
-              <div>
-                <label className="text-sm font-semibold block mb-1 text-slate-600">Description <span className="font-normal text-slate-400">(optional)</span></label>
-                <input value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="e.g. Mortgage payment, groceries..." className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" />
-              </div>
-              <div className="space-y-3 bg-slate-50 rounded-xl p-4 border border-slate-200">
-                <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Retirement Planning</p>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input type="checkbox" checked={form.isEssential} onChange={e => setForm(f => ({ ...f, isEssential: e.target.checked }))} className="w-4 h-4 rounded accent-blue-600" />
-                  <span className="text-sm font-medium text-slate-700">Essential expense</span>
-                  <span className="text-xs text-slate-400">(housing, food, healthcare)</span>
-                </label>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input type="checkbox" checked={form.includeInRetirement} onChange={e => setForm(f => ({ ...f, includeInRetirement: e.target.checked }))} className="w-4 h-4 rounded accent-blue-600" />
-                  <span className="text-sm font-medium text-slate-700">Include in retirement income need</span>
-                </label>
-                {form.includeInRetirement && (
-                  <div>
-                    <label className="text-sm font-semibold block mb-1 text-slate-600">Retirement adjustment: <span className="text-blue-600">{form.retirementAdjustmentPct}%</span></label>
-                    <input type="range" min="0" max="150" step="5" value={form.retirementAdjustmentPct} onChange={e => setForm(f => ({ ...f, retirementAdjustmentPct: e.target.value }))} className="w-full accent-blue-600" />
-                    <div className="flex justify-between text-[10px] text-slate-400 mt-0.5"><span>0%</span><span>100% (same)</span><span>150%</span></div>
-                    <p className="text-xs text-slate-400 mt-1">{fmt(parseFloat(form.monthlyAmount || "0") * parseInt(form.retirementAdjustmentPct) / 100)}/mo in retirement</p>
-                  </div>
+              <div className="flex gap-6 mb-4">
+                <div><p className="text-xs text-slate-400">Monthly</p><p className="text-lg font-bold text-slate-900">{fmt(selectedCat.total)}</p></div>
+                <div><p className="text-xs text-slate-400">Yearly</p><p className="text-lg font-bold text-slate-900">{fmt(selectedCat.total * 12)}</p></div>
+                {selectedCat.retTotal !== selectedCat.total && (
+                  <div><p className="text-xs text-slate-400">In Retirement</p><p className="text-lg font-bold text-amber-600">{fmt(selectedCat.retTotal)}/mo</p></div>
                 )}
               </div>
-              <div>
-                <label className="text-sm font-semibold block mb-1 text-slate-600">Notes</label>
-                <textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} rows={2} className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none" />
+              <div className="space-y-1">
+                {selectedCat.items.map(e => (
+                  <div key={e.id} className="flex items-center justify-between py-1.5 px-2 rounded hover:bg-slate-50 group">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${e.isEssential ? "bg-red-400" : "bg-blue-400"}`} title={e.isEssential ? "Essential" : "Discretionary"} />
+                      <span className="text-sm text-slate-600 truncate">{e.description || selectedCat.cat}</span>
+                      {e.includeInRetirement && e.retirementAdjustmentPct !== 100 && (
+                        <span className="text-[10px] bg-amber-50 text-amber-600 px-1 py-0.5 rounded">{e.retirementAdjustmentPct}% ret.</span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                      <span className="text-sm font-medium text-slate-700">{fmt(parseFloat(e.monthlyAmount))}</span>
+                      <button onClick={() => startEdit(e)} className="p-0.5 opacity-0 group-hover:opacity-100 text-slate-400 hover:text-blue-600"><Pencil className="w-3 h-3" /></button>
+                      <button onClick={() => { if (confirm("Delete?")) deleteExp.mutate(e.id); }} className="p-0.5 opacity-0 group-hover:opacity-100 text-slate-400 hover:text-red-500"><Trash2 className="w-3 h-3" /></button>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
-            <div className="px-6 py-4 border-t border-slate-200 bg-slate-50 flex justify-end gap-3">
-              <button onClick={resetForm} className="px-5 py-2.5 rounded-xl font-semibold text-slate-600 hover:bg-slate-100">Cancel</button>
-              <button onClick={handleSubmit} disabled={createExp.isPending || updateExp.isPending || !form.monthlyAmount}
-                className="px-6 py-2.5 rounded-xl font-semibold bg-gradient-to-r from-blue-600 to-cyan-500 text-white hover:shadow-md disabled:opacity-50 transition">
-                {editing !== null ? "Save Changes" : "Add Expense"}
-              </button>
+          )}
+
+          {/* Bar chart */}
+          <div className="bg-white border border-slate-200 rounded-xl p-4">
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-3">All Categories</p>
+            <div style={{ height: Math.max(120, sortedCats.length * 28) }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={sortedCats.map(c => ({ name: c.cat.split(" ")[0], value: Math.round(c.total), full: c.cat }))} layout="vertical" margin={{ top: 0, right: 10, left: 10, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
+                  <XAxis type="number" tick={{ fontSize: 10 }} tickFormatter={v => `$${(v/1000).toFixed(0)}k`} />
+                  <YAxis type="category" dataKey="name" tick={{ fontSize: 10 }} width={60} />
+                  <Tooltip
+                    wrapperStyle={{ zIndex: 50 }}
+                    contentStyle={{ backgroundColor: "#fff", border: "1px solid #e2e8f0", borderRadius: "8px", fontSize: "12px" }}
+                    formatter={(v: number, _: any, props: any) => [`${fmt(v)}/mo`, props?.payload?.full ?? ""]}
+                  />
+                  <Bar dataKey="value" radius={[0, 4, 4, 0]}>
+                    {sortedCats.map(({ cat }) => (
+                      <Cell key={cat} fill={activeCat === cat ? CAT_COLORS[cat] ?? "#94a3b8" : "#e2e8f0"} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
             </div>
           </div>
+
+          {/* Retirement guardrail */}
+          {retirementMonthly > 0 && (
+            <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+              <p className="text-sm font-medium text-amber-700">Retirement Impact</p>
+              <p className="text-sm text-amber-600 mt-1">
+                Spending requires <strong>{fmt(requiredPortfolio)}</strong> invested (4% rule) to sustain <strong>{fmt(retirementMonthly * 12)}/yr</strong>.
+              </p>
+            </div>
+          )}
+
+          {/* Actionability */}
+          {biggestCat && biggestSaving > 0 && (
+            <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 text-sm text-blue-700">
+              Reducing <strong>{biggestCat.cat}</strong> by 10% lowers required portfolio by ~<strong>{fmt(biggestSaving)}</strong>.
+            </div>
+          )}
+
         </div>
-      )}
+      </div>
+
+      {/* Add/Edit form */}
+      {showForm && <ExpenseForm form={form} setForm={setForm} editing={editing} onSubmit={handleSubmit} onClose={resetForm} creating={createExp.isPending} updating={updateExp.isPending} />}
+    </div>
+  );
+}
+
+function ExpenseForm({ form, setForm, editing, onSubmit, onClose, creating, updating }: any) {
+  return (
+    <div className="fixed inset-0 z-[200] flex">
+      <div className="flex-1 bg-black/40 backdrop-blur-sm" onClick={onClose} />
+      <div className="w-full max-w-lg bg-white shadow-2xl flex flex-col h-full border-l border-slate-200">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200">
+          <h2 className="text-lg font-bold text-slate-900">{editing !== null ? "Edit Expense" : "Add Expense"}</h2>
+          <button onClick={onClose} className="p-2 rounded-lg hover:bg-slate-100 text-slate-400"><Plus className="w-4 h-4 rotate-45" /></button>
+        </div>
+        <div className="flex-1 overflow-y-auto px-6 py-6 space-y-5">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="text-sm font-semibold block mb-1 text-slate-600">Category</label>
+              <select value={form.category} onChange={(e: any) => setForm((f: any) => ({ ...f, category: e.target.value }))} className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400">
+                {EXPENSE_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="text-sm font-semibold block mb-1 text-slate-600">Monthly Amount ($)</label>
+              <input type="number" min="0" step="10" value={form.monthlyAmount} onChange={(e: any) => setForm((f: any) => ({ ...f, monthlyAmount: e.target.value }))} className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" placeholder="0" />
+            </div>
+          </div>
+          <div>
+            <label className="text-sm font-semibold block mb-1 text-slate-600">Description <span className="font-normal text-slate-400">(optional)</span></label>
+            <input value={form.description} onChange={(e: any) => setForm((f: any) => ({ ...f, description: e.target.value }))} placeholder="e.g. Mortgage payment..." className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" />
+          </div>
+          <div className="space-y-3 bg-slate-50 rounded-xl p-4 border border-slate-200">
+            <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Retirement Planning</p>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" checked={form.isEssential} onChange={(e: any) => setForm((f: any) => ({ ...f, isEssential: e.target.checked }))} className="w-4 h-4 rounded accent-blue-600" />
+              <span className="text-sm font-medium text-slate-700">Essential expense</span>
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" checked={form.includeInRetirement} onChange={(e: any) => setForm((f: any) => ({ ...f, includeInRetirement: e.target.checked }))} className="w-4 h-4 rounded accent-blue-600" />
+              <span className="text-sm font-medium text-slate-700">Include in retirement income need</span>
+            </label>
+            {form.includeInRetirement && (
+              <div>
+                <label className="text-sm font-semibold block mb-1 text-slate-600">Retirement adjustment: <span className="text-blue-600">{form.retirementAdjustmentPct}%</span></label>
+                <input type="range" min="0" max="150" step="5" value={form.retirementAdjustmentPct} onChange={(e: any) => setForm((f: any) => ({ ...f, retirementAdjustmentPct: e.target.value }))} className="w-full accent-blue-600" />
+                <p className="text-xs text-slate-400 mt-1">{fmt(parseFloat(form.monthlyAmount || "0") * parseInt(form.retirementAdjustmentPct) / 100)}/mo in retirement</p>
+              </div>
+            )}
+          </div>
+        </div>
+        <div className="px-6 py-4 border-t border-slate-200 bg-slate-50 flex justify-end gap-3">
+          <button onClick={onClose} className="px-5 py-2.5 rounded-xl font-semibold text-slate-600 hover:bg-slate-100">Cancel</button>
+          <button onClick={onSubmit} disabled={creating || updating || !form.monthlyAmount}
+            className="px-6 py-2.5 rounded-xl font-semibold bg-gradient-to-r from-blue-600 to-cyan-500 text-white hover:shadow-md disabled:opacity-50 transition">
+            {editing !== null ? "Save Changes" : "Add Expense"}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

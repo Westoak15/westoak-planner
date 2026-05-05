@@ -126,113 +126,104 @@ export function PoliciesTab({ clientId, client, person = "primary" }: { clientId
   const isTermType = TERM_TYPES.includes(draft.type);
 
   return (
-    <div className="p-6 max-w-5xl mx-auto">
-
-      {/* Summary bar */}
-      <SummaryBar items={[
-        { label: "Life coverage",     value: fmt$(lifeCoverage),   color: "text-blue-600",    bg: "bg-blue-50"   },
-        { label: "Disability",        value: diCoverage > 0 ? fmt$(diCoverage) + "/mo" : "—", color: "text-violet-600", bg: "bg-violet-50" },
-        { label: "Critical illness",  value: fmt$(ciCoverage),     color: "text-emerald-600", bg: "bg-emerald-50"},
-        { label: "Total premium/yr",  value: fmt$(totalPremium),   color: "text-gray-700",    bg: "bg-gray-100"  },
-      ]} />
+    <div className="max-w-5xl mx-auto px-6 py-6 space-y-6">
 
       {/* Header */}
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-bold text-gray-900">Insurance Policies</h2>
-          <p className="text-sm text-gray-400 mt-0.5">
-            {filteredPolicies.length} polic{filteredPolicies.length !== 1 ? "ies" : "y"} on file
-          </p>
+          <h1 className="text-xl font-semibold text-slate-900">Protection</h1>
+          <p className="text-sm text-slate-500">{filteredPolicies.length} polic{filteredPolicies.length !== 1 ? "ies" : "y"} on file</p>
         </div>
         <button onClick={openCreate}
-          className="flex items-center gap-2 bg-[#0c1e3a] hover:bg-[#0e2a4a] text-white text-sm font-semibold px-4 py-2 rounded-xl transition-colors">
+          className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-cyan-500 text-white text-sm font-semibold px-4 py-2 rounded-xl shadow-sm hover:shadow-md transition">
           <Plus className="w-4 h-4" /> Add Policy
         </button>
       </div>
 
-      {/* Table */}
+      {/* Summary stats */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {[
+          { label: "Life Coverage",    value: lifeCoverage > 0 ? fmt$(lifeCoverage)           : "—", color: lifeCoverage > 0 ? "text-blue-600"    : "text-slate-400" },
+          { label: "Disability",       value: diCoverage > 0   ? fmt$(diCoverage) + "/mo"     : "—", color: diCoverage > 0   ? "text-violet-600"  : "text-slate-400" },
+          { label: "Critical Illness", value: ciCoverage > 0   ? fmt$(ciCoverage)             : "—", color: ciCoverage > 0   ? "text-emerald-600" : "text-slate-400" },
+          { label: "Annual Premium",   value: fmt$(totalPremium),                                    color: "text-slate-700" },
+        ].map(s => (
+          <div key={s.label} className="bg-white border border-slate-200 rounded-xl p-4 hover:shadow-sm transition-all duration-200">
+            <p className="text-xs text-slate-500">{s.label}</p>
+            <p className={`text-xl font-semibold mt-1 ${s.color}`}>{s.value}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Gap insights */}
+      {filteredPolicies.length > 0 && lifeCoverage === 0 && (
+        <div className="bg-red-50 border border-red-100 rounded-xl p-4 text-sm text-red-600 font-medium">
+          ⚠ No life insurance on file — income replacement needs may be unmet.
+        </div>
+      )}
+      {filteredPolicies.length > 0 && diCoverage === 0 && (
+        <div className="bg-amber-50 border border-amber-100 rounded-xl p-4 text-sm text-amber-700 font-medium">
+          ⚠ No disability coverage on file — income at risk if unable to work.
+        </div>
+      )}
+
+      {/* Policy cards */}
       {loading ? (
-        <div className="text-center py-16 text-gray-400">Loading…</div>
+        <div className="text-center py-16 text-slate-400">Loading…</div>
       ) : filteredPolicies.length === 0 ? (
-        <div className="text-center py-16 border-2 border-dashed border-gray-200 rounded-2xl">
-          <Shield className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-          <p className="text-gray-500 font-semibold">No policies on file</p>
-          <p className="text-sm text-gray-400 mt-1">Add existing life, disability, or LTC coverage</p>
+        <div className="text-center py-16 border-2 border-dashed border-slate-200 rounded-2xl">
+          <Shield className="w-10 h-10 text-slate-300 mx-auto mb-3" />
+          <p className="text-slate-500 font-semibold">No policies on file</p>
+          <p className="text-sm text-slate-400 mt-1">Add existing life, disability, or LTC coverage</p>
+          <button onClick={openCreate} className="mt-4 text-sm text-blue-600 hover:underline">Add your first policy</button>
         </div>
       ) : (
-        <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-          <table className="w-full text-sm">
-            <thead className="bg-gray-50 border-b border-gray-200">
-              <tr>
-                <TH>Type</TH>
-                <TH>Insured</TH>
-                <TH>Provider</TH>
-                <TH right>Coverage</TH>
-                <TH right>Premium / yr</TH>
-                <TH>Inforce</TH>
-                {filteredPolicies.some(p => TERM_TYPES.includes(p.type)) && <TH>Renews</TH>}
-                <TH>Beneficiary</TH>
-                <TH></TH>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {filteredPolicies.map(p => (
-                <tr key={p.id} className="hover:bg-gray-50 transition-colors">
-                  <TD>
-                    <span className="bg-[#0c1e3a]/10 text-[#0c1e3a] text-xs font-semibold px-2 py-0.5 rounded-full whitespace-nowrap">
-                      {p.type}
-                    </span>
-                  </TD>
-                  <TD>
-                    <span className="text-gray-600 text-xs">
-                      {p.insured === "spouse" ? (spouseName ?? "Spouse") : clientName}
-                    </span>
-                  </TD>
-                  <TD><span className="font-medium text-gray-800">{p.provider || "—"}</span></TD>
-                  <TD right><span className="font-semibold text-gray-900">{fmt$(p.coverageAmount)}</span></TD>
-                  <TD right>
-                    <span className="text-gray-600">{fmt$(annualPremium(p))}</span>
-                    <span className="text-gray-400 text-xs ml-1">({fmt$(p.premium)}/{p.premiumFrequency?.slice(0,2)})</span>
-                  </TD>
-                  <TD><span className="text-gray-400 text-xs">{p.inforceDate || "—"}</span></TD>
-                  {filteredPolicies.some(pp => TERM_TYPES.includes(pp.type)) && (
-                    <TD>
-                      {TERM_TYPES.includes(p.type) && p.renewalDate
-                        ? <span className="text-amber-600 text-xs font-medium">{p.renewalDate}</span>
-                        : <span className="text-gray-300">—</span>}
-                    </TD>
-                  )}
-                  <TD><span className="text-gray-400 text-xs">{p.beneficiary || "—"}</span></TD>
-                  <TD>
-                    <div className="flex gap-1">
-                      <button onClick={() => openEdit(p)} className="p-1.5 text-gray-400 hover:text-[#0c1e3a] transition-colors">
-                        <Pencil className="w-3.5 h-3.5" />
-                      </button>
-                      <button onClick={() => del(p.id)} className="p-1.5 text-gray-400 hover:text-red-500 transition-colors">
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
+        <div className="space-y-4">
+          {filteredPolicies.map(p => {
+            const insuredName = p.insured === "spouse" ? (spouseName ?? "Spouse") : clientName;
+            return (
+              <div key={p.id} className="bg-white border border-slate-200 rounded-2xl p-5 hover:shadow-md hover:-translate-y-[1px] transition-all duration-200 group">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-xs font-semibold bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full">{p.type}</span>
+                      {TERM_TYPES.includes(p.type) && p.renewalDate && (
+                        <span className="text-xs font-medium text-amber-600">Renews {p.renewalDate}</span>
+                      )}
                     </div>
-                  </TD>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                    <p className="font-medium text-slate-900">{p.provider || "—"}</p>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      {insuredName}
+                      {p.policyNumber ? ` · #${p.policyNumber}` : ""}
+                      {p.inforceDate ? ` · Since ${p.inforceDate}` : ""}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-lg font-semibold text-blue-600">{fmt$(p.coverageAmount)}</p>
+                    <p className="text-xs text-slate-500">{fmt$(annualPremium(p))}/yr</p>
+                  </div>
+                </div>
+                <div className="mt-3 flex justify-between items-center text-xs text-slate-500 border-t border-slate-100 pt-3">
+                  <span>Beneficiary: {p.beneficiary || "—"}</span>
+                  <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition">
+                    <button onClick={() => openEdit(p)} className="p-1.5 text-slate-400 hover:text-blue-600 rounded-md hover:bg-blue-50 transition">
+                      <Pencil className="w-3.5 h-3.5" />
+                    </button>
+                    <button onClick={() => del(p.id)} className="p-1.5 text-slate-400 hover:text-red-500 rounded-md hover:bg-red-50 transition">
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+                {p.notes && (
+                  <p className="mt-2 text-xs text-slate-500 bg-slate-50 rounded-lg px-3 py-2">{p.notes}</p>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
 
-      {/* Notes column if any policy has notes */}
-      {filteredPolicies.some(p => p.notes) && (
-        <div className="mt-3 space-y-1.5">
-          {filteredPolicies.filter(p => p.notes).map(p => (
-            <div key={p.id} className="flex gap-2 text-xs text-gray-500 bg-gray-50 rounded-lg px-3 py-2">
-              <span className="font-semibold text-gray-600">{p.provider || p.type}:</span>
-              <span>{p.notes}</span>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Form modal */}
+            {/* Form modal */}
       {showForm && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg">

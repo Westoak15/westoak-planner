@@ -563,9 +563,9 @@ export function RetirementProjectionForm({ clientId, clientName, projection, onS
 // Drop-in replacement for the existing retirement tab.
 // Usage: <RetirementTab clientId={clientId} />
 
-export function RetirementTab({ clientId, clientName }: { clientId: number; clientName?: string }) {
+export function RetirementTab({ clientId, clientName, person: personProp }: { clientId: number; clientName?: string; person?: string }) {
   const qc = useQueryClient();
-  const [view, setView] = useState<"primary" | "spouse" | "combined">("primary");
+  const view = (personProp ?? "primary") as "primary" | "spouse" | "combined";
   const [adding, setAdding] = useState(false);
   const [editing, setEditing] = useState<RetirementProjection | null>(null);
   const [checkupLoading, setCheckupLoading] = useState(false);
@@ -722,25 +722,6 @@ export function RetirementTab({ clientId, clientName }: { clientId: number; clie
             + Add Projection
           </button>
         </div>
-      </div>
-
-      {/* Person tabs */}
-      <div className="flex gap-1 mb-5 p-1 bg-gray-100 rounded-lg w-fit">
-        {[
-          { key: "primary" as const, label: clientName ?? "Primary" },
-          ...(hasSpouse ? [{ key: "spouse" as const, label: clientData?.spouseFirstName ?? "Spouse" }] : []),
-          ...(hasSpouse ? [{ key: "combined" as const, label: "Combined" }] : []),
-        ].map(tab => (
-          <button
-            key={tab.key}
-            onClick={() => setView(tab.key)}
-            className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
-              view === tab.key ? "bg-white shadow-sm text-gray-900" : "text-gray-500 hover:text-gray-700"
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
       </div>
 
       {/* Combined summary */}

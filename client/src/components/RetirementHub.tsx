@@ -48,7 +48,7 @@ export function RetirementHub({ clientId, client, person, onPersonChange }: Prop
       >
         <div className="p-6">
           {subtab === "projection" && (
-            <RetirementTab clientId={clientId} clientName={client?.firstName} />
+            <RetirementTab clientId={clientId} clientName={client?.firstName} person={person} />
           )}
           {subtab === "pension" && (
             <PensionTab clientId={clientId} client={client} person={person === "combined" ? "primary" : person} />

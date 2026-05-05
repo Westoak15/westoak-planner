@@ -1768,7 +1768,11 @@ export default function App() {
                     <NetWorthTabNew clientId={client.id} />
                   </QueryClientProvider>
                 )}
-                {tab === "goals"    && <GoalsTab clientId={client.id} client={client} />}
+                {tab === "goals"    && (
+                  <QueryClientProvider client={queryClient}>
+                    <GoalsTab clientId={client.id} client={client} />
+                  </QueryClientProvider>
+                )}
                 {tab === "expenses" && (
                   <QueryClientProvider client={queryClient}>
                     <ExpensesTab clientId={client.id} addTrigger={tab === "expenses" ? globalAddTrigger : 0} />

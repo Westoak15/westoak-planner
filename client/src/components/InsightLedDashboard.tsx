@@ -437,7 +437,7 @@ export function InsightLedDashboard({ clientId, client, onNavigate }: InsightLed
         </section>
 
         <div className="grid grid-cols-12 gap-6">
-          <div className="col-span-8 fp-insightled-card p-6 flex flex-col min-h-[350px]">
+          <div className="col-span-8 fp-insightled-card p-6 min-h-[350px]">
             <div className="flex justify-between items-start mb-6">
               <div>
                 <h2 className="text-sm font-semibold text-[var(--text-secondary)] uppercase tracking-widest">Current Net Worth</h2>
@@ -454,7 +454,7 @@ export function InsightLedDashboard({ clientId, client, onNavigate }: InsightLed
                 Snapshot
               </span>
             </div>
-            <div className="flex-1 w-full relative min-h-[240px]">
+            <div className="w-full" style={{ height: 240 }}>
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={trendData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                   <defs>
@@ -477,9 +477,9 @@ export function InsightLedDashboard({ clientId, client, onNavigate }: InsightLed
             </div>
           </div>
 
-          <div className="col-span-4 fp-insightled-card p-6 flex flex-col">
+          <div className="col-span-4 fp-insightled-card p-6">
             <h2 className="text-sm font-semibold text-[var(--text-secondary)] uppercase tracking-widest mb-6">Asset Allocation</h2>
-            <div className="flex-1 w-full min-h-[200px] relative">
+            <div className="w-full relative" style={{ height: 200 }}>
               {allocationData.length === 0 ? (
                 <div className="flex items-center justify-center h-full text-xs text-[var(--text-tertiary)] text-center px-4">
                   No assets recorded yet. Add entries from the Net Worth tab.
@@ -522,9 +522,9 @@ export function InsightLedDashboard({ clientId, client, onNavigate }: InsightLed
             )}
           </div>
 
-          <div className="col-span-6 fp-insightled-card p-6 flex flex-col min-h-[300px]">
+          <div className="col-span-6 fp-insightled-card p-6 min-h-[300px]">
             <h2 className="text-sm font-semibold text-[var(--text-secondary)] uppercase tracking-widest mb-6">Cash Flow (Estimated, 6 Mo)</h2>
-            <div className="flex-1 w-full relative">
+            <div className="w-full relative" style={{ height: 220 }}>
               {headerInfo.totalIncome === 0 ? (
                 <div className="flex items-center justify-center h-full text-xs text-[var(--text-tertiary)] text-center">
                   Add household income to see cash flow.

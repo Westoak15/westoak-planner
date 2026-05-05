@@ -1670,11 +1670,33 @@ function TaxProjectionPanel({ clientId, prefillPrimary, prefillSpouse, person = 
 // PANEL: Capital Gains Analysis
 // ============================================================================
 
-const PROVINCE_RATES: Record<string, number> = {
-  ON: 53.53, BC: 53.50, AB: 48.00, QC: 53.31, MB: 50.40,
-  SK: 47.50, NS: 54.00, NB: 52.50, PE: 51.37, NL: 51.30,
-  YT: 48.00, NT: 47.05, NU: 44.50,
+// Top provincial bracket rates (2025) + federal top = combined top marginal rate
+// Federal top bracket: 33% (>$253,414)
+const FEDERAL_TOP = 0.33;
+const PROV_TOP: Record<string, number> = {
+  ON: 0.1316, BC: 0.2050, AB: 0.15,  QC: 0.2575, MB: 0.174,
+  SK: 0.145,  NS: 0.2100, NB: 0.195, PE: 0.1900, NL: 0.218,
+  YT: 0.150,  NT: 0.1405, NU: 0.115,
 };
+
+// Compute marginal rate from income using actual 2025 brackets
+function computeMarginalRate(income: number, province: string): number {
+  // Federal brackets 2025
+  const fed = income <= 57375 ? 0.15 : income <= 114750 ? 0.205 : income <= 177882 ? 0.26 : income <= 253414 ? 0.29 : 0.33;
+  // Provincial top bracket (simplified — uses top rate for high incomes, otherwise province default)
+  const prov = PROV_TOP[province] ?? 0.1316;
+  return Math.round((fed + prov) * 10000) / 100; // returns as percentage
+}
+
+// Capital-gain-eligible NW categories
+const CG_CATEGORIES = ["Real Estate", "Business Assets", "Cottage", "Rental Property", "Stocks"];
+
+// Map NW category → asset type for LCGE / inclusion logic
+function categoryToAssetType(cat: string): string {
+  if (cat === "Real Estate" || cat === "Cottage" || cat === "Rental Property") return "realestate";
+  if (cat === "Business Assets") return "smallbiz";
+  return "stock";
+}
 
 function CapitalGainsPanel({ clientId, client, person = "primary" }: {
   clientId: number; client?: any; person?: string;
@@ -1687,12 +1709,11 @@ function CapitalGainsPanel({ clientId, client, person = "primary" }: {
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [saving, setSaving]     = useState(false);
-  const [result, setResult]     = useState<any>(null);
-  const [showResult, setShowResult] = useState<number | null>(null);
+  const [nwEntries, setNwEntries] = useState<any[]>([]);
 
   const provinces = ["ON","BC","AB","QC","MB","SK","NS","NB","PE","NL","YT","NT","NU"];
   const ASSET_TYPES = [
-    { key: "stock",      label: "Stock / ETF" },
+    { key: "stock",      label: "Non-Registered / Stock" },
     { key: "realestate", label: "Real Estate" },
     { key: "smallbiz",   label: "Small Business Shares" },
     { key: "farmfish",   label: "Farm / Fishing Property" },
@@ -1701,12 +1722,21 @@ function CapitalGainsPanel({ clientId, client, person = "primary" }: {
   const LCGE_TYPES = ["smallbiz", "farmfish"];
   const LCGE_LIMIT = 1250000;
 
+  // Compute income for this person
+  const personIncome = person === "spouse"
+    ? Number(client?.spouseAnnualIncome ?? 0)
+    : Number(client?.annualIncome ?? 0);
+
+  const defaultProvince = client?.province ?? "ON";
+  const defaultRate = computeMarginalRate(personIncome, defaultProvince);
+
   const emptyForm = () => ({
     label: `Capital Gains — ${personLabel} — ${new Date().getFullYear()}`,
-    province: client?.province ?? "ON",
-    marginalRate: String((PROVINCE_RATES[client?.province ?? "ON"] ?? 53.53).toFixed(2)),
+    province: defaultProvince,
+    income: String(personIncome),
+    marginalRate: String(defaultRate),
     carryForwardLoss: "0",
-    positions: [{ type: "stock", symbol: "", acb: "", fmv: "", lcgeEligible: false }],
+    positions: [] as { type: string; name: string; category: string; acb: string; fmv: string; lcgeEligible: boolean }[],
   });
 
   const [form, setForm] = useState(emptyForm());
@@ -1714,30 +1744,48 @@ function CapitalGainsPanel({ clientId, client, person = "primary" }: {
   const load = async () => {
     setLoading(true);
     try {
-      const data = await api.get<any[]>(`/api/tax/client/${clientId}/analyses?type=capgains`);
+      const [data, nw] = await Promise.all([
+        api.get<any[]>(`/api/tax/client/${clientId}/analyses?type=capgains`),
+        api.get<any[]>(`/api/clients/${clientId}/net-worth`),
+      ]);
       setAnalyses(data.filter((a: any) => a.owner === owner));
+      setNwEntries(nw);
     } catch { setAnalyses([]); }
     finally { setLoading(false); }
   };
 
   useEffect(() => { load(); }, [clientId, owner]);
 
+  // Build asset rows from NW entries for this person
+  const cgAssets = nwEntries.filter(e =>
+    e.type === "asset" &&
+    CG_CATEGORIES.includes(e.category) &&
+    (!e.owner || e.owner === "primary" || e.owner === owner || owner === "joint")
+  );
+
   const openNew = () => {
     setEditingId(null);
-    setForm(emptyForm());
-    setResult(null);
+    // Pre-populate from NW assets
+    const prePositions = cgAssets.map(e => ({
+      type: categoryToAssetType(e.category),
+      name: e.name,
+      category: e.category,
+      acb: "",
+      fmv: String(Math.round(Number(e.value))),
+      lcgeEligible: LCGE_TYPES.includes(categoryToAssetType(e.category)),
+    }));
+    setForm({ ...emptyForm(), positions: prePositions.length > 0 ? prePositions : [{ type: "realestate", name: "", category: "Real Estate", acb: "", fmv: "", lcgeEligible: false }] });
     setShowForm(true);
   };
 
   const openEdit = (a: any) => {
     setEditingId(a.id);
-    setForm({ label: a.label ?? "", ...a.inputData });
-    setResult(a.resultData ?? null);
+    setForm({ label: a.label ?? "", income: String(personIncome), ...a.inputData });
     setShowForm(true);
   };
 
   const addPosition = () =>
-    setForm(f => ({ ...f, positions: [...f.positions, { type: "stock", symbol: "", acb: "", fmv: "", lcgeEligible: false }] }));
+    setForm(f => ({ ...f, positions: [...f.positions, { type: "realestate", name: "", category: "Real Estate", acb: "", fmv: "", lcgeEligible: false }] }));
 
   const removePosition = (i: number) =>
     setForm(f => ({ ...f, positions: f.positions.filter((_, idx) => idx !== i) }));
@@ -1768,7 +1816,7 @@ function CapitalGainsPanel({ clientId, client, person = "primary" }: {
     try {
       const input = {
         positions: form.positions.map(p => ({
-          symbol: p.symbol || p.type,
+          symbol: p.name || p.category || p.type,
           acb: Number(p.acb), fmv: Number(p.fmv),
           lcgeEligible: p.lcgeEligible,
         })),
@@ -1781,7 +1829,7 @@ function CapitalGainsPanel({ clientId, client, person = "primary" }: {
       );
       const payload = {
         type: "capgains", owner, label: form.label,
-        inputData: { province: form.province, marginalRate: form.marginalRate, carryForwardLoss: form.carryForwardLoss, positions: form.positions },
+        inputData: { province: form.province, marginalRate: form.marginalRate, income: form.income, carryForwardLoss: form.carryForwardLoss, positions: form.positions },
         resultData: calcResult,
       };
       if (editingId) await api.patch(`/api/tax/tax-analyses/${editingId}`, payload);
@@ -1808,14 +1856,14 @@ function CapitalGainsPanel({ clientId, client, person = "primary" }: {
           <span className="ml-2 text-xs bg-green-100 text-green-700 font-semibold px-2 py-0.5 rounded-full">Rate increase cancelled Mar 21, 2025</span>
         </div>
         <button onClick={openNew}
-          className="flex items-center gap-1.5 text-sm font-semibold text-white bg-[#0c1e3a] hover:bg-[#0e2a4a] px-4 py-2 rounded-xl whitespace-nowrap">
+          className="flex items-center gap-1.5 text-sm font-semibold text-white bg-gradient-to-r from-blue-600 to-cyan-500 hover:shadow-md px-4 py-2 rounded-xl whitespace-nowrap shadow-sm transition">
           <Plus className="w-4 h-4" /> New Analysis
         </button>
       </div>
 
       {showForm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/40 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between p-5 border-b border-gray-100">
               <h3 className="text-lg font-bold text-gray-900">{editingId ? "Edit" : "New"} Capital Gains Analysis — {personLabel}</h3>
               <button onClick={() => setShowForm(false)} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
@@ -1826,20 +1874,35 @@ function CapitalGainsPanel({ clientId, client, person = "primary" }: {
                 <input value={form.label} onChange={e => setForm(f => ({ ...f, label: e.target.value }))}
                   className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm" />
               </div>
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-4 gap-3">
                 <div>
                   <label className="text-xs font-semibold text-gray-500 block mb-1">Province</label>
                   <select value={form.province}
-                    onChange={e => setForm(f => ({ ...f, province: e.target.value, marginalRate: String((PROVINCE_RATES[e.target.value] ?? 53.53).toFixed(2)) }))}
+                    onChange={e => {
+                      const newRate = computeMarginalRate(Number(form.income || 0), e.target.value);
+                      setForm(f => ({ ...f, province: e.target.value, marginalRate: String(newRate) }));
+                    }}
                     className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm">
                     {provinces.map(p => <option key={p} value={p}>{p}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className="text-xs font-semibold text-gray-500 block mb-1">Marginal Tax Rate (%)</label>
-                  <input type="number" step="0.1" value={form.marginalRate}
-                    onChange={e => setForm(f => ({ ...f, marginalRate: e.target.value }))}
-                    className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm" />
+                  <label className="text-xs font-semibold text-gray-500 block mb-1">Annual Income ($)</label>
+                  <input type="number" value={form.income}
+                    onChange={e => {
+                      const newRate = computeMarginalRate(Number(e.target.value), form.province);
+                      setForm(f => ({ ...f, income: e.target.value, marginalRate: String(newRate) }));
+                    }}
+                    className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm" placeholder="0" />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-gray-500 block mb-1">Marginal Rate (%)</label>
+                  <div className="flex items-center gap-2">
+                    <input type="number" step="0.1" value={form.marginalRate}
+                      onChange={e => setForm(f => ({ ...f, marginalRate: e.target.value }))}
+                      className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm" />
+                    <span className="text-xs text-slate-400 whitespace-nowrap">2025 tables</span>
+                  </div>
                 </div>
                 <div>
                   <label className="text-xs font-semibold text-gray-500 block mb-1">Prior Year Losses ($)</label>
@@ -1849,12 +1912,12 @@ function CapitalGainsPanel({ clientId, client, person = "primary" }: {
                 </div>
               </div>
 
-              {/* Positions table */}
+              {/* Assets table */}
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Positions</label>
-                  <button onClick={addPosition} className="flex items-center gap-1 text-xs font-semibold text-[#0c1e3a] hover:underline">
-                    <Plus className="w-3.5 h-3.5" /> Add Position
+                  <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Assets</label>
+                  <button onClick={addPosition} className="flex items-center gap-1 text-xs font-semibold text-blue-600 hover:underline">
+                    <Plus className="w-3.5 h-3.5" /> Add Asset
                   </button>
                 </div>
                 <div className="border border-gray-200 rounded-xl overflow-hidden">
@@ -1862,7 +1925,8 @@ function CapitalGainsPanel({ clientId, client, person = "primary" }: {
                     <thead className="bg-gray-50 border-b border-gray-200">
                       <tr>
                         <th className="px-3 py-2 text-left text-xs font-semibold text-gray-500">Type</th>
-                        <th className="px-3 py-2 text-left text-xs font-semibold text-gray-500">Symbol</th>
+                        <th className="px-3 py-2 text-left text-xs font-semibold text-gray-500">Category</th>
+                        <th className="px-3 py-2 text-left text-xs font-semibold text-gray-500">Name</th>
                         <th className="px-3 py-2 text-right text-xs font-semibold text-gray-500">ACB ($)</th>
                         <th className="px-3 py-2 text-right text-xs font-semibold text-gray-500">FMV ($)</th>
                         <th className="px-3 py-2 text-right text-xs font-semibold text-gray-500">Gain/Loss</th>
@@ -1882,8 +1946,12 @@ function CapitalGainsPanel({ clientId, client, person = "primary" }: {
                               </select>
                             </td>
                             <td className="px-3 py-2">
-                              <input value={pos.symbol} onChange={e => updatePos(i, "symbol", e.target.value)}
-                                className="border border-gray-200 rounded-lg px-2 py-1.5 text-xs w-full" placeholder="e.g. XIC.TO" />
+                              <input value={pos.category} onChange={e => updatePos(i, "category", e.target.value)}
+                                className="border border-gray-200 rounded-lg px-2 py-1.5 text-xs w-full" placeholder="e.g. Real Estate" />
+                            </td>
+                            <td className="px-3 py-2">
+                              <input value={pos.name} onChange={e => updatePos(i, "name", e.target.value)}
+                                className="border border-gray-200 rounded-lg px-2 py-1.5 text-xs w-full" placeholder="e.g. Cottage" />
                             </td>
                             <td className="px-3 py-2">
                               <input type="number" value={pos.acb} onChange={e => updatePos(i, "acb", e.target.value)}
@@ -1917,6 +1985,11 @@ function CapitalGainsPanel({ clientId, client, person = "primary" }: {
                     </tbody>
                   </table>
                 </div>
+                {cgAssets.length > 0 && form.positions.length === 0 && (
+                  <p className="text-xs text-blue-600 mt-2 cursor-pointer hover:underline" onClick={() => openNew()}>
+                    ↑ Assets from Net Worth will auto-populate when you click New Analysis
+                  </p>
+                )}
               </div>
 
               {/* Live preview */}
@@ -1939,7 +2012,7 @@ function CapitalGainsPanel({ clientId, client, person = "primary" }: {
             <div className="flex gap-3 justify-end p-5 border-t border-gray-100">
               <button onClick={() => setShowForm(false)} className="text-sm text-gray-500 px-4 py-2">Cancel</button>
               <button onClick={save} disabled={saving}
-                className="flex items-center gap-1.5 bg-[#0c1e3a] hover:bg-[#0e2a4a] disabled:opacity-50 text-white text-sm font-semibold px-5 py-2.5 rounded-xl">
+                className="flex items-center gap-1.5 bg-gradient-to-r from-blue-600 to-cyan-500 hover:shadow-md disabled:opacity-50 text-white text-sm font-semibold px-5 py-2.5 rounded-xl">
                 <Save className="w-3.5 h-3.5" /> {saving ? "Saving…" : "Calculate & Save"}
               </button>
             </div>
@@ -1969,7 +2042,7 @@ function CapitalGainsPanel({ clientId, client, person = "primary" }: {
                 <div className="flex items-center justify-between mb-4">
                   <div>
                     <h3 className="font-bold text-gray-900">{a.label || "Capital Gains Analysis"}</h3>
-                    <p className="text-xs text-gray-400 mt-0.5">{positions.length} position{positions.length !== 1 ? "s" : ""} · {inp?.province ?? "ON"} · {new Date(a.createdAt).toLocaleDateString("en-CA")}</p>
+                    <p className="text-xs text-gray-400 mt-0.5">{positions.length} asset{positions.length !== 1 ? "s" : ""} · {inp?.province ?? "ON"} · {new Date(a.createdAt).toLocaleDateString("en-CA")} · {inp?.marginalRate ?? "—"}% marginal rate</p>
                   </div>
                   <div className="flex gap-1">
                     <button onClick={() => openEdit(a)} className="p-1.5 text-gray-300 hover:text-blue-500"><Pencil className="w-3.5 h-3.5" /></button>

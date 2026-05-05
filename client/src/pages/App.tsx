@@ -25,6 +25,7 @@ import { ClientOverview } from "./ClientOverview";
 import { MeetingRecorderTrigger } from "../components/MeetingRecorder";
 import { useHotkeys } from "../hooks/useHotkeys";
 import { CommandPalette, type CommandAction } from "../components/ui/CommandPalette";
+import { InlineEdit } from "../components/ui/InlineEdit";
 import {
   Plus, Pencil, Trash2, X, Check, ChevronRight, Search,
   User, Users, UserPlus, Baby, FileText, Home, Calendar, Briefcase, LogOut, Save, KeyRound, Eye, EyeOff, Mic, MicOff, Loader2,
@@ -441,10 +442,17 @@ function ClientDetail({ client, onBack, onPlanSelect, onUpdate, level }: { clien
   }, [client.id]);
 
   async function save() {
-  setBusy(true);
-  try { const updated = await api.patch<Client>(`/api/clients/${client.id}`, form); setEditing(false); onUpdate(updated); }
-  catch (e: any) { alert(e.message); }
-  finally { setBusy(false); }
+    setBusy(true);
+    try { const updated = await api.patch<Client>(`/api/clients/${client.id}`, form); setEditing(false); onUpdate(updated); }
+    catch (e: any) { alert(e.message); }
+    finally { setBusy(false); }
+  }
+
+  async function inlinePatch(data: Partial<Client>) {
+    try {
+      const updated = await api.patch<Client>(`/api/clients/${client.id}`, data);
+      onUpdate(updated);
+    } catch (e: any) { alert(e.message); }
   }
 
   async function deletePlan(planId: number) {
@@ -596,15 +604,15 @@ function ClientDetail({ client, onBack, onPlanSelect, onUpdate, level }: { clien
             }
             view={
               <dl className="grid grid-cols-2 gap-y-3 gap-x-6">
-                <ExecField label="Email"          value={client.email} />
-                <ExecField label="Phone"          value={client.phone} />
-                <ExecField label="Date of Birth"  value={client.dateOfBirth} />
-                <ExecField label="Province"       value={client.province} />
-                <ExecField label="Occupation"     value={client.occupation} />
-                <ExecField label="Annual Income"  value={fmt$(client.annualIncome)} mono />
-                <ExecField label="Pension"        value={(client as any).pensionType} />
-                <ExecField label="Retirement Age" value={client.retirementAge} mono />
-                <ExecField label="Desired Income" value={fmt$(client.desiredRetirementIncome)} mono />
+                <ExecField label="Email"          value={client.email}                     onSave={v => inlinePatch({ email: v })} />
+                <ExecField label="Phone"          value={client.phone}                     onSave={v => inlinePatch({ phone: v })} />
+                <ExecField label="Date of Birth"  value={client.dateOfBirth}               onSave={v => inlinePatch({ dateOfBirth: v })} />
+                <ExecField label="Province"       value={client.province}                  onSave={v => inlinePatch({ province: v })} />
+                <ExecField label="Occupation"     value={client.occupation}                onSave={v => inlinePatch({ occupation: v })} />
+                <ExecField label="Annual Income"  value={fmt$(client.annualIncome)} mono   onSave={v => inlinePatch({ annualIncome: v })} type="number" />
+                <ExecField label="Pension"        value={(client as any).pensionType}      onSave={v => inlinePatch({ pensionType: v } as any)} />
+                <ExecField label="Retirement Age" value={client.retirementAge} mono        onSave={v => inlinePatch({ retirementAge: +v })} type="number" />
+                <ExecField label="Desired Income" value={fmt$(client.desiredRetirementIncome)} mono onSave={v => inlinePatch({ desiredRetirementIncome: v })} type="number" />
               </dl>
             }
           />
@@ -632,11 +640,11 @@ function ClientDetail({ client, onBack, onPlanSelect, onUpdate, level }: { clien
               }
               view={
                 <dl className="grid grid-cols-2 gap-y-3 gap-x-6">
-                  <ExecField label="Date of Birth"  value={client.spouseDateOfBirth} />
-                  <ExecField label="Occupation"     value={client.spouseOccupation} />
-                  <ExecField label="Annual Income"  value={fmt$(client.spouseAnnualIncome)} mono />
-                  <ExecField label="Pension"        value={(client as any).spousePensionType} />
-                  <ExecField label="Retirement Age" value={client.spouseRetirementAge} mono />
+                  <ExecField label="Date of Birth"  value={client.spouseDateOfBirth}             onSave={v => inlinePatch({ spouseDateOfBirth: v })} />
+                  <ExecField label="Occupation"     value={client.spouseOccupation}               onSave={v => inlinePatch({ spouseOccupation: v })} />
+                  <ExecField label="Annual Income"  value={fmt$(client.spouseAnnualIncome)} mono   onSave={v => inlinePatch({ spouseAnnualIncome: v })} type="number" />
+                  <ExecField label="Pension"        value={(client as any).spousePensionType}      onSave={v => inlinePatch({ spousePensionType: v } as any)} />
+                  <ExecField label="Retirement Age" value={client.spouseRetirementAge} mono        onSave={v => inlinePatch({ spouseRetirementAge: +v })} type="number" />
                   <ExecField label="Desired Income" value={fmt$(client.spouseDesiredRetirementIncome)} mono />
                 </dl>
               }
@@ -777,7 +785,13 @@ function PersonPanel({ roleLabel, avatarBg, avatarInitials, displayName, display
 // ─────────────────────────────────────────────────────────────────────────────
 // ExecField — refined "executive" read-only field. Label small, value bold.
 // ─────────────────────────────────────────────────────────────────────────────
-function ExecField({ label, value, mono = false }: { label: string; value: string | number | null | undefined; mono?: boolean }) {
+function ExecField({ label, value, mono = false, onSave, type = "text" }: {
+  label: string;
+  value: string | number | null | undefined;
+  mono?: boolean;
+  onSave?: (v: string) => void;
+  type?: "text" | "number";
+}) {
   const v = value === null || value === undefined || value === "" ? "—" : value;
   const isEmpty = v === "—";
   return (
@@ -787,7 +801,17 @@ function ExecField({ label, value, mono = false }: { label: string; value: strin
         "text-sm font-semibold truncate",
         isEmpty ? "text-gray-300" : "text-gray-800",
         mono && !isEmpty && "font-mono tabular-nums",
-      )}>{v}</dd>
+      )}>
+        {onSave ? (
+          <InlineEdit
+            value={v === "—" ? "" : String(v)}
+            type={type}
+            onSave={onSave}
+            placeholder={label}
+            className={cn("text-sm font-semibold", mono && "font-mono tabular-nums", isEmpty && "text-gray-300")}
+          />
+        ) : v}
+      </dd>
     </div>
   );
 }

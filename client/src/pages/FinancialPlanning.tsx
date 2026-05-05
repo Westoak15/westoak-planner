@@ -9,6 +9,7 @@ class ErrorBoundary extends Component<{children:ReactNode;fallback?:ReactNode},{
 }
 import { useQuery } from "@tanstack/react-query";
 import { RetirementTab } from "@/components/planning/RetirementProjectionForm";
+import { InlineEdit } from "@/components/ui/InlineEdit";
 import {
   useClientPlans, useNetWorthEntries, useCreateNetWorthEntry, useUpdateNetWorthEntry, useDeleteNetWorthEntry,
 } from "../hooks/use-plans";
@@ -170,6 +171,68 @@ function OverviewTab({ clientId, onTabChange }: { clientId: number; onTabChange?
 }
 
 // ── Net Worth Tab ─────────────────────────────────────────────────────────────
+function NetWorthRow({ item, onUpdate, onDelete }: { item: any; onUpdate: (id: number, data: any) => void; onDelete: (id: number) => void }) {
+  const [open, setOpen] = useState(false);
+  const isAsset = item.type === "asset";
+  const val = parseFloat(item.value || "0");
+  const fmt = (n: number) => `$${Math.round(n).toLocaleString("en-CA")}`;
+
+  return (
+    <div className={`border-b border-slate-100 last:border-0`}>
+      <div
+        onClick={() => setOpen(o => !o)}
+        className="flex justify-between items-center py-2.5 px-3 cursor-pointer hover:bg-slate-50 rounded-lg transition-colors group -mx-1"
+      >
+        <div className="flex items-center gap-2 min-w-0">
+          <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${isAsset ? "bg-emerald-400" : "bg-red-400"}`} />
+          <span
+            className="text-sm font-medium text-slate-900 truncate"
+            onClick={e => e.stopPropagation()}
+          >
+            <InlineEdit
+              value={item.name}
+              onSave={v => onUpdate(item.id, { name: v })}
+              className="text-sm font-medium"
+              placeholder="Name"
+            />
+          </span>
+          <span className="text-xs text-slate-400 hidden group-hover:inline truncate max-w-[120px]">{item.category}</span>
+        </div>
+        <div className="flex items-center gap-2 flex-shrink-0 ml-2">
+          <span
+            className={`text-sm font-semibold ${isAsset ? "text-emerald-600" : "text-red-500"}`}
+            onClick={e => e.stopPropagation()}
+          >
+            <InlineEdit
+              value={val.toFixed(0)}
+              type="number"
+              onSave={v => onUpdate(item.id, { value: v })}
+              format={(v) => `${isAsset ? "" : "−"}$${Math.round(Number(v)).toLocaleString("en-CA")}`}
+              inputClassName="w-28 text-right"
+            />
+          </span>
+          <button
+            onClick={e => { e.stopPropagation(); if (confirm("Delete?")) onDelete(item.id); }}
+            className="opacity-0 group-hover:opacity-100 p-1 text-slate-300 hover:text-red-500 transition"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      </div>
+      {open && (
+        <div className="px-4 pb-3 pt-1 ml-3 text-xs text-slate-500 space-y-1 border-l-2 border-slate-100">
+          <div className="flex gap-6">
+            <span>Category: <span className="text-slate-700">{item.category}</span></span>
+            {item.owner && <span>Owner: <span className="text-slate-700">{item.owner}</span></span>}
+            <span className={`font-medium ${isAsset ? "text-emerald-600" : "text-red-500"}`}>{fmt(val)}</span>
+          </div>
+          {item.notes && <p className="text-slate-400 italic">{item.notes}</p>}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function NetWorthTab({ clientId }: { clientId: number }) {
   const { data: entries = [] } = useNetWorthEntries(clientId);
   const createEntry = useCreateNetWorthEntry();
@@ -181,6 +244,13 @@ function NetWorthTab({ clientId }: { clientId: number }) {
 
   const assetCats = ["Liquid Assets", "Registered Investments (RRSP/TFSA)", "Non-Registered Investments", "Real Estate", "Business Assets", "Personal Property", "Other"];
   const liabilityCats = ["Mortgages", "Car Loans", "Student Loans", "Credit Cards", "Lines of Credit", "Business Loans", "Other Liabilities"];
+
+  const assets      = (entries as any[]).filter(e => e.type === "asset");
+  const liabilities = (entries as any[]).filter(e => e.type === "liability");
+  const totalAssets      = assets.reduce((s, e) => s + parseFloat(e.value || "0"), 0);
+  const totalLiabilities = liabilities.reduce((s, e) => s + parseFloat(e.value || "0"), 0);
+  const netWorth = totalAssets - totalLiabilities;
+  const fmt = (n: number) => `$${Math.round(n).toLocaleString("en-CA")}`;
 
   const handleAdd = async () => {
     try {
@@ -197,41 +267,122 @@ function NetWorthTab({ clientId }: { clientId: number }) {
   };
 
   return (
-    <>
-      <NetWorthPremiumMock
-        entries={entries as any}
-        onDelete={(id) => deleteEntry.mutate(id)}
-        onAdd={() => setShowAdd(true)}
-        onUpdate={(id, value) => updateEntry.mutate({ id, data: { value } })}
-      />
+    <div className="max-w-5xl mx-auto px-6 py-6 space-y-6">
 
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-xl font-semibold text-slate-900">Net Worth</h1>
+          <p className="text-sm text-slate-500">{entries.length} entr{entries.length !== 1 ? "ies" : "y"}</p>
+        </div>
+        <button onClick={() => setShowAdd(true)}
+          className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-cyan-500 text-white text-sm font-semibold px-4 py-2 rounded-xl shadow-sm hover:shadow-md transition">
+          <Plus className="w-4 h-4" /> Add Entry
+        </button>
+      </div>
+
+      {/* Summary cards */}
+      <div className="grid grid-cols-3 gap-4">
+        <div className="bg-white border border-slate-200 rounded-xl p-4">
+          <p className="text-xs text-slate-500">Total Assets</p>
+          <p className="text-xl font-semibold text-emerald-600 mt-1">{fmt(totalAssets)}</p>
+        </div>
+        <div className="bg-white border border-slate-200 rounded-xl p-4">
+          <p className="text-xs text-slate-500">Total Liabilities</p>
+          <p className="text-xl font-semibold text-red-500 mt-1">{fmt(totalLiabilities)}</p>
+        </div>
+        <div className={`bg-white border rounded-xl p-4 ${netWorth >= 0 ? "border-slate-200" : "border-red-200"}`}>
+          <p className="text-xs text-slate-500">Net Worth</p>
+          <p className={`text-xl font-semibold mt-1 ${netWorth >= 0 ? "text-blue-600" : "text-red-600"}`}>{fmt(netWorth)}</p>
+        </div>
+      </div>
+
+      {entries.length === 0 ? (
+        <div className="text-center py-16 border-2 border-dashed border-slate-200 rounded-2xl">
+          <p className="text-slate-500 font-semibold">No entries yet</p>
+          <button onClick={() => setShowAdd(true)} className="mt-3 text-blue-600 text-sm hover:underline">Add your first asset</button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          {/* Assets */}
+          <div className="bg-white border border-slate-200 rounded-2xl p-5">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-semibold text-emerald-700 uppercase tracking-wide">Assets</h3>
+              <span className="text-xs text-slate-400">{fmt(totalAssets)}</span>
+            </div>
+            {assets.length === 0 ? (
+              <p className="text-xs text-slate-400 py-4 text-center">No assets — <button onClick={() => { setAddType("asset"); setShowAdd(true); }} className="text-blue-600 hover:underline">add one</button></p>
+            ) : (
+              assets.map(e => (
+                <NetWorthRow
+                  key={e.id}
+                  item={e}
+                  onUpdate={(id, data) => updateEntry.mutate({ id, data })}
+                  onDelete={id => deleteEntry.mutate(id)}
+                />
+              ))
+            )}
+          </div>
+
+          {/* Liabilities */}
+          <div className="bg-white border border-slate-200 rounded-2xl p-5">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-semibold text-red-600 uppercase tracking-wide">Liabilities</h3>
+              <span className="text-xs text-slate-400">{fmt(totalLiabilities)}</span>
+            </div>
+            {liabilities.length === 0 ? (
+              <p className="text-xs text-slate-400 py-4 text-center">No liabilities — <button onClick={() => { setAddType("liability"); setShowAdd(true); }} className="text-blue-600 hover:underline">add one</button></p>
+            ) : (
+              liabilities.map(e => (
+                <NetWorthRow
+                  key={e.id}
+                  item={e}
+                  onUpdate={(id, data) => updateEntry.mutate({ id, data })}
+                  onDelete={id => deleteEntry.mutate(id)}
+                />
+              ))
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Add modal */}
       {showAdd && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl w-full max-w-md shadow-2xl p-6">
-            <h2 className="text-2xl font-display font-bold mb-6">Add Net Worth Entry</h2>
-            <form onSubmit={(e) => { e.preventDefault(); handleAdd(); }} className="space-y-4" data-testid="form-fp-add-nw">
-              <div className="flex space-x-2">
-                <button type="button" onClick={() => setAddType("asset")} data-testid="button-fp-type-asset" className={`flex-1 py-2 rounded-xl font-semibold text-sm ${addType === "asset" ? "bg-green-100 text-green-700 border-2 border-green-300" : "bg-muted text-muted-foreground"}`}>Asset</button>
-                <button type="button" onClick={() => setAddType("liability")} data-testid="button-fp-type-liability" className={`flex-1 py-2 rounded-xl font-semibold text-sm ${addType === "liability" ? "bg-red-100 text-red-600 border-2 border-red-300" : "bg-muted text-muted-foreground"}`}>Liability</button>
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[200] flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl p-6">
+            <h2 className="text-lg font-bold mb-5 text-slate-900">Add Net Worth Entry</h2>
+            <div className="space-y-4">
+              <div className="flex gap-2">
+                <button type="button" onClick={() => setAddType("asset")} className={`flex-1 py-2 rounded-xl font-semibold text-sm transition ${addType === "asset" ? "bg-emerald-100 text-emerald-700 border-2 border-emerald-300" : "bg-slate-100 text-slate-500 border border-slate-200"}`}>Asset</button>
+                <button type="button" onClick={() => setAddType("liability")} className={`flex-1 py-2 rounded-xl font-semibold text-sm transition ${addType === "liability" ? "bg-red-100 text-red-600 border-2 border-red-300" : "bg-slate-100 text-slate-500 border border-slate-200"}`}>Liability</button>
               </div>
               <div>
-                <label className="text-sm font-semibold">Category</label>
-                <select required value={form.category} onChange={e => setForm({ ...form, category: e.target.value })} data-testid="select-fp-nw-cat" className="w-full px-4 py-3 rounded-xl border mt-1">
+                <label className="text-sm font-semibold text-slate-600 block mb-1">Category</label>
+                <select required value={form.category} onChange={e => setForm({ ...form, category: e.target.value })} className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400">
                   <option value="">-- Select --</option>
                   {(addType === "asset" ? assetCats : liabilityCats).map(c => <option key={c} value={c}>{c}</option>)}
                 </select>
               </div>
-              <div><label className="text-sm font-semibold">Description</label><input required value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} data-testid="input-fp-nw-name" className="w-full px-4 py-3 rounded-xl border mt-1" /></div>
-              <div><label className="text-sm font-semibold">Value ($)</label><input type="number" step="0.01" required value={form.value} onChange={e => setForm({ ...form, value: e.target.value })} data-testid="input-fp-nw-value" className="w-full px-4 py-3 rounded-xl border mt-1" /></div>
-              <div className="pt-4 flex justify-end space-x-3">
-                <button type="button" onClick={() => setShowAdd(false)} className="px-6 py-3 rounded-xl font-semibold text-muted-foreground hover:bg-muted">Cancel</button>
-                <button type="submit" disabled={createEntry.isPending} data-testid="button-fp-submit-nw" className="px-6 py-3 rounded-xl font-semibold bg-primary text-primary-foreground">{createEntry.isPending ? "Adding..." : "Add Entry"}</button>
+              <div>
+                <label className="text-sm font-semibold text-slate-600 block mb-1">Description</label>
+                <input required value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" />
               </div>
-            </form>
+              <div>
+                <label className="text-sm font-semibold text-slate-600 block mb-1">Value ($)</label>
+                <input type="number" step="0.01" required value={form.value} onChange={e => setForm({ ...form, value: e.target.value })} className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" />
+              </div>
+            </div>
+            <div className="flex justify-end gap-3 mt-5">
+              <button onClick={() => setShowAdd(false)} className="px-5 py-2.5 rounded-xl font-semibold text-slate-500 hover:bg-slate-100">Cancel</button>
+              <button onClick={handleAdd} disabled={createEntry.isPending || !form.category || !form.name || !form.value}
+                className="px-5 py-2.5 rounded-xl font-semibold bg-gradient-to-r from-blue-600 to-cyan-500 text-white hover:shadow-md disabled:opacity-50 transition">
+                {createEntry.isPending ? "Adding…" : "Add Entry"}
+              </button>
+            </div>
           </div>
         </div>
       )}
-    </>
+    </div>
   );
 }
 

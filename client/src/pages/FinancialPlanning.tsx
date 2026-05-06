@@ -1,8 +1,9 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { api } from "../lib/api";
-import React, { useState, useMemo, useEffect, useRef, Component, type ReactNode } from "react";
+import React, { useState, useMemo, useEffect, useRef, Component, type ReactNode, useContext } from "react";
 import { PieChart, Pie, Cell, Tooltip } from "recharts";
 import { InlineEdit } from "@/components/ui/InlineEdit";
+import { NWSubtabCtx } from "@/components/layout/PlanningDocFlow";
 // trying to force build this file
 class ErrorBoundary extends Component<{children:ReactNode;fallback?:ReactNode},{error:boolean}> {
   state = { error: false };
@@ -247,6 +248,7 @@ function NetWorthSection({ title, total, color, isAsset, children, onAdd }: {
 }
 
 export function NetWorthTab({ clientId }: { clientId: number }) {
+  const { sub } = useContext(NWSubtabCtx);
   const { data: rawEntries = [] } = useNetWorthEntries(clientId);
   const entries = rawEntries as any[];
   const createEntry = useCreateNetWorthEntry();
@@ -297,14 +299,19 @@ export function NetWorthTab({ clientId }: { clientId: number }) {
     } catch(e: any) { alert("Failed: " + e.message); }
   };
 
+  // Education subtab — hand off to RESPTab
+  if (sub === "education") {
+    return <RESPTab clientId={clientId} planId={null} />;
+  }
+
   return (
     <div className="max-w-6xl mx-auto px-6 py-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-semibold text-slate-900">Net Worth</h1>
+          <h1 className="text-xl font-semibold text-slate-900">{sub === "liabilities" ? "Liabilities" : "Net Worth"}</h1>
           <p className="text-sm text-slate-500">{entries.length} entr{entries.length !== 1 ? "ies" : "y"}</p>
         </div>
-        <button onClick={() => openAdd("asset")} data-testid="button-fp-add-nw"
+        <button onClick={() => openAdd(sub === "liabilities" ? "liability" : "asset")} data-testid="button-fp-add-nw"
           className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-cyan-500 text-white text-sm font-semibold px-4 py-2 rounded-xl shadow-sm hover:shadow-md transition">
           <Plus className="w-4 h-4" /> Add Entry
         </button>
@@ -335,7 +342,7 @@ export function NetWorthTab({ clientId }: { clientId: number }) {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* LEFT — grouped sections */}
           <div className="lg:col-span-2 space-y-4">
-            {assetGroups.length > 0 && (
+            {(sub !== "liabilities") && assetGroups.length > 0 && (
               <div className="space-y-3">
                 <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Assets</p>
                 {assetGroups.map(({ cat, items, total }) => (
@@ -350,7 +357,7 @@ export function NetWorthTab({ clientId }: { clientId: number }) {
                 ))}
               </div>
             )}
-            {liabGroups.length > 0 && (
+            {(sub !== "assets") && liabGroups.length > 0 && (
               <div className="space-y-3">
                 <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Liabilities</p>
                 {liabGroups.map(({ cat, items, total }) => (
@@ -363,6 +370,12 @@ export function NetWorthTab({ clientId }: { clientId: number }) {
                     ))}
                   </NetWorthSection>
                 ))}
+              </div>
+            )}
+            {sub === "liabilities" && liabGroups.length === 0 && (
+              <div className="text-center py-12 border-2 border-dashed border-slate-200 rounded-2xl">
+                <p className="text-slate-500 font-semibold">No liabilities</p>
+                <button onClick={() => openAdd("liability")} className="mt-3 text-blue-600 text-sm hover:underline">Add a liability</button>
               </div>
             )}
           </div>

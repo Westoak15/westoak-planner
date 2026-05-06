@@ -1,7 +1,7 @@
 import {
   Users, LayoutDashboard, Scale, PiggyBank,
   Shield, Receipt, Brain,
-  Settings, UserCheck, FileText, Target, Sparkles
+  Settings, UserCheck, FileText, Target, Sparkles, UserCog
 } from "lucide-react";
 import { cn } from "../lib/utils";
 
@@ -12,7 +12,7 @@ export type Tab =
   | "retirementhub" | "protection"
   | "expenses"
   | "taxestate" | "ai"
-  | "documents" | "fp";
+  | "documents" | "fp" | "profile";
 
 interface Props {
   activeTab: Tab;
@@ -27,6 +27,7 @@ const ALL_TABS: { key: Tab; label: string; icon: any; dividerBefore?: boolean; g
   { key: "agents",        label: "Agents",         icon: UserCheck, dividerBefore: true, gaOnly: true },
   { key: "clients",       label: "Clients",        icon: Users },
   { key: "overview",      label: "Overview",       icon: LayoutDashboard, dividerBefore: true },
+  { key: "profile",       label: "Client Profile", icon: UserCog },
   { key: "dashboard",     label: "Dashboard",      icon: LayoutDashboard },
   { key: "networth",      label: "Net Worth",      icon: Scale },
   { key: "goals",         label: "Goals",          icon: Target },
@@ -41,7 +42,7 @@ const ALL_TABS: { key: Tab; label: string; icon: any; dividerBefore?: boolean; g
 
 const STANDARD_TABS: Tab[] = ["clients", "networth", "protection", "documents"];
 const PLAN_TABS: Tab[] = [
-  "overview", "dashboard", "networth", "goals", "retirementhub", "protection",
+  "overview", "profile", "dashboard", "networth", "goals", "retirementhub", "protection",
   "expenses", "taxestate", "ai", "documents", "fp"
 ];
 const NO_CLIENT_TABS: Tab[] = ["clients", "admin", "agents"];

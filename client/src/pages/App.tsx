@@ -1723,6 +1723,7 @@ export default function App() {
           {tab === "admin"   && <AdminPanel />}
           {tab === "agents"  && <AgentsTab />}
           {tab === "overview" && client && <ClientOverview client={client} onNavigate={(t) => setTab(t as Tab)} />}
+          {tab === "profile"  && client && <ClientDetail client={client} onBack={() => setTab("overview" as Tab)} onPlanSelect={selectPlan} onUpdate={setClient} level={level} />}
           {tab === "dashboard" && client && <InsightLedDashboard clientId={client.id} client={client} onNavigate={(t) => { const [tabKey, subtab] = t.split(":"); setTab(tabKey as Tab); setNwSubtabHint(subtab); }} />}
 
           {/* ── Merged Insight-Led hubs ─────────────────────────────────────────

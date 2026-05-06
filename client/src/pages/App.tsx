@@ -1599,7 +1599,7 @@ export default function App() {
     setClient(c);
     setPlan(null);
     setShowClientDetail(true);
-    setTab("overview" as Tab);
+    setTab("profile" as Tab);
   }
 
   function selectPlan(p: Plan) {

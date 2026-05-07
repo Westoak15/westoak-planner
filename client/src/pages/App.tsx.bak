@@ -821,7 +821,116 @@ function ExecField({ label, value, mono = false, onSave, type = "text" }: {
   );
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Net Worth Tab — multiple assets AND liabilities
+// ─────────────────────────────────────────────────────────────────────────────
+function NetWorthTab({ clientId }: { clientId: number }) {
+  const [entries, setEntries] = useState<NWEntry[]>([]);
+  const [showForm, setShowForm] = useState<"asset"|"liability"|null>(null);
+  const [form, setForm] = useState({ type:"asset", category:"RRSP", name:"", value:"", notes:"" });
+  const [busy, setBusy] = useState(false);
 
+  const load = () => api.get<NWEntry[]>(`/api/clients/${clientId}/net-worth`).then(setEntries);
+  useEffect(() => { load(); }, [clientId]);
+
+  const assets = entries.filter(e => e.type === "asset");
+  const liabilities = entries.filter(e => e.type === "liability");
+  const totalAssets = assets.reduce((s, e) => s + Number(e.value), 0);
+  const totalLiab   = liabilities.reduce((s, e) => s + Number(e.value), 0);
+
+  async function add() {
+    setBusy(true);
+    try { await api.post(`/api/clients/${clientId}/net-worth`, { ...form, type: showForm }); await load(); setShowForm(null); setForm({ type:"asset", category:"RRSP", name:"", value:"", notes:"" }); }
+    catch (e: any) { alert(e.message); }
+    finally { setBusy(false); }
+  }
+
+  async function del(id: number) {
+    if (!confirm("Delete this entry?")) return;
+    await api.delete(`/api/net-worth/${id}`); await load();
+  }
+
+  const EntryTable = ({ rows, type }: { rows: NWEntry[]; type: "asset"|"liability" }) => (
+    <div>
+      <div className="flex items-center justify-between mb-3">
+        <div>
+          <h3 className="font-bold text-gray-800">{type === "asset" ? "Assets" : "Liabilities"}</h3>
+          <p className={`text-lg font-bold ${type === "asset" ? "text-emerald-600" : "text-red-500"}`}>{fmt$(type === "asset" ? totalAssets : totalLiab)}</p>
+        </div>
+        <button onClick={() => { setShowForm(type); setForm(f => ({...f, type, category: type === "asset" ? "RRSP" : "Mortgage"})); }}
+          className="flex items-center gap-1.5 text-sm font-semibold text-white bg-[#0c1e3a] hover:bg-[#0e2a4a] px-3 py-1.5 rounded-lg">
+          <Plus className="w-3.5 h-3.5" /> Add {type === "asset" ? "Asset" : "Liability"}
+        </button>
+      </div>
+      {rows.length === 0 ? (
+        <p className="text-gray-400 text-sm py-4 text-center border border-dashed border-gray-200 rounded-xl">No {type}s added yet</p>
+      ) : (
+        <div className="border border-gray-200 rounded-xl overflow-hidden">
+          <table className="w-full text-sm">
+            <thead className="bg-gray-50 border-b border-gray-200">
+              <tr>
+                <th className="text-left px-4 py-2.5 text-xs font-semibold text-gray-400 uppercase">Category</th>
+                <th className="text-left px-4 py-2.5 text-xs font-semibold text-gray-400 uppercase">Name</th>
+                <th className="text-right px-4 py-2.5 text-xs font-semibold text-gray-400 uppercase">Value</th>
+                <th className="w-8 px-2"></th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {rows.map(e => (
+                <tr key={e.id} className="hover:bg-gray-50">
+                  <td className="px-4 py-2.5"><span className="bg-gray-100 text-gray-600 text-xs px-2 py-0.5 rounded-full font-medium">{e.category}</span></td>
+                  <td className="px-4 py-2.5 font-medium text-gray-800">{e.name}</td>
+                  <td className="px-4 py-2.5 text-right font-semibold text-gray-900">{fmt$(e.value)}</td>
+                  <td className="px-2 py-2.5">
+                    <button onClick={() => del(e.id)} className="text-gray-300 hover:text-red-500 transition-colors">
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+
+  return (
+    <div className="p-6 max-w-4xl mx-auto">
+      {/* Summary bar */}
+      <div className="grid grid-cols-3 gap-4 mb-6">
+        <div className="bg-emerald-50 rounded-xl p-4"><p className="text-xs text-gray-500 uppercase font-semibold">Total Assets</p><p className="text-2xl font-bold text-emerald-600 mt-1">{fmt$(totalAssets)}</p></div>
+        <div className="bg-red-50 rounded-xl p-4"><p className="text-xs text-gray-500 uppercase font-semibold">Total Liabilities</p><p className="text-2xl font-bold text-red-500 mt-1">{fmt$(totalLiab)}</p></div>
+        <div className={`${totalAssets - totalLiab >= 0 ? "bg-blue-50" : "bg-red-50"} rounded-xl p-4`}><p className="text-xs text-gray-500 uppercase font-semibold">Net Worth</p><p className={`text-2xl font-bold mt-1 ${totalAssets - totalLiab >= 0 ? "text-blue-600" : "text-red-500"}`}>{fmt$(totalAssets - totalLiab)}</p></div>
+      </div>
+
+      {showForm && (
+        <Card className="mb-5">
+          <h3 className="font-bold text-gray-800 mb-4">Add {showForm === "asset" ? "Asset" : "Liability"}</h3>
+          <div className="grid grid-cols-2 gap-3 mb-3">
+            <Select label="Category" value={form.category} onChange={v => setForm(f=>({...f,category:v}))} options={showForm === "asset" ? NW_ASSET_CATS : NW_LIAB_CATS} />
+            <Input label="Name / Description" value={form.name} onChange={v => setForm(f=>({...f,name:v}))} placeholder="e.g. TD Bank RRSP" />
+          </div>
+          <div className="grid grid-cols-2 gap-3 mb-3">
+            <Input label="Value ($)" type="number" value={form.value} onChange={v => setForm(f=>({...f,value:v}))} />
+            <Input label="Notes (optional)" value={form.notes} onChange={v => setForm(f=>({...f,notes:v}))} />
+          </div>
+          <div className="flex gap-2 justify-end">
+            <button onClick={() => setShowForm(null)} className="text-sm text-gray-500 px-4 py-2">Cancel</button>
+            <button onClick={add} disabled={busy||!form.name||!form.value} className="bg-[#0c1e3a] hover:bg-[#0e2a4a] disabled:opacity-50 text-white text-sm font-semibold px-4 py-2 rounded-lg">
+              {busy ? "Saving…" : "Add"}
+            </button>
+          </div>
+        </Card>
+      )}
+
+      <div className="space-y-6">
+        <Card><EntryTable rows={assets} type="asset" /></Card>
+        <Card><EntryTable rows={liabilities} type="liability" /></Card>
+      </div>
+    </div>
+  );
+}
 
 
 // ─────────────────────────────────────────────────────────────────────────────

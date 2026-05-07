@@ -352,7 +352,7 @@ r.patch("/ai/:id", async (req: AuthRequest, res: Response) => {
   res.json(u);
 });
 
-r.delete("/clients/:id/ai/session/:runId", async (req: AuthRequest, res: Response) => {
+r.delete("/clients/:id/ai/session/*", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.id;
   try {
     if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
@@ -360,7 +360,7 @@ r.delete("/clients/:id/ai/session/:runId", async (req: AuthRequest, res: Respons
     console.error("[delete session] ownsClient error:", e.message);
     return res.status(500).json({ message: e.message });
   }
-  const runId = decodeURIComponent(req.params.runId);
+  const runId = decodeURIComponent((req.params as any)[0]);
   try {
     await db.delete(aiRecommendations).where(
       and(eq(aiRecommendations.clientId, cid), eq(aiRecommendations.runId, runId))

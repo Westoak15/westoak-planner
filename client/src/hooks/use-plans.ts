@@ -616,8 +616,9 @@ export function useGenerateAiRecommendations() {
       return res.json();
     },
     onSuccess: (_, clientId) => {
-      queryClient.invalidateQueries({ queryKey: ["/api/clients/:clientId/ai-recommendations", clientId] });
-    },
+  queryClient.invalidateQueries({ queryKey: ["/api/clients/:clientId/ai-recommendations", clientId] });
+  queryClient.refetchQueries({ queryKey: ["/api/clients/:clientId/ai-recommendations", clientId] });
+},
     onError: (err) => {
       console.error("Generate failed:", err);
     },

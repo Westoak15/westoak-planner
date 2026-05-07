@@ -2707,7 +2707,8 @@ const deleteSession = async (runId: string) => {
   } catch {
     // Records may already be gone — fall through to invalidate
   } finally {
-    qc.invalidateQueries({ queryKey: [`/api/clients/${clientId}/ai-recommendations`] });
+    qc.invalidateQueries({ queryKey: ["/api/clients/:clientId/ai-recommendations", clientId] });
+    qc.refetchQueries({ queryKey: ["/api/clients/:clientId/ai-recommendations", clientId] });
   }
 };
 

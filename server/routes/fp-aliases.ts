@@ -235,8 +235,7 @@ r.post("/clients/:id/ai-recommendations/generate", async (req: AuthRequest, res:
     res.status(500).json({ message: e.message });
   }
 });
-  res.json({ ok: true });
-});
+
 r.delete("/ai-recommendations/:id", async (req: AuthRequest, res: Response) => {
   const [ex] = await db.select({ id: aiRecommendations.id, clientId: aiRecommendations.clientId }).from(aiRecommendations).where(eq(aiRecommendations.id, +req.params.id));
   if (!ex || !await ownsClient(ex.clientId, req.userId!)) return res.status(404).json({ message: "Not found" });

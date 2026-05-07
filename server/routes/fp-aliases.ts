@@ -211,6 +211,7 @@ r.delete("/debt-entries/:id", async (req: AuthRequest, res: Response) => {
 // ── AI Recommendations ────────────────────────────────────────────────────────
 r.get("/clients/:id/ai-recommendations", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.id;
+  console.log("[ai-recs GET] cid:", cid, "userId:", req.userId);
   if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
   res.json(await db.select().from(aiRecommendations).where(eq(aiRecommendations.clientId, cid)));
 });

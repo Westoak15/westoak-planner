@@ -20,7 +20,8 @@ r.get("/clients/:id/retirement-projections", async (req: AuthRequest, res: Respo
   if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
   res.json(await db.select().from(retirementProjections).where(eq(retirementProjections.clientId, cid)));
 });
-r.post("/clients/:id/retirement-projections", async (req: AuthRequest, res: Response) => {
+r.post("/clients/:id/ai-recommendations/generate", async (req: AuthRequest, res: Response) => {
+  console.log("[ai generate] hit, clientId:", req.params.id, "userId:", req.userId);
   const cid = +req.params.id;
   if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
   const body = req.body;

@@ -2704,10 +2704,10 @@ const deleteSession = async (runId: string) => {
     } else {
       await api.delete(`/api/clients/${clientId}/ai/session/${encodeURIComponent(runId)}`);
     }
+  } catch {
+    // Records may already be gone — fall through to invalidate
+  } finally {
     qc.invalidateQueries({ queryKey: [`/api/clients/${clientId}/ai-recommendations`] });
-  } catch (err: any) {
-    console.error("deleteSession failed:", err);
-    alert("Delete failed: " + err.message);
   }
 };
 

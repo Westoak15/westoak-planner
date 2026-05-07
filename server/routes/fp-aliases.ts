@@ -216,11 +216,12 @@ r.get("/clients/:id/ai-recommendations", async (req: AuthRequest, res: Response)
 r.post("/clients/:id/ai-recommendations/generate", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.id;
   if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
+  const runId = new Date().toISOString();   // ← ADD THIS
   const recs = [
-    { clientId: cid, category: "retirement", priority: "high",   title: "Review Retirement Projections", content: "Ensure CPP/OAS timing and RRSP/TFSA drawdown strategy are optimized for your province." },
-    { clientId: cid, category: "tax",        priority: "medium", title: "Annual RRSP/TFSA Review",       content: "Review contribution room and optimize between RRSP and TFSA based on marginal rates." },
-    { clientId: cid, category: "insurance",  priority: "medium", title: "Insurance Needs Analysis",      content: "Conduct annual review of life, disability, and critical illness coverage gaps." },
-    { clientId: cid, category: "estate",     priority: "low",    title: "Estate Document Review",        content: "Verify will, POA, and healthcare directive are current and reflect your wishes." },
+    { clientId: cid, runId, category: "retirement", priority: "high",   title: "Review Retirement Projections", content: "Ensure CPP/OAS timing and RRSP/TFSA drawdown strategy are optimized for your province." },
+    { clientId: cid, runId, category: "tax",        priority: "medium", title: "Annual RRSP/TFSA Review",       content: "Review contribution room and optimize between RRSP and TFSA based on marginal rates." },
+    { clientId: cid, runId, category: "insurance",  priority: "medium", title: "Insurance Needs Analysis",      content: "Conduct annual review of life, disability, and critical illness coverage gaps." },
+    { clientId: cid, runId, category: "estate",     priority: "low",    title: "Estate Document Review",        content: "Verify will, POA, and healthcare directive are current and reflect your wishes." },
   ];
   const inserted = await Promise.all(recs.map(rec => (db.insert(aiRecommendations) as any).values(rec).returning().then(([x]: any) => x)));
   res.json(inserted);

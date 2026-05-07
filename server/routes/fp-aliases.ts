@@ -218,7 +218,9 @@ r.get("/clients/:id/ai-recommendations", async (req: AuthRequest, res: Response)
 
 r.post("/clients/:id/ai-recommendations/generate", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.id;
+  console.log("[ai generate] hit cid:", cid, "userId:", req.userId);
   if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
+  console.log("[ai generate] ownsClient passed");
   const runId = new Date().toISOString();
   const recs = [
     { clientId: cid, runId, category: "retirement", priority: "high",   title: "Review Retirement Projections", content: "Ensure CPP/OAS timing and RRSP/TFSA drawdown strategy are optimized for your province." },

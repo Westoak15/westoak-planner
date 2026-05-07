@@ -1,7 +1,33 @@
 import { useState } from "react";
-import { Mic, MicOff, Square, X, Download, Copy, Check, Loader2, FileText, Target, ListChecks, LayoutGrid } from "lucide-react";
+import { Mic, MicOff, Square, X, Download, Copy, Check, Loader2, FileText, Target, ListChecks, LayoutGrid, ShieldCheck, Mail, MessageSquare, PenLine } from "lucide-react";
 import { cn } from "../lib/utils";
 import { useMeetingRecorder, type MeetingSummary } from "../hooks/useMeetingRecorder";
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Consent types
+// ─────────────────────────────────────────────────────────────────────────────
+type ConsentType = "written" | "oral" | "email";
+
+const CONSENT_OPTIONS: { type: ConsentType; label: string; description: string; icon: React.ReactNode }[] = [
+  {
+    type: "written",
+    label: "Written Consent",
+    description: "Client signed a written consent form prior to this meeting.",
+    icon: <PenLine className="w-5 h-5" />,
+  },
+  {
+    type: "oral",
+    label: "Oral Consent",
+    description: "Client verbally agreed to be recorded at the start of this meeting.",
+    icon: <MessageSquare className="w-5 h-5" />,
+  },
+  {
+    type: "email",
+    label: "Email Consent",
+    description: "Client provided consent via email prior to this meeting.",
+    icon: <Mail className="w-5 h-5" />,
+  },
+];
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
@@ -56,16 +82,18 @@ interface ModalProps {
 
 function MeetingRecorderModal({ clientId, clientName, onClose }: ModalProps) {
   const { state, transcript, summary, error, duration, startRecording, stopRecording, reset } =
-    useMeetingRecorder(clientId, clientName);
+    useMeetingRecorder(clientId);
 
-  const [copied, setCopied] = useState(false);
+  const [copied, setCopied]           = useState(false);
+  const [consentType, setConsentType] = useState<ConsentType | null>(null);
 
   function handleClose() {
     if (state === "recording") {
       if (!confirm("Recording in progress. Stop and discard?")) return;
-      stopRecording();       // will process, but we close anyway
+      stopRecording();
     }
     reset();
+    setConsentType(null);
     onClose();
   }
 
@@ -77,7 +105,10 @@ function MeetingRecorderModal({ clientId, clientName, onClose }: ModalProps) {
   }
 
   function downloadTranscript() {
-    const blob = new Blob([transcript], { type: "text/plain" });
+    const consentLine = consentType
+      ? `Consent obtained: ${CONSENT_OPTIONS.find(o => o.type === consentType)?.label ?? consentType}\n\n`
+      : "";
+    const blob = new Blob([consentLine + transcript], { type: "text/plain" });
     const url  = URL.createObjectURL(blob);
     const a    = document.createElement("a");
     a.href     = url;
@@ -87,7 +118,7 @@ function MeetingRecorderModal({ clientId, clientName, onClose }: ModalProps) {
   }
 
   return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/30 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm">
       <div className="w-full max-w-2xl mx-4 bg-white rounded-2xl shadow-2xl border border-gray-100 flex flex-col max-h-[90vh]">
 
         {/* Header */}
@@ -112,16 +143,64 @@ function MeetingRecorderModal({ clientId, clientName, onClose }: ModalProps) {
         {/* Body */}
         <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
 
-          {/* Idle state */}
-          {state === "idle" && (
-            <div className="flex flex-col items-center justify-center py-10 text-center">
+          {/* ── Consent gate ────────────────────────────────────────── */}
+          {state === "idle" && !consentType && (
+            <div className="py-4">
+              <div className="flex items-center gap-2 mb-1">
+                <ShieldCheck className="w-4 h-4 text-[#0c1e3a]" />
+                <h3 className="font-bold text-gray-900 text-sm">Recording Consent Required</h3>
+              </div>
+              <p className="text-xs text-gray-400 mb-5 ml-6">
+                Canadian privacy law requires consent before recording. How was consent obtained from <span className="font-semibold text-gray-600">{clientName}</span>?
+              </p>
+
+              <div className="space-y-2">
+                {CONSENT_OPTIONS.map(opt => (
+                  <button
+                    key={opt.type}
+                    onClick={() => setConsentType(opt.type)}
+                    className="w-full flex items-start gap-3 p-3.5 rounded-xl border border-gray-200 hover:border-[#0c1e3a] hover:bg-[#0c1e3a]/[0.02] text-left transition-all group"
+                  >
+                    <div className="w-9 h-9 rounded-lg bg-gray-50 group-hover:bg-[#0c1e3a]/10 flex items-center justify-center text-gray-400 group-hover:text-[#0c1e3a] transition-colors flex-shrink-0">
+                      {opt.icon}
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-gray-800 group-hover:text-[#0c1e3a]">{opt.label}</p>
+                      <p className="text-xs text-gray-400 mt-0.5">{opt.description}</p>
+                    </div>
+                  </button>
+                ))}
+              </div>
+
+              <p className="text-[10px] text-gray-300 text-center mt-4">
+                This selection will be logged with the meeting transcript.
+              </p>
+            </div>
+          )}
+
+          {/* ── Ready to record (consent confirmed) ─────────────────── */}
+          {state === "idle" && consentType && (
+            <div className="flex flex-col items-center justify-center py-8 text-center">
               <div className="w-16 h-16 bg-[#0c1e3a]/5 rounded-full flex items-center justify-center mb-4">
                 <Mic className="w-7 h-7 text-[#0c1e3a]" />
               </div>
               <h3 className="font-bold text-gray-800 mb-1">Ready to record</h3>
+
+              {/* Consent badge */}
+              <div className="flex items-center gap-1.5 bg-emerald-50 border border-emerald-100 text-emerald-700 text-xs font-semibold px-3 py-1 rounded-full mb-4">
+                <ShieldCheck className="w-3 h-3" />
+                {CONSENT_OPTIONS.find(o => o.type === consentType)?.label} confirmed
+                <button
+                  onClick={() => setConsentType(null)}
+                  className="ml-1 text-emerald-400 hover:text-emerald-700 transition-colors"
+                  title="Change consent type"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </div>
+
               <p className="text-sm text-gray-400 mb-6 max-w-sm">
-                Hit record to start capturing the meeting. The AI will transcribe in real time
-                and generate a financial planning summary when you're done.
+                The AI will transcribe in real time and generate a financial planning summary when you're done.
               </p>
               <button
                 onClick={startRecording}
@@ -140,6 +219,12 @@ function MeetingRecorderModal({ clientId, clientName, onClose }: ModalProps) {
                   <span className="w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse" />
                   <span className="text-sm font-semibold text-red-600">Recording</span>
                   <span className="text-sm text-gray-400 tabular-nums">{fmtDuration(duration)}</span>
+                  {consentType && (
+                    <span className="flex items-center gap-1 text-[10px] font-semibold text-emerald-600 bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded-full">
+                      <ShieldCheck className="w-2.5 h-2.5" />
+                      {CONSENT_OPTIONS.find(o => o.type === consentType)?.label}
+                    </span>
+                  )}
                 </div>
                 <button
                   onClick={stopRecording}

@@ -9,7 +9,7 @@ import {
 } from "../../shared/schema.js";
 import { isAuthenticated, type AuthRequest } from "../auth/index.js";
 import { safe, ownsClient } from "../fpUtils.js";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 
 const r = Router();
 r.use(isAuthenticated);
@@ -20,8 +20,7 @@ r.get("/clients/:id/retirement-projections", async (req: AuthRequest, res: Respo
   if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
   res.json(await db.select().from(retirementProjections).where(eq(retirementProjections.clientId, cid)));
 });
-r.post("/clients/:id/ai-recommendations/generate", async (req: AuthRequest, res: Response) => {
-  console.log("[ai generate] hit, clientId:", req.params.id, "userId:", req.userId);
+r.post("/clients/:id/retirement-projections", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.id;
   if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
   const body = req.body;
@@ -75,14 +74,14 @@ r.post("/clients/:id/ai-recommendations/generate", async (req: AuthRequest, res:
         const age   = currentAge + yr;
         const spAge = spouseAge + yr;
         const z = Math.sqrt(-2 * Math.log(Math.random())) * Math.cos(2 * Math.PI * Math.random());
-        const r = expectedReturn + stdDev * z;
+        const rr = expectedReturn + stdDev * z;
         const primRetired   = age >= retirementAge;
         const spouseRetired = isCouple && spAge >= spouseRetAge;
-        if (!primRetired) balPrimary = (balPrimary + annualContrib) * (1 + r);
-        else              balPrimary = Math.max(0, balPrimary * (1 + r));
+        if (!primRetired) balPrimary = (balPrimary + annualContrib) * (1 + rr);
+        else              balPrimary = Math.max(0, balPrimary * (1 + rr));
         if (isCouple) {
-          if (!spouseRetired) balSpouse = (balSpouse + spouseContrib) * (1 + r);
-          else                balSpouse = Math.max(0, balSpouse * (1 + r));
+          if (!spouseRetired) balSpouse = (balSpouse + spouseContrib) * (1 + rr);
+          else                balSpouse = Math.max(0, balSpouse * (1 + rr));
         }
         const bothRetired = primRetired && (!isCouple || spouseRetired);
         if (bothRetired) {
@@ -211,16 +210,13 @@ r.delete("/debt-entries/:id", async (req: AuthRequest, res: Response) => {
 // ── AI Recommendations ────────────────────────────────────────────────────────
 r.get("/clients/:id/ai-recommendations", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.id;
-  console.log("[ai-recs GET] cid:", cid, "userId:", req.userId);
   if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
   res.json(await db.select().from(aiRecommendations).where(eq(aiRecommendations.clientId, cid)));
 });
 
 r.post("/clients/:id/ai-recommendations/generate", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.id;
-  console.log("[ai generate] hit cid:", cid, "userId:", req.userId);
   if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
-  console.log("[ai generate] ownsClient passed");
   const runId = new Date().toISOString();
   const recs = [
     { clientId: cid, runId, category: "retirement", priority: "high",   title: "Review Retirement Projections", content: "Ensure CPP/OAS timing and RRSP/TFSA drawdown strategy are optimized for your province." },
@@ -237,6 +233,13 @@ r.post("/clients/:id/ai-recommendations/generate", async (req: AuthRequest, res:
     console.error("[ai generate]", e.message);
     res.status(500).json({ message: e.message });
   }
+});
+
+r.put("/ai-recommendations/:id", async (req: AuthRequest, res: Response) => {
+  const [ex] = await db.select({ id: aiRecommendations.id, clientId: aiRecommendations.clientId }).from(aiRecommendations).where(eq(aiRecommendations.id, +req.params.id));
+  if (!ex || !await ownsClient(ex.clientId, req.userId!)) return res.status(404).json({ message: "Not found" });
+  const [u] = await (db.update(aiRecommendations) as any).set(safe(req.body)).where(eq(aiRecommendations.id, ex.id)).returning();
+  res.json(u);
 });
 
 r.delete("/ai-recommendations/:id", async (req: AuthRequest, res: Response) => {

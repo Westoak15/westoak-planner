@@ -2693,10 +2693,10 @@ export function AITab({ clientId }: { clientId: number }) {
       return next;
     });
 
-  const deleteSession = async (runId: string) => {
-    if (!confirm("Delete all recommendations in this session?")) return;
+const deleteSession = async (runId: string) => {
+  if (!confirm("Delete all recommendations in this session?")) return;
+  try {
     if (runId === "legacy") {
-      // Legacy recs have no runId — delete each individually via existing DELETE /ai/:id
       const legacyRecs = (recommendations as any[]).filter((r: any) => !r.runId);
       await Promise.all(legacyRecs.map((r: any) =>
         api.delete(`/api/ai-recommendations/${r.id}`)
@@ -2705,7 +2705,11 @@ export function AITab({ clientId }: { clientId: number }) {
       await api.delete(`/api/clients/${clientId}/ai/session/${encodeURIComponent(runId)}`);
     }
     qc.invalidateQueries({ queryKey: [`/api/clients/${clientId}/ai-recommendations`] });
-  };
+  } catch (err: any) {
+    console.error("deleteSession failed:", err);
+    alert("Delete failed: " + err.message);
+  }
+};
 
   const priorityOrder: Record<string, number> = { high: 0, medium: 1, low: 2 };
 

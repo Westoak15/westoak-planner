@@ -25,7 +25,7 @@ export function isAuthenticated(req: AuthRequest, res: Response, next: NextFunct
   if (!h?.startsWith("Bearer ")) return res.status(401).json({ message: "Unauthorized" });
   try {
     const p = jwt.verify(h.slice(7), SECRET) as any;
-    req.userId = p.sub;
+    req.userId = +p.sub;
     next();
   } catch {
     res.status(401).json({ message: "Invalid token" });

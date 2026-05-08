@@ -1657,10 +1657,8 @@ export default function App() {
               >
                 {tab === "networth" && (
                   <QueryClientProvider client={queryClient}>
-                    <div className="fp-insightled">
                       <NetWorthTabNew clientId={client.id} client={client} />
-                    </div>
-                  </QueryClientProvider>
+                   /</QueryClientProvider>
                 )}
                 {tab === "goals"    && (
                   <QueryClientProvider client={queryClient}>

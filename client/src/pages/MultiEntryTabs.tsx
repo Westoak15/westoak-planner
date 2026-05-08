@@ -110,8 +110,6 @@ function emptyDraft(type: "asset"|"liability"): NWDraft {
   };
 }
 
-const SELECT_CLS = "border border-[var(--border-light)] bg-[rgba(255,255,255,0.04)] text-[var(--text-primary)] rounded px-2 py-1 text-xs focus:outline-none focus:border-[var(--accent-cyan)] focus:ring-1 focus:ring-[var(--accent-cyan)]/20";
-
 function ExtraFields({ draft, onChange, spouseName, dependants }: { draft: NWDraft; onChange: (k: keyof NWDraft, v: any) => void; spouseName: string; dependants?: any[] }) {
   const elems: React.ReactNode[] = [];
 
@@ -239,16 +237,104 @@ type NWEditForm = Partial<NWEntry & {
   propertyType: string; purchasePrice: string; rentalIncome: string; rentalExpenses: string;
 }>;
 
+// ─────────────────────────────────────────────────────────────────────────────
+// REPLACE everything from line 242 to the end of the NetWorthTab function
+// (up to but NOT including "// ── RETIREMENT TAB" comment)
+// with the code below.
+// ─────────────────────────────────────────────────────────────────────────────
+
+// ── Helper sub-components ────────────────────────────────────────────────────
+
+function SummaryCard({ label, value, tone }: { label: string; value: string; tone?: string }) {
+  return (
+    <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
+      <p className="text-xs uppercase tracking-wide font-semibold text-slate-400 mb-2">{label}</p>
+      <p className={`text-2xl font-bold ${tone ?? "text-slate-900"}`}>{value}</p>
+    </div>
+  );
+}
+
+function CategorySection({
+  title, total, color, children, onAdd,
+}: {
+  title: string; total: string; color?: string; children: React.ReactNode; onAdd?: () => void;
+}) {
+  const [open, setOpen] = useState(true);
+  return (
+    <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
+      <div
+        onClick={() => setOpen(o => !o)}
+        className="flex justify-between items-center px-5 py-4 cursor-pointer hover:bg-slate-50 transition-colors select-none"
+      >
+        <div className="flex items-center gap-2.5">
+          {color && <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: color }} />}
+          <p className="font-semibold text-slate-900 text-sm">{title}</p>
+          <span className="text-xs text-slate-400">{open ? "▲" : "▼"}</span>
+        </div>
+        <div className="flex items-center gap-3">
+          <p className="text-sm font-bold text-emerald-600">{total}</p>
+          {onAdd && (
+            <button
+              onClick={e => { e.stopPropagation(); onAdd(); }}
+              className="text-xs text-cyan-500 border border-cyan-200 px-2 py-0.5 rounded-full hover:bg-cyan-50 transition-colors"
+            >
+              + Add
+            </button>
+          )}
+        </div>
+      </div>
+      {open && <div className="border-t border-slate-100">{children}</div>}
+    </div>
+  );
+}
+
+function AssetRow({
+  entry, onEdit, onDelete, ownerLabel, metaBadge, isAsset,
+}: {
+  entry: NWEntry; onEdit: () => void; onDelete: () => void;
+  ownerLabel: string; metaBadge: React.ReactNode; isAsset: boolean;
+}) {
+  return (
+    <div className="group flex justify-between items-center px-5 py-3 hover:bg-slate-50 transition-colors border-b border-slate-50 last:border-0">
+      <div>
+        <div className="flex items-center gap-2">
+          <p className="text-sm font-medium text-slate-900">{entry.name || entry.category}</p>
+          <span className="text-[11px] px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 font-medium">{ownerLabel}</span>
+        </div>
+        {metaBadge && <div className="mt-0.5">{metaBadge}</div>}
+      </div>
+      <div className="flex items-center gap-4">
+        <p className={`text-sm font-semibold ${isAsset ? "text-emerald-600" : "text-red-500"}`}>
+          {fmt$(entry.value)}
+        </p>
+        <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
+          <button onClick={onEdit} className="p-1.5 hover:bg-blue-50 rounded-lg transition-colors" title="Edit">
+            <Pencil className="w-3.5 h-3.5 text-blue-400" />
+          </button>
+          <button onClick={onDelete} className="p-1.5 hover:bg-red-50 rounded-lg transition-colors" title="Delete">
+            <Trash2 className="w-3.5 h-3.5 text-red-400" />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── normalizeCat — remap legacy category names ────────────────────────────────
 function normalizeCat(e: NWEntry): NWEntry {
-  if (e.category === "ESU" || e.category === "RSU") {
+  if (e.category === "ESU" || e.category === "RSU")
     return { ...e, category: "Employer Stock Options", metadata: { ...(e.metadata ?? {}), stockOptionType: e.category } };
-  }
+  if (e.category === "Real Estate")
+    return { ...e, category: "Real Estate (other)" };
+  if (e.category === "RRSP/TFSA" || e.category === "Registered Investments (RRSP/TFSA)")
+    return { ...e, category: "RRSP" };
   return e;
 }
 
-const LABEL_CLS = "text-[10px] text-[var(--text-tertiary)] uppercase font-semibold block mb-0.5";
-const EDIT_SELECT_CLS = "border border-[var(--border-light)] bg-[rgba(255,255,255,0.04)] text-[var(--text-primary)] rounded-lg px-2 py-1.5 text-sm w-full focus:outline-none focus:border-[var(--accent-cyan)]";
+const LABEL_CLS = "text-[10px] text-slate-400 uppercase font-semibold block mb-0.5";
+const SELECT_CLS = "border border-slate-200 bg-white text-slate-800 rounded-lg px-2 py-1.5 text-sm w-full focus:outline-none focus:border-cyan-400";
 
+// ── NetWorthTab ───────────────────────────────────────────────────────────────
 export function NetWorthTab({ clientId, client }: { clientId: number; client?: { firstName: string; lastName: string; spouseFirstName?: string | null; spouseLastName?: string | null } }) {
   const [entries, setEntries] = useState<NWEntry[]>([]);
   const [drafts, setDrafts]   = useState<NWDraft[]>([]);
@@ -256,6 +342,7 @@ export function NetWorthTab({ clientId, client }: { clientId: number; client?: {
   const [editingId, setEditingId] = useState<number | null>(null);
   const { sub: nwTab } = useContext(NWSubtabCtx);
   const [editForm, setEditForm] = useState<NWEditForm>({});
+  const [voiceOpen, setVoiceOpen] = useState<null | "asset" | "liability">(null);
 
   const spouseName  = client?.spouseFirstName ? `${client.spouseFirstName} ${client.spouseLastName ?? ""}`.trim() : "";
   const primaryName = client ? `${client.firstName} ${client.lastName}` : "Primary";
@@ -269,37 +356,31 @@ export function NetWorthTab({ clientId, client }: { clientId: number; client?: {
   const totalL = liabs.reduce((s, e) => s + Number(e.value), 0);
   const netWorth = totalA - totalL;
 
-  function addDraft(type: "asset"|"liability") { setDrafts(d => [...d, emptyDraft(type)]); }
-  function addVoiceDraft(type: "asset"|"liability", parsed: Record<string, string>) {
+  function addDraft(type: "asset" | "liability") {
+    setDrafts(d => [...d, emptyDraft(type)]);
+  }
+  function addVoiceDraft(type: "asset" | "liability", parsed: Record<string, string>) {
     const base = emptyDraft(type);
     const cats = type === "asset" ? NW_ASSET_CATS : NW_LIAB_CATS;
-    // Snap category to one of the allowed values (case-insensitive). If the
-    // model returns a value that doesn't match any allowed enum, fall back to
-    // the safe default ("Other Asset" / "Other Liability") rather than
-    // persisting the raw string — that would produce an invalid category in
-    // the DB and break category-grouped charts/totals.
     const safeFallback = type === "asset" ? "Other Asset" : "Other Liability";
-    let category: string = base.category || safeFallback;
+    let category = base.category || safeFallback;
     if (parsed.category) {
       const match = cats.find(c => c.toLowerCase() === parsed.category.toLowerCase());
       category = match ?? safeFallback;
     }
-    const merged: NWDraft = {
-      ...base,
-      category,
-      name:   parsed.name   ?? base.name,
-      owner:  (parsed.owner === "spouse" || parsed.owner === "joint" ? parsed.owner : "primary"),
-      value:  String(parsed.value ?? "").replace(/[^0-9.]/g, "") || base.value,
-      notes:  parsed.notes  ?? base.notes,
-      monthlyPayment:         parsed.monthlyPayment         ?? base.monthlyPayment,
-      mortgageBalance:        parsed.mortgageBalance        ?? base.mortgageBalance,
+    setDrafts(d => [...d, {
+      ...base, category,
+      name: parsed.name ?? base.name,
+      owner: (parsed.owner === "spouse" || parsed.owner === "joint" ? parsed.owner : "primary"),
+      value: String(parsed.value ?? "").replace(/[^0-9.]/g, "") || base.value,
+      notes: parsed.notes ?? base.notes,
+      monthlyPayment: parsed.monthlyPayment ?? base.monthlyPayment,
+      mortgageBalance: parsed.mortgageBalance ?? base.mortgageBalance,
       mortgageMonthlyPayment: parsed.mortgageMonthlyPayment ?? base.mortgageMonthlyPayment,
-    };
-    setDrafts(d => [...d, merged]);
+    }]);
   }
   function updateDraft(i: number, k: keyof NWDraft, v: any) { setDrafts(d => d.map((x, idx) => idx === i ? { ...x, [k]: v } : x)); }
   function removeDraft(i: number) { setDrafts(d => d.filter((_, idx) => idx !== i)); }
-  const [voiceOpen, setVoiceOpen] = useState<null | "asset" | "liability">(null);
 
   function startEdit(e: NWEntry) {
     const m = (e.metadata ?? {}) as any;
@@ -310,8 +391,7 @@ export function NetWorthTab({ clientId, client }: { clientId: number; client?: {
       isSpousal: !!m.spousal, rrspContributor: m.contributor ?? "",
       pensionType: m.pensionType ?? "DBPP", matchPct: m.matchPct ?? "",
       monthlyPayment: m.monthlyPayment ?? "", respBeneficiary: m.respBeneficiary ?? "",
-      holdingType: m.holdingType ?? "",
-      jointWithSpouse: e.owner === "joint",
+      holdingType: m.holdingType ?? "", jointWithSpouse: e.owner === "joint",
       stockOptionType: m.stockOptionType ?? (e.category === "ESU" ? "ESU" : "RSU"),
       propertyType: m.propertyType ?? "Family Occupied",
       purchasePrice: m.purchasePrice ? String(m.purchasePrice) : "",
@@ -320,12 +400,12 @@ export function NetWorthTab({ clientId, client }: { clientId: number; client?: {
     });
   }
 
-  function buildMeta(form: NWEditForm): Record<string,any> {
+  function buildMeta(form: NWEditForm): Record<string, any> {
     const m: any = {};
     const cat = form.category ?? "";
     if (cat === "RRSP" && form.isSpousal) { m.spousal = true; m.contributor = form.rrspContributor; }
     if ((form as any).monthlyPayment) m.monthlyPayment = (form as any).monthlyPayment;
-    if (["RRSP","TFSA","Non-Registered"].includes(cat) && form.holdingType) m.holdingType = form.holdingType;
+    if (["RRSP", "TFSA", "Non-Registered"].includes(cat) && form.holdingType) m.holdingType = form.holdingType;
     if (cat === "Employer Stock Options" && form.stockOptionType) m.stockOptionType = form.stockOptionType;
     if (cat === "Real Estate (other)") {
       if (form.propertyType) m.propertyType = form.propertyType;
@@ -357,10 +437,7 @@ export function NetWorthTab({ clientId, client }: { clientId: number; client?: {
 
   function isDraftSavable(d: NWDraft) {
     const isProperty = d.category === "Principal Residence" || d.category === "Real Estate (other)";
-    if (isProperty) {
-      // Property is savable if user filled in market value, purchase price, or mortgage balance
-      return Number(d.value || 0) > 0 || Number(d.purchasePrice || 0) > 0 || Number(d.mortgageBalance || 0) > 0;
-    }
+    if (isProperty) return Number(d.value || 0) > 0 || Number(d.purchasePrice || 0) > 0 || Number(d.mortgageBalance || 0) > 0;
     return Boolean(d.value);
   }
 
@@ -376,28 +453,19 @@ export function NetWorthTab({ clientId, client }: { clientId: number; client?: {
         const propName = d.name || d.category;
         const isProperty = d.category === "Principal Residence" || d.category === "Real Estate (other)";
         const mortgageVal = Number(d.mortgageBalance || 0);
-        // For properties, fall back to purchase price if user didn't fill in market value
-        const assetValue = isProperty && !Number(d.value || 0) && Number(d.purchasePrice || 0) > 0
-          ? d.purchasePrice
-          : d.value;
-
-        // 1. Create the asset/liability entry
+        const assetValue = isProperty && !Number(d.value || 0) && Number(d.purchasePrice || 0) > 0 ? d.purchasePrice : d.value;
         await api.post(`/api/clients/${clientId}/net-worth`, {
           type: d.type, category: d.category,
-          name: propName, owner,
-          value: assetValue, notes: d.notes || null,
+          name: propName, owner, value: assetValue, notes: d.notes || null,
           metadata: Object.keys(m).length ? m : null,
         });
-
-        // 2. If this is a property with a mortgage, also auto-create a linked Mortgage liability
         if (isProperty && mortgageVal > 0) {
           const mortgageMeta: any = { linkedAssetName: propName };
           if (d.mortgageMonthlyPayment) mortgageMeta.monthlyPayment = d.mortgageMonthlyPayment;
           await api.post(`/api/clients/${clientId}/net-worth`, {
             type: "liability", category: "Mortgage",
             name: `Mortgage — ${propName}`, owner,
-            value: String(mortgageVal),
-            notes: `Linked to ${propName}`,
+            value: String(mortgageVal), notes: `Linked to ${propName}`,
             metadata: mortgageMeta,
           });
         }
@@ -420,434 +488,386 @@ export function NetWorthTab({ clientId, client }: { clientId: number; client?: {
     const m = (entry.metadata ?? {}) as any;
     const chips: React.ReactNode[] = [];
     if (entry.category === "RRSP" && m.spousal)
-      chips.push(<span key="sp" className="text-[10px] bg-[var(--accent-cyan)]/10 text-[var(--accent-cyan)] px-1.5 py-0.5 rounded font-mono">Spousal · {m.contributor}</span>);
+      chips.push(<span key="sp" className="text-[10px] bg-cyan-50 text-cyan-600 px-1.5 py-0.5 rounded font-mono">Spousal · {m.contributor}</span>);
     if (m.linkedAssetName && entry.category === "Mortgage")
-      chips.push(<span key="lnk" className="text-[10px] bg-[var(--accent-cyan)]/10 text-[var(--accent-cyan)] px-1.5 py-0.5 rounded font-mono">↪ {m.linkedAssetName}</span>);
+      chips.push(<span key="lnk" className="text-[10px] bg-cyan-50 text-cyan-600 px-1.5 py-0.5 rounded font-mono">↪ {m.linkedAssetName}</span>);
     if (m.holdingType)
-      chips.push(<span key="ht" className="text-[10px] bg-[var(--accent-cyan)]/10 text-[var(--accent-cyan)] px-1.5 py-0.5 rounded font-mono">{m.holdingType}</span>);
-    if (entry.category === "Employer Stock Options" && m.stockOptionType)
-      chips.push(<span key="st" className="text-[10px] bg-white/[0.06] text-[var(--text-secondary)] px-1.5 py-0.5 rounded font-mono">{m.stockOptionType}</span>);
-    if (entry.owner === "joint")
-      chips.push(<span key="joint" className="text-[10px] bg-[var(--accent-cyan)]/10 text-[var(--accent-cyan)] px-1.5 py-0.5 rounded font-mono">Joint</span>);
+      chips.push(<span key="ht" className="text-[10px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded font-mono">{m.holdingType}</span>);
     if (m.propertyType)
-      chips.push(<span key="pt" className="text-[10px] bg-white/[0.06] text-[var(--text-secondary)] px-1.5 py-0.5 rounded font-mono">{m.propertyType}</span>);
+      chips.push(<span key="pt" className="text-[10px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded font-mono">{m.propertyType}</span>);
     if (m.rentalIncome) {
       const net = Number(m.rentalIncome) - Number(m.rentalExpenses || 0);
-      chips.push(<span key="rent" className="text-[10px] bg-[var(--accent-green)]/10 text-[var(--accent-green)] px-1.5 py-0.5 rounded font-mono">Rental {net >= 0 ? "+" : ""}{fmt$(net)}/yr</span>);
+      chips.push(<span key="rent" className="text-[10px] bg-emerald-50 text-emerald-600 px-1.5 py-0.5 rounded font-mono">Rental {net >= 0 ? "+" : ""}{fmt$(net)}/yr</span>);
     }
     if (!chips.length) return null;
     return <div className="flex flex-wrap gap-1 mt-0.5">{chips}</div>;
   }
 
+  // Education sub-tab
   if (nwTab === "education") {
     return <RespTab clientId={clientId} client={client} />;
   }
 
-  const isAssets = nwTab === "assets";
+  const isAssets = nwTab !== "liabilities";
   const activeRows = isAssets ? assets : liabs;
   const activeCats = isAssets ? NW_ASSET_CATS : NW_LIAB_CATS;
   const activeDrafts = drafts.filter(d => d.type === (isAssets ? "asset" : "liability"));
-  const colCount = isAssets ? 6 : 7;
 
-  if (nwTab === "education") {
-    return <EducationSubTab clientId={clientId} client={client} />;
-  }
+  // Pie chart data
+  const pieData = NW_ASSET_CATS
+    .map(cat => ({
+      name: cat,
+      value: assets.filter(a => a.category === cat).reduce((s, a) => s + Number(a.value), 0),
+      color: NW_ASSET_COLORS[cat] ?? "#6b7280",
+    }))
+    .filter(d => d.value > 0);
+
+  const CustomTooltip = ({ active, payload }: any) => {
+    if (!active || !payload?.length) return null;
+    const d = payload[0].payload;
+    const pct = totalA > 0 ? (d.value / totalA) * 100 : 0;
+    return (
+      <div className="rounded-lg px-3 py-2 text-xs shadow-lg bg-slate-900 border border-white/10">
+        <div className="font-semibold mb-0.5" style={{ color: d.color }}>{d.name}</div>
+        <div className="text-white">{fmt$(d.value)}</div>
+        <div className="text-slate-400">{pct.toFixed(1)}% of total</div>
+      </div>
+    );
+  };
 
   return (
-    <div>
-      {/* ── Table ───────────────────────────────────────────────────────────── */}
-      <div className="mt-5 border border-[var(--border-subtle)] rounded-xl overflow-hidden">
-        <div className="px-4 py-3 flex items-center justify-between border-b border-[var(--border-subtle)] bg-[var(--bg-card)]">
-          <h3 className="font-semibold text-[var(--text-primary)] text-sm">
-            {isAssets ? "Assets" : "Liabilities"}
-          </h3>
-          <div className="flex items-center gap-2">
+    <div className="p-6">
+
+      {/* ── Summary cards ──────────────────────────────────────────────────── */}
+      <div className="grid grid-cols-3 gap-4 mb-6">
+        <SummaryCard label="Net Worth" value={fmt$(netWorth)} tone={netWorth >= 0 ? "text-slate-900" : "text-red-500"} />
+        <SummaryCard label="Total Assets" value={fmt$(totalA)} tone="text-emerald-600" />
+        <SummaryCard label="Total Liabilities" value={fmt$(totalL)} tone="text-red-500" />
+      </div>
+
+      {/* ── Main grid ──────────────────────────────────────────────────────── */}
+      <div className="grid grid-cols-3 gap-6">
+
+        {/* ── Left 2/3 ───────────────────────────────────────────────────── */}
+        <div className="col-span-2 space-y-4">
+
+          {/* Action bar */}
+          <div className="flex items-center justify-between">
+            <div className="flex gap-2">
+              <button
+                onClick={() => addDraft("asset")}
+                className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-gradient-to-r from-cyan-500 to-blue-600 text-white text-sm font-semibold hover:opacity-90 transition-opacity shadow-sm"
+              >
+                <Plus className="w-4 h-4" /> Add Asset
+              </button>
+              <button
+                onClick={() => addDraft("liability")}
+                className="flex items-center gap-1.5 px-4 py-2 rounded-full border border-slate-200 text-slate-600 text-sm font-semibold hover:bg-slate-50 transition-colors"
+              >
+                <Plus className="w-4 h-4" /> Add Liability
+              </button>
+            </div>
             <button
               onClick={() => setVoiceOpen(isAssets ? "asset" : "liability")}
-              title={`Voice add ${isAssets ? "asset" : "liability"}`}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-full border border-[var(--border-light)] text-[var(--text-secondary)] hover:text-[var(--accent-cyan)] hover:border-[var(--accent-cyan)] text-xs font-semibold transition-colors"
+              className="flex items-center gap-1.5 text-xs text-slate-500 border border-slate-200 px-3 py-1.5 rounded-full hover:border-cyan-400 hover:text-cyan-500 transition-colors"
             >
               <Mic className="w-3.5 h-3.5" /> Voice
             </button>
-            <button
-              onClick={() => addDraft(isAssets ? "asset" : "liability")}
-              className="flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-[var(--accent-cyan)] to-[var(--accent-blue)] text-[var(--bg-base)] text-sm font-semibold hover:opacity-90 transition-opacity"
-            >
-              <Plus className="w-4 h-4" /> Add {isAssets ? "Asset" : "Liability"}
-            </button>
           </div>
-        </div>
 
-        {voiceOpen && (
-          <VoiceAddDialog
-            title={`Voice-Add ${voiceOpen === "asset" ? "Asset" : "Liability"}`}
-            moduleId={`net-worth-${voiceOpen}`}
-            prompt={voiceOpen === "asset"
-              ? `Try: "TFSA at TD worth twenty-five thousand, jointly with spouse"`
-              : `Try: "RBC mortgage balance 320 thousand, monthly payment 1850"`}
-            fieldSchema={[
-              { key: "category", label: "Category",
-                description: `Type of ${voiceOpen}`,
-                enum: voiceOpen === "asset" ? NW_ASSET_CATS : NW_LIAB_CATS },
-              { key: "name",  label: "Name",  description: "Description (e.g. 'TD TFSA')" },
-              { key: "value", label: voiceOpen === "asset" ? "Value" : "Balance",
-                description: "Amount in dollars, number only" },
-              { key: "owner", label: "Owner", description: "Who owns it",
-                enum: ["primary", "spouse", "joint"] },
-              ...(voiceOpen === "liability" ? [
-                { key: "monthlyPayment", label: "Monthly Pmt",
-                  description: "Monthly payment, number only" }
-              ] : []),
-              { key: "notes", label: "Notes", description: "Free-form notes" },
-            ]}
-            onConfirm={(fields) => { addVoiceDraft(voiceOpen, fields); setVoiceOpen(null); }}
-            onClose={() => setVoiceOpen(null)}
-          />
-        )}
-
-        <table className="w-full text-sm">
-          <thead className="bg-[var(--bg-card)]/60 border-b border-[var(--border-subtle)]">
-            <tr>
-              <TH>Owner</TH><TH>Category</TH><TH>Name / Description</TH>
-              <TH>{isAssets ? "Value" : "Balance Owing"}</TH>
-              {!isAssets && <TH>Monthly Pmt</TH>}
-              <TH>Notes</TH><TH></TH>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-[var(--border-subtle)]">
-
-            {activeRows.map(e => editingId === +e.id ? (
-              // ── Edit mode ──────────────────────────────────────────────────
-              <tr key={e.id} className="bg-[var(--accent-cyan)]/[0.03] border-b border-[var(--accent-cyan)]/10">
-                <td colSpan={colCount} className="px-3 py-3">
-                  <div className="grid grid-cols-5 gap-2 mb-1">
-                    <div>
-                      <label className={LABEL_CLS}>Owner</label>
-                      <select
-                        value={editForm.owner ?? "primary"}
-                        onChange={ev => setEditForm(f => ({...f, owner: ev.target.value}))}
-                        disabled={editForm.jointWithSpouse && editForm.category === "Non-Registered"}
-                        className={cn(EDIT_SELECT_CLS, editForm.jointWithSpouse && editForm.category === "Non-Registered" && "opacity-50")}
-                      >
-                        <option value="primary">{primaryName}</option>
-                        {spouseName && <option value="spouse">{spouseName}</option>}
-                        {spouseName && <option value="joint">Joint</option>}
-                      </select>
-                    </div>
-                    <div>
-                      <label className={LABEL_CLS}>Category</label>
-                      <InlineSelect value={editForm.category ?? ""} onChange={v => setEditForm(f => ({...f, category: v}))} options={activeCats} />
-                    </div>
-                    <div>
-                      <label className={LABEL_CLS}>Name / Description</label>
-                      <InlineInput value={editForm.name ?? ""} onChange={v => setEditForm(f => ({...f, name: v}))} />
-                    </div>
-                    <div>
-                      <label className={LABEL_CLS}>{isAssets ? "Market Value ($)" : "Balance ($)"}</label>
-                      <InlineInput value={String(editForm.value ?? "")} onChange={v => setEditForm(f => ({...f, value: v}))} type="number" />
-                    </div>
-                    {!isAssets && (
-                      <div>
-                        <label className={LABEL_CLS}>Monthly Pmt ($)</label>
-                        <InlineInput value={String(editForm.monthlyPayment ?? "")} onChange={v => setEditForm(f => ({...f, monthlyPayment: v}))} type="number" />
-                      </div>
-                    )}
-                    <div className="flex gap-1 items-end">
-                      <div className="flex-1">
-                        <label className={LABEL_CLS}>Notes</label>
-                        <InlineInput value={editForm.notes ?? ""} onChange={v => setEditForm(f => ({...f, notes: v}))} />
-                      </div>
-                      <div className="flex gap-1 mb-1.5">
-                        <button onClick={saveEdit} disabled={saving} title="Save" className="text-[var(--accent-cyan)] hover:text-[var(--accent-cyan)]/80"><Save className="w-4 h-4" /></button>
-                        <button onClick={() => { setEditingId(null); setEditForm({}); }} title="Cancel" className="text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"><X className="w-4 h-4" /></button>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* ── Category extras in edit mode ────────────────────────── */}
-                  <div className="flex flex-wrap gap-3 mt-2 pt-1.5 border-t border-[var(--border-subtle)]">
-                    {["RRSP","TFSA","Non-Registered"].includes(editForm.category ?? "") && (
-                      <>
-                        {editForm.category === "RRSP" && (
-                          <>
-                            <label className="flex items-center gap-1.5 text-xs text-[var(--text-secondary)] cursor-pointer">
-                              <input type="checkbox" checked={!!editForm.isSpousal} onChange={ev => setEditForm(f => ({...f, isSpousal: ev.target.checked}))} className="w-3.5 h-3.5 rounded accent-[var(--accent-cyan)]" />
-                              Spousal RRSP
-                            </label>
-                            {editForm.isSpousal && (
-                              <div className="flex items-center gap-1.5">
-                                <span className="text-xs text-[var(--text-tertiary)]">Contributor:</span>
-                                <select value={editForm.rrspContributor ?? ""} onChange={ev => setEditForm(f => ({...f, rrspContributor: ev.target.value}))} className={SELECT_CLS}>
-                                  <option value="">Select…</option>
-                                  <option value="client">Client</option>
-                                  <option value="spouse">Spouse</option>
-                                </select>
-                              </div>
-                            )}
-                          </>
-                        )}
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-xs text-[var(--text-tertiary)]">Type:</span>
-                          <select value={editForm.holdingType ?? ""} onChange={ev => setEditForm(f => ({...f, holdingType: ev.target.value}))} className={SELECT_CLS}>
-                            <option value="">Select type…</option>
-                            {HOLDING_TYPES.map(t => <option key={t}>{t}</option>)}
-                          </select>
-                        </div>
-                        {editForm.category === "Non-Registered" && spouseName && (
-                          <label className="flex items-center gap-1.5 text-xs text-[var(--text-secondary)] cursor-pointer">
-                            <input type="checkbox" checked={!!editForm.jointWithSpouse} onChange={ev => setEditForm(f => ({...f, jointWithSpouse: ev.target.checked, owner: ev.target.checked ? "joint" : f.owner}))} className="w-3.5 h-3.5 rounded accent-[var(--accent-cyan)]" />
-                            Jointly held with spouse
-                          </label>
-                        )}
-                      </>
-                    )}
-                    {editForm.category === "Employer Stock Options" && (
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-xs text-[var(--text-tertiary)]">Sub-type:</span>
-                        <select value={editForm.stockOptionType ?? "RSU"} onChange={ev => setEditForm(f => ({...f, stockOptionType: ev.target.value}))} className={SELECT_CLS}>
-                          <option value="RSU">RSU — Restricted Stock Unit</option>
-                          <option value="ESU">ESU — Employee Stock Unit</option>
-                        </select>
-                      </div>
-                    )}
-                    {editForm.category === "Principal Residence" && (
-                      <span className="text-[10px] text-[var(--text-tertiary)] italic">
-                        Mortgage is managed as a separate Mortgage liability. Edit it on the Liabilities tab.
-                      </span>
-                    )}
-                    {editForm.category === "Real Estate (other)" && (
-                      <>
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-xs text-[var(--text-tertiary)]">Property type:</span>
-                          <select
-                            value={editForm.propertyType ?? "Family Occupied"}
-                            onChange={ev => setEditForm(f => ({...f, propertyType: ev.target.value}))}
-                            className={SELECT_CLS}
-                          >
-                            {PROPERTY_TYPES.map(t => <option key={t}>{t}</option>)}
-                          </select>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-xs text-[var(--text-tertiary)]">Purchase price ($):</span>
-                          <InlineInput value={editForm.purchasePrice ?? ""} onChange={v => setEditForm(f => ({...f, purchasePrice: v}))} type="number" placeholder="0" className="w-28" />
-                        </div>
-                        {editForm.propertyType === "Rental Property" && (
-                          <>
-                            <div className="flex items-center gap-1.5">
-                              <span className="text-xs text-[var(--text-tertiary)]">Annual rental income ($):</span>
-                              <InlineInput value={editForm.rentalIncome ?? ""} onChange={v => setEditForm(f => ({...f, rentalIncome: v}))} type="number" placeholder="0" className="w-28" />
-                            </div>
-                            <div className="flex items-center gap-1.5">
-                              <span className="text-xs text-[var(--text-tertiary)]">Annual expenses ($):</span>
-                              <InlineInput value={editForm.rentalExpenses ?? ""} onChange={v => setEditForm(f => ({...f, rentalExpenses: v}))} type="number" placeholder="0" className="w-28" />
-                            </div>
-                          </>
-                        )}
-                        <span className="text-[10px] text-[var(--text-tertiary)] italic">
-                          Mortgage is managed separately on the Liabilities tab.
-                        </span>
-                      </>
-                    )}
-                  </div>
-                </td>
-              </tr>
-            ) : (
-              // ── View mode ──────────────────────────────────────────────────
-              <tr key={e.id} className="hover:bg-white/[0.02] cursor-pointer group transition-colors" onClick={() => startEdit(e)}>
-                <TD><span className="text-xs text-[var(--text-tertiary)]">{ownerLabel(e)}</span></TD>
-                <TD>
-                  <div className="flex flex-col gap-0.5">
-                    <span className="text-xs px-2 py-0.5 rounded bg-white/[0.06] text-[var(--text-secondary)] w-fit">{e.category}</span>
-                    {metaBadge(e)}
-                  </div>
-                </TD>
-                <TD><span className="font-medium text-[var(--text-primary)]">{e.name}</span></TD>
-                <TD right>
-                  <span className={`font-semibold font-mono ${isAssets ? "text-[var(--accent-green)]" : "text-[var(--accent-rose)]"}`}>
-                    {fmt$(e.value)}
-                  </span>
-                </TD>
-                {!isAssets && <TD><span className="text-[var(--text-tertiary)] text-xs font-mono">{e.metadata?.monthlyPayment ? fmt$(e.metadata.monthlyPayment) : "—"}</span></TD>}
-                <TD><span className="text-[var(--text-tertiary)] text-xs">{e.notes ?? ""}</span></TD>
-                <TD>
-                  <div className="flex items-center gap-2">
-                    <Pencil className="w-3.5 h-3.5 text-[var(--text-tertiary)]/30 group-hover:text-[var(--accent-cyan)] transition-colors" />
-                    <button onClick={ev => { ev.stopPropagation(); del(e.id); }} className="text-[var(--text-tertiary)]/30 hover:text-[var(--accent-rose)] transition-colors">
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                </TD>
-              </tr>
-            ))}
-
-            {/* ── Draft rows ────────────────────────────────────────────────── */}
-            {activeDrafts.map(d => {
-              const ri = drafts.indexOf(d);
-              return (
-                <tr key={ri} className="bg-[var(--accent-cyan)]/[0.03] border-b border-[var(--accent-cyan)]/10">
-                  <td colSpan={colCount} className="px-3 py-3">
-                    <div className="grid grid-cols-5 gap-2 mb-1">
+          {/* New entry drafts */}
+          {activeDrafts.length > 0 && (
+            <div className="bg-white border border-cyan-200 rounded-2xl overflow-hidden shadow-sm">
+              <div className="px-5 py-3 bg-cyan-50 border-b border-cyan-100 flex items-center justify-between">
+                <span className="text-sm font-semibold text-cyan-700">New {isAssets ? "Assets" : "Liabilities"}</span>
+                <div className="flex gap-2">
+                  <button onClick={() => setDrafts([])} className="text-xs text-slate-400 px-3 py-1 border border-slate-200 rounded-lg hover:bg-white transition-colors">
+                    Discard All
+                  </button>
+                  <button onClick={saveAll} disabled={saving}
+                    className="flex items-center gap-1.5 text-xs font-semibold text-white bg-[#0c1e3a] px-3 py-1 rounded-lg disabled:opacity-50 hover:bg-[#0e2a4a] transition-colors"
+                  >
+                    <Save className="w-3 h-3" /> {saving ? "Saving…" : `Save ${drafts.filter(isDraftSavable).length} Entries`}
+                  </button>
+                </div>
+              </div>
+              {activeDrafts.map((d, ri) => {
+                const draftIdx = drafts.indexOf(d);
+                return (
+                  <div key={ri} className="px-5 py-4 border-b border-slate-50 last:border-0">
+                    <div className="grid grid-cols-4 gap-3 mb-2">
                       <div>
                         <label className={LABEL_CLS}>Owner</label>
-                        <select
-                          value={d.jointWithSpouse && d.category === "Non-Registered" ? "joint" : d.owner}
-                          onChange={ev => updateDraft(ri, "owner", ev.target.value)}
-                          disabled={d.jointWithSpouse && d.category === "Non-Registered"}
-                          className={cn(EDIT_SELECT_CLS, d.jointWithSpouse && d.category === "Non-Registered" && "opacity-50")}
-                        >
-                          <option value="primary">{primaryName}</option>
+                        <select value={d.owner} onChange={e => updateDraft(draftIdx, "owner", e.target.value)} className={SELECT_CLS}>
+                          <option value="primary">{primaryName || "Primary"}</option>
                           {spouseName && <option value="spouse">{spouseName}</option>}
                           {spouseName && <option value="joint">Joint</option>}
                         </select>
                       </div>
                       <div>
                         <label className={LABEL_CLS}>Category</label>
-                        <InlineSelect value={d.category} onChange={v => updateDraft(ri, "category", v)} options={activeCats} />
+                        <select value={d.category} onChange={e => updateDraft(draftIdx, "category", e.target.value)} className={SELECT_CLS}>
+                          {activeCats.map(c => <option key={c}>{c}</option>)}
+                        </select>
                       </div>
                       <div>
                         <label className={LABEL_CLS}>Name / Description</label>
-                        <InlineInput value={d.name} onChange={v => updateDraft(ri, "name", v)} placeholder={d.category} />
+                        <InlineInput value={d.name} onChange={v => updateDraft(draftIdx, "name", v)} placeholder={d.category} />
                       </div>
                       <div>
-                        {!isAssets && (
-                          <div className="mb-1">
-                            <label className={LABEL_CLS}>Monthly Pmt ($)</label>
-                            <InlineInput value={d.monthlyPayment} onChange={v => updateDraft(ri, "monthlyPayment", v)} type="number" placeholder="0" />
-                          </div>
-                        )}
                         <label className={LABEL_CLS}>{isAssets ? "Market Value ($)" : "Balance Owing ($)"}</label>
-                        <InlineInput value={d.value} onChange={v => updateDraft(ri, "value", v)} type="number" placeholder="0" />
-                      </div>
-                      <div className="flex gap-1 items-end">
-                        <div className="flex-1">
-                          <label className={LABEL_CLS}>Notes</label>
-                          <InlineInput value={d.notes} onChange={v => updateDraft(ri, "notes", v)} placeholder="optional" />
+                        <div className="flex gap-1">
+                          <InlineInput type="number" value={d.value} onChange={v => updateDraft(draftIdx, "value", v)} placeholder="0" />
+                          <button onClick={() => removeDraft(draftIdx)} className="text-slate-300 hover:text-red-400 transition-colors flex-shrink-0">
+                            <X className="w-4 h-4" />
+                          </button>
                         </div>
-                        <button onClick={() => removeDraft(ri)} className="text-[var(--text-tertiary)]/50 hover:text-[var(--accent-rose)] mb-1.5 transition-colors"><X className="w-4 h-4" /></button>
                       </div>
                     </div>
-                    <ExtraFields draft={d} onChange={(k, v) => updateDraft(ri, k, v)} spouseName={spouseName} dependants={Array.isArray((client as any)?.dependants) ? (client as any).dependants : []} />
-                  </td>
-                </tr>
-              );
-            })}
+                    {!isAssets && (
+                      <div className="mb-2">
+                        <label className={LABEL_CLS}>Monthly Payment ($)</label>
+                        <InlineInput type="number" value={d.monthlyPayment} onChange={v => updateDraft(draftIdx, "monthlyPayment", v)} placeholder="0" className="w-40" />
+                      </div>
+                    )}
+                    <ExtraFields draft={d} onChange={(k, v) => updateDraft(draftIdx, k, v)} spouseName={spouseName} dependants={[]} />
+                  </div>
+                );
+              })}
+            </div>
+          )}
 
-            {activeRows.length === 0 && activeDrafts.length === 0 && (
-              <tr>
-                <td colSpan={colCount} className="px-4 py-8 text-center text-[var(--text-tertiary)] text-sm">
-                  No {isAssets ? "assets" : "liabilities"} yet — click <span className="text-[var(--accent-cyan)]">Add {isAssets ? "Asset" : "Liability"}</span> to add one
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+          {/* Category sections */}
+          {activeCats.map(cat => {
+            const catRows = activeRows.filter(e => e.category === cat);
+            if (!catRows.length) return null;
+            const catTotal = catRows.reduce((s, e) => s + Number(e.value), 0);
+            return (
+              <CategorySection
+                key={cat}
+                title={cat}
+                total={fmt$(catTotal)}
+                color={isAssets ? (NW_ASSET_COLORS[cat] ?? "#94a3b8") : "#f87171"}
+              >
+                {catRows.map(e => (
+                  editingId === e.id ? (
+                    // ── Inline edit form ──────────────────────────────────────
+                    <div key={e.id} className="px-5 py-4 bg-slate-50 border-b border-slate-100">
+                      <div className="grid grid-cols-4 gap-3 mb-2">
+                        <div>
+                          <label className={LABEL_CLS}>Owner</label>
+                          <select value={editForm.owner ?? "primary"} onChange={ev => setEditForm(f => ({ ...f, owner: ev.target.value }))} className={SELECT_CLS}>
+                            <option value="primary">{primaryName || "Primary"}</option>
+                            {spouseName && <option value="spouse">{spouseName}</option>}
+                            {spouseName && <option value="joint">Joint</option>}
+                          </select>
+                        </div>
+                        <div>
+                          <label className={LABEL_CLS}>Category</label>
+                          <select value={editForm.category ?? ""} onChange={ev => setEditForm(f => ({ ...f, category: ev.target.value }))} className={SELECT_CLS}>
+                            {activeCats.map(c => <option key={c}>{c}</option>)}
+                          </select>
+                        </div>
+                        <div>
+                          <label className={LABEL_CLS}>Name / Description</label>
+                          <InlineInput value={editForm.name ?? ""} onChange={v => setEditForm(f => ({ ...f, name: v }))} placeholder={editForm.category} />
+                        </div>
+                        <div>
+                          <label className={LABEL_CLS}>{isAssets ? "Market Value ($)" : "Balance Owing ($)"}</label>
+                          <InlineInput type="number" value={editForm.value ?? ""} onChange={v => setEditForm(f => ({ ...f, value: v }))} placeholder="0" />
+                        </div>
+                      </div>
+                      {/* Extra fields for edit */}
+                      <div className="flex flex-wrap gap-3 mb-3">
+                        {["RRSP", "TFSA", "Non-Registered"].includes(editForm.category ?? "") && (
+                          <>
+                            {editForm.category === "RRSP" && (
+                              <>
+                                <label className="flex items-center gap-1.5 text-xs text-slate-600 cursor-pointer">
+                                  <input type="checkbox" checked={!!editForm.isSpousal} onChange={ev => setEditForm(f => ({ ...f, isSpousal: ev.target.checked }))} className="w-3.5 h-3.5 rounded" />
+                                  Spousal RRSP
+                                </label>
+                                {editForm.isSpousal && (
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="text-xs text-slate-400">Contributor:</span>
+                                    <select value={editForm.rrspContributor ?? ""} onChange={ev => setEditForm(f => ({ ...f, rrspContributor: ev.target.value }))} className="border border-slate-200 rounded-lg px-2 py-1 text-sm">
+                                      <option value="">Select…</option>
+                                      <option value="client">{primaryName || "Client"}</option>
+                                      {spouseName && <option value="spouse">{spouseName}</option>}
+                                    </select>
+                                  </div>
+                                )}
+                              </>
+                            )}
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-xs text-slate-400">Holding type:</span>
+                              <select value={editForm.holdingType ?? ""} onChange={ev => setEditForm(f => ({ ...f, holdingType: ev.target.value }))} className="border border-slate-200 rounded-lg px-2 py-1 text-sm">
+                                <option value="">Select…</option>
+                                {HOLDING_TYPES.map(t => <option key={t}>{t}</option>)}
+                              </select>
+                            </div>
+                            {editForm.category === "Non-Registered" && spouseName && (
+                              <label className="flex items-center gap-1.5 text-xs text-slate-600 cursor-pointer">
+                                <input type="checkbox" checked={!!editForm.jointWithSpouse} onChange={ev => setEditForm(f => ({ ...f, jointWithSpouse: ev.target.checked, owner: ev.target.checked ? "joint" : f.owner }))} className="w-3.5 h-3.5 rounded" />
+                                Jointly held with spouse
+                              </label>
+                            )}
+                          </>
+                        )}
+                        {editForm.category === "Real Estate (other)" && (
+                          <>
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-xs text-slate-400">Property type:</span>
+                              <select value={editForm.propertyType ?? "Family Occupied"} onChange={ev => setEditForm(f => ({ ...f, propertyType: ev.target.value }))} className="border border-slate-200 rounded-lg px-2 py-1 text-sm">
+                                {PROPERTY_TYPES.map(t => <option key={t}>{t}</option>)}
+                              </select>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-xs text-slate-400">Purchase price ($):</span>
+                              <InlineInput value={editForm.purchasePrice ?? ""} onChange={v => setEditForm(f => ({ ...f, purchasePrice: v }))} type="number" placeholder="0" className="w-28" />
+                            </div>
+                            {editForm.propertyType === "Rental Property" && (
+                              <>
+                                <div className="flex items-center gap-1.5">
+                                  <span className="text-xs text-slate-400">Rental income/yr ($):</span>
+                                  <InlineInput value={editForm.rentalIncome ?? ""} onChange={v => setEditForm(f => ({ ...f, rentalIncome: v }))} type="number" placeholder="0" className="w-28" />
+                                </div>
+                                <div className="flex items-center gap-1.5">
+                                  <span className="text-xs text-slate-400">Expenses/yr ($):</span>
+                                  <InlineInput value={editForm.rentalExpenses ?? ""} onChange={v => setEditForm(f => ({ ...f, rentalExpenses: v }))} type="number" placeholder="0" className="w-28" />
+                                </div>
+                              </>
+                            )}
+                          </>
+                        )}
+                      </div>
+                      <div className="flex gap-2 justify-end">
+                        <button onClick={() => { setEditingId(null); setEditForm({}); }} className="text-sm text-slate-500 px-3 py-1.5 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors">Cancel</button>
+                        <button onClick={saveEdit} disabled={saving} className="text-sm font-semibold text-white bg-[#0c1e3a] px-4 py-1.5 rounded-lg disabled:opacity-50 hover:bg-[#0e2a4a] transition-colors">
+                          {saving ? "Saving…" : "Save"}
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <AssetRow
+                      key={e.id}
+                      entry={e}
+                      onEdit={() => startEdit(e)}
+                      onDelete={() => del(e.id)}
+                      ownerLabel={ownerLabel(e)}
+                      metaBadge={metaBadge(e)}
+                      isAsset={isAssets}
+                    />
+                  )
+                ))}
+              </CategorySection>
+            );
+          })}
 
-      {/* ── Save / discard ─────────────────────────────────────────────────── */}
-      {drafts.length > 0 && (
-        <div className="flex justify-end gap-2 mt-4">
-          <button onClick={() => setDrafts([])} className="text-sm text-[var(--text-tertiary)] px-4 py-2 border border-[var(--border-light)] rounded-lg hover:bg-white/5 transition-colors">
-            Discard All
-          </button>
-          <button onClick={saveAll} disabled={saving}
-            className="flex items-center gap-1.5 bg-[var(--accent-cyan)] text-[var(--bg-base)] text-sm font-semibold px-5 py-2 rounded-lg disabled:opacity-50 hover:bg-[var(--accent-cyan)]/90 transition-colors">
-            <Save className="w-3.5 h-3.5" /> {saving ? "Saving…" : `Save ${drafts.filter(isDraftSavable).length} Entries`}
-          </button>
+          {activeRows.length === 0 && activeDrafts.length === 0 && (
+            <div className="bg-white border border-slate-200 rounded-2xl p-10 text-center shadow-sm">
+              <p className="text-slate-400 text-sm">No {isAssets ? "assets" : "liabilities"} added yet</p>
+              <button onClick={() => addDraft(isAssets ? "asset" : "liability")} className="mt-3 text-cyan-500 text-sm hover:underline">
+                Add your first {isAssets ? "asset" : "liability"}
+              </button>
+            </div>
+          )}
+
         </div>
-      )}
 
-      {/* ── KPI tiles ───────────────────────────────────────────────────────── */}
-      <div className="grid grid-cols-2 gap-3 mt-5 mb-5">
-        {isAssets ? (
-          <>
-            <div className="fp-insightled-card p-4">
-              <p className="text-xs font-semibold text-[var(--text-tertiary)] uppercase tracking-wide mb-1">Total Assets</p>
-              <p className="text-2xl font-bold text-[var(--accent-green)] font-mono">{fmt$(totalA)}</p>
-            </div>
-            <div className="fp-insightled-card p-4">
-              <p className="text-xs font-semibold text-[var(--text-tertiary)] uppercase tracking-wide mb-1">Net Worth</p>
-              <p className={`text-2xl font-bold font-mono ${netWorth >= 0 ? "text-[var(--text-primary)]" : "text-[var(--accent-rose)]"}`}>{fmt$(netWorth)}</p>
-            </div>
-          </>
-        ) : (
-          <>
-            <div className="fp-insightled-card p-4">
-              <p className="text-xs font-semibold text-[var(--text-tertiary)] uppercase tracking-wide mb-1">Total Liabilities</p>
-              <p className="text-2xl font-bold text-[var(--accent-rose)] font-mono">{fmt$(totalL)}</p>
-            </div>
-            <div className="fp-insightled-card p-4">
-              <p className="text-xs font-semibold text-[var(--text-tertiary)] uppercase tracking-wide mb-1">Net Worth</p>
-              <p className={`text-2xl font-bold font-mono ${netWorth >= 0 ? "text-[var(--text-primary)]" : "text-[var(--accent-rose)]"}`}>{fmt$(netWorth)}</p>
-            </div>
-          </>
-        )}
-      </div>
+        {/* ── Right 1/3 ──────────────────────────────────────────────────── */}
+        <div className="space-y-4">
 
-      {/* ── Asset Allocation Donut Chart ────────────────────────────────────── */}
-      {isAssets && totalA > 0 && (() => {
-        const chartData = NW_ASSET_CATS
-          .map(cat => ({
-            name: cat,
-            value: assets.filter(a => a.category === cat).reduce((s, a) => s + Number(a.value), 0),
-            color: NW_ASSET_COLORS[cat] ?? "#6b7280",
-          }))
-          .filter(d => d.value > 0);
-
-        const CustomTooltip = ({ active, payload }: any) => {
-          if (!active || !payload?.length) return null;
-          const d = payload[0].payload;
-          const pct = totalA > 0 ? (d.value / totalA) * 100 : 0;
-          return (
-            <div className="rounded-lg px-3 py-2 text-xs shadow-lg"
-              style={{ background: "#1c1f26", border: "1px solid rgba(255,255,255,0.12)" }}>
-              <div className="font-semibold mb-0.5" style={{ color: d.color }}>{d.name}</div>
-              <div style={{ color: "#f0f2f5" }}>{fmt$(d.value)}</div>
-              <div style={{ color: "#a1a8b3" }}>{pct.toFixed(1)}% of total</div>
-            </div>
-          );
-        };
-
-        return (
-          <div className="fp-insightled-card p-5 mb-5">
-            <p className="text-xs font-semibold text-[var(--text-tertiary)] uppercase tracking-wide mb-4">Asset Allocation</p>
-            <div className="flex flex-col sm:flex-row items-center gap-6">
-              <div style={{ width: 200, height: 200, flexShrink: 0 }}>
+          {/* Pie chart */}
+          {totalA > 0 && (
+            <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
+              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-4">Asset Allocation</p>
+              <div style={{ width: "100%", height: 180 }}>
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
-                    <Pie
-                      data={chartData}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={58}
-                      outerRadius={90}
-                      paddingAngle={2}
-                      dataKey="value"
-                      startAngle={90}
-                      endAngle={-270}
-                    >
-                      {chartData.map((entry, i) => (
-                        <Cell key={i} fill={entry.color} stroke="transparent" />
-                      ))}
+                    <Pie data={pieData} cx="50%" cy="50%" innerRadius={52} outerRadius={80}
+                      paddingAngle={2} dataKey="value" startAngle={90} endAngle={-270}>
+                      {pieData.map((entry, i) => <Cell key={i} fill={entry.color} stroke="transparent" />)}
                     </Pie>
                     <Tooltip content={<CustomTooltip />} />
                   </PieChart>
                 </ResponsiveContainer>
               </div>
-              <div className="flex flex-wrap gap-x-5 gap-y-2 flex-1">
-                {chartData.map(d => (
-                  <div key={d.name} className="flex items-center gap-2 min-w-[160px]">
+              <div className="space-y-1.5 mt-3">
+                {pieData.map(d => (
+                  <div key={d.name} className="flex items-center gap-2">
                     <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: d.color }} />
-                    <span className="text-xs text-[var(--text-secondary)] flex-1 truncate">{d.name}</span>
-                    <span className="text-xs font-mono text-[var(--text-tertiary)]">
-                      {totalA > 0 ? ((d.value / totalA) * 100).toFixed(1) : "0.0"}%
-                    </span>
+                    <span className="text-xs text-slate-500 flex-1 truncate">{d.name}</span>
+                    <span className="text-xs font-semibold text-slate-700">{fmt$(d.value)}</span>
                   </div>
                 ))}
               </div>
             </div>
+          )}
+
+          {/* Net Worth summary */}
+          <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
+            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-3">Summary</p>
+            <div className="space-y-2.5">
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-slate-500">Total Assets</span>
+                <span className="font-semibold text-emerald-600">{fmt$(totalA)}</span>
+              </div>
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-slate-500">Total Liabilities</span>
+                <span className="font-semibold text-red-500">{fmt$(totalL)}</span>
+              </div>
+              <div className="border-t border-slate-100 pt-2.5 flex justify-between items-center">
+                <span className="font-semibold text-slate-900">Net Worth</span>
+                <span className={`font-bold text-lg ${netWorth >= 0 ? "text-slate-900" : "text-red-500"}`}>
+                  {fmt$(netWorth)}
+                </span>
+              </div>
+            </div>
           </div>
-        );
-      })()}
+
+          {/* Quick Add */}
+          <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
+            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-3">Quick Add</p>
+            <div className="space-y-1.5">
+              {(isAssets ? NW_ASSET_CATS : NW_LIAB_CATS).map(cat => (
+                <button key={cat} onClick={() => {
+                  const d = emptyDraft(isAssets ? "asset" : "liability");
+                  d.category = cat;
+                  setDrafts(prev => [...prev, d]);
+                }}
+                  className="w-full text-left text-xs text-slate-500 hover:text-cyan-600 hover:bg-cyan-50 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-2"
+                >
+                  {isAssets && <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: NW_ASSET_COLORS[cat] ?? "#94a3b8" }} />}
+                  + {cat}
+                </button>
+              ))}
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      {/* Voice dialog */}
+      {voiceOpen && (
+        <VoiceAddDialog
+          title={`Voice-Add ${voiceOpen === "asset" ? "Asset" : "Liability"}`}
+          moduleId={`net-worth-${voiceOpen}`}
+          prompt={voiceOpen === "asset"
+            ? `Try: "TFSA at TD worth twenty-five thousand, jointly with spouse"`
+            : `Try: "RBC mortgage balance 320 thousand, monthly payment 1850"`}
+          fieldSchema={[
+            { key: "category", label: "Category", description: `Type of ${voiceOpen}`, enum: voiceOpen === "asset" ? NW_ASSET_CATS : NW_LIAB_CATS },
+            { key: "name", label: "Name", description: "Description" },
+            { key: "value", label: voiceOpen === "asset" ? "Value" : "Balance", description: "Amount in dollars" },
+            { key: "owner", label: "Owner", description: "Who owns it", enum: ["primary", "spouse", "joint"] },
+            ...(voiceOpen === "liability" ? [{ key: "monthlyPayment", label: "Monthly Pmt", description: "Monthly payment" }] : []),
+          ]}
+          onResult={(parsed: Record<string, string>) => { addVoiceDraft(voiceOpen, parsed); setVoiceOpen(null); }}
+          onClose={() => setVoiceOpen(null)}
+        />
+      )}
+
     </div>
   );
 }

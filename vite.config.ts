@@ -24,16 +24,18 @@ export default defineConfig({
     emptyOutDir: true,
     rollupOptions: {
       output: {
-        manualChunks: {
-          // Core React — loads immediately
-          "vendor-react":  ["react", "react-dom"],
-          // Data fetching — loads on first query
-          "vendor-query":  ["@tanstack/react-query"],
-          // Charts — only loaded when a chart tab is visited
-          "vendor-charts": ["recharts"],
-          // Date utilities if present
-          "vendor-date":   ["date-fns"],
-        },
+        manualChunks(id) {
+  if (id.includes("node_modules/react-dom") || id.includes("node_modules/react/")) 
+    return "vendor-react";
+  if (id.includes("node_modules/@tanstack/react-query")) 
+    return "vendor-query";
+  if (id.includes("node_modules/recharts")) 
+    return "vendor-charts";
+  if (id.includes("node_modules/lucide-react")) 
+    return "vendor-lucide";
+  if (id.includes("node_modules/date-fns")) 
+    return "vendor-date";
+},
       },
     },
     // Raise warning threshold — after splitting, individual chunks should be under 500KB

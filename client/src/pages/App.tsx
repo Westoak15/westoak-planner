@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { lazy, Suspense } from "react";
 import { useAuth } from "../lib/auth";
 import { token } from "../lib/api";
 import { api } from "../lib/api";
@@ -6,19 +7,32 @@ import { Sidebar, type Tab } from "../components/Sidebar";
 import { PlanningDocFlow, PLANNING_TABS, type PlanningTab } from "../components/layout/PlanningDocFlow";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "../lib/queryClient";
-import { NetWorthTab as NetWorthTabNew } from "./MultiEntryTabs";
-import { AITab } from "./FinancialPlanning";
 import { AdminPanel } from "./AdminPanel"
-import { AgentsTab } from "./AgentsTab";
-import { ExpensesTab } from "./ExpensesTab";
-import { GoalsTab } from "./GoalsTab";
-import { InsightLedDashboard } from "../components/InsightLedDashboard";
+//import { AITab } from "./FinancialPlanning";
+const AITab = lazy(() => import("./FinancialPlanning").then(m => ({ default: m.AITab })));
+const NetWorthTabNew   = lazy(() => import("./MultiEntryTabs").then(m => ({ default: m.NetWorthTab })));
+const RetirementHub    = lazy(() => import("../components/RetirementHub").then(m => ({ default: m.RetirementHub })));
+const TaxEstateHub     = lazy(() => import("../components/TaxEstateHub").then(m => ({ default: m.TaxEstateHub })));
+const ProtectionHub    = lazy(() => import("../components/ProtectionHub").then(m => ({ default: m.ProtectionHub })));
+const DocumentsHub     = lazy(() => import("../components/DocumentsHub").then(m => ({ default: m.DocumentsHub })));
+const FinancialPlanHub = lazy(() => import("../components/FinancialPlanHub").then(m => ({ default: m.FinancialPlanHub })));
+const GoalsTab         = lazy(() => import("./GoalsTab").then(m => ({ default: m.GoalsTab })));
+const ExpensesTab      = lazy(() => import("./ExpensesTab").then(m => ({ default: m.ExpensesTab })));
+const ReportsTab       = lazy(() => import("./ReportsTab").then(m => ({ default: m.ReportsTab })));
+const LettersTab       = lazy(() => import("./LettersTab").then(m => ({ default: m.LettersTab })));
+const AgentsTab          = lazy(() => import("./AgentsTab").then(m => ({ default: m.AgentsTab })));
+const InsightLedDashboard = lazy(() => import("../components/InsightLedDashboard").then(m => ({ default: m.InsightLedDashboard })));
+//import { NetWorthTab as NetWorthTabNew } from "./MultiEntryTabs";
+//import { AgentsTab } from "./AgentsTab";
+//import { ExpensesTab } from "./ExpensesTab";
+//import { GoalsTab } from "./GoalsTab";
+//import { InsightLedDashboard } from "../components/InsightLedDashboard";
 // Merged Insight-Led hubs (Policies+FNA, Retirement+Pension, Tax+Estate, Reports+Letters, Full FP+Plan)
-import { ProtectionHub } from "../components/ProtectionHub";
-import { RetirementHub } from "../components/RetirementHub";
-import { TaxEstateHub } from "../components/TaxEstateHub";
-import { DocumentsHub } from "../components/DocumentsHub";
-import { FinancialPlanHub } from "../components/FinancialPlanHub";
+//import { ProtectionHub } from "../components/ProtectionHub";
+//import { RetirementHub } from "../components/RetirementHub";
+//import { TaxEstateHub } from "../components/TaxEstateHub";
+//import { DocumentsHub } from "../components/DocumentsHub";
+//import { FinancialPlanHub } from "../components/FinancialPlanHub";
 import { fmt$, fmtPct, initials, avatarBg, cn } from "../lib/utils";
 import { VoiceProvider, useVoice, labelToKey } from "../contexts/VoiceContext";
 import { ClientOverview } from "./ClientOverview";
@@ -48,6 +62,18 @@ const PROVINCES = ["AB","BC","MB","NB","NL","NS","NT","NU","ON","PE","QC","SK","
 const NW_ASSET_CATS = ["RRSP","TFSA","Non-Registered","Real Estate","Business","Cash/Bank","Other Asset"];
 const NW_LIAB_CATS  = ["Mortgage","HELOC","Car Loan","Credit Card","Student Loan","Line of Credit","Other Liability"];
 const DEBT_TYPES    = ["mortgage","heloc","car_loan","credit_card","student_loan","line_of_credit","other"];
+
+//
+function TabLoader() {
+  return (
+    <div className="flex items-center justify-center h-full min-h-[400px]">
+      <div className="flex flex-col items-center gap-3">
+        <div className="w-6 h-6 border-2 border-[#0c1e3a] border-t-transparent rounded-full animate-spin" />
+        <span className="text-xs text-gray-400 font-medium">Loading…</span>
+      </div>
+    </div>
+  );
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Shared UI components
@@ -1578,6 +1604,7 @@ export default function App() {
         {/* Content — wrap in fp-insightled so EVERY tab gets the
             light-grey page + dark-card treatment (sidebar/header are outside) */}
         <div key={tab} className="flex-1 overflow-y-auto fp-insightled animate-in fade-in duration-300">
+          <Suspense fallback={<TabLoader />}>
           {/* Global context bar — shown when a client is selected and not on overview/clients */}
           {client && !["clients", "overview", "dashboard"].includes(tab) && (
             <div className="flex justify-between items-center bg-white border-b border-slate-200 px-6 py-2">
@@ -1658,7 +1685,7 @@ export default function App() {
                 {tab === "networth" && (
                   <QueryClientProvider client={queryClient}>
                       <NetWorthTabNew clientId={client.id} client={client} />
-                   /</QueryClientProvider>
+                   </QueryClientProvider>
                 )}
                 {tab === "goals"    && (
                   <QueryClientProvider client={queryClient}>
@@ -1678,10 +1705,10 @@ export default function App() {
               </PlanningDocFlow>
             </div>
           )}
-
+          </Suspense>
         </div>
       </div>
-       </div>
+     </div>
     </VoiceProvider>
   );
 }

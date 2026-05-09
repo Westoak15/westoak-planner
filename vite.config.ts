@@ -19,5 +19,26 @@ export default defineConfig({
     hmr: false,
     proxy: { "/api": { target: "http://localhost:8080", changeOrigin: true } },
   },
-  build: { outDir: "../dist/client", emptyOutDir: true },
+  build: {
+    outDir: "../dist/client",
+    emptyOutDir: true,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // Core React — loads immediately
+          "vendor-react":  ["react", "react-dom"],
+          // Data fetching — loads on first query
+          "vendor-query":  ["@tanstack/react-query"],
+          // Charts — only loaded when a chart tab is visited
+          "vendor-charts": ["recharts"],
+          // Icons — large but tree-shakeable; separate chunk avoids re-parsing
+          "vendor-lucide": ["lucide-react"],
+          // Date utilities if present
+          "vendor-date":   ["date-fns"],
+        },
+      },
+    },
+    // Raise warning threshold — after splitting, individual chunks should be under 500KB
+    chunkSizeWarningLimit: 600,
+  },
 });

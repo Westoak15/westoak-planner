@@ -21,6 +21,7 @@ import {
   users,
 } from "../../shared/schema.js";
 import { eq, and } from "drizzle-orm";
+import { ownsClient } from "../fpUtils.js";
 import { isAuthenticated, type AuthRequest } from "../auth/index.js";
 
 import { projectRetirement }      from "./engines/retirement.js";
@@ -90,16 +91,6 @@ function sumExpenseCategory(rows: { category: string; monthlyAmount: string | nu
   return rows
     .filter(r => r.category.toLowerCase().includes(keyword.toLowerCase()))
     .reduce((s, r) => s + Number(r.monthlyAmount ?? 0), 0);
-}
-
-// â”€â”€ Ownership check â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-
-async function ownsClient(clientId: number, userId: number): Promise<boolean> {
-  const [c] = await db
-    .select({ id: clients.id })
-    .from(clients)
-    .where(and(eq(clients.id, clientId), eq(clients.userId, userId)));
-  return !!c;
 }
 
 // â”€â”€ Load client + advisor â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€

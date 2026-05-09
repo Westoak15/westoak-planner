@@ -53,13 +53,33 @@ export function ReportsTab({ clientId }: { clientId: number }) {
   const token = () => localStorage.getItem("fp_token") ?? "";
 
   async function fetchHtml(route: string, withCover = false): Promise<string> {
+    // Comprehensive report uses the planning engine endpoint (POST)
+    if (route === "comprehensive") {
+      const res = await fetch(`/api/planning/report/${clientId}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token()}`,
+        },
+        body: JSON.stringify({ sections: "all" }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        return `<p style="color:red;padding:20px;font-family:sans-serif;">
+          <strong>Report generation failed:</strong> ${(err as any).error ?? res.statusText}<br/>
+          <small>Make sure the client has retirement projections, debt entries, and insurance data entered.</small>
+        </p>`;
+      }
+      return res.text();
+    }
+ 
+    // All other reports use the existing GET endpoint
     let url = `/api/reports/${clientId}/${route}`;
     if (route === "fna") {
       if (!fnaAnalysisId) return "<p>No FNA analysis selected</p>";
       url = `/api/reports/${clientId}/fna/${fnaAnalysisId}`;
     }
-    // comprehensive always has its own cover; individual reports pass ?cover=true when toggled
-    if (withCover && route !== "comprehensive" && route !== "one-page") {
+    if (withCover && route !== "one-page") {
       url += "?cover=true";
     }
     const res = await fetch(url, { headers: { Authorization: `Bearer ${token()}` } });

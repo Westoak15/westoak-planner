@@ -21,6 +21,7 @@ import { lettersRouter } from "./routes/letters.js";
 import { goalsRouter } from "./routes/goals.js";
 import { pensionRouter } from "./routes/pension.js";
 import aiVoiceRouter from "./routes/ai-voice.js";
+import { planningRouter } from "./planning/routes.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = parseInt(process.env.PORT ?? "8080", 10);
@@ -59,7 +60,7 @@ app.use("/api",         simulationRouter);   // ← FIX 1: mounts /api/simulatio
 app.use("/api/reports", reportsRouter);
 app.use("/api",         lettersRouter);
 app.use("/api/ai",      aiVoiceRouter);
-
+app.use("/api/planning", planningRouter);
 
 if (process.env.NODE_ENV === "production") {
   const dist = path.join(__dirname, "../client");

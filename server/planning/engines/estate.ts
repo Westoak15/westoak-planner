@@ -1,6 +1,6 @@
 // server/planning/engines/estate.ts
-import type { EstateInputs, EstateAnalysis, EstateRecommendation } from "../types";
-import { calculateFederalTax, calculateProvincialTax, calculateProbateFees, getMarginalRate } from "../data/taxData2024";
+import type { EstateInputs, EstateAnalysis, EstateRecommendation } from "../types.js";
+import { calculateFederalTax, calculateProvincialTax, calculateProbateFees, getMarginalRate } from "../data/taxData2024.js";
 
 export function analyzeEstate(inputs: EstateInputs): EstateAnalysis {
   const { province, age, maritalStatus, primaryResidence, cottageOrSecondProperty, rrspBalance, rrifBalance, tfsaBalance, nonRegInvestments, lifeInsurance, businessInterest, otherAssets, mortgage, otherDebt, hasWill, hasPOA, hasHCDirective, namedRrspBeneficiary, namedTfsaBeneficiary, namedInsuranceBeneficiary, rrspTaxableOnDeath, capitalGainsOnCottage, capitalGainsOnBusiness } = inputs;

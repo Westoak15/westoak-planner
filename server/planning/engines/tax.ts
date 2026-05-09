@@ -1,6 +1,6 @@
 // server/planning/engines/tax.ts
-import type { TaxInputs, TaxProjection, TaxBracketRow, TaxRecommendation } from "../types";
-import { FEDERAL_BRACKETS_2025 as FEDERAL_BRACKETS_2024, PROVINCIAL_BRACKETS_2025 as PROVINCIAL_BRACKETS_2024, calculateFederalTax, calculateProvincialTax, calculateCPP, calculateEI, getBracketRate, getMarginalRate, ELIGIBLE_DIVIDEND_GROSSUP, ELIGIBLE_DIVIDEND_FED_CREDIT, NONELIGIBLE_DIVIDEND_GROSSUP, NONELIGIBLE_DIVIDEND_FED_CREDIT } from "../data/taxData2025";
+import type { TaxInputs, TaxProjection, TaxBracketRow, TaxRecommendation } from "../types.js";
+import { FEDERAL_BRACKETS_2025 as FEDERAL_BRACKETS_2024, PROVINCIAL_BRACKETS_2025 as PROVINCIAL_BRACKETS_2024, calculateFederalTax, calculateProvincialTax, calculateCPP, calculateEI, getBracketRate, getMarginalRate, ELIGIBLE_DIVIDEND_GROSSUP, ELIGIBLE_DIVIDEND_FED_CREDIT, NONELIGIBLE_DIVIDEND_GROSSUP, NONELIGIBLE_DIVIDEND_FED_CREDIT } from "../data/taxData2025.js";
 
 export function projectTax(inputs: TaxInputs): TaxProjection {
   const { taxYear, province, employmentIncome, selfEmploymentIncome, capitalGainsIncome, eligibleDividends, nonEligibleDividends, rrspDeduction, otherDeductions, pensionIncome, rentalIncome, otherIncome, rrspContributionRoom } = inputs;

@@ -1,6 +1,6 @@
 // server/planning/engines/capitalGains.ts
-import type { CapitalGainsInputs, CapitalGainsAnalysis, CapitalGainsDisposalResult } from "../types";
-import { calculateFederalTax, calculateProvincialTax, CAPITAL_GAINS_THRESHOLD_2024, CAPITAL_GAINS_INCLUSION_RATE_UNDER_250K, CAPITAL_GAINS_INCLUSION_RATE_OVER_250K, LIFETIME_CAPITAL_GAINS_EXEMPTION_QSBC } from "../data/taxData2024";
+import type { CapitalGainsInputs, CapitalGainsAnalysis, CapitalGainsDisposalResult } from "../types.js";
+import { calculateFederalTax, calculateProvincialTax, CAPITAL_GAINS_THRESHOLD_2024, CAPITAL_GAINS_INCLUSION_RATE_UNDER_250K, CAPITAL_GAINS_INCLUSION_RATE_OVER_250K, LIFETIME_CAPITAL_GAINS_EXEMPTION_QSBC } from "../data/taxData2024.js";
 
 export function analyzeCapitalGains(inputs: CapitalGainsInputs): CapitalGainsAnalysis {
   const { province, otherIncome, disposals, currentYearLosses, carryForwardLosses } = inputs;

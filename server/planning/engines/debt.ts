@@ -1,6 +1,6 @@
 // server/planning/engines/debt.ts
-import type { DebtInputs, DebtAnalysis, DebtPayoffItem, DebtRecommendation, CashFlowBudget } from "../types";
-import { calculateFederalTax, calculateProvincialTax } from "../data/taxData2024";
+import type { DebtInputs, DebtAnalysis, DebtPayoffItem, DebtRecommendation, CashFlowBudget } from "../types.js";
+import { calculateFederalTax, calculateProvincialTax } from "../data/taxData2024.js";
 
 function calculatePayoffOrder(debts: DebtInputs["debts"], method: "avalanche"|"snowball", extraMonthly: number): DebtPayoffItem[] {
   const sorted = method==="avalanche" ? [...debts].sort((a,b)=>b.interestRate-a.interestRate) : [...debts].sort((a,b)=>a.balance-b.balance);

@@ -1,6 +1,6 @@
 // server/planning/engines/education.ts
-import type { EducationInputs, EducationAnalysis, EducationChildAnalysis, RespYearRow } from "../types";
-import { CESG_ANNUAL_MAX, CESG_LIFETIME_MAX, CLB_FIRST_YEAR, CLB_SUBSEQUENT_YEAR, CLB_LIFETIME_MAX, CLB_INCOME_THRESHOLD, ANNUAL_EDUCATION_COSTS_2024, getCesgRate, CESG_ADDITIONAL_INCOME_1 } from "../data/taxData2024";
+import type { EducationInputs, EducationAnalysis, EducationChildAnalysis, RespYearRow } from "../types.js";
+import { CESG_ANNUAL_MAX, CESG_LIFETIME_MAX, CLB_FIRST_YEAR, CLB_SUBSEQUENT_YEAR, CLB_LIFETIME_MAX, CLB_INCOME_THRESHOLD, ANNUAL_EDUCATION_COSTS_2024, getCesgRate, CESG_ADDITIONAL_INCOME_1 } from "../data/taxData2024.js";
 
 export function analyzeEducation(inputs: EducationInputs): EducationAnalysis {
   const { province, familyIncome, children, annualContribution, expectedReturnRate, educationType, programYears } = inputs;

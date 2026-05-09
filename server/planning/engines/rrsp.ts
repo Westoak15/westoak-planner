@@ -1,6 +1,6 @@
 // server/planning/engines/rrsp.ts
-import type { RrspInputs, RrspAnalysis, RrspYearRow } from "../types";
-import { getMarginalRate, RRSP_LIMIT_2024, RRSP_CONTRIBUTION_RATE } from "../data/taxData2024";
+import type { RrspInputs, RrspAnalysis, RrspYearRow } from "../types.js";
+import { getMarginalRate, RRSP_LIMIT_2024, RRSP_CONTRIBUTION_RATE } from "../data/taxData2024.js";
 
 export function analyzeRrsp(inputs: RrspInputs): RrspAnalysis {
   const { currentAge, earnedIncome, currentBalance, unusedContributionRoom, pensionAdjustment, annualContribution, province, expectedRetirementAge, expectedReturnRate } = inputs;

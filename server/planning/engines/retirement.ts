@@ -1,6 +1,6 @@
 // server/planning/engines/retirement.ts
-import type { RetirementInputs, RetirementProjection, RetirementYearRow } from "../types";
-import { calculateFederalTax, calculateProvincialTax, calculateCPP, getCppMonthlyBenefit, getOasMonthlyBenefit, getRrifMinimumFactor, getMarginalRate } from "../data/taxData2024";
+import type { RetirementInputs, RetirementProjection, RetirementYearRow } from "../types.js";
+import { calculateFederalTax, calculateProvincialTax, calculateCPP, getCppMonthlyBenefit, getOasMonthlyBenefit, getRrifMinimumFactor, getMarginalRate } from "../data/taxData2024.js";
 
 export function projectRetirement(inputs: RetirementInputs): RetirementProjection {
   const { currentAge, retirementAge, planToAge, province, rrspBalance, tfsaBalance, nonRegBalance, annualRrspContribution, annualTfsaContribution, annualNonRegContribution, employmentIncome, desiredRetirementIncome, cppStartAge, oasStartAge, yearsInCanada, equityReturn, bondReturn, inflationRate, equityAllocation, pensionMonthly, rrifConversionAge } = inputs;

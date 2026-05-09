@@ -1,5 +1,5 @@
 // server/planning/engines/insurance.ts
-import type { InsuranceInputs, InsuranceAnalysis, InsuranceRecommendation } from "../types";
+import type { InsuranceInputs, InsuranceAnalysis, InsuranceRecommendation } from "../types.js";
 
 export function analyzeInsurance(inputs: InsuranceInputs): InsuranceAnalysis {
   const { clientAge, numberOfDependents, youngestDependentAge, annualIncome, spouseAnnualIncome, incomeReplacementYears, liquidAssets, rrspBalance, tfsaBalance, nonRegInvestments, realEstateEquity, mortgageBalance, otherDebt, finalExpenses, existingLifeInsurance, existingGroupBenefits, monthlyExpenses, existingDisabilityBenefit, existingCriticalIllness } = inputs;

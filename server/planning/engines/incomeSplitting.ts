@@ -1,6 +1,6 @@
 // server/planning/engines/incomeSplitting.ts
-import type { IncomeSplittingInputs, IncomeSplittingAnalysis, IncomeSplittingStrategy } from "../types";
-import { calculateFederalTax, calculateProvincialTax, getMarginalRate } from "../data/taxData2024";
+import type { IncomeSplittingInputs, IncomeSplittingAnalysis, IncomeSplittingStrategy } from "../types.js";
+import { calculateFederalTax, calculateProvincialTax, getMarginalRate } from "../data/taxData2024.js";
 
 function calcTax(income: number, province: IncomeSplittingInputs["province"]): number {
   return Math.max(0, calculateFederalTax(income) + calculateProvincialTax(income, province));

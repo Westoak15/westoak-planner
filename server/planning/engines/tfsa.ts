@@ -1,6 +1,6 @@
 // server/planning/engines/tfsa.ts
-import type { TfsaInputs, TfsaAnalysis, TfsaYearRow, TfsaVsTaxableRow } from "../types";
-import { TFSA_ANNUAL_LIMITS, getTfsaCumulativeRoom, getMarginalRate } from "../data/taxData2024";
+import type { TfsaInputs, TfsaAnalysis, TfsaYearRow, TfsaVsTaxableRow } from "../types.js";
+import { TFSA_ANNUAL_LIMITS, getTfsaCumulativeRoom, getMarginalRate } from "../data/taxData2024.js";
 
 export function analyzeTfsa(inputs: TfsaInputs): TfsaAnalysis {
   const { currentAge, birthYear, currentBalance, withdrawalsThisYear, annualContribution, expectedReturnRate, province } = inputs;

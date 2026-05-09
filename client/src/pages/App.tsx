@@ -8,8 +8,6 @@ import { PlanningDocFlow, PLANNING_TABS, type PlanningTab } from "../components/
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "../lib/queryClient";
 import { AdminPanel } from "./AdminPanel"
-import { useToast } from "@/hooks/use-toast";
-import { Toaster } from "@/components/ui/toaster";
 //import { AITab } from "./FinancialPlanning";
 const AITab = lazy(() => import("./FinancialPlanning").then(m => ({ default: m.AITab })));
 const NetWorthTabNew   = lazy(() => import("./MultiEntryTabs").then(m => ({ default: m.NetWorthTab })));
@@ -64,22 +62,8 @@ const PROVINCES = ["AB","BC","MB","NB","NL","NS","NT","NU","ON","PE","QC","SK","
 const NW_ASSET_CATS = ["RRSP","TFSA","Non-Registered","Real Estate","Business","Cash/Bank","Other Asset"];
 const NW_LIAB_CATS  = ["Mortgage","HELOC","Car Loan","Credit Card","Student Loan","Line of Credit","Other Liability"];
 const DEBT_TYPES    = ["mortgage","heloc","car_loan","credit_card","student_loan","line_of_credit","other"];
-const { toast } = useToast();
+
 //
-
-// Global API error toast listener
-useEffect(() => {
-  const handler = (e: Event) => {
-    const msg = (e as CustomEvent).detail?.message ?? "Something went wrong";
-    // Skip auth errors — we redirect instead
-    if (msg === "Unauthorized") return;
-    toast({ title: "Error", description: msg, variant: "destructive" });
-  };
-  window.addEventListener("api:error", handler);
-  return () => window.removeEventListener("api:error", handler);
-}, []);
-
-
 function TabLoader() {
   return (
     <div className="flex items-center justify-center h-full min-h-[400px]">
@@ -1725,7 +1709,6 @@ export default function App() {
         </div>
       </div>
      </div>
-     <Toaster />
     </VoiceProvider>
   );
 }

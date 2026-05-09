@@ -1,10 +1,15 @@
 const BASE = "";
 
 export const token = {
-  get: () => localStorage.getItem("fp_token"),
-  set: (t: string) => localStorage.setItem("fp_token", t),
+  get:   () => localStorage.getItem("fp_token"),
+  set:   (t: string) => localStorage.setItem("fp_token", t),
   clear: () => localStorage.removeItem("fp_token"),
 };
+
+// Dispatch a global event so the app can show a toast without importing React here
+function notifyError(message: string) {
+  window.dispatchEvent(new CustomEvent("api:error", { detail: { message } }));
+}
 
 async function req<T>(path: string, opts: RequestInit = {}): Promise<T> {
   const t = token.get();
@@ -17,14 +22,19 @@ async function req<T>(path: string, opts: RequestInit = {}): Promise<T> {
     },
   });
   if (res.status === 401) { token.clear(); window.location.href = "/"; throw new Error("Unauthorized"); }
-  if (!res.ok) { const b = await res.json().catch(() => ({})); throw new Error(b.message ?? `HTTP ${res.status}`); }
+  if (!res.ok) {
+    const b = await res.json().catch(() => ({}));
+    const message = b.message ?? `HTTP ${res.status}`;
+    notifyError(message);
+    throw new Error(message);
+  }
   return res.json();
 }
 
 export const api = {
-  get:    <T>(p: string)               => req<T>(p),
-  post:   <T>(p: string, b?: unknown)  => req<T>(p, { method: "POST",   body: JSON.stringify(b) }),
-  patch:  <T>(p: string, b?: unknown)  => req<T>(p, { method: "PATCH",  body: JSON.stringify(b) }),
-  put:    <T>(p: string, b?: unknown)  => req<T>(p, { method: "PUT",    body: JSON.stringify(b) }),
-  delete: <T>(p: string)               => req<T>(p, { method: "DELETE" }),
+  get:    <T>(p: string)              => req<T>(p),
+  post:   <T>(p: string, b?: unknown) => req<T>(p, { method: "POST",   body: JSON.stringify(b) }),
+  patch:  <T>(p: string, b?: unknown) => req<T>(p, { method: "PATCH",  body: JSON.stringify(b) }),
+  put:    <T>(p: string, b?: unknown) => req<T>(p, { method: "PUT",    body: JSON.stringify(b) }),
+  delete: <T>(p: string)              => req<T>(p, { method: "DELETE" }),
 };

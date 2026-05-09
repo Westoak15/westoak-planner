@@ -8,7 +8,7 @@
  *   import { financialRouter } from "./routes/financial.js";
  *   app.use("/api", financialRouter);
  */
-
+import { runRetirementProjection } from "../engine/retirementProjection.js";
 import { Router, Response } from "express";
 import { db } from "../db/index.js";
 import {
@@ -18,7 +18,7 @@ import {
   debtEntries, clientPolicies, householdExpenses,
   taxPlanningNotes, estatePlanningNotes, aiRecommendations,
   planAssumptions, simulationResults, planSnapshots,
-  planStaleFlags, planActionItems,
+  planStaleFlags, planActionItems, pensionPlans
 } from "../../shared/schema.js";
 import { isAuthenticated, type AuthRequest } from "../auth/index.js";
 import { safe, ownsClient, ownsPlan } from "../fpUtils.js";
@@ -189,13 +189,11 @@ r.post("/clients/:id/retirement", async (req: AuthRequest, res: Response) => {
   }
 });
 
-// Also handle Monte Carlo retirement projections POST (alias path from use-plans.ts)
 r.post("/clients/:id/retirement-projections", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.id;
   if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
   const body = req.body;
   try {
-    const { pensionPlans } = await import("../../shared/schema.js");
     const plans = await db.select().from(pensionPlans).where(eq(pensionPlans.clientId, cid));
     const pensionIncome = plans.reduce((sum: number, p: any) => {
       if (p.pensionType === "dbpp" && p.accrualRate && p.projectedYearsAtRetirement && p.bestAverageEarnings)
@@ -203,84 +201,38 @@ r.post("/clients/:id/retirement-projections", async (req: AuthRequest, res: Resp
       if (p.pensionType === "dcpp" && p.currentBalance) return sum + (Number(p.currentBalance) * 0.04);
       return sum;
     }, 0);
-    const isCouple       = body.householdType === "couple";
-    const currentAge     = Number(body.currentAge ?? 40);
-    const retirementAge  = Number(body.retirementAge ?? 65);
-    const lifeExpectancy = Number(body.lifeExpectancy ?? 90);
-    const currentSavings = Number(body.currentSavings ?? 0);
-    const annualContrib  = Number(body.annualContribution ?? 0);
-    const desiredIncome  = Number(body.desiredRetirementIncome ?? 50000);
-    const expectedReturn = Number(body.expectedReturn ?? 7) / 100;
-    const stdDev         = 0.10;
-    const infl           = Number(body.inflationRate ?? 2) / 100;
-    const cppAge         = Number(body.cppStartAge ?? 65);
-    const cppAnnual      = 900 * 12;
-    const oasAnnual      = 700 * 12;
-    const spouseAge      = Number(body.spouseAge ?? currentAge);
-    const spouseRetAge   = Number(body.spouseRetirementAge ?? retirementAge);
-    const spouseLifeExp  = Number(body.spouseLifeExpectancy ?? lifeExpectancy);
-    const spouseSavings  = Number(body.spouseSavings ?? 0);
-    const spouseContrib  = Number(body.spouseContribution ?? 0);
-    const spousePension  = Number(body.spousePensionIncome ?? 0);
-    const spouseCppAge   = Number(body.spouseCppStartAge ?? 65);
-    const planToAge      = isCouple ? Math.max(lifeExpectancy, spouseLifeExp) : lifeExpectancy;
-    const totalYears     = Math.max(1, planToAge - currentAge);
-    const simCount       = 1000;
-    const outcomes: number[] = [];
-    let successCount = 0;
-    for (let s = 0; s < simCount; s++) {
-      let balPrimary = currentSavings;
-      let balSpouse  = isCouple ? spouseSavings : 0;
-      let spending   = desiredIncome;
-      for (let yr = 0; yr < totalYears; yr++) {
-        const age   = currentAge + yr;
-        const spAge = spouseAge + yr;
-        const z  = Math.sqrt(-2 * Math.log(Math.random())) * Math.cos(2 * Math.PI * Math.random());
-        const rr = expectedReturn + stdDev * z;
-        const primRetired   = age >= retirementAge;
-        const spouseRetired = isCouple && spAge >= spouseRetAge;
-        if (!primRetired) balPrimary = (balPrimary + annualContrib) * (1 + rr);
-        else              balPrimary = Math.max(0, balPrimary * (1 + rr));
-        if (isCouple) {
-          if (!spouseRetired) balSpouse = (balSpouse + spouseContrib) * (1 + rr);
-          else                balSpouse = Math.max(0, balSpouse * (1 + rr));
-        }
-        const bothRetired = primRetired && (!isCouple || spouseRetired);
-        if (bothRetired) {
-          const cpp  = age >= cppAge     ? cppAnnual : 0;
-          const oas  = age >= cppAge     ? oasAnnual : 0;
-          const scpp = isCouple && spAge >= spouseCppAge ? cppAnnual : 0;
-          const soas = isCouple && spAge >= spouseCppAge ? oasAnnual : 0;
-          const totalGov = cpp + oas + scpp + soas + pensionIncome + (isCouple ? spousePension : 0);
-          const combinedPool = balPrimary + balSpouse;
-          const netW = Math.max(0, spending - totalGov);
-          const ratio = combinedPool > 0 ? balPrimary / combinedPool : 0.5;
-          balPrimary = Math.max(0, balPrimary - netW * ratio);
-          balSpouse  = Math.max(0, balSpouse  - netW * (1 - ratio));
-          spending  *= (1 + infl);
-        }
-      }
-      const finalBal = balPrimary + (isCouple ? balSpouse : 0);
-      outcomes.push(finalBal);
-      if (finalBal > 0) successCount++;
-    }
-    const sorted         = [...outcomes].sort((a, b) => a - b);
-    const pct            = (p: number) => sorted[Math.floor(sorted.length * p)] ?? 0;
-    const successRate    = successCount / simCount;
-    const medianBalance  = Math.round(pct(0.5));
-    const retYears       = planToAge - retirementAge;
-    const totalCpp       = isCouple ? cppAnnual * 2 : cppAnnual;
-    const totalOas       = isCouple ? oasAnnual * 2 : oasAnnual;
-    const totalPension   = pensionIncome + (isCouple ? spousePension : 0);
-    const projectedTotal = medianBalance + (totalCpp + totalOas + totalPension) * retYears;
-    const desiredTotal   = desiredIncome * retYears;
-    const shortfall      = Math.round(projectedTotal - desiredTotal);
-    const [row] = await (db.insert(retirementProjections) as any).values({
-      clientId: cid, ...safe(body),
-      projectedBalance: String(medianBalance), shortfallSurplus: String(shortfall),
-      successRate: String(Math.round(successRate * 100)), pensionIncome: String(Math.round(pensionIncome)),
-    }).returning();
-    res.json(row);
+    
+const result = runRetirementProjection({
+  currentAge:         Number(body.currentAge ?? 40),
+  retirementAge:      Number(body.retirementAge ?? 65),
+  lifeExpectancy:     Number(body.lifeExpectancy ?? 90),
+  currentSavings:     Number(body.currentSavings ?? 0),
+  annualContribution: Number(body.annualContribution ?? 0),
+  desiredIncome:      Number(body.desiredRetirementIncome ?? 50000),
+  expectedReturn:     Number(body.expectedReturn ?? 7) / 100,
+  inflationRate:      Number(body.inflationRate ?? 2) / 100,
+  cppStartAge:        Number(body.cppStartAge ?? 65),
+  pensionIncome,
+  isCouple:           body.householdType === "couple",
+  spouseAge:          Number(body.spouseAge ?? body.currentAge ?? 40),
+  spouseRetirementAge:  Number(body.spouseRetirementAge ?? 65),
+  spouseLifeExpectancy: Number(body.spouseLifeExpectancy ?? 90),
+  spouseSavings:        Number(body.spouseSavings ?? 0),
+  spouseContribution:   Number(body.spouseContribution ?? 0),
+  spousePensionIncome:  Number(body.spousePensionIncome ?? 0),
+  spouseCppStartAge:    Number(body.spouseCppStartAge ?? 65),
+});
+
+const [row] = await (db.insert(retirementProjections) as any).values({
+  clientId: cid, ...safe(body),
+  projectedBalance: String(result.medianBalance),
+  shortfallSurplus: String(result.shortfallSurplus),
+  successRate:      String(result.successRate),
+  pensionIncome:    String(Math.round(result.pensionIncome)),
+}).returning();
+
+res.json(row);
+
   } catch (e: any) {
     console.error("[retirement projection sim]", e.message);
     const [row] = await (db.insert(retirementProjections) as any).values({ clientId: cid, ...safe(body) }).returning();

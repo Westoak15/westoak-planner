@@ -1,6 +1,6 @@
 // server/planning/reports/components.ts
-import type { ReportMeta } from "../types";
-import { PROVINCE_NAMES } from "../data/taxData2024";
+import type { ReportMeta } from "../types.js";
+import { PROVINCE_NAMES } from "../data/taxData2024.js";
 
 export const fmt = {
   dollar:(n:number,decimals=0)=>new Intl.NumberFormat("en-CA",{style:"currency",currency:"CAD",minimumFractionDigits:decimals,maximumFractionDigits:decimals}).format(n),

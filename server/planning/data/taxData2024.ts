@@ -1,5 +1,5 @@
 // server/planning/data/taxData2024.ts
-import type { Province } from "../types";
+import type { Province } from "../types.js";
 export const FEDERAL_BRACKETS_2024=[{min:0,max:55867,rate:0.15},{min:55867,max:111733,rate:0.205},{min:111733,max:154906,rate:0.26},{min:154906,max:220000,rate:0.29},{min:220000,max:Infinity,rate:0.33}];
 export const FEDERAL_BASIC_PERSONAL_2024=15705;
 export const CPP_EMPLOYEE_RATE_2024=0.0595,CPP_MAX_EARNINGS_2024=68500,CPP_BASIC_EXEMPTION_2024=3500;

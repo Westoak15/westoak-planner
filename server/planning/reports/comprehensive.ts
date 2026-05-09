@@ -1,8 +1,8 @@
 // server/planning/reports/comprehensive.ts
-import type { ComprehensiveReportInputs, RetirementProjection, TaxProjection, RrspAnalysis, TfsaAnalysis, CapitalGainsAnalysis, IncomeSplittingAnalysis, InsuranceAnalysis, EducationAnalysis, EstateAnalysis, DebtAnalysis } from "../types";
-import { REPORT_CSS } from "./styles";
-import { coverPage, pageHeader, pageFooter, sectionHeader, metricGrid, dataTable, recommendationList, callout, progressBar, twoCol, divider, badge, barChart, lineChart, donutChart, fmt } from "./components";
-import { PROVINCE_NAMES } from "../data/taxData2024";
+import type { ComprehensiveReportInputs, RetirementProjection, TaxProjection, RrspAnalysis, TfsaAnalysis, CapitalGainsAnalysis, IncomeSplittingAnalysis, InsuranceAnalysis, EducationAnalysis, EstateAnalysis, DebtAnalysis } from "../types.js";
+import { REPORT_CSS } from "./styles.js";
+import { coverPage, pageHeader, pageFooter, sectionHeader, metricGrid, dataTable, recommendationList, callout, progressBar, twoCol, divider, badge, barChart, lineChart, donutChart, fmt } from "./components.js";
+import { PROVINCE_NAMES } from "../data/taxData2024.js";
 
 function retirementSection(inputs: ComprehensiveReportInputs, r: RetirementProjection): string {
   const ri = inputs.retirement!;

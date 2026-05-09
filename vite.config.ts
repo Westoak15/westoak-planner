@@ -31,8 +31,6 @@ export default defineConfig({
           "vendor-query":  ["@tanstack/react-query"],
           // Charts — only loaded when a chart tab is visited
           "vendor-charts": ["recharts"],
-          // Icons — large but tree-shakeable; separate chunk avoids re-parsing
-          "vendor-lucide": ["lucide-react"],
           // Date utilities if present
           "vendor-date":   ["date-fns"],
         },

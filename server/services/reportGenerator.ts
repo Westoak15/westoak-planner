@@ -742,12 +742,12 @@ function svgMonteCarloChart(
   const H   = height - pad.top  - pad.bottom;
   const N   = bands.p50.length;
 
-  const allValues = [...bands.p10, ...bands.p90].filter(v => v >= 0);
-  const maxVal    = Math.max(...allValues) * 1.05;
-  const minVal    = Math.min(0, ...bands.p10);
-
+  const allValues = [...bands.p10, ...bands.p25, ...bands.p50, ...bands.p75, ...bands.p90].filter(v => !isNaN(v) && isFinite(v));
+  const maxVal = allValues.length > 0 ? Math.max(...allValues) * 1.05 : 1;
+  const minVal = Math.max(0, (allValues.length > 0 ? Math.min(...allValues) : 0) * 0.95);
+  const range = maxVal - minVal;
   const xScale = (i: number) => (i / Math.max(1, N - 1)) * W;
-  const yScale = (v: number) => H - ((v - minVal) / (maxVal - minVal)) * H;
+  const yScale = (v: number) => range > 0 ? H - ((v - minVal) / range) * H : H / 2;
 
   const pointsStr = (arr: number[]) =>
     arr.map((v, i) => `${xScale(i).toFixed(1)},${yScale(v).toFixed(1)}`).join(" ");

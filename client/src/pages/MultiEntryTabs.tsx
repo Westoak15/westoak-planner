@@ -536,7 +536,7 @@ export function NetWorthTab({ clientId, client }: { clientId: number; client?: {
   };
 
   return (
-    <div className="p-6">
+    <div className="p-6 h-full flex flex-col">
 
       {/* ── Summary cards ──────────────────────────────────────────────────── */}
       <div className="grid grid-cols-3 gap-4 mb-6">
@@ -549,7 +549,7 @@ export function NetWorthTab({ clientId, client }: { clientId: number; client?: {
       <div className="grid grid-cols-3 gap-6">
 
         {/* ── Left 2/3 ───────────────────────────────────────────────────── */}
-        <div className="col-span-2 space-y-4">
+        <div className="col-span-2 space-y-4 overflow-y-auto min-h-0 pr-2">
 
           {/* Action bar */}
           <div className="flex items-center justify-between">
@@ -776,7 +776,7 @@ export function NetWorthTab({ clientId, client }: { clientId: number; client?: {
         </div>
 
         {/* ── Right 1/3 ──────────────────────────────────────────────────── */}
-        <div className="space-y-4">
+        <div className="space-y-4 overflow-y-auto min-h-0">
 
           {/* Pie chart */}
           {totalA > 0 && (

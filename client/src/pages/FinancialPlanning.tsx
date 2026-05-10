@@ -2519,6 +2519,7 @@ export function TaxTab({ clientId, client, person: personProp = "primary" }: { c
   const hasSpouse = !!client?.spouseFirstName;
   const primaryLabel = client?.firstName ?? "Primary";
   const spouseLabel  = client?.spouseFirstName ?? "Spouse";
+  const { data: taxNwEntries = [] } = useNetWorthEntries(clientId);
 
   function buildPrefill(isPrimary: boolean) {
     if (!client) return null;
@@ -2529,6 +2530,11 @@ export function TaxTab({ clientId, client, person: personProp = "primary" }: { c
       : (client.spouseRetirementAge ?? 65);
     const age       = dob ? (new Date().getFullYear() - new Date(dob).getFullYear()) : 40;
     const birthYear = dob ? new Date(dob).getFullYear() : (new Date().getFullYear() - age);
+    const owner = isPrimary ? "primary" : "spouse";
+    const nwTfsa = (taxNwEntries as any[])
+      .filter(e => e.type === "asset" && e.category === "TFSA" &&
+        (e.owner === owner || (!e.owner && isPrimary)))
+      .reduce((s: number, e: any) => s + Number(e.value), 0);
 
     return {
       currentAge:              String(age),
@@ -2538,7 +2544,7 @@ export function TaxTab({ clientId, client, person: personProp = "primary" }: { c
       employmentIncome:        String(income),
       priorYearEarnedIncome:   String(income),
       rrspBalance:             isPrimary ? String(Number(ret?.rrspBalance   ?? 0)) : "0",
-      tfsaBalance:             isPrimary ? String(Number(ret?.tfsaBalance   ?? 0)) : "0",
+      tfsaBalance: nwTfsa > 0 ? String(nwTfsa) : (isPrimary ? String(Number(ret?.tfsaBalance ?? 0)) : "0"),
       nonRegBalance:           isPrimary ? String(Number(ret?.nonRegBalance ?? 0)) : "0",
       rrspAnnualContribution:  isPrimary ? String(Number(ret?.annualContribution      ?? 0)) : "0",
       annualTfsaContribution:  isPrimary ? String(Number(ret?.annualTfsaContribution  ?? 0)) : "0",

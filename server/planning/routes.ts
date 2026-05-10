@@ -155,6 +155,7 @@ return {
   annualIncome:       Number(clientRow.annualIncome       ?? 0),
   spouseAnnualIncome: Number(clientRow.spouseAnnualIncome ?? 0),
 };
+}
 
 // â”€â”€ POST /api/planning/report/:clientId â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Body: { sections?: string | string[], overrides?: object }
@@ -538,4 +539,4 @@ planningRouter.get("/summary/:clientId", async (req: AuthRequest, res: Response)
     return res.status(500).json({ error: err.message });
   }
 });
-}
+

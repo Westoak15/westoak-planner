@@ -65,7 +65,7 @@ const NW_ASSET_COLORS: Record<string, string> = {
   "Employer Stock Options":  "#fb923c",
   "Other Asset":             "#f43f5e",
 };
-const NW_LIAB_CATS  = ["Mortgage","HELOC","Car Loan","Credit Card","Student Loan","Line of Credit","Other Liability"];
+const NW_LIAB_CATS = ["Mortgage","HELOC","Car Loan","Credit Card","Student Loan","Line of Credit","Property Taxes Owing","Personal Taxes Owing","Other Liability"];
 const DEBT_TYPES    = ["mortgage","heloc","car_loan","credit_card","student_loan","line_of_credit","other"];
 const PENSION_TYPES = ["DBPP","DCPP","Self-Directed","Matching Contributions"];
 const HOLDING_TYPES = ["Mutual Funds","Stock","GIC","Annuity"];
@@ -88,6 +88,7 @@ type NWDraft = {
   rentalExpenses: string;
   mortgageBalance: string;       // For Principal Residence / Real Estate (other) — auto-creates a linked Mortgage liability
   mortgageMonthlyPayment: string;
+  includeInDebt: boolean;
 };
 
 function emptyDraft(type: "asset"|"liability"): NWDraft {
@@ -107,6 +108,7 @@ function emptyDraft(type: "asset"|"liability"): NWDraft {
     rentalExpenses: "",
     mortgageBalance: "",
     mortgageMonthlyPayment: "",
+    includeInDebt: false,
   };
 }
 
@@ -469,6 +471,18 @@ export function NetWorthTab({ clientId, client }: { clientId: number; client?: {
             metadata: mortgageMeta,
           });
         }
+        // Auto-create debt entry if checkbox checked
+        if (d.type === "liability" && d.includeInDebt && Number(d.value || 0) > 0) {
+          await api.post(`/api/clients/${clientId}/debt`, {
+            name:           propName,
+            category:       d.category,
+            balance:        d.value,
+            interestRate:   "0",
+            minimumPayment: d.monthlyPayment || "0",
+            payoffStrategy: "avalanche",
+            notes:          `Linked from Net Worth — ${d.category}`,
+          });
+        }
       }));
       setDrafts([]);
       await load();
@@ -625,11 +639,16 @@ export function NetWorthTab({ clientId, client }: { clientId: number; client?: {
                       </div>
                     </div>
                     {!isAssets && (
-                      <div className="mb-2">
-                        <label className={LABEL_CLS}>Monthly Payment ($)</label>
-                        <InlineInput type="number" value={d.monthlyPayment} onChange={v => updateDraft(draftIdx, "monthlyPayment", v)} placeholder="0" className="w-40" />
-                      </div>
-                    )}
+  <label className="flex items-center gap-2 text-xs text-slate-600 cursor-pointer mt-1">
+    <input
+      type="checkbox"
+      checked={d.includeInDebt}
+      onChange={e => updateDraft(draftIdx, "includeInDebt", e.target.checked)}
+      className="w-3.5 h-3.5 rounded"
+    />
+    Include in Debt Tracker
+  </label>
+)}
                     <ExtraFields draft={d} onChange={(k, v) => updateDraft(draftIdx, k, v)} spouseName={spouseName} dependants={[]} />
                   </div>
                 );
@@ -863,7 +882,7 @@ export function NetWorthTab({ clientId, client }: { clientId: number; client?: {
             { key: "owner", label: "Owner", description: "Who owns it", enum: ["primary", "spouse", "joint"] },
             ...(voiceOpen === "liability" ? [{ key: "monthlyPayment", label: "Monthly Pmt", description: "Monthly payment" }] : []),
           ]}
-          onResult={(parsed: Record<string, string>) => { addVoiceDraft(voiceOpen, parsed); setVoiceOpen(null); }}
+          onConfirm={(parsed: Record<string, string>) => { addVoiceDraft(voiceOpen, parsed); setVoiceOpen(null); }}
           onClose={() => setVoiceOpen(null)}
         />
       )}

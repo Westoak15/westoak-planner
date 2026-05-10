@@ -1457,7 +1457,7 @@ function TfsaRoomPanel({ clientId, prefill, person = "primary", primaryLabel = "
   const [form, setForm] = useState({
     label: "", birthYear: "", priorYearClosingRoom: "0",
     contributionsMadeThisYear: "0", withdrawalsLastYear: "0",
-    currentTfsaBalance: "0", annualContribution: "7000", portfolioReturn: "0.06",
+    currentTfsaBalance: "0", annualContribution: "7000", portfolioReturn: "6",
   });
 
   const load = async () => {
@@ -1478,7 +1478,7 @@ function TfsaRoomPanel({ clientId, prefill, person = "primary", primaryLabel = "
       label: `TFSA Analysis ${new Date().getFullYear()} — ${personLabel}`,
       birthYear, priorYearClosingRoom: "0", contributionsMadeThisYear: "0",
       withdrawalsLastYear: "0", currentTfsaBalance: prefill?.tfsaBalance ?? "0",
-      annualContribution: "7000", portfolioReturn: "0.06",
+      annualContribution: "7000", portfolioReturn: "6",
     });
     setShowForm(true);
   };
@@ -1495,7 +1495,7 @@ function TfsaRoomPanel({ clientId, prefill, person = "primary", primaryLabel = "
       const input: Record<string, unknown> = {};
       for (const [k, v] of Object.entries(form)) {
         if (k === "label") continue;
-        input[k] = Number(v);
+        input[k] = k === "portfolioReturn" ? Number(v) / 100 : Number(v);
       }
       const result = await api.post(`/api/tax/${clientId}/tfsa-room`, input);
       const payload = { type: "tfsa", owner, label: form.label, inputData: form, resultData: result };

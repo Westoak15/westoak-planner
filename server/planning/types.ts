@@ -82,6 +82,7 @@ export interface RrspAnalysis {
 export interface RrspYearRow { age: number; year: number; openingBalance: number; contribution: number; growth: number; closingBalance: number; cumulativeContributions: number; taxRefund: number; }
 export interface TfsaInputs {
   currentAge: number; birthYear: number; currentBalance: number;
+  contributionsMadeToDate?: number;
   withdrawalsThisYear: number; annualContribution: number;
   expectedReturnRate: number; province: Province;
 }

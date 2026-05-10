@@ -317,6 +317,7 @@ planningRouter.post("/report/:clientId", async (req: AuthRequest, res: Response)
       currentAge:          age,
       birthYear,
       currentBalance:      retInputs.tfsaBalance,
+      contributionsMadeToDate: Number(retRow?.tfsaContributionsMade ?? 0) || undefined,
       withdrawalsThisYear: 0,
       annualContribution:  retInputs.annualTfsaContribution,
       expectedReturnRate:  portfolioReturn,

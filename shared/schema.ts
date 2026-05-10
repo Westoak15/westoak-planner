@@ -133,6 +133,7 @@ export const retirementProjections = pgTable("retirement_projections", {
   nonRegBalance:           decimal("non_reg_balance", { precision: 15, scale: 2 }),
   annualContribution:      decimal("annual_contribution", { precision: 15, scale: 2 }),
   annualTfsaContribution:  decimal("annual_tfsa_contribution", { precision: 15, scale: 2 }),
+  tfsaContributionsMade:   decimal("tfsa_contributions_made", { precision: 15, scale: 2 }),
   expectedReturn:          decimal("expected_return", { precision: 5, scale: 2 }),
   inflationRate:           decimal("inflation_rate", { precision: 5, scale: 2 }),
   desiredRetirementIncome: decimal("desired_retirement_income", { precision: 15, scale: 2 }),

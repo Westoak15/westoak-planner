@@ -30,6 +30,7 @@ const PORT = parseInt(process.env.PORT ?? "8080", 10);
 // ── Startup migrations (idempotent)  ───────────────────────────────────────────
 async function runMigrations() {
   const migrations = [
+    `ALTER TABLE retirement_projections ADD COLUMN IF NOT EXISTS tfsa_contributions_made decimal(15,2)`,
     `ALTER TABLE retirement_projections ADD COLUMN IF NOT EXISTS person TEXT DEFAULT 'primary'`,
     `ALTER TABLE ai_recommendations ADD COLUMN IF NOT EXISTS run_id TEXT`,
     `ALTER TABLE clients ADD COLUMN IF NOT EXISTS spouse_pension_type TEXT`,

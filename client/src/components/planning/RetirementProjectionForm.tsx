@@ -36,6 +36,7 @@ interface RetirementProjection {
   nonRegBalance?: string;
   annualContribution?: string;
   annualTfsaContribution?: string;
+  tfsaContributionsMade?: string;
   expectedReturn?: string;
   inflationRate?: string;
   desiredRetirementIncome?: string;
@@ -67,6 +68,7 @@ const DEFAULTS = {
   lifeExpectancy: 90,
   rrspBalance: "",
   tfsaBalance: "",
+  tfsaContributionsMade: "",
   nonRegBalance: "",
   annualContribution: "",
   annualTfsaContribution: "7000",
@@ -287,6 +289,7 @@ export function RetirementProjectionForm({ clientId, clientName, projection, onS
           lifeExpectancy:           projection.lifeExpectancy     ?? DEFAULTS.lifeExpectancy,
           rrspBalance:              projection.rrspBalance        ?? "",
           tfsaBalance:              projection.tfsaBalance        ?? "",
+          tfsaContributionsMade:   (projection as any).tfsaContributionsMade ?? "",
           nonRegBalance:            projection.nonRegBalance      ?? "",
           annualContribution:       projection.annualContribution ?? "",
           annualTfsaContribution:   projection.annualTfsaContribution ?? "7000",
@@ -320,6 +323,7 @@ export function RetirementProjectionForm({ clientId, clientName, projection, onS
         lifeExpectancy:          +f.lifeExpectancy,
         rrspBalance:             f.rrspBalance   || "0",
         tfsaBalance:             f.tfsaBalance   || "0",
+        tfsaContributionsMade:   f.tfsaContributionsMade || null,
         nonRegBalance:           f.nonRegBalance || "0",
         annualContribution:      f.annualContribution       || "0",
         annualTfsaContribution:  f.annualTfsaContribution   || "0",
@@ -467,6 +471,11 @@ export function RetirementProjectionForm({ clientId, clientName, projection, onS
           <div>
             <label className="block text-xs text-slate-500 mb-1">TFSA balance ($)</label>
             <input type="number" value={f.tfsaBalance} onChange={set("tfsaBalance")} placeholder="0" className="fp-input" />
+          </div>
+          <div>
+            <label className="block text-xs text-slate-500 mb-1">TFSA contributions made to date ($)</label>
+            <input type="number" value={f.tfsaContributionsMade} onChange={set("tfsaContributionsMade")} placeholder="e.g. 45000" className="fp-input" />
+            <p className="text-[10px] text-slate-400 mt-0.5">Total contributions ever made — excludes growth. Used to calculate available room.</p>
           </div>
           <div>
             <label className="block text-xs text-slate-500 mb-1">Non-reg balance ($)</label>

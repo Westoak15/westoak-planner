@@ -621,20 +621,166 @@ r.post("/clients/:id/ai/generate", async (req: AuthRequest, res: Response) => {
   res.status(201).json(inserted);
 });
 
+// ─────────────────────────────────────────────────────────────────────────────
+
 r.post("/clients/:id/ai-recommendations/generate", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.id;
   if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
+
   const runId = new Date().toISOString();
-  const recs = [
-    { clientId: cid, runId, category: "retirement", priority: "high",   title: "Review Retirement Projections", content: "Ensure CPP/OAS timing and RRSP/TFSA drawdown strategy are optimized for your province." },
-    { clientId: cid, runId, category: "tax",        priority: "medium", title: "Annual RRSP/TFSA Review",       content: "Review contribution room and optimize between RRSP and TFSA based on marginal rates." },
-    { clientId: cid, runId, category: "insurance",  priority: "medium", title: "Insurance Needs Analysis",      content: "Conduct annual review of life, disability, and critical illness coverage gaps." },
-    { clientId: cid, runId, category: "estate",     priority: "low",    title: "Estate Document Review",        content: "Verify will, POA, and healthcare directive are current and reflect your wishes." },
-  ];
+
   try {
-    const inserted = await Promise.all(recs.map(rec => db.insert(aiRecommendations).values(rec).returning().then(([x]) => x)));
+    // ── Gather client data ──────────────────────────────────────────────────
+    const [[client], nw, debt, ret, ins, goals] = await Promise.all([
+      db.select().from(clients).where(eq(clients.id, cid)),
+      db.select().from(netWorthEntries).where(eq(netWorthEntries.clientId, cid)),
+      db.select().from(debtEntries).where(eq(debtEntries.clientId, cid)),
+      db.select().from(retirementProjections).where(eq(retirementProjections.clientId, cid)).limit(1),
+      db.select().from(insuranceAnalyses).where(eq(insuranceAnalyses.clientId, cid)).limit(1),
+      db.select().from(financialGoals).where(eq(financialGoals.clientId, cid)),
+    ]);
+
+    const assets    = nw.filter(e => e.type === "asset").reduce((s, e) => s + Number(e.value), 0);
+    const liabs     = nw.filter(e => e.type === "liability").reduce((s, e) => s + Number(e.value), 0);
+    const totalDebt = debt.reduce((s, d) => s + Number(d.balance), 0);
+    const retProj   = ret[0] as any;
+    const insRow    = ins[0] as any;
+
+    const context = {
+      client: {
+        name:              `${client.firstName} ${client.lastName}`,
+        age:               client.dateOfBirth ? new Date().getFullYear() - new Date(client.dateOfBirth as string).getFullYear() : null,
+        province:          (client as any).province ?? "ON",
+        annualIncome:      Number((client as any).annualIncome ?? 0),
+        spouseIncome:      Number((client as any).spouseAnnualIncome ?? 0),
+        hasSpouse:         !!client.spouseFirstName,
+        retirementAge:     (client as any).retirementAge ?? null,
+        employmentStatus:  (client as any).employmentStatus ?? null,
+      },
+      netWorth: {
+        totalAssets:      assets,
+        totalLiabilities: liabs,
+        netWorth:         assets - liabs,
+        rrsp:             nw.filter(e => e.category === "RRSP").reduce((s, e) => s + Number(e.value), 0),
+        tfsa:             nw.filter(e => e.category === "TFSA").reduce((s, e) => s + Number(e.value), 0),
+        nonReg:           nw.filter(e => e.category === "Non-Registered").reduce((s, e) => s + Number(e.value), 0),
+        realEstate:       nw.filter(e => ["Principal Residence","Real Estate (other)"].includes(e.category ?? "")).reduce((s, e) => s + Number(e.value), 0),
+      },
+      retirement: retProj ? {
+        currentAge:        retProj.currentAge,
+        retirementAge:     retProj.retirementAge,
+        rrspBalance:       Number(retProj.rrspBalance ?? 0),
+        tfsaBalance:       Number(retProj.tfsaBalance ?? 0),
+        annualContrib:     Number(retProj.annualContribution ?? 0),
+        desiredIncome:     Number(retProj.desiredRetirementIncome ?? 0),
+        successRate:       Number(retProj.successRate ?? 0),
+        shortfall:         Number(retProj.shortfallSurplus ?? 0),
+        cppMonthly:        Number(retProj.cppMonthly ?? 0),
+        oasMonthly:        Number(retProj.oasMonthly ?? 0),
+        pensionIncome:     Number(retProj.pensionIncome ?? 0),
+      } : null,
+      debt: {
+        totalDebt,
+        items: debt.map(d => ({ name: d.name, balance: Number(d.balance), rate: Number(d.interestRate ?? 0) })),
+      },
+      insurance: insRow ? {
+        lifeGap:       Number(insRow.lifeGap ?? 0),
+        disabilityGap: Number(insRow.disabilityGap ?? 0),
+        ciGap:         Number(insRow.criticalIllnessGap ?? 0),
+      } : null,
+      goals: goals.map(g => ({ title: g.title, type: g.goalType, priority: g.priority, targetAmount: Number(g.targetAmount ?? 0), targetYear: g.targetYear })),
+    };
+
+    // ── Call Claude ─────────────────────────────────────────────────────────
+    const apiKey = process.env.ANTHROPIC_API_KEY;
+    if (!apiKey) {
+      // Fallback to smart rule-based recs if no API key
+      throw new Error("NO_API_KEY");
+    }
+
+    const claudeRes = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": apiKey,
+        "anthropic-version": "2023-06-01",
+      },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 2000,
+        system: `You are a senior Canadian Certified Financial Planner (CFP). Generate specific, actionable financial planning recommendations for a Canadian client based on their actual data. Each recommendation must be specific to their situation — not generic advice.
+
+Respond ONLY with a valid JSON array. No preamble, no markdown, no explanation outside the JSON.
+
+Each recommendation object must have:
+- category: one of "retirement" | "tax" | "insurance" | "estate" | "savings" | "debt" | "investment"  
+- priority: one of "high" | "medium" | "low"
+- title: concise action title (max 60 chars)
+- content: specific advice referencing their actual numbers (2-3 sentences)
+
+Generate 4-7 recommendations. Prioritize the most impactful issues first.`,
+        messages: [{
+          role: "user",
+          content: `Generate financial planning recommendations for this Canadian client:\n\n${JSON.stringify(context, null, 2)}`,
+        }],
+      }),
+    });
+
+    if (!claudeRes.ok) throw new Error(`Claude API error: ${claudeRes.status}`);
+
+    const claudeData = await claudeRes.json() as any;
+    const rawText = claudeData.content?.[0]?.text ?? "[]";
+    const cleaned = rawText.replace(/^```json\s*/i, "").replace(/```\s*$/i, "").trim();
+
+    let aiRecs: any[];
+    try {
+      aiRecs = JSON.parse(cleaned);
+      if (!Array.isArray(aiRecs)) throw new Error("Not an array");
+    } catch {
+      throw new Error("Failed to parse AI response");
+    }
+
+    // Validate and sanitize each rec
+    const validCategories = ["retirement", "tax", "insurance", "estate", "savings", "debt", "investment"];
+    const validPriorities = ["high", "medium", "low"];
+    const sanitized = aiRecs
+      .filter(r => r.title && r.content)
+      .slice(0, 8)
+      .map(r => ({
+        clientId: cid,
+        runId,
+        category: validCategories.includes(r.category) ? r.category : "tax",
+        priority: validPriorities.includes(r.priority) ? r.priority : "medium",
+        title:    String(r.title).slice(0, 100),
+        content:  String(r.content).slice(0, 500),
+        status:   "pending",
+      }));
+
+    const inserted = await Promise.all(
+      sanitized.map(rec => db.insert(aiRecommendations).values(rec).returning().then(([x]) => x))
+    );
     res.json(inserted);
-  } catch (e: any) { console.error("[ai generate]", e.message); res.status(500).json({ message: e.message }); }
+
+  } catch (e: any) {
+    if (e.message === "NO_API_KEY" || e.message.includes("parse")) {
+      // Smart rule-based fallback
+      console.log("[ai generate] falling back to rule-based recs:", e.message);
+      const recs = [
+        { clientId: cid, runId, category: "retirement", priority: "high",   title: "Review Retirement Projections",  content: "Ensure CPP/OAS timing and RRSP/TFSA drawdown strategy are optimized for your province.", status: "pending" },
+        { clientId: cid, runId, category: "tax",        priority: "medium", title: "Annual RRSP/TFSA Review",         content: "Review contribution room and optimize between RRSP and TFSA based on marginal rates.", status: "pending" },
+        { clientId: cid, runId, category: "insurance",  priority: "medium", title: "Insurance Needs Analysis",        content: "Conduct annual review of life, disability, and critical illness coverage gaps.", status: "pending" },
+        { clientId: cid, runId, category: "estate",     priority: "low",    title: "Estate Document Review",          content: "Verify will, POA, and healthcare directive are current and reflect your wishes.", status: "pending" },
+      ];
+      try {
+        const inserted = await Promise.all(recs.map(rec => db.insert(aiRecommendations).values(rec).returning().then(([x]) => x)));
+        return res.json(inserted);
+      } catch (dbErr: any) {
+        return res.status(500).json({ message: dbErr.message });
+      }
+    }
+    console.error("[ai generate]", e.message);
+    res.status(500).json({ message: e.message });
+  }
 });
 
 r.patch("/ai/:id", async (req: AuthRequest, res: Response) => {

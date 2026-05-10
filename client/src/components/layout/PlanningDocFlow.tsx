@@ -296,9 +296,11 @@ export function PlanningDocFlow({
         activeSubtab={tab === "networth" ? nwSubtab : undefined}
         onSubtabChange={tab === "networth" ? setNwSubtab : undefined}
       >
-        <div className="p-6">
-          {children}
-        </div>
+      {tab === "networth" ? children : (
+  <div className="p-6">
+    {children}
+  </div>
+)}
       </HubShell>
       </NWSubtabCtx.Provider>
 

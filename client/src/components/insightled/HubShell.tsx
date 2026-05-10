@@ -29,6 +29,7 @@ export interface HubShellProps {
   onSubtabChange?: (key: string) => void;
   /** Optional Primary | Spouse | Combined toggle in the header. */
   personToggle?: PersonToggleConfig;
+  contentClassName?: string;
   children: ReactNode;
 }
 
@@ -49,6 +50,7 @@ export function HubShell({
   activeSubtab,
   onSubtabChange,
   personToggle,
+  contentClassName,
   children,
 }: HubShellProps) {
   return (
@@ -115,7 +117,7 @@ export function HubShell({
       )}
 
       {/* Content area — wraps children in .fp-insightled scope so legacy tabs get themed */}
-      <div className="flex-1 overflow-y-auto fp-insightled-scrollbar bg-slate-100">
+      <div className={`flex-1 fp-insightled-scrollbar bg-slate-100 ${contentClassName ?? "overflow-y-auto"}`}>
         {children}
       </div>
     </div>

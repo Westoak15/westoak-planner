@@ -288,6 +288,7 @@ export function PlanningDocFlow({
         subtitle={subtitle}
         actions={actions}
         personToggle={personToggle}
+        contentClassName={tab === "networth" ? "overflow-hidden flex flex-col" : undefined}
         subtabs={tab === "networth" ? [
           { key: "assets",      label: "Assets",      icon: TrendingUp,      badge: overview ? fmt$(overview.totalAssets)      : undefined, badgeTone: "green" },
           { key: "liabilities", label: "Liabilities", icon: TrendingDown,    badge: overview ? fmt$(overview.totalLiabilities) : undefined, badgeTone: "rose"  },

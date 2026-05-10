@@ -25,20 +25,17 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks(id) {
-  if (id.includes("node_modules/react-dom") || id.includes("node_modules/react/")) 
-    return "vendor-react";
-  if (id.includes("node_modules/@tanstack/react-query")) 
-    return "vendor-query";
-  if (id.includes("node_modules/recharts")) 
-    return "vendor-charts";
-  if (id.includes("node_modules/lucide-react")) 
-    return "vendor-lucide";
-  if (id.includes("node_modules/date-fns")) 
-    return "vendor-date";
-},
+          if (id.includes("node_modules/react-dom") || id.includes("node_modules/react/"))
+            return "vendor-react";
+          if (id.includes("node_modules/@tanstack/react-query"))
+            return "vendor-query";
+          if (id.includes("node_modules/recharts"))
+            return "vendor-charts";
+          if (id.includes("node_modules/date-fns"))
+            return "vendor-date";
+        },
       },
     },
-    // Raise warning threshold — after splitting, individual chunks should be under 500KB
     chunkSizeWarningLimit: 600,
   },
 });

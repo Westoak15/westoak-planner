@@ -48,58 +48,66 @@ function rrspSection(inputs: ComprehensiveReportInputs, r: RrspAnalysis): string
 }
 
 function tfsaSection(inputs: ComprehensiveReportInputs, r: TfsaAnalysis): string {
-  const rows = r.yearByYear.filter((_,i)=>i%3===0).slice(0,12).map(row=>[fmt.age(row.age),row.year.toString(),fmt.dollar(row.annualLimit),fmt.dollar(row.cumulativeRoom),fmt.dollar(row.contribution),fmt.dollar(row.growth),fmt.dollar(row.closingBalance)]);
-  return `<div class="page">${pageHeader(inputs.meta,"TFSA Analysis")}${sectionHeader("Section 4","TFSA Room & Strategy",`Lifetime room since ${Math.max(2009,(inputs.tfsa?.birthYear??1980)+18)}`)}
+  const rows = r.yearByYear.filter((_,i)=>i%3===0).slice(0,12).map(row=>[fmt.age(row.age),row.year.toString(),fmt.dollar(row.annualLimit),fmt.dollar(row.cumulativeRoom),fmt.dollar(row.openingBalance),fmt.dollar(row.contribution),fmt.dollar(row.growth),fmt.dollar(row.closingBalance)]);
+  return `<div class="page">${pageHeader(inputs.meta,"TFSA Analysis")}${sectionHeader("Section 4","TFSA Room & Strategy","Lifetime room since 2009")}
   ${metricGrid([{label:"Lifetime Room to Date",value:fmt.dollar(r.lifetimeRoomToDate),variant:"navy"},{label:"Available Room Now",value:fmt.dollar(r.currentAvailableRoom),variant:r.currentAvailableRoom>0?"green":"amber"},{label:"2024 Annual Limit",value:fmt.dollar(r.new2024Room)},{label:"Withdrawal Room Recovered",value:fmt.dollar(r.withdrawalRoomRecovered)}])}
   ${metricGrid([{label:"Balance in 10 Years",value:fmt.dollar(r.projectedBalance10Years),variant:"blue"},{label:"Balance in 20 Years",value:fmt.dollar(r.projectedBalance20Years),variant:"blue"},{label:"Balance at Retirement",value:fmt.dollar(r.projectedBalanceAtRetirement),variant:"blue"},{label:"Optimal Withdrawal Age",value:`Age ${r.optimalWithdrawalAge}`}])}
-  ${lineChart("TFSA vs. Taxable Account \u2014 Tax-Free Advantage",[{label:"TFSA Balance",data:r.taxFreeSavingsVsTaxable.map(row=>({x:row.year,y:row.tfsaBalance})),color:"#1E5FA8"},{label:"Taxable Account",data:r.taxFreeSavingsVsTaxable.map(row=>({x:row.year,y:row.taxableBalance})),color:"#D4860A"},{label:"TFSA Advantage",data:r.taxFreeSavingsVsTaxable.map(row=>({x:row.year,y:row.tfsaAdvantage})),color:"#1A7A4A"}])}
+  ${lineChart("TFSA vs. Taxable Account \u2014 Tax-Free Advantage",[{label:"TFSA Balance",data:r.taxFreeSavingsVsTaxable.map(row=>({x:row.year,y:row.tfsaBalance})),color:"#1E5FA8"},{label:"Taxable Account",data:r.taxFreeSavingsVsTaxable.map(row=>({x:row.year,y:row.taxableBalance})),color:"#C9A84C"},{label:"TFSA Advantage",data:r.taxFreeSavingsVsTaxable.map(row=>({x:row.year,y:row.tfsaAdvantage})),color:"#1A7A4A"}])}
   ${callout(r.withdrawalStrategy,"info")}
-  ${dataTable("TFSA Annual Contribution Room & Growth",[{label:"Age"},{label:"Year"},{label:"Annual Limit",right:true},{label:"Cumulative Room",right:true},{label:"Contribution",right:true},{label:"Growth",right:true},{label:"Closing Balance",right:true}],rows)}
+  ${dataTable("TFSA Growth Projection",[{label:"Age"},{label:"Year"},{label:"Annual Limit",right:true},{label:"Cumulative Room",right:true},{label:"Opening Balance",right:true},{label:"Contribution",right:true},{label:"Growth",right:true},{label:"Closing Balance",right:true}],rows)}
   ${pageFooter(4,10,inputs.meta.advisor.companyName)}</div>`;
 }
 
 function capitalGainsSection(inputs: ComprehensiveReportInputs, r: CapitalGainsAnalysis): string {
-  return `<div class="page">${pageHeader(inputs.meta,"Capital Gains")}${sectionHeader("Section 5","Capital Gains Analysis","2025 — 50% Inclusion Rate")}
-  ${callout(`<strong>2024 Capital Gains Inclusion Rate Change:</strong> For individuals, the first $250,000 of net annual capital gains remains at a 50% inclusion rate. Gains above $250,000 are now included at 66.67% (effective June 25, 2024).`,"warning")}
-  ${metricGrid([{label:"Total Proceeds",value:fmt.dollar(r.totalProceeds)},{label:"Total Adjusted Cost Base",value:fmt.dollar(r.totalACB)},{label:"Net Capital Gain",value:fmt.dollar(r.netGain),variant:r.netGain>0?"amber":"green"},{label:"Tax on Gains",value:fmt.dollar(r.totalTaxOnGains),variant:"red"}])}
-  ${metricGrid([{label:"Gains at 50% Inclusion",value:fmt.dollar(r.gainUnder250k),sub:"Under $250,000 threshold"},{label:"Gains at 66.67% Inclusion",value:fmt.dollar(r.gainOver250k),sub:"Over $250,000 threshold",variant:r.gainOver250k>0?"amber":""},{label:"Taxable Gain",value:fmt.dollar(r.taxableGain)},{label:"Effective Rate on Gains",value:fmt.pct(r.effectiveRateOnGains)}])}
-  ${r.disposalBreakdown.length>0?dataTable("Disposition Details",[{label:"Description"},{label:"Type"},{label:"Proceeds",right:true},{label:"ACB",right:true},{label:"Gain/Loss",right:true},{label:"Taxable Gain",right:true},{label:"Est. Tax",right:true}],r.disposalBreakdown.map(d=>[d.description,d.assetType.replace(/_/g," "),fmt.dollar(d.proceeds),fmt.dollar(d.acb),fmt.dollar(d.gain),fmt.dollar(d.taxableGain),fmt.dollar(d.estimatedTax)]),["TOTAL","",fmt.dollar(r.totalProceeds),fmt.dollar(r.totalACB),fmt.dollar(r.netGain),fmt.dollar(r.taxableGain),fmt.dollar(r.totalTaxOnGains)]):""}
-  ${r.lcgeUsed>0||r.lcgeRemaining>0?metricGrid([{label:"Lifetime Capital Gains Exemption",value:fmt.dollar(r.lifetimeCapitalGainsExemption),sub:"2024 QSBC limit"},{label:"LCGE Used",value:fmt.dollar(r.lcgeUsed),variant:r.lcgeUsed>0?"amber":""},{label:"LCGE Remaining",value:fmt.dollar(r.lcgeRemaining),variant:"green"}],3):""}
-  ${r.timingRecommendations.length>0?recommendationList(r.timingRecommendations.map(t=>({priority:"medium",category:"Timing Strategy",text:t}))):""}
-  ${r.harvestingOpportunities.length>0?recommendationList(r.harvestingOpportunities.map(t=>({priority:"high",category:"Tax-Loss Harvesting",text:t}))):""}
+  return `<div class="page">${pageHeader(inputs.meta,"Capital Gains")}${sectionHeader("Section 5","Capital Gains Analysis",`Tax Year ${inputs.capitalGains?.taxYear??new Date().getFullYear()}`)}
+  ${metricGrid([{label:"Total Gain",value:fmt.dollar(r.totalGain),variant:r.totalGain>0?"amber":""},{label:"Taxable Gain",value:fmt.dollar(r.netTaxableGain),variant:"red"},{label:"Total Tax on Gains",value:fmt.dollar(r.totalTaxOnGains),variant:"red"},{label:"Effective Rate on Gains",value:fmt.pct(r.effectiveRateOnGains)}])}
+  ${metricGrid([{label:"Inclusion Rate (under $250k)",value:fmt.pct(r.inclusionRateUnder250k)},{label:"Inclusion Rate (over $250k)",value:fmt.pct(r.inclusionRateOver250k)},{label:"LCGE Remaining",value:fmt.dollar(r.lcgeRemaining),variant:"green"},{label:"Losses Applied",value:fmt.dollar(r.lossesApplied)}])}
+  ${r.disposalBreakdown.length>0?dataTable("Disposal Breakdown",[{label:"Asset"},{label:"Proceeds",right:true},{label:"ACB",right:true},{label:"Gain",right:true},{label:"Tax",right:true}],r.disposalBreakdown.map(d=>[d.description,d.proceeds,d.acb,d.gain,d.estimatedTax])):""}
+  ${r.timingRecommendations.length>0?callout(`<strong>Timing Strategies:</strong> ${r.timingRecommendations.join(" &nbsp;|&nbsp; ")}`,"info"):""}
+  ${r.harvestingOpportunities.length>0?callout(`<strong>Harvesting Opportunities:</strong> ${r.harvestingOpportunities.join(" &nbsp;|&nbsp; ")}`,"success"):""}
   ${pageFooter(5,10,inputs.meta.advisor.companyName)}</div>`;
 }
 
 function incomeSplittingSection(inputs: ComprehensiveReportInputs, r: IncomeSplittingAnalysis): string {
+  const strats = r.strategies ?? [];
   return `<div class="page">${pageHeader(inputs.meta,"Income Splitting")}${sectionHeader("Section 6","Income Splitting Strategies","T1032 Pension Splitting & Spousal RRSP")}
-  ${metricGrid([{label:"Current Combined Tax",value:fmt.dollar(r.currentCombinedTax),variant:"red"},{label:"After Splitting Tax",value:fmt.dollar(r.combinedAfterSplitTax),variant:"green"},{label:"Annual Tax Saving",value:fmt.dollar(r.totalAnnualSaving),variant:"green"},{label:"Lifetime Tax Saving",value:fmt.dollar(r.totalLifetimeSaving),variant:"navy"}])}
-  ${dataTable("Before vs. After Income Splitting",[{label:"Taxpayer"},{label:"Before: Tax",right:true},{label:"Before: Eff. Rate",right:true},{label:"After: Tax",right:true},{label:"After: Eff. Rate",right:true},{label:"Saving",right:true}],[[inputs.meta.client.fullName+" (Primary)",fmt.dollar(r.primaryCurrentTax),fmt.pct(r.comparison.beforeSplitting.effectivePrimary/100),fmt.dollar(r.primaryAfterSplitTax),fmt.pct(r.comparison.afterSplitting.effectivePrimary/100),fmt.dollar(r.primaryCurrentTax-r.primaryAfterSplitTax)],[(inputs.meta.client.spouseFirstName??"Spouse")+" (Spouse)",fmt.dollar(r.spouseCurrentTax),fmt.pct(r.comparison.beforeSplitting.effectiveSpouse/100),fmt.dollar(r.spouseAfterSplitTax),fmt.pct(r.comparison.afterSplitting.effectiveSpouse/100),fmt.dollar(r.spouseCurrentTax-r.spouseAfterSplitTax)]],["Combined",fmt.dollar(r.currentCombinedTax),"—",fmt.dollar(r.combinedAfterSplitTax),"—",fmt.dollar(r.pensionSplitTaxSaving)])}
-  ${sectionHeader("","Available Strategies")}
-  ${r.strategies.map(s=>`<div class="rec-item ${s.eligible?(s.annualSaving>5000?"high":"medium"):"low"}" style="margin-bottom:10px"><div class="rec-icon">${s.eligible?"&#9873;":"&#8211;"}</div><div class="rec-body"><div class="rec-category">${s.name} ${s.eligible?badge("ELIGIBLE","green"):badge("NOT ELIGIBLE","red")}</div><div class="rec-text">${s.description}</div>${s.eligible&&s.annualSaving>0?`<div class="rec-saving">Annual saving: ${fmt.dollar(s.annualSaving)} &mdash; ${s.actionRequired}</div>`:`<div class="text-xs mt-4">${s.actionRequired}</div>`}</div></div>`).join("")}
-  ${r.spousalRrspRecommended?callout(r.spousalRrspRationale,"info"):""}
+  ${metricGrid([{label:"Current Combined Tax",value:fmt.dollar(r.currentCombinedTax),variant:"red"},{label:"After Splitting Tax",value:fmt.dollar(r.combinedAfterSplitTax),variant:"green"},{label:"Annual Tax Saving",value:fmt.dollar(r.totalAnnualSaving),variant:"navy"},{label:"Lifetime Tax Saving",value:fmt.dollar(r.totalLifetimeSaving),variant:"navy"}])}
+  ${dataTable("Before vs. After Income Splitting",[{label:"Taxpayer"},{label:"Before: Tax",right:true},{label:"Before: Eff. Rate",right:true},{label:"After: Tax",right:true},{label:"After: Eff. Rate",right:true},{label:"Saving",right:true}],[
+    [inputs.meta.client.fullName+" (Primary)",fmt.dollar(r.primaryCurrentTax),fmt.pct(r.comparison?.beforeSplitting?.effectivePrimary??0),fmt.dollar(r.primaryAfterSplitTax),fmt.pct(r.comparison?.afterSplitting?.effectivePrimary??0),fmt.dollar(r.primaryCurrentTax-r.primaryAfterSplitTax)],
+    [(inputs.meta.client.spouseFirstName??"Spouse"),fmt.dollar(r.spouseCurrentTax),fmt.pct(r.comparison?.beforeSplitting?.effectiveSpouse??0),fmt.dollar(r.spouseAfterSplitTax),fmt.pct(r.comparison?.afterSplitting?.effectiveSpouse??0),fmt.dollar(r.spouseCurrentTax-r.spouseAfterSplitTax)],
+  ],["Combined",fmt.dollar(r.currentCombinedTax),"—",fmt.dollar(r.combinedAfterSplitTax),"—",fmt.dollar(r.totalAnnualSaving)])}
+  ${strats.length>0?`<div class="section-title mb-12">Available Strategies</div><div class="rec-list">${strats.map(s=>`<div class="rec-item ${s.eligible?"medium":"low"}"><div class="rec-icon">${s.eligible?"&#9873;":"&#8212;"}</div><div class="rec-body"><div class="rec-category">${s.name.toUpperCase()} ${s.eligible?badge("ELIGIBLE","green"):badge("NOT ELIGIBLE","red")}</div><div class="rec-text">${s.description}</div>${s.eligible&&s.annualSaving>0?`<div class="rec-saving">Annual saving: ${fmt.dollar(s.annualSaving)} \u2014 ${s.actionRequired}</div>`:s.actionRequired?`<div class="rec-text" style="color:var(--gray-400);font-size:11px">${s.actionRequired}</div>`:""}</div></div>`).join("")}</div>`:""}
+  ${r.spousalRrspRecommended?callout(`Contributing to a spousal RRSP saves ${fmt.pct(r.comparison?.beforeSplitting?.effectivePrimary??0 - (r.comparison?.afterSplitting?.effectivePrimary??0))} on withdrawals. ${r.spousalRrspRationale}`,"success"):""}
   ${pageFooter(6,10,inputs.meta.advisor.companyName)}</div>`;
 }
 
 function insuranceSection(inputs: ComprehensiveReportInputs, r: InsuranceAnalysis): string {
-  return `<div class="page">${pageHeader(inputs.meta,"Insurance Needs Analysis")}${sectionHeader("Section 7","Insurance Needs Analysis","Life, Disability & Critical Illness")}
+  return `<div class="page">${pageHeader(inputs.meta,"Insurance Needs")}${sectionHeader("Section 7","Insurance Needs Analysis","Life, Disability & Critical Illness")}
   ${metricGrid([{label:"Life Insurance Gap",value:fmt.dollar(r.dimeGap),variant:r.dimeGap>0?"red":"green"},{label:"Recommended Coverage",value:fmt.dollar(r.recommendedLifeCoverage),variant:"navy"},{label:"Disability Gap (Monthly)",value:fmt.dollar(r.disabilityGap)+"/mo",variant:r.disabilityGap>0?"amber":"green"},{label:"Critical Illness Gap",value:fmt.dollar(r.ciGap),variant:r.ciGap>0?"amber":"green"}])}
   ${dataTable("Life Insurance Needs \u2014 DIME Method",[{label:"Component"},{label:"Amount",right:true},{label:"Notes"}],[["Debt (D)",fmt.dollar(r.dimeDebt),"Total liabilities + final expenses"],["Income Replacement (I)",fmt.dollar(r.dimeIncome),`${Math.round(r.dimeIncome/(inputs.insurance?.annualIncome||1))} years income replacement`],["Mortgage (M)",fmt.dollar(r.dimeMortgage),"Outstanding mortgage balance"],["Education (E)",fmt.dollar(r.dimeEducation),"Children's education costs"],["Total DIME Need",fmt.dollar(r.dimeTotalNeed),""],["Less: Existing Coverage",`(${fmt.dollar(r.dimeExistingCoverage)})`,"Life insurance + liquid assets"]],["Coverage Gap",fmt.dollar(r.dimeGap),`${r.recommendedCoverageType.replace(/_/g," ")} recommended`])}
-  <div class="two-col mb-20"><div>${metricGrid([{label:"Human Life Value",value:fmt.dollar(r.hlvValue),sub:"Income capitalization"},{label:"HLV Gap",value:fmt.dollar(r.hlvGap),variant:r.hlvGap>0?"amber":"green"}],2)}</div><div>${metricGrid([{label:"Needs-Based Requirement",value:fmt.dollar(r.needsBasedCapitalNeeded)},{label:"Needs-Based Gap",value:fmt.dollar(r.needsBasedGap),variant:r.needsBasedGap>0?"amber":"green"}],2)}</div></div>
+  ${metricGrid([{label:"Human Life Value",value:fmt.dollar(r.hlvValue)},{label:"HLV Gap",value:fmt.dollar(r.hlvGap),variant:r.hlvGap>0?"amber":""},{label:"Needs-Based Requirement",value:fmt.dollar(r.needsBasedCapitalNeeded)},{label:"Needs-Based Gap",value:fmt.dollar(r.needsBasedGap),variant:r.needsBasedGap>0?"amber":"green"}])}
   ${dataTable("Disability & Critical Illness",[{label:"Coverage Type"},{label:"Monthly Need",right:true},{label:"Existing",right:true},{label:"Gap",right:true},{label:"Est. Premium",right:true}],[["Long-term Disability",fmt.dollar(r.monthlyDisabilityNeed)+"/mo",fmt.dollar(r.existingDisabilityCoverage)+"/mo",fmt.dollar(r.disabilityGap)+"/mo",fmt.dollar(r.estimatedDisabilityPremium)+"/mo"],["Critical Illness (Lump Sum)",fmt.dollar(r.recommendedCICoverage),fmt.dollar(inputs.insurance?.existingCriticalIllness??0),fmt.dollar(r.ciGap),fmt.dollar(r.estimatedCIPremium)+"/mo"]])}
-  ${recommendationList(r.recommendations.map(rec=>({priority:rec.priority,category:rec.type.replace(/_/g," ").replace(/\b\w/g,(l:string)=>l.toUpperCase()),text:rec.rationale})))}
+  ${r.recommendations.length>0?recommendationList(r.recommendations.map(rec=>({priority:rec.priority,category:rec.type,text:rec.rationale,saving:rec.coverageAmount}))):""}
   ${pageFooter(7,10,inputs.meta.advisor.companyName)}</div>`;
 }
 
 function educationSection(inputs: ComprehensiveReportInputs, r: EducationAnalysis): string {
-  return `<div class="page">${pageHeader(inputs.meta,"Education Planning (RESP)")}${sectionHeader("Section 8","Education Planning \u2014 RESP","Canada Education Savings Grant & Canada Learning Bond")}
-  ${metricGrid([{label:"Total Projected RESP",value:fmt.dollar(r.totalProjectedRespValue),variant:"navy"},{label:"Total CESG Received",value:fmt.dollar(r.totalCesgReceived),variant:"green"},{label:"Estimated Education Cost",value:fmt.dollar(r.totalEstimatedEducationCost)},{label:"Surplus / (Shortfall)",value:fmt.dollar(r.shortfallOrSurplus),variant:r.shortfallOrSurplus>=0?"green":"red"}])}
-  ${callout(`<strong>CESG Rate:</strong> ${fmt.pct(r.familyCesgRate)} on the first $2,500 contributed per child per year (max $500/year, $7,200 lifetime).${r.additionalCesgPerChild>0?` <strong>Additional CESG:</strong> Your family income qualifies for an additional $${r.additionalCesgPerChild}/year per child.`:""}${r.clbPerChild>0?` <strong>Canada Learning Bond:</strong> Your family may qualify for ${fmt.dollar(r.clbPerChild)} per child.`:""}`,r.familyCesgRate>0.20?"success":"info")}
-  ${r.children.map(child=>`<div class="no-break"><div class="table-title" style="padding:12px 0 8px;font-size:14px;color:var(--navy);font-weight:600;">${child.name} \u2014 Age ${child.age} (${child.yearsUntilPostSecondary} years until post-secondary)</div>${metricGrid([{label:"Projected RESP Balance",value:fmt.dollar(child.projectedRespBalance),variant:"blue"},{label:"Total CESG",value:fmt.dollar(child.totalCesgForChild),variant:"green"},{label:"Estimated Program Cost",value:fmt.dollar(child.estimatedEducationCost)},{label:"Surplus / (Shortfall)",value:fmt.dollar(child.shortfallOrSurplus),variant:child.shortfallOrSurplus>=0?"green":"red"}])}${dataTable("",[{label:"Year"},{label:"Child Age"},{label:"Contribution",right:true},{label:"CESG",right:true},{label:"Add'l CESG",right:true},{label:"Growth",right:true},{label:"Balance",right:true}],child.yearByYear.filter((_,i)=>i%2===0).map(row=>[row.year.toString(),row.childAge.toString(),fmt.dollar(row.contribution),fmt.dollar(row.cesg),fmt.dollar(row.additionalCesg),fmt.dollar(row.growth),fmt.dollar(row.closingBalance)]))}</div>`).join(divider())}
+  return `<div class="page">${pageHeader(inputs.meta,"Education Planning")}${sectionHeader("Section 8","Education Planning (RESP)","CESG, CLB & Projection")}
+  ${metricGrid([{label:"Total CESG Received",value:fmt.dollar(r.totalCesgReceived),variant:"green"},{label:"Projected RESP Value",value:fmt.dollar(r.totalProjectedRespValue),variant:"navy"},{label:"Estimated Education Cost",value:fmt.dollar(r.totalEstimatedEducationCost)},{label:"Surplus / Shortfall",value:fmt.dollar(r.shortfallOrSurplus),variant:r.shortfallOrSurplus>=0?"green":"red"}])}
+  ${r.children.map(child=>`<div class="section-title mb-8">${child.name} (Age ${child.age})</div>${metricGrid([{label:"Projected RESP",value:fmt.dollar(child.projectedRespBalance),variant:"blue"},{label:"Education Cost",value:fmt.dollar(child.estimatedEducationCost)},{label:"Total CESG",value:fmt.dollar(child.totalCesgForChild),variant:"green"},{label:"Surplus/Shortfall",value:fmt.dollar(child.shortfallOrSurplus),variant:child.shortfallOrSurplus>=0?"green":"red"}],4)}${dataTable(`${child.name} — RESP Growth`,[{label:"Year"},{label:"Age"},{label:"Contribution",right:true},{label:"CESG",right:true},{label:"Growth",right:true},{label:"Balance",right:true}],child.yearByYear.filter((_,i)=>i%2===0).slice(0,10).map(row=>[row.year.toString(),row.childAge.toString(),fmt.dollar(row.contribution),fmt.dollar(row.cesg+row.additionalCesg),fmt.dollar(row.growth),fmt.dollar(row.closingBalance)]))}`).join("")}
   ${pageFooter(8,10,inputs.meta.advisor.companyName)}</div>`;
 }
 
 function estateSection(inputs: ComprehensiveReportInputs, r: EstateAnalysis): string {
-  const docItems = Object.entries(r.documentStatus).map(([key,val])=>({name:key.replace(/([A-Z])/g," $1").replace(/\b\w/g,(l:string)=>l.toUpperCase()),has:(val as any).hasDocument,rec:(val as any).recommendation}));
+  const ds = r.documentStatus;
+  const docItems = [
+    { name:"Will",                has: ds.will.hasDocument,                rec: ds.will.recommendation },
+    { name:"POA",                 has: ds.poa.hasDocument,                 rec: ds.poa.recommendation },
+    { name:"HC Directive",        has: ds.hcDirective.hasDocument,         rec: ds.hcDirective.recommendation },
+    { name:"RRSP Beneficiary",    has: ds.rrspBeneficiary.hasDocument,     rec: ds.rrspBeneficiary.recommendation },
+    { name:"TFSA Beneficiary",    has: ds.tfsaBeneficiary.hasDocument,     rec: ds.tfsaBeneficiary.recommendation },
+    { name:"Insurance Beneficiary",has:ds.insuranceBeneficiary.hasDocument,rec: ds.insuranceBeneficiary.recommendation },
+  ];
   return `<div class="page">${pageHeader(inputs.meta,"Estate Planning")}${sectionHeader("Section 9","Estate Planning",`Province: ${PROVINCE_NAMES[inputs.estate?.province??inputs.meta.client.province]}`)}
   ${metricGrid([{label:"Gross Estate",value:fmt.dollar(r.grossEstate)},{label:"Net Estate",value:fmt.dollar(r.netEstate),variant:"navy"},{label:"Estimated Tax on Death",value:fmt.dollar(r.totalTaxOnDeath),variant:"red"},{label:"Estate After Tax & Probate",value:fmt.dollar(r.estateAfterTaxAndProbate),variant:"green"}])}
   ${metricGrid([{label:"Probate Fees",value:fmt.dollar(r.probateFees),variant:r.probateFees>10000?"amber":""},{label:"Assets Bypassing Probate",value:fmt.dollar(r.assetsBypassingProbate),variant:"green"},{label:"RRSP/RRIF Tax on Death",value:fmt.dollar(r.taxOnRrsp),variant:r.taxOnRrsp>0?"red":""},{label:"Capital Gains Tax on Death",value:fmt.dollar(r.taxOnCapitalGains),variant:r.taxOnCapitalGains>0?"amber":""}])}
@@ -121,9 +129,62 @@ function debtSection(inputs: ComprehensiveReportInputs, r: DebtAnalysis): string
   ${metricGrid([{label:"GDSR",value:fmt.pct(r.grossDebtServiceRatio),variant:r.grossDebtServiceRatio>0.32?"red":"green",sub:"Max 32% recommended"},{label:"TDSR",value:fmt.pct(r.totalDebtServiceRatio),variant:r.totalDebtServiceRatio>0.44?"red":r.totalDebtServiceRatio>0.36?"amber":"green",sub:"Max 44% (lender limit)"}],2)}
   </div><div>${metricGrid([{label:"Emergency Fund",value:`${r.emergencyFundMonthsCovered.toFixed(1)} months`,variant:r.emergencyFundStatus==="adequate"?"green":r.emergencyFundStatus==="building"?"amber":"red"},{label:"Status",value:r.emergencyFundStatus.toUpperCase(),sub:r.emergencyFundStatus==="adequate"?"3-6 months covered":"Below 3-month target"}],2)}</div></div>
   ${dataTable("Monthly Cash Flow Budget",[{label:"Category"},{label:"Monthly Amount",right:true},{label:"Annual",right:true},{label:"% of Net Income",right:true}],[["Gross Income",fmt.dollar(r.monthlyBudget.grossIncome),fmt.dollar(r.monthlyBudget.grossIncome*12),"100%"],["Less: Taxes",`(${fmt.dollar(r.monthlyBudget.taxes)})`,`(${fmt.dollar(r.monthlyBudget.taxes*12)})`,""],[`Net Income`,fmt.dollar(r.monthlyBudget.netIncome),fmt.dollar(r.monthlyBudget.netIncome*12),"100%"],["Housing",fmt.dollar(r.monthlyBudget.housing),fmt.dollar(r.monthlyBudget.housing*12),fmt.pct(r.monthlyBudget.housing/Math.max(r.monthlyBudget.netIncome,1))],["Transportation",fmt.dollar(r.monthlyBudget.transportation),fmt.dollar(r.monthlyBudget.transportation*12),fmt.pct(r.monthlyBudget.transportation/Math.max(r.monthlyBudget.netIncome,1))],["Food",fmt.dollar(r.monthlyBudget.food),fmt.dollar(r.monthlyBudget.food*12),fmt.pct(r.monthlyBudget.food/Math.max(r.monthlyBudget.netIncome,1))],["Debt Payments",fmt.dollar(r.monthlyBudget.debtPayments),fmt.dollar(r.monthlyBudget.debtPayments*12),fmt.pct(r.monthlyBudget.debtPayments/Math.max(r.monthlyBudget.netIncome,1))],["Savings",fmt.dollar(r.monthlyBudget.savings),fmt.dollar(r.monthlyBudget.savings*12),fmt.pct(r.monthlyBudget.savings/Math.max(r.monthlyBudget.netIncome,1))],["Discretionary",fmt.dollar(r.monthlyBudget.discretionary),fmt.dollar(r.monthlyBudget.discretionary*12),fmt.pct(r.monthlyBudget.discretionary/Math.max(r.monthlyBudget.netIncome,1))]],["Monthly Surplus",fmt.dollar(r.monthlyBudget.surplus),fmt.dollar(r.monthlyBudget.surplus*12),fmt.pct(r.monthlyBudget.surplus/Math.max(r.monthlyBudget.netIncome,1))])}
-  ${dataTable(`Debt Payoff \u2014 Avalanche Method (Saves ${fmt.dollar(r.avalancheInterestSaved)} vs Snowball)`,[{label:"Priority"},{label:"Debt"},{label:"Balance",right:true},{label:"Rate",right:true},{label:"Min Payment",right:true},{label:"Payoff Date"},{label:"Total Interest",right:true}],r.avalancheOrder.map(d=>[`#${d.payoffOrder}`,d.name,fmt.dollar(d.balance),fmt.pct(d.interestRate),fmt.dollar(d.minimumPayment),d.payoffDate,fmt.dollar(d.totalInterestPaid)]))}
+  ${r.avalancheOrder.length>0?dataTable(`Debt Payoff \u2014 Avalanche Method (Saves ${fmt.dollar(r.avalancheInterestSaved)} vs Snowball)`,[{label:"Priority"},{label:"Debt"},{label:"Balance",right:true},{label:"Rate",right:true},{label:"Min Payment",right:true},{label:"Payoff Date"},{label:"Total Interest",right:true}],r.avalancheOrder.map(d=>[`#${d.payoffOrder}`,d.name,fmt.dollar(d.balance),fmt.pct(d.interestRate),fmt.dollar(d.minimumPayment),d.payoffDate,fmt.dollar(d.totalInterestPaid)])):""}
   ${r.recommendations.length>0?recommendationList(r.recommendations.map(rec=>({priority:rec.priority,category:rec.category,text:rec.recommendation,saving:rec.monthlyImpact*12}))):""}
   ${pageFooter(10,10,inputs.meta.advisor.companyName)}</div>`;
+}
+
+// ── Display-only sections (no engine calculation, just raw DB data) ──────────
+
+function networthSection(inputs: ComprehensiveReportInputs): string {
+  const rows = inputs.rawNetWorth ?? [];
+  const assets = rows.filter(e => e.type === "asset");
+  const liabs  = rows.filter(e => e.type === "liability");
+  const totalA = assets.reduce((s, e) => s + Number(e.value), 0);
+  const totalL = liabs.reduce((s, e) => s + Number(e.value), 0);
+  const netWorth = totalA - totalL;
+
+  // Group assets by category for allocation
+  const catGroups: Record<string, number> = {};
+  assets.forEach(e => { catGroups[e.category] = (catGroups[e.category] ?? 0) + Number(e.value); });
+  const allocationData = Object.entries(catGroups).map(([label, value]) => ({ label, value }));
+
+  return `<div class="page">${pageHeader(inputs.meta,"Net Worth Statement")}${sectionHeader("Net Worth","Net Worth & Asset Allocation",`As of ${inputs.meta.reportDate}`)}
+  ${metricGrid([{label:"Total Assets",value:fmt.dollar(totalA),variant:"green"},{label:"Total Liabilities",value:fmt.dollar(totalL),variant:"red"},{label:"Net Worth",value:fmt.dollar(netWorth),variant:netWorth>=0?"navy":"red"},{label:"Asset Count",value:`${assets.length} assets`}])}
+  ${assets.length>0?dataTable("Assets",[{label:"Category"},{label:"Description"},{label:"Owner"},{label:"Value",right:true}],assets.map(e=>[e.category,e.name||e.category,e.owner==="spouse"?"Spouse":e.owner==="joint"?"Joint":"Primary",Number(e.value)])):""}
+  ${liabs.length>0?dataTable("Liabilities",[{label:"Category"},{label:"Description"},{label:"Balance",right:true}],liabs.map(e=>[e.category,e.name||e.category,Number(e.value)])):""}
+  ${allocationData.length>0?barChart("Asset Allocation by Category",allocationData):""}
+  ${pageFooter(0,0,inputs.meta.advisor.companyName)}</div>`;
+}
+
+function cashflowSection(inputs: ComprehensiveReportInputs): string {
+  const rows = inputs.rawExpenses ?? [];
+  const totalMonthly = rows.reduce((s, e) => s + Number(e.monthlyAmount ?? 0), 0);
+  const annualIncome = inputs.annualIncome ?? 0;
+  const monthlySurplus = annualIncome / 12 - totalMonthly;
+
+  const catGroups: Record<string, number> = {};
+  rows.forEach(e => { catGroups[e.category] = (catGroups[e.category] ?? 0) + Number(e.monthlyAmount ?? 0); });
+
+  return `<div class="page">${pageHeader(inputs.meta,"Cash Flow")}${sectionHeader("Cash Flow","Monthly Cash Flow & Budget",`As of ${inputs.meta.reportDate}`)}
+  ${metricGrid([{label:"Monthly Income",value:fmt.dollar(annualIncome/12)+"/mo",variant:"green"},{label:"Monthly Expenses",value:fmt.dollar(totalMonthly)+"/mo"},{label:"Annual Expenses",value:fmt.dollar(totalMonthly*12)+"/yr"},{label:"Monthly Surplus",value:fmt.dollar(monthlySurplus)+"/mo",variant:monthlySurplus>=0?"green":"red"}])}
+  ${rows.length>0?dataTable("Monthly Expenses",[{label:"Category"},{label:"Description"},{label:"Monthly",right:true},{label:"Annual",right:true}],rows.map(e=>[e.category,e.description||e.category,Number(e.monthlyAmount??0),Number(e.monthlyAmount??0)*12])):callout("No expense entries found. Add expenses in the Cash Flow tab.","info")}
+  ${Object.keys(catGroups).length>0?barChart("Spending by Category",Object.entries(catGroups).map(([label,value])=>({label,value}))):""}
+  ${pageFooter(0,0,inputs.meta.advisor.companyName)}</div>`;
+}
+
+function goalsSection(inputs: ComprehensiveReportInputs): string {
+  const goals = inputs.rawGoals ?? [];
+  const active    = goals.filter(g => g.status !== "completed");
+  const completed = goals.filter(g => g.status === "completed");
+  const totalTarget = goals.reduce((s, g) => s + Math.abs(Number(g.targetAmount ?? 0)), 0);
+  const priorityOrder: Record<string, number> = { high: 0, medium: 1, low: 2 };
+  const sorted = [...goals].sort((a, b) => (priorityOrder[a.priority ?? "low"] ?? 2) - (priorityOrder[b.priority ?? "low"] ?? 2));
+
+  return `<div class="page">${pageHeader(inputs.meta,"Financial Goals")}${sectionHeader("Goals","Financial Goals Status",`${goals.length} goals \u2014 as of ${inputs.meta.reportDate}`)}
+  ${metricGrid([{label:"Total Goals",value:goals.length.toString()},{label:"Active",value:active.length.toString(),variant:"navy"},{label:"Completed",value:completed.length.toString(),variant:"green"},{label:"Total Target",value:fmt.dollar(totalTarget)}])}
+  ${goals.length>0?dataTable("Goals Summary",[{label:"Goal"},{label:"Type"},{label:"Target Amount",right:true},{label:"Target Year"},{label:"Priority"},{label:"Status"}],sorted.map(g=>[g.title,(g.goalType??"—").replace(/_/g," "),Math.abs(Number(g.targetAmount??0)),g.targetYear?g.targetYear.toString():"—",(g.priority??"medium").toUpperCase(),(g.status??"active").replace(/_/g," ").toUpperCase()])):callout("No financial goals found. Add goals in the Goals tab.","info")}
+  ${pageFooter(0,0,inputs.meta.advisor.companyName)}</div>`;
 }
 
 export function generateComprehensiveReport(
@@ -131,15 +192,23 @@ export function generateComprehensiveReport(
   results: { retirement?: RetirementProjection; tax?: TaxProjection; rrsp?: RrspAnalysis; tfsa?: TfsaAnalysis; capitalGains?: CapitalGainsAnalysis; incomeSplitting?: IncomeSplittingAnalysis; insurance?: InsuranceAnalysis; education?: EducationAnalysis; estate?: EstateAnalysis; debt?: DebtAnalysis; }
 ): string {
   const tocItems: string[] = [], sections: string[] = [];
+
+  // Engine-calculated sections
   if (results.retirement)     { tocItems.push("Retirement Planning (RRSP/RRIF/CPP/OAS)"); sections.push(retirementSection(inputs, results.retirement)); }
-  if (results.tax)            { tocItems.push("Tax Projection & Planning"); sections.push(taxSection(inputs, results.tax)); }
-  if (results.rrsp)           { tocItems.push("RRSP Room & Optimization"); sections.push(rrspSection(inputs, results.rrsp)); }
-  if (results.tfsa)           { tocItems.push("TFSA Room & Strategy"); sections.push(tfsaSection(inputs, results.tfsa)); }
-  if (results.capitalGains)   { tocItems.push("Capital Gains Analysis"); sections.push(capitalGainsSection(inputs, results.capitalGains)); }
-  if (results.incomeSplitting){ tocItems.push("Income Splitting (T1032)"); sections.push(incomeSplittingSection(inputs, results.incomeSplitting)); }
-  if (results.insurance)      { tocItems.push("Insurance Needs Analysis"); sections.push(insuranceSection(inputs, results.insurance)); }
-  if (results.education)      { tocItems.push("Education Planning (RESP)"); sections.push(educationSection(inputs, results.education)); }
-  if (results.estate)         { tocItems.push("Estate Planning"); sections.push(estateSection(inputs, results.estate)); }
-  if (results.debt)           { tocItems.push("Debt & Cash Flow"); sections.push(debtSection(inputs, results.debt)); }
+  if (results.tax)            { tocItems.push("Tax Projection & Planning");                sections.push(taxSection(inputs, results.tax)); }
+  if (results.rrsp)           { tocItems.push("RRSP Room & Optimization");                 sections.push(rrspSection(inputs, results.rrsp)); }
+  if (results.tfsa)           { tocItems.push("TFSA Room & Strategy");                     sections.push(tfsaSection(inputs, results.tfsa)); }
+  if (results.capitalGains)   { tocItems.push("Capital Gains Analysis");                   sections.push(capitalGainsSection(inputs, results.capitalGains)); }
+  if (results.incomeSplitting){ tocItems.push("Income Splitting (T1032)");                 sections.push(incomeSplittingSection(inputs, results.incomeSplitting)); }
+  if (results.insurance)      { tocItems.push("Insurance Needs Analysis");                 sections.push(insuranceSection(inputs, results.insurance)); }
+  if (results.education)      { tocItems.push("Education Planning (RESP)");                sections.push(educationSection(inputs, results.education)); }
+  if (results.estate)         { tocItems.push("Estate Planning");                          sections.push(estateSection(inputs, results.estate)); }
+  if (results.debt)           { tocItems.push("Debt & Cash Flow");                         sections.push(debtSection(inputs, results.debt)); }
+
+  // Display-only sections (raw data, no engine)
+  if (inputs.rawNetWorth && inputs.rawNetWorth.length > 0) { tocItems.push("Net Worth & Asset Allocation"); sections.push(networthSection(inputs)); }
+  if (inputs.rawExpenses && inputs.rawExpenses.length > 0) { tocItems.push("Cash Flow & Budget");           sections.push(cashflowSection(inputs)); }
+  if (inputs.rawGoals    && inputs.rawGoals.length    > 0) { tocItems.push("Financial Goals");              sections.push(goalsSection(inputs)); }
+
   return `<!DOCTYPE html>\n<html lang="en">\n<head>\n<meta charset="UTF-8">\n<title>${inputs.meta.reportTitle} \u2014 ${inputs.meta.client.fullName}</title>\n<style>${REPORT_CSS}</style>\n</head>\n<body>\n${coverPage(inputs.meta, tocItems)}\n${sections.join("\n")}\n</body>\n</html>`;
 }

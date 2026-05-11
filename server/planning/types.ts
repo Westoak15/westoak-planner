@@ -196,5 +196,29 @@ export interface DebtPayoffItem extends DebtItem { payoffOrder: number; monthsTo
 export interface CashFlowBudget { grossIncome: number; taxes: number; netIncome: number; housing: number; transportation: number; food: number; insurance: number; childcare: number; debtPayments: number; savings: number; discretionary: number; total: number; surplus: number; }
 export interface DebtRecommendation { priority: "high" | "medium" | "low"; category: string; recommendation: string; monthlyImpact: number; }
 export interface DebtAnalysis { totalDebt: number; totalMonthlyDebt: number; totalMonthlyIncome: number; totalMonthlyExpenses: number; monthlySurplusOrDeficit: number; grossDebtServiceRatio: number; totalDebtServiceRatio: number; debtToIncomeRatio: number; avalancheOrder: DebtPayoffItem[]; snowballOrder: DebtPayoffItem[]; avalancheInterestSaved: number; avalancheMonthsSaved: number; snowballMotivationScore: number; recommendedStrategy: "avalanche" | "snowball"; monthlyBudget: CashFlowBudget; annualCashFlow: number; savingsRate: number; emergencyFundMonthsCovered: number; emergencyFundStatus: "adequate" | "building" | "critical"; recommendations: DebtRecommendation[]; debtFreeDate: string; }
+
 export interface ReportMeta { client: PlanningClient; advisor: PlanningAdvisor; reportDate: string; reportTitle: string; disclaimer: string; confidential: boolean; planId?: number; }
-export interface ComprehensiveReportInputs { meta: ReportMeta; retirement?: RetirementInputs; tax?: TaxInputs; rrsp?: RrspInputs; tfsa?: TfsaInputs; capitalGains?: CapitalGainsInputs; incomeSplitting?: IncomeSplittingInputs; insurance?: InsuranceInputs; education?: EducationInputs; estate?: EstateInputs; debt?: DebtInputs; }
+
+// Raw data rows passed through for display-only sections (no engine calculation)
+export interface RawNwEntry    { type: string; category: string; name: string; value: string; owner?: string | null; }
+export interface RawExpenseRow { category: string; description?: string | null; monthlyAmount?: string | null; }
+export interface RawGoalRow    { title: string; goalType?: string | null; targetAmount?: string | null; targetYear?: number | null; status?: string | null; priority?: string | null; cashflowType?: string | null; }
+
+export interface ComprehensiveReportInputs {
+  meta: ReportMeta;
+  retirement?: RetirementInputs;
+  tax?: TaxInputs;
+  rrsp?: RrspInputs;
+  tfsa?: TfsaInputs;
+  capitalGains?: CapitalGainsInputs;
+  incomeSplitting?: IncomeSplittingInputs;
+  insurance?: InsuranceInputs;
+  education?: EducationInputs;
+  estate?: EstateInputs;
+  debt?: DebtInputs;
+  // Display-only sections — raw DB rows, no engine
+  rawNetWorth?: RawNwEntry[];
+  rawExpenses?: RawExpenseRow[];
+  rawGoals?:    RawGoalRow[];
+  annualIncome?: number;
+}

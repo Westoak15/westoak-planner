@@ -183,7 +183,7 @@ function goalsSection(inputs: ComprehensiveReportInputs): string {
 
   return `<div class="page">${pageHeader(inputs.meta,"Financial Goals")}${sectionHeader("Goals","Financial Goals Status",`${goals.length} goals \u2014 as of ${inputs.meta.reportDate}`)}
   ${metricGrid([{label:"Total Goals",value:goals.length.toString()},{label:"Active",value:active.length.toString(),variant:"navy"},{label:"Completed",value:completed.length.toString(),variant:"green"},{label:"Total Target",value:fmt.dollar(totalTarget)}])}
-  ${goals.length>0?dataTable("Goals Summary",[{label:"Goal"},{label:"Type"},{label:"Target Amount",right:true},{label:"Target Year"},{label:"Priority"},{label:"Status"}],sorted.map(g=>[g.title,(g.goalType??"—").replace(/_/g," "),Math.abs(Number(g.targetAmount??0)),g.targetYear?g.targetYear.toString():"—",(g.priority??"medium").toUpperCase(),(g.status??"active").replace(/_/g," ").toUpperCase()])):callout("No financial goals found. Add goals in the Goals tab.","info")}
+  ${goals.length>0?dataTable("Goals Summary",[{label:"Goal"},{label:"Type"},{label:"Target Amount",right:true},{label:"Target Year"},{label:"Priority"},{label:"Status"}],sorted.map(g=>[g.title,String(g.goalType??"—").replace(/_/g," "),Math.abs(Number(g.targetAmount??0)),g.targetYear?g.targetYear.toString():"—",String(g.priority??"medium").toUpperCase(),(g.status??"active").replace(/_/g," ").toUpperCase()])):callout("No financial goals found. Add goals in the Goals tab.","info")}
   ${pageFooter(0,0,inputs.meta.advisor.companyName)}</div>`;
 }
 

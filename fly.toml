@@ -1,37 +1,40 @@
-app = "westoak-planner"
-primary_region = "yyz"
+# fly.toml app configuration file generated for westoak-planner on 2026-05-11T14:04:26Z
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
 
-[deploy]
-  strategy = "immediate"
+app = 'westoak-planner'
+primary_region = 'yyz'
 
 [build]
-  dockerfile = "Dockerfile"
+  dockerfile = 'Dockerfile'
+
+[deploy]
+  strategy = 'immediate'
 
 [env]
-  PORT = "8080"
-  NODE_ENV = "production"
+  NODE_ENV = 'production'
+  PORT = '8080'
 
 [http_service]
   internal_port = 8080
   force_https = true
-  auto_stop_machines = "stop"
+  auto_stop_machines = 'stop'
   auto_start_machines = true
   min_machines_running = 2
- processes = ["app"]
- 
-[[vm]]
-  memory = "1gb"
-  cpu_kind = "shared"
-  cpus = 2
+  processes = ['app']
 
 [checks]
   [checks.health]
-    type = "http"
     port = 8080
-    path = "/api/health"
-    interval = "30s"
-    timeout = "10s"
-    grace_period = "120s"
+    type = 'http'
+    interval = '30s'
+    timeout = '10s'
+    grace_period = '2m0s'
+    path = '/api/health'
 
-
-
+[[vm]]
+  memory = '1gb'
+  cpu_kind = 'shared'
+  cpus = 2
+  memory_mb = 256

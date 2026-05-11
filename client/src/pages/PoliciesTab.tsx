@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { api } from "../lib/api";
-import { Plus, Trash2, Pencil, X, Save, Shield } from "lucide-react";
+import { PolicyImporter } from "../components/PolicyImporter";
+import { Plus, Trash2, Pencil, X, Save, Shield, Table } from "lucide-react";
 
 interface Policy {
   id: number;
@@ -70,7 +71,7 @@ export function PoliciesTab({ clientId, client, person = "primary" }: { clientId
   const [editId, setEditId]     = useState<number | null>(null);
   const [draft, setDraft]       = useState<PolicyDraft>(emptyDraft());
   const [saving, setSaving]     = useState(false);
-
+  const [showImporter, setShowImporter] = useState(false);
   const activePerson  = person === "spouse" ? "spouse" : "primary";
   const hasSpouse     = !!client?.spouseFirstName;
   const spouseName    = client?.spouseFirstName ? `${client.spouseFirstName} ${client.spouseLastName ?? ""}`.trim() : null;
@@ -134,10 +135,16 @@ export function PoliciesTab({ clientId, client, person = "primary" }: { clientId
           <h1 className="text-xl font-semibold text-slate-900">Protection</h1>
           <p className="text-sm text-slate-500">{filteredPolicies.length} polic{filteredPolicies.length !== 1 ? "ies" : "y"} on file</p>
         </div>
-        <button onClick={openCreate}
-          className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-cyan-500 text-white text-sm font-semibold px-4 py-2 rounded-xl shadow-sm hover:shadow-md transition">
-          <Plus className="w-4 h-4" /> Add Policy
-        </button>
+        <div className="flex items-center gap-2">
+  <button onClick={() => setShowImporter(true)}
+    className="flex items-center gap-1.5 text-sm font-semibold text-slate-600 border border-slate-200 hover:bg-slate-50 px-3 py-2 rounded-xl transition-colors">
+    <Table className="w-4 h-4" /> Import Excel
+  </button>
+  <button onClick={openCreate}
+    className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-cyan-500 text-white text-sm font-semibold px-4 py-2 rounded-xl shadow-sm hover:shadow-md transition">
+    <Plus className="w-4 h-4" /> Add Policy
+  </button>
+</div>
       </div>
 
       {/* Summary stats */}
@@ -302,6 +309,14 @@ export function PoliciesTab({ clientId, client, person = "primary" }: { clientId
             </div>
           </div>
         </div>
+      )}
+      {showImporter && (
+        <PolicyImporter
+          clientId={clientId}
+          client={client}
+          onImported={() => { load(); setShowImporter(false); }}
+          onClose={() => setShowImporter(false)}
+        />
       )}
     </div>
   );

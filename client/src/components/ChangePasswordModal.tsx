@@ -59,7 +59,7 @@ export function ChangePasswordModal({ onClose, forceReset = false }: Props) {
 
   return (
     <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-7">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-7 overflow-y-auto max-h-[90vh]">
         <div className="flex items-center justify-between mb-5">
           <h2 className="text-lg font-bold text-gray-900">Change Password</h2>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl leading-none">×</button>

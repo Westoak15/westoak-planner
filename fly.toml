@@ -1,4 +1,4 @@
-app = "fp-standalone"
+app = "westoak-planner"
 primary_region = "yyz"
 
 [deploy]

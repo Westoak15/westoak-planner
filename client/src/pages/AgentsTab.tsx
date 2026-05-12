@@ -1,7 +1,20 @@
+/**
+ * AgentsTab.tsx
+ * Merged Agent Management + Agents list.
+ * - GA can create/edit/delete agents directly from this tab
+ * - Jurisdiction (CA/US) set at creation, locked forever
+ * - Admin tab removed — this replaces it
+ */
+
 import { useState, useEffect } from "react";
 import { api } from "../lib/api";
-import { ChevronRight, Users, User, ArrowLeft, FileText } from "lucide-react";
+import {
+  ChevronRight, Users, User, FileText,
+  Plus, Pencil, Trash2, X, Eye, EyeOff,
+} from "lucide-react";
 import { initials, avatarBg } from "../lib/utils";
+
+// ── Types ─────────────────────────────────────────────────────────────────────
 
 interface FaUser {
   id: number;
@@ -12,6 +25,9 @@ interface FaUser {
   agency: string | null;
   phone: string | null;
   level: "standard" | "enhanced";
+  role: string;
+  jurisdiction: "CA" | "US";
+  createdAt?: string;
 }
 
 interface Client {
@@ -22,6 +38,7 @@ interface Client {
   phone: string | null;
   province: string | null;
   annualIncome: string | null;
+  jurisdiction?: string;
 }
 
 interface Plan {
@@ -33,49 +50,137 @@ interface Plan {
 
 type View = "agents" | "clients" | "plans";
 
+const INPUT = "w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-blue-400/30 focus:border-blue-400 outline-none transition";
+
+const EMPTY_FORM = {
+  firstName: "", lastName: "", email: "", password: "",
+  agentId: "", agency: "", phone: "",
+  level: "standard" as "standard" | "enhanced",
+  jurisdiction: "CA" as "CA" | "US",
+};
+
+// ── Jurisdiction badge ────────────────────────────────────────────────────────
+
+function JurisdictionBadge({ jurisdiction }: { jurisdiction?: string }) {
+  if (!jurisdiction) return null;
+  return (
+    <span className={`text-[10px] px-1.5 py-0.5 rounded font-bold ${
+      jurisdiction === "US"
+        ? "bg-blue-100 text-blue-700"
+        : "bg-red-100 text-red-700"
+    }`}>
+      {jurisdiction === "US" ? "🇺🇸 US" : "🇨🇦 CA"}
+    </span>
+  );
+}
+
+// ── Main component ────────────────────────────────────────────────────────────
+
 export function AgentsTab({ onSelectClient }: { onSelectClient?: (clientId: number, planId: number | null) => void }) {
-  const [view, setView]           = useState<View>("agents");
-  const [agents, setAgents]       = useState<FaUser[]>([]);
-  const [clients, setClients]     = useState<Client[]>([]);
-  const [plans, setPlans]         = useState<Plan[]>([]);
+  const [view, setView]                   = useState<View>("agents");
+  const [agents, setAgents]               = useState<FaUser[]>([]);
+  const [clients, setClients]             = useState<Client[]>([]);
+  const [plans, setPlans]                 = useState<Plan[]>([]);
   const [selectedAgent, setSelectedAgent] = useState<FaUser | null>(null);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
-  const [loading, setLoading]     = useState(true);
+  const [loading, setLoading]             = useState(true);
 
-  useEffect(() => {
+  // Form state
+  const [showForm, setShowForm] = useState(false);
+  const [editId, setEditId]     = useState<number | null>(null);
+  const [form, setForm]         = useState({ ...EMPTY_FORM });
+  const [busy, setBusy]         = useState(false);
+  const [error, setError]       = useState("");
+  const [showPw, setShowPw]     = useState(false);
+
+  const loadAgents = () => {
+    setLoading(true);
     api.get<FaUser[]>("/api/auth/users").then(setAgents).finally(() => setLoading(false));
-  }, []);
+  };
+
+  useEffect(() => { loadAgents(); }, []);
+
+  const u = (k: string, v: string) => setForm(f => ({ ...f, [k]: v }));
+
+  // ── Navigation ──────────────────────────────────────────────────────────────
 
   function selectAgent(agent: FaUser) {
-  setSelectedAgent(agent);
-  setLoading(true);
-  api.get<Client[]>(`/api/clients?agentId=${agent.id}`)
-    .then(setClients)
-    .finally(() => setLoading(false));
-  setView("clients");
-}
+    setSelectedAgent(agent);
+    setLoading(true);
+    api.get<Client[]>(`/api/clients?agentId=${agent.id}`)
+      .then(setClients)
+      .finally(() => setLoading(false));
+    setView("clients");
+  }
 
   function selectClient(client: Client) {
     setSelectedClient(client);
     setLoading(true);
-    api.get<Plan[]>(`/api/clients/${client.id}/plans`).then(setPlans).finally(() => setLoading(false));
+    api.get<Plan[]>(`/api/clients/${client.id}/plans`)
+      .then(setPlans)
+      .finally(() => setLoading(false));
     setView("plans");
   }
 
   function backToAgents() {
-    setView("agents");
-    setSelectedAgent(null);
-    setClients([]);
+    setView("agents"); setSelectedAgent(null); setClients([]);
   }
 
   function backToClients() {
-    setView("clients");
-    setSelectedClient(null);
-    setPlans([]);
+    setView("clients"); setSelectedClient(null); setPlans([]);
   }
 
+  // ── Agent CRUD ──────────────────────────────────────────────────────────────
+
+  function openCreate() {
+    setForm({ ...EMPTY_FORM });
+    setEditId(null); setError(""); setShowForm(true);
+  }
+
+  function openEdit(fa: FaUser) {
+    setForm({
+      firstName: fa.firstName, lastName: fa.lastName,
+      email: fa.email, password: "",
+      agentId: fa.agentId ?? "", agency: fa.agency ?? "",
+      phone: fa.phone ?? "", level: fa.level,
+      jurisdiction: fa.jurisdiction ?? "CA",
+    });
+    setEditId(fa.id); setError(""); setShowForm(true);
+  }
+
+  async function handleSubmit() {
+    setError(""); setBusy(true);
+    try {
+      if (editId) {
+        const body: any = {
+          firstName: form.firstName, lastName: form.lastName,
+          agentId: form.agentId, agency: form.agency,
+          phone: form.phone, level: form.level,
+        };
+        if (form.password) body.password = form.password;
+        await api.patch(`/api/auth/users/${editId}`, body);
+      } else {
+        await api.post("/api/auth/users", form);
+      }
+      setShowForm(false);
+      loadAgents();
+    } catch (e: any) {
+      setError(e.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleDelete(id: number, name: string) {
+    if (!confirm(`Delete ${name}? Their clients will remain but become unassigned.`)) return;
+    await api.delete(`/api/auth/users/${id}`);
+    loadAgents();
+  }
+
+  // ── Render ──────────────────────────────────────────────────────────────────
+
   return (
-    <div className="p-6 max-w-4xl mx-auto">
+    <div className="p-6 max-w-5xl mx-auto">
 
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-sm text-gray-400 mb-6">
@@ -93,17 +198,25 @@ export function AgentsTab({ onSelectClient }: { onSelectClient?: (clientId: numb
         {selectedClient && (
           <>
             <ChevronRight className="w-3.5 h-3.5" />
-            <span className="font-bold text-gray-900">{selectedClient.firstName} {selectedClient.lastName}</span>
+            <span className="font-bold text-gray-900">
+              {selectedClient.firstName} {selectedClient.lastName}
+            </span>
           </>
         )}
       </div>
 
-      {/* Agents list */}
+      {/* ── Agents list ── */}
       {view === "agents" && (
         <>
           <div className="flex justify-between items-center mb-4">
-            <h1 className="text-2xl font-bold text-gray-900">Field Agents</h1>
-            <span className="text-sm text-gray-400">{agents.length} agent{agents.length !== 1 ? "s" : ""}</span>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Field Agents</h1>
+              <p className="text-sm text-gray-400 mt-0.5">{agents.length} agent{agents.length !== 1 ? "s" : ""}</p>
+            </div>
+            <button onClick={openCreate}
+              className="flex items-center gap-2 bg-[#0c1e3a] hover:bg-[#0e2a4a] text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors">
+              <Plus className="w-4 h-4" /> Add Agent
+            </button>
           </div>
 
           {loading ? (
@@ -112,44 +225,84 @@ export function AgentsTab({ onSelectClient }: { onSelectClient?: (clientId: numb
             <div className="text-center py-16 border-2 border-dashed border-gray-200 rounded-2xl">
               <User className="w-10 h-10 text-gray-300 mx-auto mb-3" />
               <p className="text-gray-500 font-semibold">No field agents yet</p>
-              <p className="text-sm text-gray-400 mt-1">Create agents in the Admin tab</p>
+              <button onClick={openCreate} className="mt-3 text-blue-600 text-sm hover:underline font-semibold">
+                Create your first agent
+              </button>
             </div>
           ) : (
             <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
-              {agents.map((agent, i) => (
-                <button key={agent.id} onClick={() => selectAgent(agent)}
-                  className={`w-full flex items-center justify-between px-5 py-4 hover:bg-gray-50 transition-colors text-left ${i > 0 ? "border-t border-gray-100" : ""}`}>
-                  <div className="flex items-center gap-3">
-                    <div className={`w-9 h-9 rounded-full ${avatarBg(agent.firstName + agent.lastName)} flex items-center justify-center text-white text-sm font-bold`}>
-                      {initials(agent.firstName, agent.lastName)}
-                    </div>
-                    <div>
-                      <p className="font-semibold text-gray-900">{agent.firstName} {agent.lastName}</p>
-                      <p className="text-xs text-gray-400">{agent.email}{agent.agentId ? ` · ${agent.agentId}` : ""}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className={`text-xs px-2 py-1 rounded-full font-semibold ${agent.level === "enhanced" ? "bg-cyan-100 text-cyan-700" : "bg-gray-100 text-gray-600"}`}>
-                      {agent.level === "enhanced" ? "Enhanced" : "Standard"}
-                    </span>
-                    {agent.agency && <span className="text-xs text-gray-400">{agent.agency}</span>}
-                    <ChevronRight className="w-4 h-4 text-gray-300" />
-                  </div>
-                </button>
-              ))}
+              <table className="w-full text-sm">
+                <thead className="bg-gray-50 border-b border-gray-200">
+                  <tr>
+                    <th className="text-left px-4 py-3 font-semibold text-gray-600">Agent</th>
+                    <th className="text-left px-4 py-3 font-semibold text-gray-600">Agent ID</th>
+                    <th className="text-left px-4 py-3 font-semibold text-gray-600">Agency</th>
+                    <th className="text-left px-4 py-3 font-semibold text-gray-600">Level</th>
+                    <th className="text-left px-4 py-3 font-semibold text-gray-600">Jurisdiction</th>
+                    <th className="text-right px-4 py-3 font-semibold text-gray-600">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {agents.map(fa => (
+                    <tr key={fa.id} className="hover:bg-gray-50 transition-colors cursor-pointer"
+                      onClick={() => selectAgent(fa)}>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-3">
+                          <div className={`w-8 h-8 rounded-full ${avatarBg(fa.firstName + fa.lastName)} flex items-center justify-center text-white text-xs font-bold flex-shrink-0`}>
+                            {initials(fa.firstName, fa.lastName)}
+                          </div>
+                          <div>
+                            <p className="font-semibold text-gray-900">{fa.firstName} {fa.lastName}</p>
+                            <p className="text-xs text-gray-400">{fa.email}</p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-gray-600">{fa.agentId || "—"}</td>
+                      <td className="px-4 py-3 text-gray-600">{fa.agency || "—"}</td>
+                      <td className="px-4 py-3">
+                        <span className={`text-xs px-2 py-1 rounded-full font-semibold ${
+                          fa.level === "enhanced" ? "bg-cyan-100 text-cyan-700" : "bg-gray-100 text-gray-600"
+                        }`}>
+                          {fa.level === "enhanced" ? "Enhanced" : "Standard"}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <JurisdictionBadge jurisdiction={fa.jurisdiction} />
+                      </td>
+                      <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
+                        <div className="flex items-center justify-end gap-2">
+                          <button onClick={() => openEdit(fa)}
+                            className="p-1.5 text-gray-400 hover:text-[#0c1e3a] transition-colors">
+                            <Pencil className="w-4 h-4" />
+                          </button>
+                          <button onClick={() => handleDelete(fa.id, `${fa.firstName} ${fa.lastName}`)}
+                            className="p-1.5 text-gray-400 hover:text-red-500 transition-colors">
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           )}
         </>
       )}
 
-      {/* Clients list */}
+      {/* ── Clients list ── */}
       {view === "clients" && (
         <>
           <div className="flex justify-between items-center mb-4">
-            <h1 className="text-2xl font-bold text-gray-900">
-              {selectedAgent?.firstName}'s Clients
-            </h1>
-            <span className="text-sm text-gray-400">{clients.length} client{clients.length !== 1 ? "s" : ""}</span>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">
+                {selectedAgent?.firstName}'s Clients
+              </h1>
+              <div className="flex items-center gap-2 mt-0.5">
+                <span className="text-sm text-gray-400">{clients.length} client{clients.length !== 1 ? "s" : ""}</span>
+                {selectedAgent?.jurisdiction && <JurisdictionBadge jurisdiction={selectedAgent.jurisdiction} />}
+              </div>
+            </div>
           </div>
 
           {loading ? (
@@ -170,7 +323,10 @@ export function AgentsTab({ onSelectClient }: { onSelectClient?: (clientId: numb
                     </div>
                     <div>
                       <p className="font-semibold text-gray-900">{client.firstName} {client.lastName}</p>
-                      <p className="text-xs text-gray-400">{client.email ?? ""}{client.province ? ` · ${client.province}` : ""}</p>
+                      <p className="text-xs text-gray-400">
+                        {client.email ?? ""}
+                        {client.province ? ` · ${client.province}` : ""}
+                      </p>
                     </div>
                   </div>
                   <ChevronRight className="w-4 h-4 text-gray-300" />
@@ -181,7 +337,7 @@ export function AgentsTab({ onSelectClient }: { onSelectClient?: (clientId: numb
         </>
       )}
 
-      {/* Plans list */}
+      {/* ── Plans list ── */}
       {view === "plans" && (
         <>
           <div className="flex justify-between items-center mb-4">
@@ -208,7 +364,9 @@ export function AgentsTab({ onSelectClient }: { onSelectClient?: (clientId: numb
                     <p className="text-xs text-gray-400">{new Date(plan.createdAt).toLocaleDateString()}</p>
                   </div>
                   <div className="flex items-center gap-3">
-                    <span className={`text-xs px-2 py-0.5 rounded-full ${plan.status === "active" ? "bg-emerald-100 text-emerald-700" : "bg-gray-100 text-gray-500"}`}>
+                    <span className={`text-xs px-2 py-0.5 rounded-full ${
+                      plan.status === "active" ? "bg-emerald-100 text-emerald-700" : "bg-gray-100 text-gray-500"
+                    }`}>
                       {plan.status}
                     </span>
                     <ChevronRight className="w-4 h-4 text-gray-300" />
@@ -218,6 +376,149 @@ export function AgentsTab({ onSelectClient }: { onSelectClient?: (clientId: numb
             </div>
           )}
         </>
+      )}
+
+      {/* ── Create / Edit modal ── */}
+      {showForm && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center px-6 pt-6 pb-4 border-b border-gray-100 sticky top-0 bg-white z-10">
+              <h2 className="text-lg font-bold text-gray-900">
+                {editId ? "Edit Agent" : "New Field Agent"}
+              </h2>
+              <button onClick={() => setShowForm(false)} className="text-gray-400 hover:text-gray-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="px-6 py-5 space-y-4">
+
+              {/* Name */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-semibold text-gray-500 mb-1 block">First Name</label>
+                  <input value={form.firstName} onChange={e => u("firstName", e.target.value)}
+                    className={INPUT} placeholder="First name" />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-gray-500 mb-1 block">Last Name</label>
+                  <input value={form.lastName} onChange={e => u("lastName", e.target.value)}
+                    className={INPUT} placeholder="Last name" />
+                </div>
+              </div>
+
+              {/* Email — create only */}
+              {!editId && (
+                <div>
+                  <label className="text-xs font-semibold text-gray-500 mb-1 block">Email (Login)</label>
+                  <input type="email" value={form.email} onChange={e => u("email", e.target.value)}
+                    className={INPUT} placeholder="agent@example.com" />
+                </div>
+              )}
+
+              {/* Password */}
+              <div>
+                <label className="text-xs font-semibold text-gray-500 mb-1 block">
+                  {editId ? "New Password (leave blank to keep current)" : "Temporary Password"}
+                </label>
+                <div className="relative">
+                  <input type={showPw ? "text" : "password"} value={form.password}
+                    onChange={e => u("password", e.target.value)}
+                    className={INPUT + " pr-11"}
+                    placeholder={editId ? "Leave blank to keep current" : "Min 8 characters"} />
+                  <button type="button" onClick={() => setShowPw(s => !s)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                    {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+                {!editId && <p className="text-xs text-gray-400 mt-1">Agent will be prompted to reset on first login.</p>}
+              </div>
+
+              {/* Agent ID + Phone */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-semibold text-gray-500 mb-1 block">Agent ID</label>
+                  <input value={form.agentId} onChange={e => u("agentId", e.target.value)}
+                    className={INPUT} placeholder="Optional" />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-gray-500 mb-1 block">Phone</label>
+                  <input value={form.phone} onChange={e => u("phone", e.target.value)}
+                    className={INPUT} placeholder="Optional" />
+                </div>
+              </div>
+
+              {/* Agency */}
+              <div>
+                <label className="text-xs font-semibold text-gray-500 mb-1 block">Agency</label>
+                <input value={form.agency} onChange={e => u("agency", e.target.value)}
+                  className={INPUT} placeholder="Optional" />
+              </div>
+
+              {/* Access Level */}
+              <div>
+                <label className="text-xs font-semibold text-gray-500 mb-1 block">Access Level</label>
+                <select value={form.level} onChange={e => u("level", e.target.value)} className={INPUT}>
+                  <option value="standard">Standard — Clients, Policies, FNA</option>
+                  <option value="enhanced">Enhanced — All Modules</option>
+                </select>
+              </div>
+
+              {/* Jurisdiction — create only, locked on edit */}
+              <div>
+                <label className="text-xs font-semibold text-gray-500 mb-1 block">
+                  Planning Jurisdiction
+                  {editId && <span className="ml-2 text-gray-400 font-normal">(locked after creation)</span>}
+                </label>
+                {editId ? (
+                  // Read-only on edit
+                  <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm">
+                    <JurisdictionBadge jurisdiction={form.jurisdiction} />
+                    <span className="text-gray-500">
+                      {form.jurisdiction === "US" ? "United States — 401(k), IRA, Social Security" : "Canada — RRSP, TFSA, CPP/OAS"}
+                    </span>
+                  </div>
+                ) : (
+                  // Editable on create
+                  <div className="grid grid-cols-2 gap-3">
+                    {[
+                      { value: "CA", flag: "🇨🇦", label: "Canada", sub: "RRSP · TFSA · CPP/OAS" },
+                      { value: "US", flag: "🇺🇸", label: "United States", sub: "401(k) · IRA · Social Security" },
+                    ].map(opt => (
+                      <button key={opt.value} type="button"
+                        onClick={() => u("jurisdiction", opt.value)}
+                        className={`flex items-start gap-3 p-3 rounded-xl border-2 text-left transition-all ${
+                          form.jurisdiction === opt.value
+                            ? "border-[#0c1e3a] bg-[#0c1e3a]/5"
+                            : "border-gray-200 hover:border-gray-300"
+                        }`}>
+                        <span className="text-xl mt-0.5">{opt.flag}</span>
+                        <div>
+                          <p className="text-sm font-semibold text-gray-900">{opt.label}</p>
+                          <p className="text-xs text-gray-400 mt-0.5">{opt.sub}</p>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {error && <p className="text-red-500 text-sm bg-red-50 rounded-lg px-3 py-2">{error}</p>}
+            </div>
+
+            <div className="flex justify-end gap-3 px-6 pb-6 sticky bottom-0 bg-white border-t border-gray-100 pt-4">
+              <button onClick={() => setShowForm(false)}
+                className="px-4 py-2.5 text-sm font-semibold text-gray-500 hover:text-gray-700">
+                Cancel
+              </button>
+              <button onClick={handleSubmit}
+                disabled={busy || (!editId && (!form.firstName || !form.lastName || !form.email || !form.password))}
+                className="px-6 py-2.5 bg-[#0c1e3a] hover:bg-[#0e2a4a] disabled:opacity-50 text-white text-sm font-semibold rounded-xl transition-colors">
+                {busy ? "Saving…" : editId ? "Save Changes" : "Create Agent"}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

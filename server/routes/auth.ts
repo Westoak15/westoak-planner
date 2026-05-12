@@ -184,11 +184,12 @@ r.post("/users", isAuthenticated, async (req: AuthRequest, res: Response) => {
     if (!me || me.role !== "ga") return res.status(403).json({ message: "Forbidden" });
 
     const body = z.object({
-      firstName: z.string().min(1),
-      lastName:  z.string().min(1),
-      email:     z.string().email(),
-      password:  z.string().min(8),
-      level:     z.enum(["standard", "enhanced"]).default("standard"),
+      firstName:    z.string().min(1),
+      lastName:     z.string().min(1),
+      email:        z.string().email(),
+      password:     z.string().min(8),
+      level:        z.enum(["standard", "enhanced"]).default("standard"),
+      jurisdiction: z.enum(["CA", "US"]).default("CA"),
     }).parse(req.body);
 
     const exists = await db.select({ id: users.id }).from(users).where(eq(users.email, body.email)).limit(1);
@@ -196,14 +197,16 @@ r.post("/users", isAuthenticated, async (req: AuthRequest, res: Response) => {
 
     const hash = await hashPassword(body.password as string);
     const [u] = await (db.insert(users) as any).values({
-      email: body.email, passwordHash: hash,
-      firstName: body.firstName, lastName: body.lastName,
-      level: body.level, role: "fa", gaId: me.id,
-      mustResetPassword: true,
-    }).returning({
-      id: users.id, email: users.email, firstName: users.firstName,
-      lastName: users.lastName, level: users.level, role: users.role,
-    });
+  email: body.email, passwordHash: hash,
+  firstName: body.firstName, lastName: body.lastName,
+  level: body.level, role: "fa", gaId: me.id,
+  jurisdiction: body.jurisdiction,
+  mustResetPassword: true,
+}).returning({
+  id: users.id, email: users.email, firstName: users.firstName,
+  lastName: users.lastName, level: users.level, role: users.role,
+  jurisdiction: users.jurisdiction,
+});
 
     res.status(201).json(u);
   } catch (e: any) {

@@ -9,7 +9,6 @@ import { Sidebar, type Tab } from "../components/Sidebar";
 import { PlanningDocFlow, PLANNING_TABS, type PlanningTab } from "../components/layout/PlanningDocFlow";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "../lib/queryClient";
-import { AdminPanel } from "./AdminPanel"
 import { TabLoader, Field, SectionHeader, Card, Input, Select, DobInput, Textarea } from "../components/ui/AppHelpers";
 import { AccountSettingsModal } from "../components/AccountSettingsModal";
 import { ChangePasswordModal } from "../components/ChangePasswordModal";
@@ -912,7 +911,7 @@ export default function App() {
           {tab === "clients" && showClientDetail && client && (
             <ClientDetail client={client} onBack={backToClients} onPlanSelect={selectPlan} onUpdate={setClient} level={level} />
           )}
-          {tab !== "admin" && tab !== "agents" && tab !== "clients" && !client && (
+          {tab !== "agents" && tab !== "clients" && !client && (
             <div className="flex flex-col items-center justify-center h-full text-center p-8">
               <div className="w-16 h-16 bg-white border border-slate-200/80 rounded-2xl flex items-center justify-center mb-4 shadow-sm">
                 <Users className="w-8 h-8 text-slate-400" />
@@ -924,7 +923,6 @@ export default function App() {
               </button>
             </div>
           )}
-          {tab === "admin"   && <AdminPanel />}
           {tab === "agents"  && <AgentsTab />}
           {tab === "overview" && client && <ClientOverview client={client} onNavigate={(t) => setTab(t as Tab)} />}
           {tab === "profile"  && client && <ClientDetail client={client} onBack={() => setTab("overview" as Tab)} onPlanSelect={selectPlan} onUpdate={setClient} level={level} />}

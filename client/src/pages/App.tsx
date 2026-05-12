@@ -142,6 +142,14 @@ function ClientCard({ client: c, onSelect, onDelete, onStatusChange, onOvReady, 
 }
 
 function ClientsTab({ onSelect }: { onSelect: (c: Client) => void }) {
+  const { user } = useAuth();
+  const jurisdiction = (user as any)?.jurisdiction ?? "CA";
+  const regions = jurisdiction === "US"
+    ? ["AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA","HI","ID","IL","IN","IA","KS","KY","LA","ME","MD","MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ","NM","NY","NC","ND","OH","OK","OR","PA","RI","SC","SD","TN","TX","UT","VT","VA","WA","WV","WI","WY"]
+    : PROVINCES;
+  const regionLabel = jurisdiction === "US" ? "State" : "Province";
+  const defaultRegion = jurisdiction === "US" ? "CA" : "ON";
+
   const [clients, setClients] = useState<Client[]>([]);
   const [search, setSearch]   = useState("");
   const [loading, setLoading] = useState(true);
@@ -150,13 +158,6 @@ function ClientsTab({ onSelect }: { onSelect: (c: Client) => void }) {
   const [busy, setBusy]       = useState(false);
   const [attentionIds, setAttentionIds] = useState<Set<number>>(new Set());
   const [navIdx, setNavIdx]   = useState(-1);
-  const { user } = useAuth();
-  const jurisdiction = (user as any)?.jurisdiction ?? "CA";
-  const regions = jurisdiction === "US"
-    ? ["AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA","HI","ID","IL","IN","IA","KS","KY","LA","ME","MD","MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ","NM","NY","NC","ND","OH","OK","OR","PA","RI","SC","SD","TN","TX","UT","VT","VA","WA","WV","WI","WY"]
-    : PROVINCES;
-  const regionLabel = jurisdiction === "US" ? "State" : "Province";
-  const defaultRegion = jurisdiction === "US" ? "CA" : "ON";
 
   // Arrow key + enter navigation for client list
   useEffect(() => {
@@ -298,6 +299,15 @@ function ClientDetail({ client, onBack, onPlanSelect, onUpdate, level }: { clien
   const [busy, setBusy]         = useState(false);
   const [newPlanName, setNewPlanName] = useState("Financial Plan");
   const u = (k: keyof Client, v: any) => setForm(f => ({ ...f, [k]: v }));
+
+  // Jurisdiction-aware region list
+  const { user } = useAuth();
+  const jurisdiction = (client as any).jurisdiction ?? (user as any)?.jurisdiction ?? "CA";
+  const regions = jurisdiction === "US"
+    ? ["AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA","HI","ID","IL","IN","IA","KS","KY","LA","ME","MD","MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ","NM","NY","NC","ND","OH","OK","OR","PA","RI","SC","SD","TN","TX","UT","VT","VA","WA","WV","WI","WY"]
+    : PROVINCES;
+  const regionLabel = jurisdiction === "US" ? "State" : "Province";
+  const defaultRegion = jurisdiction === "US" ? "CA" : "ON";
 
   useEffect(() => {
     api.get<Plan[]>(`/api/clients/${client.id}/plans`).then(setPlans);
@@ -456,7 +466,7 @@ function ClientDetail({ client, onBack, onPlanSelect, onUpdate, level }: { clien
                 <Input label="Email" type="email" value={form.email ?? ""} onChange={v => u("email", v)} />
                 <Input label="Phone"       value={form.phone ?? ""}     onChange={v => u("phone", v)} />
                 <DobInput label="Date of Birth" value={form.dateOfBirth ?? ""} onChange={v => u("dateOfBirth", v)} />
-                <Select label={regionLabel} value={form.province ?? defaultRegion} onChange={v => u("province", v)} options={regions} ... />
+                <Select label={regionLabel} value={form.province ?? defaultRegion} onChange={v => u("province", v)} options={regions} />
                 <Input label="Occupation"  value={form.occupation ?? ""} onChange={v => u("occupation", v)} />
                 <Input label="Annual Income" type="number" value={form.annualIncome ?? ""} onChange={v => u("annualIncome", v)} />
                 <Select label="Pension Type" value={(form as any).pensionType ?? ""} onChange={v => u("pensionType", v)} options={["", "DBPP", "DCPP", "Group RRSP", "DPSP", "No Pension"]} />

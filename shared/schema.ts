@@ -28,6 +28,8 @@ export const financialGoals = pgTable("financial_goals", {
   endYear:             integer("end_year"),              // for recurring_expense
   annualAmount:        decimal("annual_amount", { precision: 15, scale: 2 }), // for recurring_expense
   fundingSource:       text("funding_source").default("non_reg"), // non_reg|tfsa|rrsp|automatic
+
+
   createdAt:     timestamp("created_at").defaultNow().notNull(),
   updatedAt:     timestamp("updated_at").defaultNow().notNull(),
 });
@@ -81,6 +83,10 @@ export const clients = pgTable("clients", {
   spousePensionType:           text("spouse_pension_type"),
   dependants:                  jsonb("dependants"),
   notes:                       text("notes"),
+  jurisdiction:                text("jurisdiction").notNull().default("CA"),
+  usState:                     text("us_state"),
+  filingStatus:                text("filing_status"),
+  birthYear:                   integer("birth_year"),
   createdAt:                   timestamp("created_at").defaultNow().notNull(),
   updatedAt:                   timestamp("updated_at").defaultNow().notNull(),
 });

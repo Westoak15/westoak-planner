@@ -18,6 +18,7 @@ import { simulateRouter }   from "./routes/simulate.js";
 import { simulationRouter } from "./routes/simulation.js";   // ← FIX 1: was missing
 import { reportsRouter }    from "./routes/reports.js";
 import { taxRouter }        from "./routes/tax.js";
+import { usTaxRouter }      from "./routes/us-tax.js";
 import { lettersRouter } from "./routes/letters.js";
 import { goalsRouter } from "./routes/goals.js";
 import { pensionRouter } from "./routes/pension.js";
@@ -34,6 +35,10 @@ async function runMigrations() {
     `ALTER TABLE retirement_projections ADD COLUMN IF NOT EXISTS person TEXT DEFAULT 'primary'`,
     `ALTER TABLE ai_recommendations ADD COLUMN IF NOT EXISTS run_id TEXT`,
     `ALTER TABLE clients ADD COLUMN IF NOT EXISTS spouse_pension_type TEXT`,
+    `ALTER TABLE clients ADD COLUMN IF NOT EXISTS jurisdiction TEXT NOT NULL DEFAULT 'CA'`,  // ← add
+    `ALTER TABLE clients ADD COLUMN IF NOT EXISTS us_state TEXT`,                            // ← add
+    `ALTER TABLE clients ADD COLUMN IF NOT EXISTS filing_status TEXT`,                       // ← add
+    `ALTER TABLE clients ADD COLUMN IF NOT EXISTS birth_year INTEGER`,                       // ← add
   ];
   for (const sql of migrations) {
     try { await pool.query(sql); }
@@ -53,6 +58,7 @@ app.use("/api/auth",    authRouter);
 app.use("/api",         goalsRouter);
 app.use("/api", pensionRouter);
 app.use("/api/tax",     taxRouter);
+app.use("/api/us-tax",  usTaxRouter);
 app.use("/api", financialRouter);
 //app.use("/api",         fpRouter);
 //app.use("/api",         fpAliasesRouter);

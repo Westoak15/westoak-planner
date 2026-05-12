@@ -3,6 +3,7 @@ import { api } from "../lib/api";
 import React, { useState, useMemo, useEffect, useRef, Component, type ReactNode, useContext } from "react";
 import { PieChart, Pie, Cell, Tooltip } from "recharts";
 import { InlineEdit } from "@/components/ui/InlineEdit";
+import { UsTaxTab } from "./UsTaxTab";
 import { NWSubtabCtx } from "@/components/layout/PlanningDocFlow";
 // trying to force build this file
 class ErrorBoundary extends Component<{children:ReactNode;fallback?:ReactNode},{error:boolean}> {
@@ -2993,7 +2994,11 @@ const { data: plans = [] } = useClientPlans(selectedClientId ?? 0);
             {activeTab === "insurance"  && <InsuranceTab     clientId={selectedClientId} planId={activePlanId} client={selectedClient} />}
             {activeTab === "resp"       && <RESPTab          clientId={selectedClientId} planId={activePlanId} />}
             {activeTab === "debt"       && <DebtTab          clientId={selectedClientId} planId={activePlanId} />}
-            {activeTab === "tax"        && <TaxTab           clientId={selectedClientId} client={selectedClient} />}
+            {activeTab === "tax" && (
+              (selectedClient as any)?.jurisdiction === "US"
+                ? <UsTaxTab clientId={selectedClientId} client={selectedClient} />
+                : <TaxTab   clientId={selectedClientId} client={selectedClient} />
+            )}
             {activeTab === "estate"     && <EstateNotesTab   clientId={selectedClientId} planId={activePlanId} />}
             {activeTab === "ai"         && <AITab            clientId={selectedClientId} />}
           </>

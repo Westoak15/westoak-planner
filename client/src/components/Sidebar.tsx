@@ -1,12 +1,12 @@
 import {
   Users, LayoutDashboard, Scale, PiggyBank,
   Shield, Receipt, Brain,
-  Settings, UserCheck, FileText, Target, Sparkles, UserCog
+  UserCheck, FileText, Target, Sparkles, UserCog
 } from "lucide-react";
 import { cn } from "../lib/utils";
 
 export type Tab =
-  | "admin" | "agents"
+  | "agents"
   | "clients" | "overview" | "dashboard"
   | "networth" | "goals"
   | "retirementhub" | "protection"
@@ -23,7 +23,6 @@ interface Props {
 }
 
 const ALL_TABS: { key: Tab; label: string; icon: any; dividerBefore?: boolean; gaOnly?: boolean }[] = [
-  { key: "admin",         label: "Admin",          icon: Settings, gaOnly: true },
   { key: "agents",        label: "Agents",         icon: UserCheck, dividerBefore: true, gaOnly: true },
   { key: "clients",       label: "Clients",        icon: Users },
   { key: "profile",       label: "Client Profile", icon: UserCog },
@@ -45,7 +44,7 @@ const PLAN_TABS: Tab[] = [
   "overview", "profile", "dashboard", "networth", "goals", "retirementhub", "protection",
   "expenses", "taxestate", "ai", "documents", "fp"
 ];
-const NO_CLIENT_TABS: Tab[] = ["clients", "admin", "agents"];
+const NO_CLIENT_TABS: Tab[] = ["clients", "agents"];
 
 export function Sidebar({ activeTab, onTab, clientName, role, level }: Props) {
   const isGA = role === "ga";

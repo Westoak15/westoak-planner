@@ -170,6 +170,10 @@ r.get("/users", isAuthenticated, async (req: AuthRequest, res: Response) => {
     const fas = await db.select({
       id: users.id, email: users.email, firstName: users.firstName, lastName: users.lastName,
       level: users.level, role: users.role, gaId: users.gaId, createdAt: users.createdAt,
+      jurisdiction: users.jurisdiction,
+      agentId: (users as any).agentId,
+      agency: (users as any).agency,
+      phone: (users as any).phone,
     }).from(users).where(eq(users.gaId, me.id));
     res.json(fas);
   } catch (e: any) {

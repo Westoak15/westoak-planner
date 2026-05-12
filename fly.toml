@@ -32,4 +32,4 @@ primary_region = 'yyz'
   memory = '1gb'
   cpu_kind = 'shared'
   cpus = 2
-  memory_mb = 256
+  memory_mb = 512

@@ -171,9 +171,6 @@ r.get("/users", isAuthenticated, async (req: AuthRequest, res: Response) => {
       id: users.id, email: users.email, firstName: users.firstName, lastName: users.lastName,
       level: users.level, role: users.role, gaId: users.gaId, createdAt: users.createdAt,
       jurisdiction: users.jurisdiction,
-      agentId: (users as any).agentId,
-      agency: (users as any).agency,
-      phone: (users as any).phone,
     }).from(users).where(eq(users.gaId, me.id));
     res.json(fas);
   } catch (e: any) {
@@ -278,7 +275,7 @@ r.patch("/me", isAuthenticated, async (req: AuthRequest, res: Response) => {
     const [u] = await db.update(users).set(body).where(eq(users.id, req.userId!)).returning({
       id: users.id, email: users.email, firstName: users.firstName,
       lastName: users.lastName, firmName: users.firmName,
-      role: users.role, level: users.level, jurisdiction: (users as any).jurisdiction,
+      //role: users.role, level: users.level, jurisdiction: (users as any).jurisdiction,
     });
     res.json(u);
   } catch (e: any) {

@@ -10,6 +10,7 @@ export interface User {
   role: "ga" | "fa";
   level: "standard" | "enhanced";
   mustResetPassword: boolean;
+  jurisdiction: "CA" | "US";
 }
 
 interface Ctx {

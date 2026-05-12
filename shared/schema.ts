@@ -42,6 +42,7 @@ export const users = pgTable("users", {
   firstName:    text("first_name").notNull(),
   lastName:     text("last_name").notNull(),
   firmName:     text("firm_name"),
+  jurisdiction: text("jurisdiction").notNull().default("CA"),
   role:         text("role").notNull().default("advisor"),
   level:              text("level").notNull().default("standard"),
   mustResetPassword:  boolean("must_reset_password").default(false),

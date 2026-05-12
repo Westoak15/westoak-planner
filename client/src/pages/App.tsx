@@ -11,6 +11,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "../lib/queryClient";
 import { AdminPanel } from "./AdminPanel"
 import { TabLoader, Field, SectionHeader, Card, Input, Select, DobInput, Textarea } from "../components/ui/AppHelpers";
+import { AccountSettingsModal } from "../components/AccountSettingsModal";
 import { ChangePasswordModal } from "../components/ChangePasswordModal";
 //import { AITab } from "./FinancialPlanning";
 const AITab = lazy(() => import("./FinancialPlanning").then(m => ({ default: m.AITab })));
@@ -26,17 +27,7 @@ const ReportsTab       = lazy(() => import("./ReportsTab").then(m => ({ default:
 const LettersTab       = lazy(() => import("./LettersTab").then(m => ({ default: m.LettersTab })));
 const AgentsTab          = lazy(() => import("./AgentsTab").then(m => ({ default: m.AgentsTab })));
 const InsightLedDashboard = lazy(() => import("../components/InsightLedDashboard").then(m => ({ default: m.InsightLedDashboard })));
-//import { NetWorthTab as NetWorthTabNew } from "./MultiEntryTabs";
-//import { AgentsTab } from "./AgentsTab";
-//import { ExpensesTab } from "./ExpensesTab";
-//import { GoalsTab } from "./GoalsTab";
-//import { InsightLedDashboard } from "../components/InsightLedDashboard";
-// Merged Insight-Led hubs (Policies+FNA, Retirement+Pension, Tax+Estate, Reports+Letters, Full FP+Plan)
-//import { ProtectionHub } from "../components/ProtectionHub";
-//import { RetirementHub } from "../components/RetirementHub";
-//import { TaxEstateHub } from "../components/TaxEstateHub";
-//import { DocumentsHub } from "../components/DocumentsHub";
-//import { FinancialPlanHub } from "../components/FinancialPlanHub";
+
 import { fmt$, fmtPct, initials, avatarBg, cn } from "../lib/utils";
 import { VoiceProvider, useVoice, labelToKey } from "../contexts/VoiceContext";
 import { ClientOverview } from "./ClientOverview";
@@ -47,7 +38,7 @@ import { InlineEdit } from "../components/ui/InlineEdit";
 import {
   Plus, Pencil, Trash2, X, Check, ChevronRight, Search,
   User, Users, UserPlus, Baby, FileText, Home, Calendar, Briefcase, LogOut, Save, KeyRound, Eye, EyeOff, Mic, MicOff, Loader2,
-  LayoutDashboard, PiggyBank, Shield, Receipt, Target, Brain, Scale
+  LayoutDashboard, PiggyBank, Shield, Receipt, Target, Brain, Scale, Globe
 } from "lucide-react";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -155,10 +146,17 @@ function ClientsTab({ onSelect }: { onSelect: (c: Client) => void }) {
   const [search, setSearch]   = useState("");
   const [loading, setLoading] = useState(true);
   const [showNew, setShowNew] = useState(false);
-  const [form, setForm]       = useState({ firstName:"", lastName:"", email:"", phone:"", province:"ON" });
+  const [form, setForm] = useState({ firstName:"", lastName:"", email:"", phone:"", province: defaultRegion });
   const [busy, setBusy]       = useState(false);
   const [attentionIds, setAttentionIds] = useState<Set<number>>(new Set());
   const [navIdx, setNavIdx]   = useState(-1);
+  const { user } = useAuth();
+  const jurisdiction = (user as any)?.jurisdiction ?? "CA";
+  const regions = jurisdiction === "US"
+    ? ["AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA","HI","ID","IL","IN","IA","KS","KY","LA","ME","MD","MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ","NM","NY","NC","ND","OH","OK","OR","PA","RI","SC","SD","TN","TX","UT","VT","VA","WA","WV","WI","WY"]
+    : PROVINCES;
+  const regionLabel = jurisdiction === "US" ? "State" : "Province";
+  const defaultRegion = jurisdiction === "US" ? "CA" : "ON";
 
   // Arrow key + enter navigation for client list
   useEffect(() => {
@@ -190,9 +188,10 @@ function ClientsTab({ onSelect }: { onSelect: (c: Client) => void }) {
 
   async function create() {
     setBusy(true);
-    try { const c = await api.post<Client>("/api/clients", form); setClients(p => [c,...p]); setShowNew(false); setForm({ firstName:"",lastName:"",email:"",phone:"",province:"ON" }); }
-    catch (e: any) { alert(e.message); }
-    finally { setBusy(false); }
+    try { const c = await api.post<Client>("/api/clients", { ...form, jurisdiction });
+    setClients(p => [c,...p]);
+    setShowNew(false);
+    setForm({ firstName:"", lastName:"", email:"", phone:"", province: defaultRegion });
   }
 
   const [ovData, setOvData] = useState<Record<number, Overview>>({});
@@ -228,7 +227,7 @@ function ClientsTab({ onSelect }: { onSelect: (c: Client) => void }) {
           </div>
           <div className="grid grid-cols-3 gap-3 mb-4">
             <Input label="Email"    type="email" value={form.email} onChange={v => setForm(f=>({...f,email:v}))} />
-            <Select label="Province" value={form.province} onChange={v => setForm(f=>({...f,province:v}))} options={PROVINCES} />
+            <Select label={regionLabel} value={form.province} onChange={v => setForm(f=>({...f,province:v}))} options={regions} />
           </div>
           <div className="flex gap-2 justify-end">
             <button onClick={() => setShowNew(false)} className="text-sm text-gray-500 px-4 py-2">Cancel</button>
@@ -454,7 +453,7 @@ function ClientDetail({ client, onBack, onPlanSelect, onUpdate, level }: { clien
                 <Input label="Email" type="email" value={form.email ?? ""} onChange={v => u("email", v)} />
                 <Input label="Phone"       value={form.phone ?? ""}     onChange={v => u("phone", v)} />
                 <DobInput label="Date of Birth" value={form.dateOfBirth ?? ""} onChange={v => u("dateOfBirth", v)} />
-                <Select label="Province"   value={form.province ?? "ON"} onChange={v => u("province", v)} options={PROVINCES} />
+                <Select label={regionLabel} value={form.province ?? defaultRegion} onChange={v => u("province", v)} options={regions} ... />
                 <Input label="Occupation"  value={form.occupation ?? ""} onChange={v => u("occupation", v)} />
                 <Input label="Annual Income" type="number" value={form.annualIncome ?? ""} onChange={v => u("annualIncome", v)} />
                 <Select label="Pension Type" value={(form as any).pensionType ?? ""} onChange={v => u("pensionType", v)} options={["", "DBPP", "DCPP", "Group RRSP", "DPSP", "No Pension"]} />
@@ -686,6 +685,7 @@ export default function App() {
   const level = user?.level ?? "standard";
   const [showForceReset, setShowForceReset] = useState(!!user?.mustResetPassword);
   const [showChangePw, setShowChangePw]     = useState(false);
+  const [showAccountSettings, setShowAccountSettings] = useState(false);
   const [tab, setTab] = useState<Tab>(user?.role === "ga" ? "agents" : "clients");
   const [nwSubtabHint, setNwSubtabHint] = useState<string | undefined>(undefined);
   const [person, setPerson] = useState<"primary"|"spouse"|"combined">("primary");
@@ -861,11 +861,15 @@ export default function App() {
             <button onClick={() => setShowChangePw(true)} title="Change password" className="text-slate-400 hover:text-cyan-600 transition-colors">
               <KeyRound className="w-4 h-4" />
             </button>
+            <button onClick={() => setShowAccountSettings(true)} title="Account settings" className="text-slate-400 hover:text-cyan-600 transition-colors">
+              <Globe className="w-4 h-4" />
+            </button>
             <button onClick={() => { setTab("agents"); logout(); }} title="Sign out" className="text-slate-400 hover:text-rose-500 transition-colors">
               <LogOut className="w-4 h-4" />
             </button>
           </div>
          {showForceReset && <ChangePasswordModal forceReset onClose={() => setShowForceReset(false)} />}
+         {showAccountSettings && <AccountSettingsModal onClose={() => setShowAccountSettings(false)} />}
         </header>
 
         {/* Content — wrap in fp-insightled so EVERY tab gets the

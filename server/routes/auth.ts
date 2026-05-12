@@ -54,7 +54,8 @@ r.post("/login", async (req: Request, res: Response) => {
       user: {
         id: u.id, email: u.email, firstName: u.firstName, lastName: u.lastName,
         firmName: u.firmName, role: u.role, level: u.level,
-        mustResetPassword: u.mustResetPassword,
+        mustResetPassword: u.mustResetPassword, 
+        jurisdiction: u.jurisdiction,
       },
     });
   } catch (e: any) {
@@ -256,6 +257,23 @@ r.delete("/users/:id", isAuthenticated, async (req: AuthRequest, res: Response) 
 
     await db.delete(users).where(eq(users.id, target.id));
     res.json({ message: "User deleted" });
+  } catch (e: any) {
+    res.status(500).json({ message: e.message });
+  }
+});
+
+r.patch("/me", isAuthenticated, async (req: AuthRequest, res: Response) => {
+  try {
+    const body = z.object({
+      firmName:     z.string().nullable().optional(),
+      jurisdiction: z.enum(["CA", "US"]).optional(),
+    }).parse(req.body);
+    const [u] = await db.update(users).set(body).where(eq(users.id, req.userId!)).returning({
+      id: users.id, email: users.email, firstName: users.firstName,
+      lastName: users.lastName, firmName: users.firmName,
+      role: users.role, level: users.level, jurisdiction: (users as any).jurisdiction,
+    });
+    res.json(u);
   } catch (e: any) {
     res.status(500).json({ message: e.message });
   }

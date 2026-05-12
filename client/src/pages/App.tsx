@@ -186,13 +186,16 @@ function ClientsTab({ onSelect }: { onSelect: (c: Client) => void }) {
 
   useEffect(() => { load(); }, [load]);
 
-  async function create() {
-    setBusy(true);
-    try { const c = await api.post<Client>("/api/clients", { ...form, jurisdiction });
+async function create() {
+  setBusy(true);
+  try {
+    const c = await api.post<Client>("/api/clients", { ...form, jurisdiction });
     setClients(p => [c,...p]);
     setShowNew(false);
     setForm({ firstName:"", lastName:"", email:"", phone:"", province: defaultRegion });
-  }
+  } catch (e: any) { alert(e.message); }
+  finally { setBusy(false); }
+}
 
   const [ovData, setOvData] = useState<Record<number, Overview>>({});
   const totalAum = Object.values(ovData).reduce((s, o) => s + Math.max(0, o.netWorth), 0);

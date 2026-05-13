@@ -438,3 +438,52 @@ usTaxRouter.post("/:clientId/us-tax-calc", async (req, res) => {
     res.status(500).json({ error: "Failed to calculate US tax" });
   }
 });
+
+  // ── US Retirement Monte Carlo ─────────────────────────────────────────────────
+usTaxRouter.post("/:clientId/us-retirement", async (req, res) => {
+  try {
+    const { runUsRetirementProjection } = await import("../engine/usRetirementProjection.js");
+    const input = req.body;
+    if (!input.currentAge || !input.retirementAge || !input.birthYear) {
+      return res.status(400).json({ error: "currentAge, retirementAge and birthYear are required" });
+    }
+    const result = runUsRetirementProjection({
+      currentAge:              Number(input.currentAge),
+      retirementAge:           Number(input.retirementAge),
+      lifeExpectancy:          Number(input.lifeExpectancy      || 90),
+      birthYear:               Number(input.birthYear),
+      filingStatus:            input.filingStatus               || "single",
+      usState:                 input.usState                    || "CA",
+      pretaxBalance:           Number(input.pretaxBalance       || 0),
+      rothBalance:             Number(input.rothBalance         || 0),
+      taxableBalance:          Number(input.taxableBalance      || 0),
+      annualPretaxContrib:     Number(input.annualPretaxContrib || 0),
+      annualRothContrib:       Number(input.annualRothContrib   || 0),
+      annualTaxableContrib:    Number(input.annualTaxableContrib|| 0),
+      employerMatch:           Number(input.employerMatch       || 0),
+      currentIncome:           Number(input.currentIncome       || 0),
+      desiredRetirementIncome: Number(input.desiredRetirementIncome || 60000),
+      pensionIncome:           Number(input.pensionIncome       || 0),
+      pensionCola:             Number(input.pensionCola         || 0.02),
+      ssMonthlyAtFra:          Number(input.ssMonthlyAtFra      || 0),
+      ssClaimAge:              Number(input.ssClaimAge          || 67),
+      expectedReturn:          Number(input.expectedReturn      || 0.07),
+      stdDev:                  Number(input.stdDev              || 0.10),
+      inflationRate:           Number(input.inflationRate       || 0.025),
+      equityAllocation:        Number(input.equityAllocation    || 0.60),
+      isCouple:                Boolean(input.isCouple),
+      spouseAge:               input.spouseAge        ? Number(input.spouseAge)        : undefined,
+      spouseBirthYear:         input.spouseBirthYear  ? Number(input.spouseBirthYear)  : undefined,
+      spouseRetirementAge:     input.spouseRetirementAge ? Number(input.spouseRetirementAge) : undefined,
+      spousePretaxBalance:     input.spousePretaxBalance ? Number(input.spousePretaxBalance) : undefined,
+      spouseRothBalance:       input.spouseRothBalance  ? Number(input.spouseRothBalance)  : undefined,
+      spouseSsMonthlyAtFra:    input.spouseSsMonthlyAtFra ? Number(input.spouseSsMonthlyAtFra) : undefined,
+      spouseSsClaimAge:        input.spouseSsClaimAge  ? Number(input.spouseSsClaimAge)  : undefined,
+      simulations:             Number(input.simulations || 1000),
+    });
+    res.json(result);
+  } catch (e: any) {
+    console.error("[us-retirement]", e.message);
+    res.status(500).json({ error: e.message });
+  }
+});

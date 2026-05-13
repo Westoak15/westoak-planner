@@ -380,6 +380,104 @@ function AddPolicyForm({ onSave, onCancel }: {
 
 // ── Main Component ────────────────────────────────────────────────────────────
 
+function GroupedPolicies({ policies, onSave, onDelete }: {
+  policies: Policy[];
+  onSave: (p: Policy) => Promise<void>;
+  onDelete: (id: number) => Promise<void>;
+}) {
+  // Group by carrier, then by type within each carrier
+  const groups = policies.reduce<Record<string, Record<string, Policy[]>>>((acc, p) => {
+    const carrier = p.carrier?.trim() || "No Carrier";
+    const type    = p.type || "Other";
+    if (!acc[carrier])       acc[carrier] = {};
+    if (!acc[carrier][type]) acc[carrier][type] = [];
+    acc[carrier][type].push(p);
+    return acc;
+  }, {});
+
+  const [collapsedCarriers, setCollapsedCarriers] = useState<Set<string>>(new Set());
+  const [collapsedTypes,    setCollapsedTypes]    = useState<Set<string>>(new Set());
+
+  const toggleCarrier = (c: string) => setCollapsedCarriers(s => {
+    const n = new Set(s); n.has(c) ? n.delete(c) : n.add(c); return n;
+  });
+  const toggleType = (key: string) => setCollapsedTypes(s => {
+    const n = new Set(s); n.has(key) ? n.delete(key) : n.add(key); return n;
+  });
+
+  return (
+    <>
+      {Object.entries(groups).map(([carrier, typeMap]) => {
+        const carrierPolicies = Object.values(typeMap).flat();
+        const carrierPremium  = carrierPolicies.reduce((s, p) => s + annualPremium(p), 0);
+        const carrierCoverage = carrierPolicies.reduce((s, p) => s + parseFloat(p.coverageAmount || "0"), 0);
+        const isCarrierCollapsed = collapsedCarriers.has(carrier);
+
+        return (
+          <div key={carrier} className="border-b border-slate-200 last:border-0">
+            {/* Carrier header */}
+            <button
+              onClick={() => toggleCarrier(carrier)}
+              className="w-full flex items-center gap-2 px-4 py-2.5 bg-slate-50 hover:bg-slate-100 transition-colors text-left group"
+            >
+              <div className="w-4 h-4 rounded bg-blue-100 flex items-center justify-center flex-shrink-0">
+                <Shield className="w-2.5 h-2.5 text-blue-600" />
+              </div>
+              <span className="text-xs font-bold text-slate-800 flex-1">{carrier}</span>
+              <span className="text-[10px] text-slate-400 font-medium">
+                {carrierPolicies.length} polic{carrierPolicies.length !== 1 ? "ies" : "y"}
+              </span>
+              <span className="text-[10px] text-slate-400 mx-3">·</span>
+              <span className="text-[10px] font-semibold text-slate-600">{fmt$(carrierCoverage)}</span>
+              <span className="text-[10px] text-slate-400 mx-3">·</span>
+              <span className="text-[10px] font-semibold text-slate-600">{fmt$(carrierPremium)}/yr</span>
+              <div className="ml-2 text-slate-400 group-hover:text-slate-600 transition-colors">
+                {isCarrierCollapsed ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronUp className="w-3.5 h-3.5" />}
+              </div>
+            </button>
+
+            {/* Type groups within carrier */}
+            {!isCarrierCollapsed && Object.entries(typeMap).map(([type, typePolicies]) => {
+              const typeKey = `${carrier}__${type}`;
+              const isTypeCollapsed = collapsedTypes.has(typeKey);
+              const typePremium  = typePolicies.reduce((s, p) => s + annualPremium(p), 0);
+              const typeCoverage = typePolicies.reduce((s, p) => s + parseFloat(p.coverageAmount || "0"), 0);
+
+              return (
+                <div key={type} className="border-t border-slate-100">
+                  {/* Type subheader */}
+                  <button
+                    onClick={() => toggleType(typeKey)}
+                    className="w-full flex items-center gap-2 px-6 py-2 bg-white hover:bg-slate-50/60 transition-colors text-left group"
+                  >
+                    <span className="text-[10px] font-semibold text-slate-500 flex-1 uppercase tracking-wider">{type}</span>
+                    <span className="text-[10px] text-slate-400">{typePolicies.length}</span>
+                    <span className="text-[10px] text-slate-300 mx-2">·</span>
+                    <span className="text-[10px] text-slate-500">{fmt$(typeCoverage)}</span>
+                    <span className="text-[10px] text-slate-300 mx-2">·</span>
+                    <span className="text-[10px] text-slate-500">{fmt$(typePremium)}/yr</span>
+                    <div className="ml-2 text-slate-300 group-hover:text-slate-500 transition-colors">
+                      {isTypeCollapsed ? <ChevronDown className="w-3 h-3" /> : <ChevronUp className="w-3 h-3" />}
+                    </div>
+                  </button>
+
+                  {/* Policy rows */}
+                  {!isTypeCollapsed && typePolicies.map(p => (
+                    <div key={p.id} className="pl-2">
+                      <PolicyRow policy={p} onSave={onSave} onDelete={onDelete} />
+                    </div>
+                  ))}
+                </div>
+              );
+            })}
+          </div>
+        );
+      })}
+    </>
+  );
+}
+
+
 export function PoliciesTab({ clientId, client }: Props) {
   const [policies,      setPolicies]     = useState<Policy[]>([]);
   const [loading,       setLoading]      = useState(true);
@@ -543,10 +641,8 @@ export function PoliciesTab({ clientId, client }: Props) {
                     <Plus className="w-3.5 h-3.5" /> Add First Policy
                   </button>
                 </div>
-              ) : (
-                policies.map(p => (
-                  <PolicyRow key={p.id} policy={p} onSave={handleSave} onDelete={handleDelete} />
-                ))
+               ) : (
+                <GroupedPolicies policies={policies} onSave={handleSave} onDelete={handleDelete} />
               )}
             </>
           )}

@@ -34,9 +34,9 @@ import { useHotkeys } from "../hooks/useHotkeys";
 import { CommandPalette, type CommandAction } from "../components/ui/CommandPalette";
 import { InlineEdit } from "../components/ui/InlineEdit";
 import {
-  Plus, Pencil, Trash2, X, Check, ChevronRight, Search,
+  Plus, Pencil, Trash2, X, Check, Search,
   User, Users, UserPlus, Baby, FileText, Home, Calendar, Briefcase, LogOut, Save, KeyRound, Eye, EyeOff, Mic, MicOff, Loader2,
-  LayoutDashboard, PiggyBank, Shield, Receipt, Target, Brain, Scale,
+  LayoutDashboard, PiggyBank, Shield, Receipt, Target, Brain, Scale, ChevronRight, ChevronUp, ChevronDown,
 } from "lucide-react";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -51,132 +51,292 @@ const PROVINCES = ["AB","BC","MB","NB","NL","NS","NT","NU","ON","PE","QC","SK","
 
 //
 
-function ClientCard({ client: c, onSelect, onDelete, onStatusChange, onOvReady, keyboardActive }: {
-  client: Client;
+// ─────────────────────────────────────────────────────────────────────────────
+// ADVISOR OPERATIONS QUEUE
+// Drop-in replacement for ClientCard + ClientsTab in App.tsx
+//
+// HOW TO USE:
+//   1. Delete the existing `function ClientCard(...)` block
+//   2. Delete the existing `function ClientsTab(...)` block  
+//   3. Paste this entire file's contents in their place
+//   4. The `onSelect` prop is preserved — clicking "Open" navigates as before
+// ─────────────────────────────────────────────────────────────────────────────
+
+// ── Household Score ───────────────────────────────────────────────────────────
+
+function householdScore(ov: Overview | null): number {
+  if (!ov) return 0;
+  let score = 100;
+  if (ov.retirementProjections === 0) score -= 22;
+  if (ov.insuranceAnalyses     === 0) score -= 18;
+  if (ov.pendingAi > 0)               score -= Math.min(25, ov.pendingAi * 8);
+  if (ov.netWorth <= 0)               score -= 10;
+  return Math.max(0, score);
+}
+
+function scoreLabel(s: number): { label: string; cls: string; dot: string } {
+  if (s >= 85) return { label: "Optimized",     cls: "text-emerald-600 bg-emerald-50 border-emerald-100", dot: "bg-emerald-400" };
+  if (s >= 70) return { label: "Review Needed", cls: "text-blue-600    bg-blue-50    border-blue-100",    dot: "bg-blue-400" };
+  if (s >= 50) return { label: "Planning Gaps", cls: "text-amber-600   bg-amber-50   border-amber-100",   dot: "bg-amber-400" };
+  return               { label: "Critical",      cls: "text-red-600    bg-red-50     border-red-100",      dot: "bg-red-400" };
+}
+
+function fmtNw(nw: number | null): string {
+  if (nw === null) return "—";
+  if (Math.abs(nw) >= 1_000_000) return `$${(nw / 1_000_000).toFixed(1)}M`;
+  if (Math.abs(nw) >= 1_000)    return `$${Math.round(nw / 1000)}K`;
+  return `$${Math.round(nw)}`;
+}
+
+// ── Household Row ─────────────────────────────────────────────────────────────
+
+function HouseholdRow({
+  c, onSelect, onDelete, onOvReady, keyboardActive,
+}: {
+  c: Client;
   onSelect: (c: Client) => void;
   onDelete: (id: number) => void;
-  onStatusChange?: (id: number, needsAttention: boolean) => void;
   onOvReady?: (id: number, ov: Overview) => void;
   keyboardActive?: boolean;
 }) {
-  const [ov, setOv] = useState<Overview | null>(null);
+  const [ov,       setOv]       = useState<Overview | null>(null);
+  const [expanded, setExpanded] = useState(false);
 
   useEffect(() => {
     api.get<Overview>(`/api/clients/${c.id}/overview`).then(data => {
       setOv(data);
       onOvReady?.(c.id, data);
-      const needs = data.pendingAi > 0 || data.retirementProjections === 0 || data.insuranceAnalyses === 0;
-      onStatusChange?.(c.id, needs);
     }).catch(() => {});
   }, [c.id]);
 
-  const nw = ov ? ov.netWorth : null;
-  const nwFmt = nw !== null
-    ? (Math.abs(nw) >= 1_000_000 ? `$${(nw / 1_000_000).toFixed(1)}M` : `$${Math.round(nw / 1000)}K`)
-    : null;
-
+  const score      = householdScore(ov);
+  const { label: statusLabel, cls: statusCls, dot: dotCls } = scoreLabel(score);
+  const nw         = ov?.netWorth ?? null;
   const actionCount = ov
     ? ov.pendingAi + (ov.retirementProjections === 0 ? 1 : 0) + (ov.insuranceAnalyses === 0 ? 1 : 0)
     : 0;
 
-  const needsAttention = actionCount > 0;
+  const gaps: string[] = [];
+  if (ov?.retirementProjections === 0) gaps.push("No retirement plan");
+  if (ov?.insuranceAnalyses     === 0) gaps.push("No insurance analysis");
+  if ((ov?.pendingAi ?? 0) > 0)        gaps.push(`${ov!.pendingAi} AI action${ov!.pendingAi > 1 ? "s" : ""} pending`);
 
-  // Status badge
-  const statusBadge = needsAttention
-    ? { label: "Needs Review", cls: "bg-amber-100 text-amber-700" }
-    : ov
-    ? { label: "On Track", cls: "bg-green-100 text-green-700" }
-    : null;
+  const nextAction = gaps[0] ?? "Review complete";
 
-  // Micro-insights
-  const insights: string[] = [];
-  if (ov) {
-    if (ov.retirementProjections === 0) insights.push("No retirement plan");
-    if (ov.insuranceAnalyses === 0) insights.push("Insurance gap");
-    if (ov.pendingAi > 0) insights.push(`${ov.pendingAi} AI action${ov.pendingAi > 1 ? "s" : ""}`);
-  }
+  const scoreColor = score >= 85 ? "#10b981" : score >= 70 ? "#3b82f6" : score >= 50 ? "#f59e0b" : "#ef4444";
 
   return (
-    <div
-      onClick={() => onSelect(c)}
-      className={`relative bg-white border rounded-2xl p-5 cursor-pointer transition-all duration-200 hover:shadow-md group ${
-        keyboardActive ? "border-blue-400 ring-2 ring-blue-200 shadow-md" : "border-slate-200 hover:border-slate-300"
-      }`}
-    >
-      {needsAttention && (
-        <div className="absolute top-3.5 right-3.5 w-2.5 h-2.5 bg-amber-500 rounded-full" title="Needs attention" />
-      )}
-      <div className="flex items-center gap-3 mb-4">
-        <div className={`w-10 h-10 rounded-full ${avatarBg(c.firstName + c.lastName)} flex items-center justify-center text-white text-sm font-semibold flex-shrink-0 shadow-sm`}>
-          {initials(c.firstName, c.lastName)}
+    <div className={`border-b border-slate-100 last:border-0 transition-colors group ${
+      keyboardActive ? "bg-blue-50/50" : expanded ? "bg-slate-50/60" : "hover:bg-slate-50/40"
+    }`}>
+
+      {/* ── Main row ── */}
+      <div
+        className="grid items-center px-4 py-3 cursor-pointer select-none"
+        style={{ gridTemplateColumns: "2fr 110px 100px 120px 1fr 90px" }}
+        onClick={() => setExpanded(e => !e)}
+      >
+        {/* Household */}
+        <div className="flex items-center gap-3 min-w-0">
+          <div className={`w-7 h-7 rounded-full ${avatarBg(c.firstName + c.lastName)} flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0`}>
+            {initials(c.firstName, c.lastName)}
+          </div>
+          <div className="min-w-0">
+            <div className="text-sm font-semibold text-slate-900 truncate leading-none mb-0.5">
+              {c.firstName} {c.lastName}
+            </div>
+            <div className="text-[10px] text-slate-400 truncate">
+              {c.email ?? c.province ?? "—"}
+            </div>
+          </div>
         </div>
-        <div className="min-w-0">
-          <p className="font-semibold text-slate-900 truncate">{c.firstName} {c.lastName}</p>
-          {insights.length > 0
-            ? <p className="text-xs text-slate-400 truncate">{insights.join(" · ")}</p>
-            : <p className="text-xs text-slate-400">{c.province || "—"}</p>}
+
+        {/* Score */}
+        <div className="flex items-center gap-2">
+          <div className="relative w-6 h-6 flex-shrink-0">
+            <svg viewBox="0 0 24 24" className="w-6 h-6 -rotate-90">
+              <circle cx="12" cy="12" r="9" fill="none" stroke="#f1f5f9" strokeWidth="2.5" />
+              <circle cx="12" cy="12" r="9" fill="none"
+                stroke={scoreColor} strokeWidth="2.5"
+                strokeDasharray={`${(score / 100) * 56.5} 56.5`}
+                strokeLinecap="round" />
+            </svg>
+            <div className="absolute inset-0 flex items-center justify-center">
+              <span className="text-[7px] font-bold" style={{ color: scoreColor }}>{score}</span>
+            </div>
+          </div>
+          <span className={`text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded border ${statusCls}`}>
+            {statusLabel}
+          </span>
         </div>
-      </div>
-      <div className="flex items-center justify-between">
+
+        {/* Net Worth */}
+        <div className="text-right">
+          {ov ? (
+            <span className={`text-sm font-semibold ${(nw ?? 0) >= 0 ? "text-slate-900" : "text-red-600"}`}>
+              {fmtNw(nw)}
+            </span>
+          ) : (
+            <span className="text-xs text-slate-300">—</span>
+          )}
+        </div>
+
+        {/* Alerts */}
         <div>
-          {nwFmt ? <p className="text-base font-semibold text-slate-900">{nwFmt}</p> : <p className="text-sm text-slate-300">—</p>}
-          <p className="text-[10px] text-slate-400">Net Worth</p>
+          {actionCount > 0 ? (
+            <span className="text-[10px] font-semibold text-amber-700 bg-amber-50 border border-amber-100 px-1.5 py-0.5 rounded">
+              ⚠ {actionCount} alert{actionCount > 1 ? "s" : ""}
+            </span>
+          ) : (
+            <span className="text-[10px] text-emerald-600 font-medium">✓ Clear</span>
+          )}
         </div>
-        {statusBadge && <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${statusBadge.cls}`}>{statusBadge.label}</span>}
-      </div>
-      <div className="flex items-center justify-between mt-3 pt-3 border-t border-slate-100">
-        {actionCount > 0
-          ? <span className="text-xs font-medium text-amber-600">{actionCount} action{actionCount > 1 ? "s" : ""} needed</span>
-          : <span className="text-xs text-slate-400">{ov?.retirementProjections ?? 0} plan{(ov?.retirementProjections ?? 0) !== 1 ? "s" : ""}</span>}
-        <div className="flex items-center gap-1">
-          <button onClick={e => { e.stopPropagation(); onDelete(c.id); }} className="opacity-0 group-hover:opacity-100 p-1 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded transition">
-            <Trash2 className="w-3.5 h-3.5" />
+
+        {/* Next Action */}
+        <div className="text-[10px] text-slate-500 truncate pr-4">{nextAction}</div>
+
+        {/* Actions */}
+        <div className="flex items-center justify-end gap-1.5" onClick={e => e.stopPropagation()}>
+          <button
+            onClick={() => onSelect(c)}
+            className="text-[10px] font-semibold text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-2.5 py-1 rounded-lg transition-colors border border-blue-100"
+          >
+            Open →
           </button>
-          <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-blue-500 transition" />
+          <button
+            onClick={() => { if (confirm(`Delete ${c.firstName} ${c.lastName}?`)) onDelete(c.id); }}
+            className="p-1 text-slate-200 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100 rounded"
+          >
+            <Trash2 className="w-3 h-3" />
+          </button>
+          <button onClick={() => setExpanded(e => !e)}
+            className="p-1 text-slate-300 hover:text-slate-500 transition-colors rounded">
+            {expanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+          </button>
         </div>
       </div>
+
+      {/* ── Inline expansion ── */}
+      {expanded && (
+        <div className="px-4 pb-4 pt-1 animate-in fade-in duration-150">
+          <div className="bg-white border border-slate-200 rounded-xl p-4 grid grid-cols-2 md:grid-cols-4 gap-4">
+
+            {/* Planning status */}
+            <div>
+              <div className="text-[9px] font-semibold uppercase tracking-widest text-slate-400 mb-2">Planning Status</div>
+              <div className="space-y-1.5">
+                {[
+                  { label: "Retirement Plan", ok: (ov?.retirementProjections ?? 0) > 0, value: `${ov?.retirementProjections ?? 0} plan${(ov?.retirementProjections ?? 0) !== 1 ? "s" : ""}` },
+                  { label: "Insurance Analysis", ok: (ov?.insuranceAnalyses ?? 0) > 0, value: `${ov?.insuranceAnalyses ?? 0} analysis` },
+                  { label: "AI Insights", ok: (ov?.pendingAi ?? 0) === 0, value: (ov?.pendingAi ?? 0) > 0 ? `${ov!.pendingAi} pending` : "Clear" },
+                ].map(item => (
+                  <div key={item.label} className="flex items-center justify-between">
+                    <div className="flex items-center gap-1.5">
+                      <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${item.ok ? "bg-emerald-400" : "bg-amber-400"}`} />
+                      <span className="text-[10px] text-slate-600">{item.label}</span>
+                    </div>
+                    <span className={`text-[10px] font-semibold ${item.ok ? "text-emerald-600" : "text-amber-600"}`}>{item.value}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Financial snapshot */}
+            <div>
+              <div className="text-[9px] font-semibold uppercase tracking-widest text-slate-400 mb-2">Financial Snapshot</div>
+              <div className="space-y-1.5">
+                {[
+                  { label: "Net Worth",    value: fmtNw(nw) },
+                  { label: "Region",       value: c.province ?? "—" },
+                  { label: "Plans", value: `${ov?.retirementProjections ?? 0} on file` },
+                ].map(item => (
+                  <div key={item.label} className="flex items-center justify-between">
+                    <span className="text-[10px] text-slate-500">{item.label}</span>
+                    <span className="text-[10px] font-semibold text-slate-800">{item.value}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Open gaps */}
+            <div>
+              <div className="text-[9px] font-semibold uppercase tracking-widest text-slate-400 mb-2">Open Gaps</div>
+              {gaps.length === 0 ? (
+                <div className="text-[10px] text-emerald-600 font-medium">✓ No gaps detected</div>
+              ) : (
+                <div className="space-y-1">
+                  {gaps.map((g, i) => (
+                    <div key={i} className="flex items-start gap-1.5">
+                      <span className="text-amber-500 text-[10px] mt-0.5">⚠</span>
+                      <span className="text-[10px] text-slate-600">{g}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Quick actions */}
+            <div>
+              <div className="text-[9px] font-semibold uppercase tracking-widest text-slate-400 mb-2">Quick Actions</div>
+              <div className="space-y-1.5">
+                <button onClick={() => onSelect(c)}
+                  className="w-full text-left text-[10px] font-semibold text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-2.5 py-1.5 rounded-lg transition-colors border border-blue-100 flex items-center justify-between">
+                  Open full profile <span>→</span>
+                </button>
+                {(ov?.retirementProjections ?? 0) === 0 && (
+                  <button onClick={() => onSelect(c)}
+                    className="w-full text-left text-[10px] font-medium text-amber-700 hover:text-amber-900 bg-amber-50 hover:bg-amber-100 px-2.5 py-1.5 rounded-lg transition-colors border border-amber-100 flex items-center justify-between">
+                    Create retirement plan <span>→</span>
+                  </button>
+                )}
+                {(ov?.insuranceAnalyses ?? 0) === 0 && (
+                  <button onClick={() => onSelect(c)}
+                    className="w-full text-left text-[10px] font-medium text-slate-600 hover:text-slate-800 bg-slate-50 hover:bg-slate-100 px-2.5 py-1.5 rounded-lg transition-colors border border-slate-100 flex items-center justify-between">
+                    Insurance analysis <span>→</span>
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
+// ── Clients Tab (Advisor Operations Queue) ────────────────────────────────────
+
 function ClientsTab({ onSelect }: { onSelect: (c: Client) => void }) {
   const { user } = useAuth();
-  const jurisdiction = (user as any)?.jurisdiction ?? "CA";
-  const regions = jurisdiction === "US"
+  const jurisdiction  = (user as any)?.jurisdiction ?? "CA";
+  const regions       = jurisdiction === "US"
     ? ["AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA","HI","ID","IL","IN","IA","KS","KY","LA","ME","MD","MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ","NM","NY","NC","ND","OH","OK","OR","PA","RI","SC","SD","TN","TX","UT","VT","VA","WA","WV","WI","WY"]
     : PROVINCES;
-  const regionLabel = jurisdiction === "US" ? "State" : "Province";
+  const regionLabel   = jurisdiction === "US" ? "State" : "Province";
   const defaultRegion = jurisdiction === "US" ? "CA" : "ON";
 
-  const [clients, setClients] = useState<Client[]>([]);
-  const [search, setSearch]   = useState("");
-  const [loading, setLoading] = useState(true);
-  const [showNew, setShowNew] = useState(false);
-  const [form, setForm] = useState({ firstName:"", lastName:"", email:"", phone:"", province: defaultRegion });
-  const [busy, setBusy]       = useState(false);
-  const [attentionIds, setAttentionIds] = useState<Set<number>>(new Set());
-  const [navIdx, setNavIdx]   = useState(-1);
+  const [clients,  setClients]  = useState<Client[]>([]);
+  const [search,   setSearch]   = useState("");
+  const [loading,  setLoading]  = useState(true);
+  const [showNew,  setShowNew]  = useState(false);
+  const [form,     setForm]     = useState({ firstName: "", lastName: "", email: "", phone: "", province: defaultRegion });
+  const [busy,     setBusy]     = useState(false);
+  const [ovData,   setOvData]   = useState<Record<number, Overview>>({});
+  const [navIdx,   setNavIdx]   = useState(-1);
+  const [sortBy,   setSortBy]   = useState<"name" | "score" | "nw">("score");
 
-  // Arrow key + enter navigation for client list
+  // Keyboard navigation
   useEffect(() => {
     function handler(e: KeyboardEvent) {
-      const target = e.target as HTMLElement;
-      if (target.tagName === "INPUT" || target.tagName === "TEXTAREA") return;
+      const t = e.target as HTMLElement;
+      if (t.tagName === "INPUT" || t.tagName === "TEXTAREA") return;
       if (e.key === "ArrowDown") { e.preventDefault(); setNavIdx(i => Math.min(i + 1, clients.length - 1)); }
       if (e.key === "ArrowUp")   { e.preventDefault(); setNavIdx(i => Math.max(i - 1, 0)); }
-      if (e.key === "Enter" && navIdx >= 0 && clients[navIdx]) { onSelect(clients[navIdx]); }
+      if (e.key === "Enter" && navIdx >= 0 && clients[navIdx]) onSelect(clients[navIdx]);
     }
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
   }, [clients, navIdx, onSelect]);
-
-  const handleStatusChange = (id: number, needsAttention: boolean) => {
-    setAttentionIds(prev => {
-      const next = new Set(prev);
-      if (needsAttention) next.add(id); else next.delete(id);
-      return next;
-    });
-  };
 
   const load = useCallback(() => {
     const qs = search ? `?search=${encodeURIComponent(search)}` : "";
@@ -185,107 +345,271 @@ function ClientsTab({ onSelect }: { onSelect: (c: Client) => void }) {
 
   useEffect(() => { load(); }, [load]);
 
-async function create() {
-  setBusy(true);
-  try {
-    const c = await api.post<Client>("/api/clients", { ...form, jurisdiction });
-    setClients(p => [c,...p]);
-    setShowNew(false);
-    setForm({ firstName:"", lastName:"", email:"", phone:"", province: defaultRegion });
-  } catch (e: any) { toast({ title: "Error", description: e.message, variant: "destructive" }); }
-  finally { setBusy(false); }
-}
+  async function create() {
+    setBusy(true);
+    try {
+      const c = await api.post<Client>("/api/clients", { ...form, jurisdiction });
+      setClients(p => [c, ...p]);
+      setShowNew(false);
+      setForm({ firstName: "", lastName: "", email: "", phone: "", province: defaultRegion });
+      toast({ title: "Client added", description: `${form.firstName} ${form.lastName} added successfully` });
+    } catch (e: any) {
+      toast({ title: "Error", description: e.message, variant: "destructive" });
+    } finally { setBusy(false); }
+  }
 
-  const [ovData, setOvData] = useState<Record<number, Overview>>({});
-  const totalAum = Object.values(ovData).reduce((s, o) => s + Math.max(0, o.netWorth), 0);
-  const pendingActions = Object.values(ovData).reduce((s, o) => s + o.pendingAi, 0);
-  const fmtAum = (n: number) => n >= 1_000_000 ? `$${(n/1_000_000).toFixed(1)}M` : n >= 1000 ? `$${Math.round(n/1000)}K` : `$${Math.round(n)}`;
+  function deleteClient(id: number) {
+    api.delete(`/api/clients/${id}`).then(() => setClients(p => p.filter(c => c.id !== id)));
+  }
+
+  // Aggregated intelligence
+  const allOv        = Object.values(ovData);
+  const totalAum     = allOv.reduce((s, o) => s + Math.max(0, o.netWorth), 0);
+  const totalPending = allOv.reduce((s, o) => s + o.pendingAi, 0);
+  const noRetirement = allOv.filter(o => o.retirementProjections === 0).length;
+  const noInsurance  = allOv.filter(o => o.insuranceAnalyses === 0).length;
+  const avgScore     = clients.length > 0
+    ? Math.round(clients.reduce((s, c) => s + householdScore(ovData[c.id] ?? null), 0) / clients.length)
+    : 0;
+
+  const fmtAum = (n: number) => n >= 1_000_000
+    ? `$${(n / 1_000_000).toFixed(1)}M`
+    : `$${Math.round(n / 1000)}K`;
+
+  // Sort clients
+  const sorted = [...clients].sort((a, b) => {
+    if (sortBy === "score") return householdScore(ovData[b.id] ?? null) - householdScore(ovData[a.id] ?? null);
+    if (sortBy === "nw")    return (ovData[b.id]?.netWorth ?? 0) - (ovData[a.id]?.netWorth ?? 0);
+    return `${a.lastName}${a.firstName}`.localeCompare(`${b.lastName}${b.firstName}`);
+  });
 
   return (
-    <div className="p-6 space-y-5">
-      <div className="flex items-center gap-4">
-        <div className="flex-shrink-0">
-          <h1 className="text-xl font-bold text-slate-900">Clients</h1>
-          <p className="text-xs text-slate-400">{clients.length} total</p>
-        </div>
-        <div className="flex-1 relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search clients…"
-            className="w-full pl-9 pr-4 py-2 text-sm bg-white border border-slate-200 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400 transition" />
-        </div>
-        <button onClick={() => setShowNew(true)}
-          className="flex-shrink-0 flex items-center gap-1.5 bg-gradient-to-r from-blue-600 to-cyan-500 text-white text-sm font-semibold px-4 py-2 rounded-xl shadow-sm hover:shadow-md transition">
-          <Plus className="w-3.5 h-3.5" /> Add Client
-        </button>
-      </div>
+    <div className="flex h-full min-h-0 overflow-hidden">
 
-      {showNew && (
-        <Card className="mb-5">
-          <h3 className="font-bold text-gray-800 mb-4">New Client</h3>
-          <div className="grid grid-cols-3 gap-3 mb-3">
-            <Input label="First Name" value={form.firstName} onChange={v => setForm(f=>({...f,firstName:v}))} />
-            <Input label="Last Name"  value={form.lastName}  onChange={v => setForm(f=>({...f,lastName:v}))} />
-            <Input label="Phone"      value={form.phone}     onChange={v => setForm(f=>({...f,phone:v}))} />
-          </div>
-          <div className="grid grid-cols-3 gap-3 mb-4">
-            <Input label="Email"    type="email" value={form.email} onChange={v => setForm(f=>({...f,email:v}))} />
-            <Select label={regionLabel} value={form.province} onChange={v => setForm(f=>({...f,province:v}))} options={regions} />
-          </div>
-          <div className="flex gap-2 justify-end">
-            <button onClick={() => setShowNew(false)} className="text-sm text-gray-500 px-4 py-2">Cancel</button>
-            <button onClick={create} disabled={busy||!form.firstName||!form.lastName} className="bg-[#0c1e3a] hover:bg-[#0e2a4a] disabled:opacity-50 text-white text-sm font-semibold px-4 py-2 rounded-lg">
-              {busy ? "Saving…" : "Add Client"}
-            </button>
-          </div>
-        </Card>
-      )}
+      {/* ══ LEFT — Operations Queue (75%) ══════════════════════════════════════ */}
+      <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        <div className="lg:col-span-3">
-          {loading ? (
-            <div className="text-center py-12 text-slate-400 text-sm">Loading…</div>
-          ) : clients.length === 0 ? (
-            <div className="text-center py-16 text-slate-400 text-sm bg-white border border-slate-200 rounded-xl">
-              {search ? "No clients match" : "No clients yet — add your first client"}
+        {/* Header */}
+        <div className="flex-shrink-0 border-b border-slate-200 bg-white px-5 py-3">
+          <div className="flex items-center gap-3">
+            <div>
+              <h1 className="text-sm font-bold text-slate-900 leading-none">Household Queue</h1>
+              <p className="text-[10px] text-slate-400 mt-0.5">{clients.length} households · Avg score {avgScore}</p>
             </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-              {clients.map((c, idx) => (
-                <ClientCard
-                  key={c.id} client={c} onSelect={onSelect}
-                  onStatusChange={handleStatusChange}
-                  onOvReady={(id, ov) => setOvData(prev => ({ ...prev, [id]: ov }))}
-                  keyboardActive={idx === navIdx}
-                  onDelete={(id) => {
-                    if (confirm("Delete client?")) api.delete(`/api/clients/${id}`).then(() => window.location.reload());
-                  }}
-                />
+            <div className="flex-1 relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
+              <input
+                value={search} onChange={e => setSearch(e.target.value)}
+                placeholder="Search households…"
+                className="w-full pl-8 pr-4 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400/30 focus:border-blue-400 transition"
+              />
+            </div>
+            <div className="flex items-center gap-1 text-[10px] text-slate-400">
+              <span>Sort:</span>
+              {([["score","Priority"],["name","Name"],["nw","Net Worth"]] as const).map(([k, l]) => (
+                <button key={k} onClick={() => setSortBy(k)}
+                  className={`px-2 py-1 rounded transition-colors font-medium ${sortBy === k ? "bg-blue-600 text-white" : "hover:bg-slate-100 text-slate-500"}`}>
+                  {l}
+                </button>
               ))}
             </div>
+            <button onClick={() => setShowNew(s => !s)}
+              className="flex items-center gap-1 text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg transition-colors flex-shrink-0">
+              <Plus className="w-3.5 h-3.5" />
+              {showNew ? "Cancel" : "New Household"}
+            </button>
+          </div>
+        </div>
+
+        {/* New client form */}
+        {showNew && (
+          <div className="flex-shrink-0 border-b border-blue-100 bg-blue-50/40 px-5 py-3">
+            <div className="text-[10px] font-semibold text-blue-700 uppercase tracking-widest mb-2">New Household</div>
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-2 mb-2">
+              <input placeholder="First name" value={form.firstName} onChange={e => setForm(f => ({ ...f, firstName: e.target.value }))}
+                className="bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-blue-400/40 focus:border-blue-400" />
+              <input placeholder="Last name" value={form.lastName} onChange={e => setForm(f => ({ ...f, lastName: e.target.value }))}
+                className="bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-blue-400/40 focus:border-blue-400" />
+              <input placeholder="Email" type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
+                className="bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-blue-400/40 focus:border-blue-400" />
+              <input placeholder="Phone" value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))}
+                className="bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-blue-400/40 focus:border-blue-400" />
+              <select value={form.province} onChange={e => setForm(f => ({ ...f, province: e.target.value }))}
+                className="bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-blue-400/40 focus:border-blue-400">
+                {regions.map(r => <option key={r} value={r}>{r}</option>)}
+              </select>
+            </div>
+            <div className="flex items-center gap-2">
+              <button onClick={create} disabled={busy || !form.firstName || !form.lastName}
+                className="flex items-center gap-1 text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50">
+                {busy ? <span className="w-3 h-3 border border-white/40 border-t-white rounded-full animate-spin" /> : <Plus className="w-3 h-3" />}
+                Add Household
+              </button>
+              <button onClick={() => setShowNew(false)} className="text-xs text-slate-500 hover:text-slate-700 px-2 py-1">Cancel</button>
+            </div>
+          </div>
+        )}
+
+        {/* Table header */}
+        <div className="flex-shrink-0 bg-slate-50 border-b border-slate-200">
+          <div
+            className="grid items-center px-4 py-2 text-[9px] font-semibold uppercase tracking-widest text-slate-400"
+            style={{ gridTemplateColumns: "2fr 110px 100px 120px 1fr 90px" }}
+          >
+            <span>Household</span>
+            <span>Score / Status</span>
+            <span className="text-right">Net Worth</span>
+            <span>Alerts</span>
+            <span>Next Action</span>
+            <span className="text-right">Actions</span>
+          </div>
+        </div>
+
+        {/* Queue */}
+        <div className="flex-1 overflow-y-auto bg-white">
+          {loading ? (
+            <div className="flex flex-col gap-2 p-4">
+              {[1,2,3,4,5].map(i => (
+                <div key={i} className="h-12 bg-slate-100 rounded-lg animate-pulse" style={{ opacity: 1 - i * 0.15 }} />
+              ))}
+            </div>
+          ) : sorted.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-20 text-center">
+              <div className="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center mb-3">
+                <Users className="w-5 h-5 text-slate-400" />
+              </div>
+              <p className="text-sm font-semibold text-slate-700 mb-1">
+                {search ? "No households match" : "No households yet"}
+              </p>
+              {!search && (
+                <button onClick={() => setShowNew(true)}
+                  className="mt-3 text-xs font-semibold text-blue-600 hover:text-blue-800">
+                  Add your first household →
+                </button>
+              )}
+            </div>
+          ) : (
+            sorted.map((c, idx) => (
+              <HouseholdRow
+                key={c.id} c={c}
+                onSelect={onSelect}
+                onDelete={deleteClient}
+                onOvReady={(id, ov) => setOvData(prev => ({ ...prev, [id]: ov }))}
+                keyboardActive={idx === navIdx}
+              />
+            ))
           )}
         </div>
-        <div className="space-y-4">
-          <div className="bg-white border border-slate-200 rounded-xl p-4">
-            <p className="text-xs text-slate-500">Needs Attention</p>
-            <p className="text-xl font-semibold text-amber-600 mt-1">{attentionIds.size} client{attentionIds.size !== 1 ? "s" : ""}</p>
-          </div>
-          <div className="bg-white border border-slate-200 rounded-xl p-4">
-            <p className="text-xs text-slate-500">Total AUM (est.)</p>
-            <p className="text-xl font-semibold text-slate-900 mt-1">{fmtAum(totalAum)}</p>
-          </div>
-          <div className="bg-white border border-slate-200 rounded-xl p-4">
-            <p className="text-xs text-slate-500">Pending AI Actions</p>
-            <p className={`text-xl font-semibold mt-1 ${pendingActions > 0 ? "text-red-500" : "text-slate-400"}`}>{pendingActions}</p>
-          </div>
-          <div className="bg-white border border-slate-200 rounded-xl p-4">
-            <p className="text-xs text-slate-500">Total Clients</p>
-            <p className="text-xl font-semibold text-blue-600 mt-1">{clients.length}</p>
+      </div>
+
+      {/* ══ RIGHT — Intelligence Rail (25%) ════════════════════════════════════ */}
+      <div className="w-64 flex-shrink-0 border-l border-slate-200 bg-white flex flex-col overflow-y-auto">
+
+        {/* AUM Summary */}
+        <div className="px-4 py-3 border-b border-slate-100">
+          <div className="text-[9px] font-semibold uppercase tracking-widest text-slate-400 mb-2">Book Summary</div>
+          <div className="grid grid-cols-2 gap-2">
+            {[
+              { label: "Total AUM",      value: fmtAum(totalAum),        hi: true },
+              { label: "Avg Score",      value: `${avgScore}/100`,        hi: avgScore >= 70 },
+              { label: "Households",     value: String(clients.length),   hi: true },
+              { label: "Pending Actions",value: String(totalPending),     hi: totalPending === 0 },
+            ].map(s => (
+              <div key={s.label} className="bg-slate-50 rounded-lg p-2.5">
+                <div className="text-[9px] text-slate-400 mb-0.5">{s.label}</div>
+                <div className={`text-sm font-bold ${s.hi ? "text-slate-900" : "text-amber-600"}`}>{s.value}</div>
+              </div>
+            ))}
           </div>
         </div>
+
+        {/* Today's Priorities */}
+        <div className="px-4 py-3 border-b border-slate-100 flex-1">
+          <div className="text-[9px] font-semibold uppercase tracking-widest text-slate-400 mb-2">Today's Priorities</div>
+          <div className="space-y-2">
+            {noRetirement > 0 && (
+              <div className="flex items-start gap-2 p-2 bg-amber-50 border border-amber-100 rounded-lg">
+                <span className="text-amber-500 text-xs mt-0.5">⚠</span>
+                <p className="text-[10px] text-amber-700 font-medium leading-relaxed">
+                  {noRetirement} household{noRetirement > 1 ? "s" : ""} missing retirement plan{noRetirement > 1 ? "s" : ""}
+                </p>
+              </div>
+            )}
+            {noInsurance > 0 && (
+              <div className="flex items-start gap-2 p-2 bg-amber-50 border border-amber-100 rounded-lg">
+                <span className="text-amber-500 text-xs mt-0.5">⚠</span>
+                <p className="text-[10px] text-amber-700 font-medium leading-relaxed">
+                  {noInsurance} insurance gap{noInsurance > 1 ? "s" : ""} detected
+                </p>
+              </div>
+            )}
+            {totalPending > 0 && (
+              <div className="flex items-start gap-2 p-2 bg-blue-50 border border-blue-100 rounded-lg">
+                <span className="text-blue-500 text-xs mt-0.5">↻</span>
+                <p className="text-[10px] text-blue-700 font-medium leading-relaxed">
+                  {totalPending} AI recommendation{totalPending > 1 ? "s" : ""} awaiting review
+                </p>
+              </div>
+            )}
+            {noRetirement === 0 && noInsurance === 0 && totalPending === 0 && clients.length > 0 && (
+              <div className="flex items-start gap-2 p-2 bg-emerald-50 border border-emerald-100 rounded-lg">
+                <span className="text-emerald-500 text-xs mt-0.5">✓</span>
+                <p className="text-[10px] text-emerald-700 font-medium">All households up to date</p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Opportunities */}
+        {clients.length > 0 && (
+          <div className="px-4 py-3 border-b border-slate-100">
+            <div className="text-[9px] font-semibold uppercase tracking-widest text-slate-400 mb-2">Opportunities</div>
+            <div className="space-y-1.5">
+              {noRetirement > 0 && (
+                <div className="flex items-center justify-between py-1 border-b border-slate-50">
+                  <span className="text-[10px] text-slate-600">Retirement projections</span>
+                  <span className="text-[10px] font-semibold text-blue-600">{noRetirement} open</span>
+                </div>
+              )}
+              {noInsurance > 0 && (
+                <div className="flex items-center justify-between py-1 border-b border-slate-50">
+                  <span className="text-[10px] text-slate-600">Insurance analysis</span>
+                  <span className="text-[10px] font-semibold text-amber-600">{noInsurance} gap{noInsurance > 1 ? "s" : ""}</span>
+                </div>
+              )}
+              <div className="flex items-center justify-between py-1">
+                <span className="text-[10px] text-slate-600">Households needing review</span>
+                <span className="text-[10px] font-semibold text-slate-700">
+                  {clients.filter(c => householdScore(ovData[c.id] ?? null) < 70).length}
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Score distribution */}
+        {clients.length > 0 && (
+          <div className="px-4 py-3">
+            <div className="text-[9px] font-semibold uppercase tracking-widest text-slate-400 mb-2">Score Distribution</div>
+            {[
+              { label: "Optimized (85+)",   count: clients.filter(c => householdScore(ovData[c.id] ?? null) >= 85).length, color: "bg-emerald-400" },
+              { label: "Review (70-84)",    count: clients.filter(c => { const s = householdScore(ovData[c.id] ?? null); return s >= 70 && s < 85; }).length, color: "bg-blue-400" },
+              { label: "Gaps (50-69)",      count: clients.filter(c => { const s = householdScore(ovData[c.id] ?? null); return s >= 50 && s < 70; }).length, color: "bg-amber-400" },
+              { label: "Critical (<50)",    count: clients.filter(c => householdScore(ovData[c.id] ?? null) < 50).length, color: "bg-red-400" },
+            ].map(s => (
+              <div key={s.label} className="flex items-center gap-2 mb-1.5">
+                <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${s.color}`} />
+                <span className="text-[10px] text-slate-500 flex-1">{s.label}</span>
+                <span className="text-[10px] font-bold text-slate-700">{s.count}</span>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
 }
+
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Client Detail — shown when a client is selected (name, family, plans)

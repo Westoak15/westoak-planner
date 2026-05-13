@@ -10,7 +10,6 @@ import { PlanningDocFlow, PLANNING_TABS, type PlanningTab } from "../components/
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "../lib/queryClient";
 import { TabLoader, Field, SectionHeader, Card, Input, Select, DobInput, Textarea } from "../components/ui/AppHelpers";
-import { AccountSettingsModal } from "../components/AccountSettingsModal";
 import { ChangePasswordModal } from "../components/ChangePasswordModal";
 //import { AITab } from "./FinancialPlanning";
 const AITab = lazy(() => import("./FinancialPlanning").then(m => ({ default: m.AITab })));
@@ -37,7 +36,7 @@ import { InlineEdit } from "../components/ui/InlineEdit";
 import {
   Plus, Pencil, Trash2, X, Check, ChevronRight, Search,
   User, Users, UserPlus, Baby, FileText, Home, Calendar, Briefcase, LogOut, Save, KeyRound, Eye, EyeOff, Mic, MicOff, Loader2,
-  LayoutDashboard, PiggyBank, Shield, Receipt, Target, Brain, Scale, Globe
+  LayoutDashboard, PiggyBank, Shield, Receipt, Target, Brain, Scale,
 } from "lucide-react";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -697,7 +696,6 @@ export default function App() {
   const level = user?.level ?? "standard";
   const [showForceReset, setShowForceReset] = useState(!!user?.mustResetPassword);
   const [showChangePw, setShowChangePw]     = useState(false);
-  const [showAccountSettings, setShowAccountSettings] = useState(false);
   const [tab, setTab] = useState<Tab>(user?.role === "ga" ? "agents" : "clients");
   const [nwSubtabHint, setNwSubtabHint] = useState<string | undefined>(undefined);
   const [person, setPerson] = useState<"primary"|"spouse"|"combined">("primary");
@@ -873,16 +871,14 @@ export default function App() {
             <button onClick={() => setShowChangePw(true)} title="Change password" className="text-slate-400 hover:text-cyan-600 transition-colors">
               <KeyRound className="w-4 h-4" />
             </button>
-            <button onClick={() => setShowAccountSettings(true)} title="Account settings" className="text-slate-400 hover:text-cyan-600 transition-colors">
-              <Globe className="w-4 h-4" />
-            </button>
             <button onClick={() => { setTab("agents"); logout(); }} title="Sign out" className="text-slate-400 hover:text-rose-500 transition-colors">
               <LogOut className="w-4 h-4" />
             </button>
           </div>
+         </header>
          {showForceReset && <ChangePasswordModal forceReset onClose={() => setShowForceReset(false)} />}
-         {showAccountSettings && <AccountSettingsModal onClose={() => setShowAccountSettings(false)} />}
-        </header>
+         {showChangePw && <ChangePasswordModal onClose={() => setShowChangePw(false)} />}
+        
 
         {/* Content — wrap in fp-insightled so EVERY tab gets the
             light-grey page + dark-card treatment (sidebar/header are outside) */}

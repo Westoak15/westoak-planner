@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Shield, FileHeart, Calendar, Plus } from "lucide-react";
+import { Shield, FileHeart, Calendar, } from "lucide-react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { HubShell } from "./insightled";
 import { PoliciesTab } from "../pages/PoliciesTab";
@@ -63,14 +63,7 @@ export function ProtectionHub({ clientId, client, person, onPersonChange }: Prop
             <span>Annual premium {fmt$(totalPremium)}</span>
           </>
         }
-        actions={
-          <button
-            className="px-4 py-2 rounded-lg bg-[var(--bg-card)] border border-[var(--border-light)] text-sm font-medium text-white hover:bg-white/5 transition-colors flex items-center gap-2"
-            onClick={() => setSubtab("coverage")}
-          >
-            <Plus className="w-4 h-4" /> Add Policy
-          </button>
-        }
+        
         subtabs={[
           {
             key: "coverage",

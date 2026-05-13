@@ -141,7 +141,7 @@ export function PoliciesTab({ clientId, client, person = "primary" }: { clientId
     <Table className="w-4 h-4" /> Import Excel
   </button>
   <button onClick={openCreate}
-    className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-cyan-500 text-white text-sm font-semibold px-4 py-2 rounded-xl shadow-sm hover:shadow-md transition">
+    className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-cyan-500 !text-white text-sm font-semibold px-4 py-2 rounded-xl shadow-sm hover:shadow-md transition">
     <Plus className="w-4 h-4" /> Add Policy
   </button>
 </div>

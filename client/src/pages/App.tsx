@@ -3,7 +3,7 @@ import { lazy, Suspense } from "react";
 import { useAuth } from "../lib/auth";
 import { token } from "../lib/api";
 import { api } from "../lib/api";
-import { useToast } from "@/hooks/use-toast";
+import { useToast, toast } from "@/hooks/use-toast";
 import { Toaster } from "@/components/ui/toaster";
 import { Sidebar, type Tab } from "../components/Sidebar";
 import { PlanningDocFlow, PLANNING_TABS, type PlanningTab } from "../components/layout/PlanningDocFlow";
@@ -192,7 +192,7 @@ async function create() {
     setClients(p => [c,...p]);
     setShowNew(false);
     setForm({ firstName:"", lastName:"", email:"", phone:"", province: defaultRegion });
-  } catch (e: any) { alert(e.message); }
+  } catch (e: any) { toast({ title: "Error", description: e.message, variant: "destructive" }); }
   finally { setBusy(false); }
 }
 
@@ -314,7 +314,7 @@ function ClientDetail({ client, onBack, onPlanSelect, onUpdate, level }: { clien
   async function save() {
     setBusy(true);
     try { const updated = await api.patch<Client>(`/api/clients/${client.id}`, form); setEditing(false); onUpdate(updated); }
-    catch (e: any) { alert(e.message); }
+    catch (e: any) {toast({ title: "Error", description: e.message, variant: "destructive" }) }
     finally { setBusy(false); }
   }
 
@@ -322,7 +322,7 @@ function ClientDetail({ client, onBack, onPlanSelect, onUpdate, level }: { clien
     try {
       const updated = await api.patch<Client>(`/api/clients/${client.id}`, data);
       onUpdate(updated);
-    } catch (e: any) { alert(e.message); }
+    } catch (e: any) { toast({ title: "Error", description: e.message, variant: "destructive" }); }
   }
 
   async function deletePlan(planId: number) {

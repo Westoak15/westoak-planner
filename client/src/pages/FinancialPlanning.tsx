@@ -1,3 +1,4 @@
+import { toast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { api } from "../lib/api";
 import React, { useState, useMemo, useEffect, useRef, Component, type ReactNode, useContext } from "react";
@@ -296,7 +297,7 @@ export function NetWorthTab({ clientId }: { clientId: number }) {
       });
       const data = await res.json();
       if (res.ok) { setShowAdd(false); setForm({ category: "", name: "", value: "" }); }
-      else { alert("Error: " + data.message); }
+      else { toast({ title: "Error", description: data.message, variant: "destructive" }); }
     } catch(e: any) { alert("Failed: " + e.message); }
   };
 

@@ -1,10 +1,9 @@
-//import { Turnstile } from '@marsidev/react-turnstile'
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useAuth } from "../lib/auth";
-import { Eye, EyeOff, Check, X } from "lucide-react";
+import { Eye, EyeOff, Check, X, ArrowLeft, ShieldCheck, Loader2 } from "lucide-react";
 import { api } from "../lib/api";
 
-const INPUT = "fp-input";
+// ── Constants ─────────────────────────────────────────────────────────────────
 
 const SECURITY_QUESTIONS = [
   "What was the name of your first pet?",
@@ -17,31 +16,54 @@ const SECURITY_QUESTIONS = [
   "What was your childhood nickname?",
 ];
 
+type Mode = "login" | "register" | "forgot-email" | "forgot-question" | "forgot-reset" | "forgot-done";
+
+const EMPTY_FORM = {
+  firstName: "", lastName: "", firmName: "",
+  email: "", password: "",
+  securityQuestion: SECURITY_QUESTIONS[0],
+  securityAnswer: "",
+};
+
+// ── Password strength ─────────────────────────────────────────────────────────
+
 function PasswordStrength({ password }: { password: string }) {
   const rules = [
-    { label: "At least 8 characters",          ok: password.length >= 8 },
-    { label: "At least one uppercase letter",  ok: /[A-Z]/.test(password) },
-    { label: "At least one lowercase letter",  ok: /[a-z]/.test(password) },
-    { label: "At least one number",            ok: /\d/.test(password) },
-    { label: "At least one special character", ok: /[^A-Za-z0-9]/.test(password) },
+    { label: "8+ characters",          ok: password.length >= 8 },
+    { label: "Uppercase letter",        ok: /[A-Z]/.test(password) },
+    { label: "Lowercase letter",        ok: /[a-z]/.test(password) },
+    { label: "Number",                  ok: /\d/.test(password) },
+    { label: "Special character",       ok: /[^A-Za-z0-9]/.test(password) },
   ];
   const score = rules.filter(r => r.ok).length;
-  const strength = score <= 1 ? "Weak" : score <= 3 ? "Fair" : score === 4 ? "Good" : "Strong";
-  const barColor = score <= 1 ? "bg-red-400" : score <= 3 ? "bg-amber-400" : score === 4 ? "bg-blue-500" : "bg-emerald-500";
   if (!password) return null;
+
+  const bar = score <= 1
+    ? { w: "20%", color: "#ef4444", label: "Weak" }
+    : score <= 2
+    ? { w: "40%", color: "#f59e0b", label: "Fair" }
+    : score <= 3
+    ? { w: "60%", color: "#3b82f6", label: "Good" }
+    : score <= 4
+    ? { w: "80%", color: "#06b6d4", label: "Great" }
+    : { w: "100%", color: "#10b981", label: "Strong" };
+
   return (
-    <div className="mt-2 space-y-2">
+    <div className="space-y-2 pt-1">
       <div className="flex items-center gap-2">
-        <div className="flex-1 h-1.5 bg-gray-200 rounded-full overflow-hidden">
-          <div className={`h-full ${barColor} rounded-full transition-all`} style={{ width: `${(score / 5) * 100}%` }} />
+        <div className="flex-1 h-1 bg-slate-100 rounded-full overflow-hidden">
+          <div className="h-full rounded-full transition-all duration-500"
+            style={{ width: bar.w, backgroundColor: bar.color }} />
         </div>
-        <span className={`text-xs font-semibold ${score <= 1 ? "text-red-500" : score <= 3 ? "text-amber-500" : score === 4 ? "text-blue-600" : "text-emerald-600"}`}>{strength}</span>
+        <span className="text-xs font-semibold" style={{ color: bar.color }}>{bar.label}</span>
       </div>
-      <div className="grid grid-cols-1 gap-1">
+      <div className="grid grid-cols-2 gap-0.5">
         {rules.map(r => (
-          <div key={r.label} className="flex items-center gap-1.5">
-            {r.ok ? <Check className="w-3 h-3 text-emerald-500 flex-shrink-0" /> : <X className="w-3 h-3 text-gray-300 flex-shrink-0" />}
-            <span className={`text-xs ${r.ok ? "text-emerald-600" : "text-gray-400"}`}>{r.label}</span>
+          <div key={r.label} className="flex items-center gap-1">
+            {r.ok
+              ? <Check className="w-2.5 h-2.5 text-emerald-500 flex-shrink-0" />
+              : <X    className="w-2.5 h-2.5 text-slate-300 flex-shrink-0" />}
+            <span className={`text-[10px] ${r.ok ? "text-emerald-600" : "text-slate-400"}`}>{r.label}</span>
           </div>
         ))}
       </div>
@@ -49,130 +71,226 @@ function PasswordStrength({ password }: { password: string }) {
   );
 }
 
-type Mode = "login" | "register" | "forgot-email" | "forgot-question" | "forgot-reset" | "forgot-done";
+// ── Input component ───────────────────────────────────────────────────────────
+
+function Field({
+  type = "text", placeholder, value, onChange, onKeyDown,
+  autoComplete = "off", suffix,
+}: {
+  type?: string; placeholder: string; value: string;
+  onChange: (v: string) => void; onKeyDown?: (e: React.KeyboardEvent) => void;
+  autoComplete?: string; suffix?: React.ReactNode;
+}) {
+  return (
+    <div className="relative">
+      <input
+        type={type} placeholder={placeholder} value={value}
+        onChange={e => onChange(e.target.value)} onKeyDown={onKeyDown}
+        autoComplete={autoComplete}
+        className="w-full bg-white/60 backdrop-blur border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all"
+      />
+      {suffix && (
+        <div className="absolute right-3 top-1/2 -translate-y-1/2">{suffix}</div>
+      )}
+    </div>
+  );
+}
+
+// ── Main Login Component ──────────────────────────────────────────────────────
 
 export default function Login() {
   const { login, register } = useAuth();
-  const [mode, setMode]   = useState<Mode>("login");
-  const [showPw, setShowPw] = useState(false);
-  const [showNewPw, setShowNewPw] = useState(false);
-  const [error, setError] = useState("");
-  const [busy, setBusy]   = useState(false);
-   const [form, setForm] = useState({
-    email: "", password: "", firstName: "", lastName: "", firmName: "",
-    securityQuestion: SECURITY_QUESTIONS[0], securityAnswer: "",
-  });
-
-  const [forgotEmail, setForgotEmail]       = useState("");
+  const [mode, setMode]         = useState<Mode>("login");
+  const [form, setForm]         = useState({ ...EMPTY_FORM });
+  const [showPw, setShowPw]     = useState(false);
+  const [busy, setBusy]         = useState(false);
+  const [error, setError]       = useState("");
+  const [forgotEmail, setForgotEmail]   = useState("");
   const [forgotQuestion, setForgotQuestion] = useState("");
-  const [forgotAnswer, setForgotAnswer]     = useState("");
-  const [newPassword, setNewPassword]       = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
+  const [forgotAnswer, setForgotAnswer] = useState("");
+  const [newPassword, setNewPassword]   = useState("");
+  const [showNewPw, setShowNewPw]       = useState(false);
 
-  const u = (k: string, v: string) => setForm(f => ({ ...f, [k]: v }));
-  const reset = () => { setError(""); };
+  const u = (k: keyof typeof form) => (v: string) => setForm(f => ({ ...f, [k]: v }));
+  const reset = useCallback(() => { setError(""); setBusy(false); }, []);
 
-  const pwRules = [
-    { ok: form.password.length >= 8 },
-    { ok: /[A-Z]/.test(form.password) },
-    { ok: /[a-z]/.test(form.password) },
-    { ok: /\d/.test(form.password) },
-    { ok: /[^A-Za-z0-9]/.test(form.password) },
-  ];
-  const pwOk = pwRules.every(r => r.ok);
+  const pwOk = [
+    form.password.length >= 8,
+    /[A-Z]/.test(form.password),
+    /[a-z]/.test(form.password),
+    /\d/.test(form.password),
+    /[^A-Za-z0-9]/.test(form.password),
+  ].filter(Boolean).length >= 4;
 
-  const newPwRules = [
-    { ok: newPassword.length >= 8 },
-    { ok: /[A-Z]/.test(newPassword) },
-    { ok: /[a-z]/.test(newPassword) },
-    { ok: /\d/.test(newPassword) },
-    { ok: /[^A-Za-z0-9]/.test(newPassword) },
-  ];
-  const newPwOk = newPwRules.every(r => r.ok);
-  const pwMatch = newPassword === confirmPassword && confirmPassword.length > 0;
+  // ── Handlers ────────────────────────────────────────────────────────────────
 
   async function submitLogin() {
-    reset(); setBusy(true);
+    setBusy(true); setError("");
     try { await login(form.email, form.password); }
-    catch (e: any) { setError(e.message); }
+    catch (e: any) { setError(e.message ?? "Invalid email or password"); }
     finally { setBusy(false); }
   }
-async function submitRegister() {
-    reset(); setBusy(true);
-    try { 
+
+  async function submitRegister() {
+    setBusy(true); setError("");
+    try {
       await register({
-       email: form.email,
-        password: form.password,
-        firstName: form.firstName,
-        lastName: form.lastName,
+        email: form.email, password: form.password,
+        firstName: form.firstName, lastName: form.lastName,
         firmName: form.firmName || undefined,
         securityQuestion: form.securityQuestion,
-        securityAnswer: form.securityAnswer
-     }); 
-  }
-    catch (e: any) { setError(e.message); }
+        securityAnswer: form.securityAnswer,
+      });
+    } catch (e: any) { setError(e.message ?? "Registration failed"); }
     finally { setBusy(false); }
   }
+
   async function submitForgotEmail() {
-    reset(); setBusy(true);
+    setBusy(true); setError("");
     try {
-      const res = await api.post<{ question: string | null }>("/api/auth/forgot/question", { email: forgotEmail });
-      if (!res.question) {
-        setError("No security question found for this email. Please contact your administrator.");
-      } else {
-        setForgotQuestion(res.question);
-        setMode("forgot-question");
-      }
+      const data = await api.post<{ question: string | null }>("/api/auth/forgot/question", { email: forgotEmail });
+      if (!data.question) return setError("No account found with that email.");
+      setForgotQuestion(data.question);
+      setMode("forgot-question");
     } catch (e: any) { setError(e.message); }
     finally { setBusy(false); }
   }
 
   async function submitForgotAnswer() {
-    reset(); setBusy(true);
+    if (!newPassword || newPassword.length < 8) return setError("New password must be at least 8 characters.");
+    setBusy(true); setError("");
     try {
-      if (!forgotAnswer.trim()) { setError("Please enter your security answer."); setBusy(false); return; }
-      setMode("forgot-reset");
-    } catch (e: any) { setError(e.message); }
-    finally { setBusy(false); }
-  }
-
-  async function submitForgotReset() {
-    reset(); setBusy(true);
-    try {
-      await api.post("/api/auth/forgot/reset", {
-        email: forgotEmail,
-        securityAnswer: forgotAnswer,
-        newPassword,
-      });
+      await api.post("/api/auth/forgot/reset", { email: forgotEmail, securityAnswer: forgotAnswer, newPassword });
       setMode("forgot-done");
     } catch (e: any) { setError(e.message); }
     finally { setBusy(false); }
   }
 
+  // ── Render ───────────────────────────────────────────────────────────────────
+
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden bg-slate-100">
-      <div
-        aria-hidden
-        className="absolute inset-0 -z-10"
-        style={{
-          backgroundImage:
-            "radial-gradient(60% 50% at 20% 20%, rgba(37, 99, 235, 0.10) 0%, rgba(37, 99, 235, 0) 70%), radial-gradient(50% 40% at 80% 80%, rgba(6, 182, 212, 0.10) 0%, rgba(6, 182, 212, 0) 70%)",
-        }}
-      />
-      <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <img src="/koc-logo.png" alt="Knights of Columbus" className="w-24 h-24 object-contain mx-auto mb-3" />
-          <div className="text-[11px] font-semibold tracking-[0.18em] uppercase text-brand-gradient">Financial Planning Suite</div>
+    <div className="min-h-screen flex bg-gradient-to-br from-slate-50 via-blue-50/30 to-cyan-50/20 relative overflow-hidden">
+
+      {/* Background mesh */}
+      <div className="absolute inset-0 pointer-events-none" aria-hidden>
+        <div className="absolute -top-24 -left-24 w-96 h-96 bg-blue-600/8 rounded-full blur-3xl" />
+        <div className="absolute -bottom-24 -right-24 w-96 h-96 bg-cyan-500/8 rounded-full blur-3xl" />
+        <div className="absolute top-1/2 left-1/3 w-64 h-64 bg-blue-400/5 rounded-full blur-2xl" />
+        {/* Subtle grid */}
+        <svg className="absolute inset-0 w-full h-full opacity-[0.015]" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <pattern id="grid" width="32" height="32" patternUnits="userSpaceOnUse">
+              <path d="M 32 0 L 0 0 0 32" fill="none" stroke="#1e293b" strokeWidth="0.5"/>
+            </pattern>
+          </defs>
+          <rect width="100%" height="100%" fill="url(#grid)" />
+        </svg>
+      </div>
+
+      {/* Left panel — branding (desktop only) */}
+      <div className="hidden lg:flex flex-col justify-between w-[440px] flex-shrink-0 bg-gradient-to-b from-slate-900 to-slate-800 p-12 relative overflow-hidden">
+        {/* Decorative elements */}
+        <div className="absolute inset-0 pointer-events-none" aria-hidden>
+          <div className="absolute top-0 right-0 w-80 h-80 bg-blue-600/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+          <div className="absolute bottom-0 left-0 w-64 h-64 bg-cyan-500/15 rounded-full blur-2xl translate-y-1/3 -translate-x-1/3" />
+          {/* Dot grid */}
+          <svg className="absolute inset-0 w-full h-full opacity-[0.07]">
+            <defs>
+              <pattern id="dots" width="20" height="20" patternUnits="userSpaceOnUse">
+                <circle cx="1" cy="1" r="1" fill="white"/>
+              </pattern>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#dots)" />
+          </svg>
         </div>
 
-        <div className="fp-card fp-card-accent shadow-xl shadow-slate-300/30 p-8"><form autoComplete="off" onSubmit={e => e.preventDefault()}>
+        {/* Top — logo & wordmark */}
+        <div className="relative z-10">
+          <div className="flex items-center gap-3 mb-12">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-400 flex items-center justify-center shadow-lg shadow-blue-500/30">
+              <ShieldCheck className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <div className="text-white font-bold text-lg tracking-tight leading-none">BrokersEdge</div>
+              <div className="text-white/40 text-[10px] font-medium tracking-widest uppercase mt-0.5">Financial Planning Suite</div>
+            </div>
+          </div>
 
+          <h1 className="text-3xl font-bold text-white leading-tight mb-4">
+            Smarter planning.<br />
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-400">
+              Better outcomes.
+            </span>
+          </h1>
+          <p className="text-white/50 text-sm leading-relaxed">
+            Comprehensive financial planning for Canadian and US advisors. Monte Carlo projections, tax optimization, and AI-powered insights — all in one platform.
+          </p>
+        </div>
+
+        {/* Features list */}
+        <div className="relative z-10 space-y-3">
+          {[
+            { label: "Dual jurisdiction", sub: "Canada & United States" },
+            { label: "Monte Carlo engine", sub: "1,000+ simulation retirement planning" },
+            { label: "AI meeting assistant", sub: "Automatic notes & action items" },
+            { label: "Multi-agent platform", sub: "GA & FA hierarchy management" },
+          ].map(f => (
+            <div key={f.label} className="flex items-start gap-3">
+              <div className="w-5 h-5 rounded-full bg-gradient-to-br from-blue-500/30 to-cyan-400/30 border border-blue-400/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                <Check className="w-3 h-3 text-cyan-400" />
+              </div>
+              <div>
+                <p className="text-white/80 text-sm font-medium leading-none">{f.label}</p>
+                <p className="text-white/35 text-xs mt-0.5">{f.sub}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Bottom */}
+        <div className="relative z-10">
+          <div className="flex items-center gap-2 text-white/20 text-xs">
+            <div className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+            All systems operational
+          </div>
+        </div>
+      </div>
+
+      {/* Right panel — form */}
+      <div className="flex-1 flex items-center justify-center p-6 lg:p-12">
+        <div className="w-full max-w-sm">
+
+          {/* Mobile logo */}
+          <div className="lg:hidden flex items-center justify-center gap-2 mb-8">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-600 to-cyan-500 flex items-center justify-center shadow-lg shadow-blue-500/25">
+              <ShieldCheck className="w-4.5 h-4.5 text-white" />
+            </div>
+            <span className="font-bold text-slate-900 text-lg">BrokersEdge</span>
+          </div>
+
+          {/* ── Login / Register ── */}
           {(mode === "login" || mode === "register") && (
-            <>
-              <div className="flex bg-gray-100 rounded-xl p-1 mb-6">
-                {(["login","register"] as const).map(m => (
+            <div className="animate-in fade-in duration-200">
+              <div className="mb-6">
+                <h2 className="text-2xl font-bold text-slate-900 mb-1">
+                  {mode === "login" ? "Welcome back" : "Create account"}
+                </h2>
+                <p className="text-sm text-slate-500">
+                  {mode === "login"
+                    ? "Sign in to your advisor dashboard"
+                    : "Register as a General Agent"}
+                </p>
+              </div>
+
+              {/* Tab switcher */}
+              <div className="flex bg-slate-100 rounded-xl p-1 mb-6">
+                {(["login", "register"] as const).map(m => (
                   <button key={m} onClick={() => { setMode(m); reset(); }}
-                    className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-all ${mode === m ? "bg-white shadow text-gray-900" : "text-gray-400 hover:text-gray-600"}`}>
+                    className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-all duration-200 ${
+                      mode === m
+                        ? "bg-white shadow-sm text-slate-900"
+                        : "text-slate-400 hover:text-slate-600"
+                    }`}>
                     {m === "login" ? "Sign In" : "Register"}
                   </button>
                 ))}
@@ -181,144 +299,173 @@ async function submitRegister() {
               <div className="space-y-3">
                 {mode === "register" && (
                   <>
-                    <div className="grid grid-cols-2 gap-3">
-                      <input placeholder="First name" autoComplete="off" value={form.firstName} onChange={e => u("firstName", e.target.value)} className={INPUT} />
-                      <input placeholder="Last name" autoComplete="off" value={form.lastName}  onChange={e => u("lastName",  e.target.value)} className={INPUT} />
+                    <div className="grid grid-cols-2 gap-2">
+                      <Field placeholder="First name" value={form.firstName} onChange={u("firstName")} />
+                      <Field placeholder="Last name"  value={form.lastName}  onChange={u("lastName")} />
                     </div>
-                    <input placeholder="Firm / Council name (optional)" value={form.firmName} onChange={e => u("firmName", e.target.value)} className={INPUT} />
+                    <Field placeholder="Firm name (optional)" value={form.firmName} onChange={u("firmName")} />
                   </>
                 )}
 
-                <input type="email" placeholder="Email address" autoComplete="off" value={form.email} onChange={e => u("email", e.target.value)} className={INPUT} />
+                <Field
+                  type="email" placeholder="Email address"
+                  value={form.email} onChange={u("email")}
+                />
 
-                <div className="relative">
-                  <input type={showPw ? "text" : "password"} placeholder="Password" autoComplete="new-password" value={form.password}
-                    onChange={e => u("password", e.target.value)}
-                    onKeyDown={e => e.key === "Enter" && mode === "login" && submitLogin()}
-                    className={INPUT + " pr-11"} />
-                  <button type="button" onClick={() => setShowPw(s => !s)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
-                    {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
-                </div>
+                <Field
+                  type={showPw ? "text" : "password"}
+                  placeholder="Password"
+                  value={form.password}
+                  onChange={u("password")}
+                  onKeyDown={e => e.key === "Enter" && mode === "login" && submitLogin()}
+                  autoComplete="new-password"
+                  suffix={
+                    <button type="button" onClick={() => setShowPw(s => !s)}
+                      className="text-slate-400 hover:text-slate-600 transition-colors">
+                      {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  }
+                />
 
                 {mode === "register" && <PasswordStrength password={form.password} />}
 
                 {mode === "register" && (
-                  <div className="pt-2 border-t border-gray-100">
-                    <p className="text-xs font-semibold text-gray-500 mb-2">Security Question (used for password recovery)</p>
-                    <select value={form.securityQuestion} onChange={e => u("securityQuestion", e.target.value)}
-                      className={INPUT + " mb-2"}>
+                  <div className="pt-3 border-t border-slate-100 space-y-2">
+                    <p className="text-xs font-semibold text-slate-500">Security Question</p>
+                    <select
+                      value={form.securityQuestion}
+                      onChange={e => u("securityQuestion")(e.target.value)}
+                      className="w-full bg-white/60 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all"
+                    >
                       {SECURITY_QUESTIONS.map(q => <option key={q} value={q}>{q}</option>)}
                     </select>
-                    <input placeholder="Your answer" value={form.securityAnswer} onChange={e => u("securityAnswer", e.target.value)} className={INPUT} />
-                    <p className="text-xs text-gray-400 mt-1">Answer is case-insensitive and stored securely.</p>
+                    <Field
+                      placeholder="Your answer"
+                      value={form.securityAnswer}
+                      onChange={u("securityAnswer")}
+                    />
+                    <p className="text-[10px] text-slate-400">Answer is case-insensitive and stored securely.</p>
                   </div>
                 )}
 
                 {mode === "login" && (
-                  <div className="text-right -mt-1">
+                  <div className="text-right">
                     <button onClick={() => { setMode("forgot-email"); reset(); }}
-                      className="text-xs text-cyan-600 hover:text-cyan-800 font-medium">
+                      className="text-xs text-blue-600 hover:text-blue-800 font-medium transition-colors">
                       Forgot password?
                     </button>
                   </div>
                 )}
-                
-                {error && <p className="text-red-500 text-sm bg-red-50 rounded-lg px-3 py-2">{error}</p>}
+
+                {error && (
+                  <div className="flex items-center gap-2 bg-red-50 border border-red-100 rounded-xl px-3 py-2.5">
+                    <X className="w-3.5 h-3.5 text-red-500 flex-shrink-0" />
+                    <p className="text-red-600 text-sm">{error}</p>
+                  </div>
+                )}
 
                 <button
                   onClick={mode === "login" ? submitLogin : submitRegister}
-                  disabled={busy || (mode === "register" && (!pwOk || !form.securityAnswer))}
-                  className="w-full bg-brand-gradient hover:bg-brand-gradient-hover shadow-sm transition-all disabled:opacity-50 text-white font-semibold py-3 rounded-xl text-sm transition-colors">
-                  {busy ? "Please wait…" : mode === "login" ? "Sign In" : "Create Account"}
+                  disabled={busy || (mode === "register" && (!pwOk || !form.securityAnswer || !form.firstName || !form.email))}
+                  className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-700 hover:to-cyan-600 text-white font-semibold py-3 rounded-xl text-sm shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
+                >
+                  {busy
+                    ? <><Loader2 className="w-4 h-4 animate-spin" /> Please wait…</>
+                    : mode === "login" ? "Sign In" : "Create Account"}
                 </button>
               </div>
-            </>
+            </div>
           )}
 
+          {/* ── Forgot — Email step ── */}
           {mode === "forgot-email" && (
-            <div className="space-y-4">
+            <div className="animate-in fade-in duration-200 space-y-4">
+              <button onClick={() => { setMode("login"); reset(); }}
+                className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-slate-600 transition-colors mb-2">
+                <ArrowLeft className="w-3.5 h-3.5" /> Back to Sign In
+              </button>
               <div>
-                <h2 className="text-lg font-bold text-gray-900">Reset Password</h2>
-                <p className="text-sm text-gray-500 mt-1">Enter your email to retrieve your security question.</p>
+                <h2 className="text-2xl font-bold text-slate-900 mb-1">Reset Password</h2>
+                <p className="text-sm text-slate-500">Enter your email to retrieve your security question.</p>
               </div>
-              <input type="email" placeholder="Email address" autoComplete="off" value={forgotEmail} onChange={e => setForgotEmail(e.target.value)} className={INPUT} />
-              {error && <p className="text-red-500 text-sm bg-red-50 rounded-lg px-3 py-2">{error}</p>}
+              <Field type="email" placeholder="Email address" value={forgotEmail} onChange={setForgotEmail} />
+              {error && (
+                <div className="flex items-center gap-2 bg-red-50 border border-red-100 rounded-xl px-3 py-2.5">
+                  <X className="w-3.5 h-3.5 text-red-500 flex-shrink-0" />
+                  <p className="text-red-600 text-sm">{error}</p>
+                </div>
+              )}
               <button onClick={submitForgotEmail} disabled={busy || !forgotEmail}
-                className="w-full bg-brand-gradient hover:bg-brand-gradient-hover shadow-sm transition-all disabled:opacity-50 text-white font-semibold py-3 rounded-xl text-sm">
-                {busy ? "Please wait…" : "Continue"}
+                className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-cyan-500 text-white font-semibold py-3 rounded-xl text-sm shadow-lg shadow-blue-500/25 transition-all disabled:opacity-50">
+                {busy ? <><Loader2 className="w-4 h-4 animate-spin" /> Please wait…</> : "Continue"}
               </button>
-              <button onClick={() => { setMode("login"); reset(); }} className="w-full text-sm text-gray-400 hover:text-gray-600 text-center">← Back to Sign In</button>
             </div>
           )}
 
+          {/* ── Forgot — Security question ── */}
           {mode === "forgot-question" && (
-            <div className="space-y-4">
-              <div>
-                <h2 className="text-lg font-bold text-gray-900">Security Question</h2>
-                <p className="text-sm text-gray-500 mt-1">Answer your security question to continue.</p>
-              </div>
-              <div className="bg-blue-50 border border-blue-200 rounded-xl px-4 py-3">
-                <p className="text-sm font-semibold text-blue-800">{forgotQuestion}</p>
-              </div>
-              <input placeholder="Your answer" value={forgotAnswer} onChange={e => setForgotAnswer(e.target.value)} className={INPUT} />
-              <p className="text-xs text-gray-400 -mt-2">Answers are not case-sensitive.</p>
-              {error && <p className="text-red-500 text-sm bg-red-50 rounded-lg px-3 py-2">{error}</p>}
-              <button onClick={submitForgotAnswer} disabled={busy || !forgotAnswer}
-                className="w-full bg-brand-gradient hover:bg-brand-gradient-hover shadow-sm transition-all disabled:opacity-50 text-white font-semibold py-3 rounded-xl text-sm">
-                {busy ? "Verifying…" : "Continue"}
+            <div className="animate-in fade-in duration-200 space-y-4">
+              <button onClick={() => { setMode("forgot-email"); reset(); }}
+                className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-slate-600 transition-colors">
+                <ArrowLeft className="w-3.5 h-3.5" /> Back
               </button>
-              <button onClick={() => { setMode("forgot-email"); reset(); }} className="w-full text-sm text-gray-400 hover:text-gray-600 text-center">← Back</button>
+              <div>
+                <h2 className="text-2xl font-bold text-slate-900 mb-1">Security Question</h2>
+                <p className="text-sm text-slate-500">Answer your security question to reset your password.</p>
+              </div>
+              <div className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-3">
+                <p className="text-xs text-slate-500 mb-0.5">Your question</p>
+                <p className="text-sm font-medium text-slate-900">{forgotQuestion}</p>
+              </div>
+              <Field placeholder="Your answer" value={forgotAnswer} onChange={setForgotAnswer} />
+              <div className="space-y-2">
+                <p className="text-xs font-semibold text-slate-500">New Password</p>
+                <Field
+                  type={showNewPw ? "text" : "password"}
+                  placeholder="New password (min 8 characters)"
+                  value={newPassword} onChange={setNewPassword}
+                  suffix={
+                    <button type="button" onClick={() => setShowNewPw(s => !s)}
+                      className="text-slate-400 hover:text-slate-600 transition-colors">
+                      {showNewPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  }
+                />
+              </div>
+              {error && (
+                <div className="flex items-center gap-2 bg-red-50 border border-red-100 rounded-xl px-3 py-2.5">
+                  <X className="w-3.5 h-3.5 text-red-500 flex-shrink-0" />
+                  <p className="text-red-600 text-sm">{error}</p>
+                </div>
+              )}
+              <button onClick={submitForgotAnswer} disabled={busy || !forgotAnswer || newPassword.length < 8}
+                className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-cyan-500 text-white font-semibold py-3 rounded-xl text-sm shadow-lg shadow-blue-500/25 transition-all disabled:opacity-50">
+                {busy ? <><Loader2 className="w-4 h-4 animate-spin" /> Resetting…</> : "Reset Password"}
+              </button>
             </div>
           )}
 
-          {mode === "forgot-reset" && (
-            <div className="space-y-4">
-              <div>
-                <h2 className="text-lg font-bold text-gray-900">Set New Password</h2>
-                <p className="text-sm text-gray-500 mt-1">Choose a strong new password.</p>
-              </div>
-              <div className="relative">
-                <input type={showNewPw ? "text" : "password"} placeholder="New password" autoComplete="new-password" value={newPassword}
-                  onChange={e => setNewPassword(e.target.value)} className={INPUT + " pr-11"} />
-                <button type="button" onClick={() => setShowNewPw(s => !s)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
-                  {showNewPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
-              </div>
-              <PasswordStrength password={newPassword} />
-              <div>
-                <input type="password" placeholder="Confirm new password" autoComplete="new-password" value={confirmPassword}
-                  onChange={e => setConfirmPassword(e.target.value)}
-                  className={`${INPUT} ${confirmPassword && !pwMatch ? "border-red-300" : ""}`} />
-                {confirmPassword && !pwMatch && <p className="text-xs text-red-500 mt-1">Passwords do not match</p>}
-                {confirmPassword && pwMatch  && <p className="text-xs text-emerald-600 mt-1">✓ Passwords match</p>}
-              </div>
-              {error && <p className="text-red-500 text-sm bg-red-50 rounded-lg px-3 py-2">{error}</p>}
-              <button onClick={submitForgotReset} disabled={busy || !newPwOk || !pwMatch}
-                className="w-full bg-brand-gradient hover:bg-brand-gradient-hover shadow-sm transition-all disabled:opacity-50 text-white font-semibold py-3 rounded-xl text-sm">
-                {busy ? "Saving…" : "Reset Password"}
-              </button>
-              <button onClick={() => { setMode("forgot-question"); reset(); }} className="w-full text-sm text-gray-400 hover:text-gray-600 text-center">← Back</button>
-            </div>
-          )}
-
+          {/* ── Forgot — Done ── */}
           {mode === "forgot-done" && (
-            <div className="text-center py-6 space-y-4">
-              <div className="w-14 h-14 bg-emerald-100 rounded-full flex items-center justify-center mx-auto">
-                <Check className="w-7 h-7 text-emerald-600" />
+            <div className="animate-in fade-in duration-200 text-center space-y-4">
+              <div className="w-16 h-16 rounded-full bg-emerald-50 border-2 border-emerald-200 flex items-center justify-center mx-auto">
+                <Check className="w-7 h-7 text-emerald-500" />
               </div>
-              <h2 className="text-lg font-bold text-gray-900">Password Reset!</h2>
-              <p className="text-sm text-gray-500">Your password has been changed successfully. You can now sign in.</p>
-              <button onClick={() => { setMode("login"); reset(); setForgotEmail(""); setForgotAnswer(""); setNewPassword(""); setConfirmPassword(""); }}
-                className="w-full bg-brand-gradient hover:bg-brand-gradient-hover shadow-sm transition-all text-white font-semibold py-3 rounded-xl text-sm">
+              <div>
+                <h2 className="text-2xl font-bold text-slate-900 mb-1">Password Reset</h2>
+                <p className="text-sm text-slate-500">Your password has been updated. You can now sign in.</p>
+              </div>
+              <button onClick={() => { setMode("login"); reset(); setForgotEmail(""); setForgotAnswer(""); setNewPassword(""); }}
+                className="w-full bg-gradient-to-r from-blue-600 to-cyan-500 text-white font-semibold py-3 rounded-xl text-sm shadow-lg shadow-blue-500/25 transition-all">
                 Sign In
               </button>
             </div>
           )}
 
-        </form>
+          {/* Footer */}
+          <p className="text-center text-[10px] text-slate-300 mt-8">
+            © 2025 BrokersEdge · Secure · Encrypted
+          </p>
         </div>
       </div>
     </div>

@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { toast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
 import {
   AreaChart, Area, BarChart, Bar, LineChart, Line,
@@ -597,7 +598,7 @@ export function MeltdownTab({ clientId, client, person }: Props) {
             </div>
             <div className="flex items-center gap-2 flex-shrink-0">
               <button
-                onClick={() => alert("Strategy saved as draft. (Persistent strategy storage is wired in the next iteration.)")}
+                onClick={() => toast({ title: `Adopted: ${active.name}`, description: `Tax saved: ${fmt$(lifetimeTaxSaved)} · Estate uplift: ${fmt$(estateUplift)}` })}
                 className="px-4 py-2.5 rounded-lg text-sm font-medium bg-white/15 hover:bg-white/25 backdrop-blur border border-white/20 transition-colors"
               >
                 Save Draft

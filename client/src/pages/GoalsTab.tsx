@@ -1,3 +1,4 @@
+import { toast } from "@/hooks/use-toast";
 import { useState, useEffect, useMemo } from "react";
 import { api } from "../lib/api";
 import { InlineEdit } from "@/components/ui/InlineEdit";
@@ -722,7 +723,7 @@ export function GoalsTab({ clientId, client }: { clientId: number; client?: any 
     try {
       await api.post(`/api/clients/${clientId}/goals`, draft);
       await load();
-    } catch (e: any) { alert(e.message); }
+    } catch (e: any) { toast({ title: "Error", description: e.message, variant: "destructive" }); }
     finally { setBusy(false); setVoiceOpen(false); }
   }
 
@@ -743,7 +744,7 @@ export function GoalsTab({ clientId, client }: { clientId: number; client?: any 
       setShowForm(false);
       setEditingGoal(null);
       await load();
-    } catch (e: any) { alert(e.message); }
+    } catch (e: any) { toast({ title: "Error", description: e.message, variant: "destructive" }); }
     finally { setBusy(false); }
   }
 
@@ -751,7 +752,7 @@ export function GoalsTab({ clientId, client }: { clientId: number; client?: any 
     try {
       await api.patch(`/api/goals/${id}`, data);
       setGoals(prev => prev.map(g => g.id === id ? { ...g, ...data } : g));
-    } catch (e: any) { alert(e.message); }
+    } catch (e: any) { toast({ title: "Error", description: e.message, variant: "destructive" }); }
   }
 
   async function del(id: number) {
@@ -916,3 +917,4 @@ export function GoalsTab({ clientId, client }: { clientId: number; client?: any 
     </div>
   );
 }
+

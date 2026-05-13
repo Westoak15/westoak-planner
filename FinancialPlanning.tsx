@@ -1384,7 +1384,7 @@ function RrspRoomPanel({ clientId, prefill, person = "primary", primaryLabel = "
       else await api.post(`/api/tax/client/${clientId}/analyses`, payload);
       setShowForm(false);
       await load();
-    } catch (e: any) { alert(e.message); }
+    } catch (e: any) { toast({ title: "Error", description: e.message, variant: "destructive" }); }
     finally { setSaving(false); }
   };
 
@@ -1557,7 +1557,7 @@ function TfsaRoomPanel({ clientId, prefill, person = "primary", primaryLabel = "
       else await api.post(`/api/tax/client/${clientId}/analyses`, payload);
       setShowForm(false);
       await load();
-    } catch (e: any) { alert(e.message); }
+    } catch (e: any) { toast({ title: "Error", description: e.message, variant: "destructive" }); }
     finally { setSaving(false); }
   };
 
@@ -1745,7 +1745,7 @@ function TaxProjectionPanel({ clientId, prefillPrimary, prefillSpouse, person = 
       else await api.post(`/api/tax/client/${clientId}/analyses`, payload);
       setShowForm(false);
       await load();
-    } catch (e: any) { alert(e.message); }
+    } catch (e: any) { toast({ title: "Error", description: e.message, variant: "destructive" }); }
     finally { setSaving(false); }
   };
 
@@ -2290,7 +2290,7 @@ function IncomeSplittingPanel({ clientId, prefill, person = "primary", primaryLa
       else await api.post(`/api/tax/client/${clientId}/analyses`, payload);
       setShowForm(false);
       await load();
-    } catch (e: any) { alert(e.message); }
+    } catch (e: any) { toast({ title: "Error", description: e.message, variant: "destructive" }); }
     finally { setSaving(false); }
   };
 

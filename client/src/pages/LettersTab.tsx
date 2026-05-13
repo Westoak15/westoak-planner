@@ -1,3 +1,4 @@
+import { toast } from "@/hooks/use-toast";
 import { useState, useEffect } from "react";
 import { api } from "../lib/api";
 import { Plus, Printer, Trash2, FileText, Save, ChevronDown } from "lucide-react";
@@ -413,7 +414,7 @@ export function LettersTab({ clientId, client }: { clientId: number; client?: Cl
       setLetters(l => [letter, ...l]);
       setSelected(letter);
       setShowNew(false);
-    } catch (e: any) { alert(e.message); }
+    } catch (e: any) { toast({ title: "Error", description: e.message, variant: "destructive" }); }
     finally { setBusy(false); }
   }
 
@@ -427,7 +428,7 @@ export function LettersTab({ clientId, client }: { clientId: number; client?: Cl
       });
       setSelected(updated);
       setLetters(l => l.map(x => x.id === updated.id ? updated : x));
-    } catch (e: any) { alert(e.message); }
+    } catch (e: any) { toast({ title: "Error", description: e.message, variant: "destructive" }); }
     finally { setBusy(false); }
   }
 
@@ -562,3 +563,4 @@ export function LettersTab({ clientId, client }: { clientId: number; client?: Cl
     </div>
   );
 }
+

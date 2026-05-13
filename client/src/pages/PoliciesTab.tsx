@@ -1,321 +1,688 @@
-import { useState, useEffect } from "react";
+/**
+ * PoliciesTab.tsx
+ * Institutional-grade Protection Intelligence Workspace.
+ *
+ * Design philosophy: Goldman Sachs PWM × Bloomberg Terminal (modernized)
+ * - Dense, scannable, advisor-centric
+ * - Answers: "Is this household properly protected?"
+ * - No modals. Inline expansion. Sticky intelligence rail.
+ */
+
+import { useState, useEffect, useRef, useCallback } from "react";
+import {
+  Shield, AlertTriangle, CheckCircle, ChevronDown, ChevronUp,
+  Plus, Table, TrendingUp, TrendingDown, Clock, User,
+  FileText, Edit3, Trash2, Save, X, Upload, Info,
+  ArrowRight, Zap, Eye, EyeOff,
+} from "lucide-react";
 import { api } from "../lib/api";
+import { toast } from "@/hooks/use-toast";
 import { PolicyImporter } from "../components/PolicyImporter";
-import { Plus, Trash2, Pencil, X, Save, Shield, Table } from "lucide-react";
+
+// ── Types ─────────────────────────────────────────────────────────────────────
 
 interface Policy {
   id: number;
   type: string;
   insured: string;
-  provider: string;
-  policyNumber: string;
+  carrier?: string;
+  policyNumber?: string;
   coverageAmount: string;
   premium: string;
   premiumFrequency: string;
-  beneficiary: string;
-  inforceDate: string;
-  renewalDate: string;
-  notes: string;
-  createdAt: string;
+  issueDate?: string;
+  expiryDate?: string;
+  beneficiary?: string;
+  riders?: string;
+  notes?: string;
+  status?: string;
 }
 
-type PolicyDraft = Omit<Policy, "id" | "createdAt">;
-
-const POLICY_TYPES = ["Term Life","Whole Life","Universal Life","Disability (DI)","Long-Term Care (LTC)","Critical Illness","Other"];
-const TERM_TYPES   = ["Term Life","Critical Illness"];
-const FREQUENCIES  = ["Monthly","Quarterly","Semi-Annual","Annual"];
-const INPUT = "fp-input";
-
-const emptyDraft = (): PolicyDraft => ({
-  type:"Term Life", insured:"primary", provider:"", policyNumber:"",
-  coverageAmount:"", premium:"", premiumFrequency:"Monthly",
-  beneficiary:"", inforceDate:"", renewalDate:"", notes:"",
-});
-
-function fmt$(v: string | number | null): string {
-  const n = parseFloat(String(v ?? "0"));
-  if (!n) return "—";
-  return "$" + n.toLocaleString("en-CA", { maximumFractionDigits: 0 });
+interface Props {
+  clientId: number;
+  client?: any;
 }
+
+// ── Constants ─────────────────────────────────────────────────────────────────
+
+const POLICY_TYPES = [
+  "Term Life", "Whole Life", "Universal Life", "Variable Life",
+  "Group Life", "Disability", "Critical Illness", "Long-Term Care",
+  "Mortgage Protection", "Key Person", "Buy-Sell", "Annuity",
+];
+
+const FREQ_MULT: Record<string, number> = {
+  Monthly: 12, Quarterly: 4, "Semi-Annual": 2, Annual: 1,
+};
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+const fmt$ = (n: number) => n >= 1_000_000
+  ? `$${(n / 1_000_000).toFixed(2)}M`
+  : n >= 1000
+  ? `$${Math.round(n / 1000).toLocaleString()}K`
+  : `$${Math.round(n).toLocaleString()}`;
+
+const fmtFull$ = (n: number) => `$${Math.round(n).toLocaleString("en-CA")}`;
 
 function annualPremium(p: Policy): number {
   const v = parseFloat(p.premium || "0");
-  const mult: Record<string, number> = { Monthly: 12, Quarterly: 4, "Semi-Annual": 2, Annual: 1 };
-  return v * (mult[p.premiumFrequency] ?? 12);
+  return v * (FREQ_MULT[p.premiumFrequency] ?? 12);
 }
 
-function SummaryBar({ items }: { items: { label: string; value: string; color: string; bg: string }[] }) {
+function policyRiskLevel(p: Policy): "low" | "medium" | "high" {
+  const cov = parseFloat(p.coverageAmount || "0");
+  if (p.type.includes("Disability") || p.type.includes("Critical")) {
+    return cov > 0 ? "low" : "high";
+  }
+  if (cov > 500000) return "low";
+  if (cov > 150000) return "medium";
+  return "high";
+}
+
+function daysUntilExpiry(expiryDate?: string): number | null {
+  if (!expiryDate) return null;
+  const d = new Date(expiryDate);
+  if (isNaN(d.getTime())) return null;
+  return Math.floor((d.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+}
+
+// ── Compact Progress Bar ──────────────────────────────────────────────────────
+
+function CoverageBar({ label, pct, tone }: { label: string; pct: number; tone: "green" | "amber" | "red" | "blue" }) {
+  const colors = { green: "#10b981", amber: "#f59e0b", red: "#ef4444", blue: "#3b82f6" };
+  const bgColors = { green: "rgba(16,185,129,0.1)", amber: "rgba(245,158,11,0.1)", red: "rgba(239,68,68,0.1)", blue: "rgba(59,130,246,0.1)" };
   return (
-    <div className="grid gap-4 mb-6" style={{ gridTemplateColumns: `repeat(${items.length}, 1fr)` }}>
-      {items.map(i => (
-        <div key={i.label} className={`${i.bg} rounded-xl p-4`}>
-          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">{i.label}</p>
-          <p className={`text-xl font-bold ${i.color}`}>{i.value}</p>
-        </div>
-      ))}
+    <div className="space-y-1">
+      <div className="flex justify-between items-center">
+        <span className="text-[10px] font-medium text-slate-500 uppercase tracking-wider">{label}</span>
+        <span className="text-[10px] font-bold" style={{ color: colors[tone] }}>{Math.round(pct)}%</span>
+      </div>
+      <div className="h-1 rounded-full" style={{ background: bgColors[tone] }}>
+        <div className="h-full rounded-full transition-all duration-700"
+          style={{ width: `${Math.min(100, pct)}%`, background: colors[tone] }} />
+      </div>
     </div>
   );
 }
 
-const TH = ({ children, right }: { children?: React.ReactNode; right?: boolean }) => (
-  <th className={`px-4 py-2.5 text-xs font-semibold text-gray-400 uppercase tracking-wide ${right ? "text-right" : "text-left"}`}>{children}</th>
-);
-const TD = ({ children, right }: { children: React.ReactNode; right?: boolean }) => (
-  <td className={`px-4 py-3 text-sm ${right ? "text-right" : ""}`}>{children}</td>
-);
+// ── Status Dot ────────────────────────────────────────────────────────────────
 
-export function PoliciesTab({ clientId, client, person = "primary" }: { clientId: number; client?: any; person?: string }) {
-  const [policies, setPolicies] = useState<Policy[]>([]);
-  const [loading, setLoading]   = useState(true);
-  const [showForm, setShowForm] = useState(false);
-  const [editId, setEditId]     = useState<number | null>(null);
-  const [draft, setDraft]       = useState<PolicyDraft>(emptyDraft());
-  const [saving, setSaving]     = useState(false);
-  const [showImporter, setShowImporter] = useState(false);
-  const activePerson  = person === "spouse" ? "spouse" : "primary";
-  const hasSpouse     = !!client?.spouseFirstName;
-  const spouseName    = client?.spouseFirstName ? `${client.spouseFirstName} ${client.spouseLastName ?? ""}`.trim() : null;
-  const clientName    = client?.firstName ?? "Client";
-  const filteredPolicies = policies.filter(p =>
-    activePerson === "primary" ? p.insured !== "spouse" : p.insured === "spouse"
-  );
-
-  const load = () => {
-    setLoading(true);
-    api.get<Policy[]>(`/api/clients/${clientId}/policies`)
-      .then(setPolicies).catch(() => setPolicies([]))
-      .finally(() => setLoading(false));
+function StatusDot({ level }: { level: "low" | "medium" | "high" | "ok" | "warn" | "crit" }) {
+  const map = {
+    low:    "bg-emerald-400",
+    ok:     "bg-emerald-400",
+    medium: "bg-amber-400",
+    warn:   "bg-amber-400",
+    high:   "bg-red-400",
+    crit:   "bg-red-400",
   };
-  useEffect(() => { load(); }, [clientId]);
+  return <span className={`inline-block w-1.5 h-1.5 rounded-full flex-shrink-0 ${map[level]}`} />;
+}
 
-  const u = (k: keyof PolicyDraft, v: string) => setDraft(d => ({ ...d, [k]: v }));
+// ── Inline Edit Field ─────────────────────────────────────────────────────────
 
-  function openCreate() { setDraft({ ...emptyDraft(), insured: activePerson }); setEditId(null); setShowForm(true); }
-  function openEdit(p: Policy) {
-    setDraft({ type:p.type, insured:p.insured, provider:p.provider, policyNumber:p.policyNumber,
-      coverageAmount:p.coverageAmount, premium:p.premium, premiumFrequency:p.premiumFrequency,
-      beneficiary:p.beneficiary, inforceDate:p.inforceDate ?? "", renewalDate:p.renewalDate ?? "", notes:p.notes });
-    setEditId(p.id); setShowForm(true);
-  }
+function EditField({ label, value, onChange, type = "text", options }: {
+  label: string; value: string; onChange: (v: string) => void;
+  type?: string; options?: string[];
+}) {
+  return (
+    <div>
+      <label className="block text-[9px] font-semibold uppercase tracking-widest text-slate-400 mb-1">{label}</label>
+      {options ? (
+        <select value={value} onChange={e => onChange(e.target.value)}
+          className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-900 focus:outline-none focus:ring-1 focus:ring-blue-400/40 focus:border-blue-400">
+          {options.map(o => <option key={o} value={o}>{o}</option>)}
+        </select>
+      ) : (
+        <input type={type} value={value} onChange={e => onChange(e.target.value)}
+          className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-900 focus:outline-none focus:ring-1 focus:ring-blue-400/40 focus:border-blue-400" />
+      )}
+    </div>
+  );
+}
 
-  async function save() {
+// ── Policy Row ────────────────────────────────────────────────────────────────
+
+function PolicyRow({
+  policy, onSave, onDelete, defaultExpanded = false,
+}: {
+  policy: Policy;
+  onSave: (p: Policy) => Promise<void>;
+  onDelete: (id: number) => Promise<void>;
+  defaultExpanded?: boolean;
+}) {
+  const [expanded, setExpanded]   = useState(defaultExpanded);
+  const [editing,  setEditing]    = useState(false);
+  const [form,     setForm]       = useState({ ...policy });
+  const [saving,   setSaving]     = useState(false);
+  const [deleting, setDeleting]   = useState(false);
+
+  const u = (k: keyof Policy) => (v: string) => setForm(f => ({ ...f, [k]: v }));
+
+  const risk    = policyRiskLevel(policy);
+  const annual  = annualPremium(policy);
+  const expDays = daysUntilExpiry(policy.expiryDate);
+  const expSoon = expDays !== null && expDays < 365 && expDays >= 0;
+  const expired = expDays !== null && expDays < 0;
+
+  const riskColors = {
+    low:    { bg: "bg-emerald-50", text: "text-emerald-700", border: "border-emerald-100" },
+    medium: { bg: "bg-amber-50",   text: "text-amber-700",   border: "border-amber-100" },
+    high:   { bg: "bg-red-50",     text: "text-red-700",     border: "border-red-100" },
+  };
+
+  async function handleSave() {
     setSaving(true);
-    try {
-      if (editId) await api.patch(`/api/clients/${clientId}/policies/${editId}`, draft);
-      else        await api.post(`/api/clients/${clientId}/policies`, draft);
-      setShowForm(false); load();
-    } finally { setSaving(false); }
+    try { await onSave(form); setEditing(false); }
+    catch (e: any) { toast({ title: "Error", description: e.message, variant: "destructive" }); }
+    finally { setSaving(false); }
   }
 
-  async function del(id: number) {
-    if (!confirm("Delete this policy?")) return;
-    await api.delete(`/api/clients/${clientId}/policies/${id}`); load();
+  async function handleDelete() {
+    if (!confirm(`Remove this ${policy.type} policy?`)) return;
+    setDeleting(true);
+    try { await onDelete(policy.id); }
+    catch (e: any) { toast({ title: "Error", description: e.message, variant: "destructive" }); setDeleting(false); }
   }
-
-  // ── Summary stats ────────────────────────────────────────────────────────────
-  const lifeCoverage = filteredPolicies
-    .filter(p => ["Term Life","Whole Life","Universal Life"].includes(p.type))
-    .reduce((s, p) => s + parseFloat(p.coverageAmount || "0"), 0);
-  const diCoverage = filteredPolicies
-    .filter(p => p.type === "Disability (DI)")
-    .reduce((s, p) => s + parseFloat(p.coverageAmount || "0"), 0);
-  const ciCoverage = filteredPolicies
-    .filter(p => p.type === "Critical Illness")
-    .reduce((s, p) => s + parseFloat(p.coverageAmount || "0"), 0);
-  const totalPremium = filteredPolicies.reduce((s, p) => s + annualPremium(p), 0);
-
-  const isTermType = TERM_TYPES.includes(draft.type);
 
   return (
-    <div className="max-w-5xl mx-auto px-6 py-6 space-y-6">
+    <div className={`border-b border-slate-100 last:border-0 transition-colors ${expanded ? "bg-slate-50/50" : "hover:bg-slate-50/30"}`}>
 
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-semibold text-slate-900">Protection</h1>
-          <p className="text-sm text-slate-500">{filteredPolicies.length} polic{filteredPolicies.length !== 1 ? "ies" : "y"} on file</p>
-        </div>
-        <div className="flex items-center gap-2">
-  <button onClick={() => setShowImporter(true)}
-    className="flex items-center gap-1.5 text-sm font-semibold text-slate-600 border border-slate-200 hover:bg-slate-50 px-3 py-2 rounded-xl transition-colors">
-    <Table className="w-4 h-4" /> Import Excel
-  </button>
-  <button onClick={openCreate}
-    className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-cyan-500 !text-white text-sm font-semibold px-4 py-2 rounded-xl shadow-sm hover:shadow-md transition">
-    <Plus className="w-4 h-4" /> Add Policy
-  </button>
-</div>
-      </div>
-
-      {/* Summary stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {[
-          { label: "Life Coverage",    value: lifeCoverage > 0 ? fmt$(lifeCoverage)           : "—", color: lifeCoverage > 0 ? "text-blue-600"    : "text-slate-400" },
-          { label: "Disability",       value: diCoverage > 0   ? fmt$(diCoverage) + "/mo"     : "—", color: diCoverage > 0   ? "text-violet-600"  : "text-slate-400" },
-          { label: "Critical Illness", value: ciCoverage > 0   ? fmt$(ciCoverage)             : "—", color: ciCoverage > 0   ? "text-emerald-600" : "text-slate-400" },
-          { label: "Annual Premium",   value: fmt$(totalPremium),                                    color: "text-slate-700" },
-        ].map(s => (
-          <div key={s.label} className="bg-white border border-slate-200 rounded-xl p-4 hover:shadow-sm transition-all duration-200">
-            <p className="text-xs text-slate-500">{s.label}</p>
-            <p className={`text-xl font-semibold mt-1 ${s.color}`}>{s.value}</p>
-          </div>
-        ))}
-      </div>
-
-      {/* Gap insights */}
-      {filteredPolicies.length > 0 && lifeCoverage === 0 && (
-        <div className="bg-red-50 border border-red-100 rounded-xl p-4 text-sm text-red-600 font-medium">
-          ⚠ No life insurance on file — income replacement needs may be unmet.
-        </div>
-      )}
-      {filteredPolicies.length > 0 && diCoverage === 0 && (
-        <div className="bg-amber-50 border border-amber-100 rounded-xl p-4 text-sm text-amber-700 font-medium">
-          ⚠ No disability coverage on file — income at risk if unable to work.
-        </div>
-      )}
-
-      {/* Policy cards */}
-      {loading ? (
-        <div className="text-center py-16 text-slate-400">Loading…</div>
-      ) : filteredPolicies.length === 0 ? (
-        <div className="text-center py-16 border-2 border-dashed border-slate-200 rounded-2xl">
-          <Shield className="w-10 h-10 text-slate-300 mx-auto mb-3" />
-          <p className="text-slate-500 font-semibold">No policies on file</p>
-          <p className="text-sm text-slate-400 mt-1">Add existing life, disability, or LTC coverage</p>
-          <button onClick={openCreate} className="mt-4 text-sm text-blue-600 hover:underline">Add your first policy</button>
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {filteredPolicies.map(p => {
-            const insuredName = p.insured === "spouse" ? (spouseName ?? "Spouse") : clientName;
-            return (
-              <div key={p.id} className="bg-white border border-slate-200 rounded-2xl p-5 hover:shadow-md hover:-translate-y-[1px] transition-all duration-200 group">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-xs font-semibold bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full">{p.type}</span>
-                      {TERM_TYPES.includes(p.type) && p.renewalDate && (
-                        <span className="text-xs font-medium text-amber-600">Renews {p.renewalDate}</span>
-                      )}
-                    </div>
-                    <p className="font-medium text-slate-900">{p.provider || "—"}</p>
-                    <p className="text-xs text-slate-500 mt-0.5">
-                      {insuredName}
-                      {p.policyNumber ? ` · #${p.policyNumber}` : ""}
-                      {p.inforceDate ? ` · Since ${p.inforceDate}` : ""}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-lg font-semibold text-blue-600">{fmt$(p.coverageAmount)}</p>
-                    <p className="text-xs text-slate-500">{fmt$(annualPremium(p))}/yr</p>
-                  </div>
-                </div>
-                <div className="mt-3 flex justify-between items-center text-xs text-slate-500 border-t border-slate-100 pt-3">
-                  <span>Beneficiary: {p.beneficiary || "—"}</span>
-                  <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition">
-                    <button onClick={() => openEdit(p)} className="p-1.5 text-slate-400 hover:text-blue-600 rounded-md hover:bg-blue-50 transition">
-                      <Pencil className="w-3.5 h-3.5" />
-                    </button>
-                    <button onClick={() => del(p.id)} className="p-1.5 text-slate-400 hover:text-red-500 rounded-md hover:bg-red-50 transition">
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                </div>
-                {p.notes && (
-                  <p className="mt-2 text-xs text-slate-500 bg-slate-50 rounded-lg px-3 py-2">{p.notes}</p>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-            {/* Form modal */}
-      {showForm && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg">
-            <div className="flex justify-between items-center px-6 pt-6 pb-4 border-b border-gray-100">
-              <h2 className="text-lg font-bold text-gray-900">{editId ? "Edit Policy" : "Add Policy"}</h2>
-              <button onClick={() => setShowForm(false)} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
-            </div>
-            <div className="px-6 py-5 space-y-4">
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-xs font-semibold text-gray-500 mb-1 block">Policy Type</label>
-                  <select value={draft.type} onChange={e => u("type", e.target.value)} className={INPUT}>
-                    {POLICY_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label className="text-xs font-semibold text-gray-500 mb-1 block">Insured</label>
-                  <select value={draft.insured} onChange={e => u("insured", e.target.value)} className={INPUT}>
-                    <option value="primary">{client ? `${client.firstName} ${client.lastName}` : "Primary"}</option>
-                    {spouseName && <option value="spouse">{spouseName}</option>}
-                  </select>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-xs font-semibold text-gray-500 mb-1 block">Provider</label>
-                  <input value={draft.provider} onChange={e => u("provider", e.target.value)} className={INPUT} placeholder="e.g. Sun Life" />
-                </div>
-                <div>
-                  <label className="text-xs font-semibold text-gray-500 mb-1 block">Policy Number</label>
-                  <input value={draft.policyNumber} onChange={e => u("policyNumber", e.target.value)} className={INPUT} placeholder="Optional" />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-xs font-semibold text-gray-500 mb-1 block">Coverage Amount ($)</label>
-                  <input type="number" value={draft.coverageAmount} onChange={e => u("coverageAmount", e.target.value)} className={INPUT} placeholder="0" />
-                </div>
-                <div>
-                  <label className="text-xs font-semibold text-gray-500 mb-1 block">Premium</label>
-                  <div className="flex gap-2">
-                    <input type="number" value={draft.premium} onChange={e => u("premium", e.target.value)} className={INPUT} placeholder="0" />
-                    <select value={draft.premiumFrequency} onChange={e => u("premiumFrequency", e.target.value)} className="border border-gray-200 rounded-lg px-2 py-2 text-sm w-32">
-                      {FREQUENCIES.map(f => <option key={f} value={f}>{f}</option>)}
-                    </select>
-                  </div>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-xs font-semibold text-gray-500 mb-1 block">Inforce Date</label>
-                  <input type="date" value={draft.inforceDate} onChange={e => u("inforceDate", e.target.value)} className={INPUT} />
-                </div>
-                {isTermType && (
-                  <div>
-                    <label className="text-xs font-semibold text-gray-500 mb-1 block">Renewal Date</label>
-                    <input type="date" value={draft.renewalDate} onChange={e => u("renewalDate", e.target.value)} className={INPUT} />
-                  </div>
-                )}
-              </div>
-              <div>
-                <label className="text-xs font-semibold text-gray-500 mb-1 block">Beneficiary</label>
-                <input value={draft.beneficiary} onChange={e => u("beneficiary", e.target.value)} className={INPUT} placeholder="Optional" />
-              </div>
-              <div>
-                <label className="text-xs font-semibold text-gray-500 mb-1 block">Notes</label>
-                <textarea value={draft.notes} onChange={e => u("notes", e.target.value)} className={INPUT} rows={2} placeholder="Optional" />
-              </div>
-            </div>
-            <div className="flex justify-end gap-3 px-6 pb-6">
-              <button onClick={() => setShowForm(false)} className="px-4 py-2.5 text-sm font-semibold text-gray-500 hover:text-gray-700">Cancel</button>
-              <button onClick={save} disabled={saving || !draft.type}
-                className="flex items-center gap-2 px-6 py-2.5 bg-[#0c1e3a] hover:bg-[#0e2a4a] disabled:opacity-50 text-white text-sm font-semibold rounded-xl transition-colors">
-                <Save className="w-4 h-4" /> {saving ? "Saving…" : editId ? "Save Changes" : "Add Policy"}
-              </button>
-            </div>
+      {/* ── Main row ── */}
+      <div
+        className="grid gap-2 px-4 py-3 cursor-pointer select-none"
+        style={{ gridTemplateColumns: "1fr 100px 90px 70px 60px 80px" }}
+        onClick={() => !editing && setExpanded(e => !e)}
+      >
+        {/* Type + insured */}
+        <div className="flex items-center gap-2 min-w-0">
+          <StatusDot level={risk} />
+          <div className="min-w-0">
+            <div className="text-xs font-semibold text-slate-900 truncate">{policy.type}</div>
+            <div className="text-[10px] text-slate-400 truncate">{policy.insured}</div>
           </div>
         </div>
+
+        {/* Coverage */}
+        <div className="text-right">
+          <div className="text-xs font-semibold text-slate-900">{fmt$(parseFloat(policy.coverageAmount || "0"))}</div>
+          <div className="text-[10px] text-slate-400">coverage</div>
+        </div>
+
+        {/* Premium */}
+        <div className="text-right">
+          <div className="text-xs font-mono text-slate-700">{fmt$(annual)}</div>
+          <div className="text-[10px] text-slate-400">per year</div>
+        </div>
+
+        {/* Status */}
+        <div className="text-center">
+          {expired ? (
+            <span className="text-[9px] font-bold uppercase tracking-wide text-red-600 bg-red-50 px-1.5 py-0.5 rounded">Expired</span>
+          ) : expSoon ? (
+            <span className="text-[9px] font-bold uppercase tracking-wide text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded">Expiring</span>
+          ) : (
+            <span className="text-[9px] font-bold uppercase tracking-wide text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">Active</span>
+          )}
+        </div>
+
+        {/* Risk */}
+        <div className="text-center">
+          <span className={`text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded ${riskColors[risk].bg} ${riskColors[risk].text}`}>
+            {risk}
+          </span>
+        </div>
+
+        {/* Actions */}
+        <div className="flex items-center justify-end gap-1" onClick={e => e.stopPropagation()}>
+          <button onClick={() => { setEditing(e => !e); setExpanded(true); }}
+            className="p-1 text-slate-300 hover:text-blue-500 transition-colors rounded">
+            <Edit3 className="w-3 h-3" />
+          </button>
+          <button onClick={handleDelete} disabled={deleting}
+            className="p-1 text-slate-300 hover:text-red-500 transition-colors rounded disabled:opacity-50">
+            <Trash2 className="w-3 h-3" />
+          </button>
+          <button onClick={() => setExpanded(e => !e)}
+            className="p-1 text-slate-300 hover:text-slate-600 transition-colors rounded">
+            {expanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+          </button>
+        </div>
+      </div>
+
+      {/* ── Expanded details ── */}
+      {expanded && (
+        <div className="px-4 pb-4 animate-in fade-in duration-150">
+          {editing ? (
+            <div className="bg-white border border-slate-200 rounded-xl p-4 space-y-3">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <EditField label="Policy Type" value={form.type} onChange={u("type")} options={POLICY_TYPES} />
+                <EditField label="Insured" value={form.insured} onChange={u("insured")} />
+                <EditField label="Carrier" value={form.carrier ?? ""} onChange={u("carrier")} />
+                <EditField label="Policy Number" value={form.policyNumber ?? ""} onChange={u("policyNumber")} />
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <EditField label="Coverage Amount" value={form.coverageAmount} onChange={u("coverageAmount")} type="number" />
+                <EditField label="Premium" value={form.premium} onChange={u("premium")} type="number" />
+                <EditField label="Frequency" value={form.premiumFrequency} onChange={u("premiumFrequency")}
+                  options={["Monthly", "Quarterly", "Semi-Annual", "Annual"]} />
+                <EditField label="Beneficiary" value={form.beneficiary ?? ""} onChange={u("beneficiary")} />
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <EditField label="Issue Date" value={form.issueDate ?? ""} onChange={u("issueDate")} type="date" />
+                <EditField label="Expiry Date" value={form.expiryDate ?? ""} onChange={u("expiryDate")} type="date" />
+                <EditField label="Riders" value={form.riders ?? ""} onChange={u("riders")} />
+                <EditField label="Notes" value={form.notes ?? ""} onChange={u("notes")} />
+              </div>
+              <div className="flex items-center justify-end gap-2 pt-1">
+                <button onClick={() => setEditing(false)}
+                  className="flex items-center gap-1 text-xs text-slate-500 hover:text-slate-700 px-3 py-1.5 rounded-lg transition-colors">
+                  <X className="w-3 h-3" /> Cancel
+                </button>
+                <button onClick={handleSave} disabled={saving}
+                  className="flex items-center gap-1 text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50">
+                  {saving ? <span className="w-3 h-3 border border-white/40 border-t-white rounded-full animate-spin" /> : <Save className="w-3 h-3" />}
+                  Save
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-x-6 gap-y-3 pt-1 pb-1">
+              {[
+                { label: "Carrier",        value: policy.carrier       || "—" },
+                { label: "Policy #",       value: policy.policyNumber  || "—" },
+                { label: "Issue Date",     value: policy.issueDate     ? new Date(policy.issueDate).toLocaleDateString("en-CA") : "—" },
+                { label: "Expiry Date",    value: policy.expiryDate    ? new Date(policy.expiryDate).toLocaleDateString("en-CA") : "—" },
+                { label: "Beneficiary",    value: policy.beneficiary   || "—" },
+                { label: "Riders",         value: policy.riders        || "—" },
+              ].map(({ label, value }) => (
+                <div key={label}>
+                  <div className="text-[9px] font-semibold uppercase tracking-widest text-slate-400 mb-0.5">{label}</div>
+                  <div className="text-xs text-slate-700 font-medium">{value}</div>
+                </div>
+              ))}
+              {policy.notes && (
+                <div className="col-span-full">
+                  <div className="text-[9px] font-semibold uppercase tracking-widest text-slate-400 mb-0.5">Notes</div>
+                  <div className="text-xs text-slate-600 leading-relaxed">{policy.notes}</div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       )}
+    </div>
+  );
+}
+
+// ── Add Policy Form (inline) ──────────────────────────────────────────────────
+
+function AddPolicyForm({ onSave, onCancel }: {
+  onSave: (p: Omit<Policy, "id">) => Promise<void>;
+  onCancel: () => void;
+}) {
+  const [form, setForm] = useState({
+    type: "Term Life", insured: "", carrier: "", policyNumber: "",
+    coverageAmount: "", premium: "", premiumFrequency: "Monthly",
+    issueDate: "", expiryDate: "", beneficiary: "", riders: "", notes: "",
+  });
+  const [saving, setSaving] = useState(false);
+  const u = (k: string) => (v: string) => setForm(f => ({ ...f, [k]: v }));
+
+  async function handleSave() {
+    if (!form.insured || !form.coverageAmount) {
+      toast({ title: "Required", description: "Insured name and coverage amount are required", variant: "destructive" });
+      return;
+    }
+    setSaving(true);
+    try { await onSave(form); }
+    catch (e: any) { toast({ title: "Error", description: e.message, variant: "destructive" }); }
+    finally { setSaving(false); }
+  }
+
+  return (
+    <div className="border-b border-slate-100 bg-blue-50/30">
+      <div className="px-4 py-3 bg-gradient-to-r from-blue-600/5 to-transparent border-l-2 border-blue-500">
+        <div className="text-xs font-semibold text-blue-700 mb-3 flex items-center gap-1.5">
+          <Plus className="w-3 h-3" /> New Policy
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
+          <EditField label="Policy Type" value={form.type} onChange={u("type")} options={POLICY_TYPES} />
+          <EditField label="Insured" value={form.insured} onChange={u("insured")} />
+          <EditField label="Carrier" value={form.carrier} onChange={u("carrier")} />
+          <EditField label="Coverage Amount" value={form.coverageAmount} onChange={u("coverageAmount")} type="number" />
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
+          <EditField label="Premium" value={form.premium} onChange={u("premium")} type="number" />
+          <EditField label="Frequency" value={form.premiumFrequency} onChange={u("premiumFrequency")}
+            options={["Monthly", "Quarterly", "Semi-Annual", "Annual"]} />
+          <EditField label="Issue Date" value={form.issueDate} onChange={u("issueDate")} type="date" />
+          <EditField label="Beneficiary" value={form.beneficiary} onChange={u("beneficiary")} />
+        </div>
+        <div className="flex items-center justify-end gap-2">
+          <button onClick={onCancel}
+            className="text-xs text-slate-500 hover:text-slate-700 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1">
+            <X className="w-3 h-3" /> Cancel
+          </button>
+          <button onClick={handleSave} disabled={saving}
+            className="flex items-center gap-1.5 text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white px-4 py-1.5 rounded-lg transition-colors disabled:opacity-50">
+            {saving
+              ? <span className="w-3 h-3 border border-white/40 border-t-white rounded-full animate-spin" />
+              : <Save className="w-3 h-3" />}
+            Add Policy
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Main Component ────────────────────────────────────────────────────────────
+
+export function PoliciesTab({ clientId, client }: Props) {
+  const [policies,      setPolicies]     = useState<Policy[]>([]);
+  const [loading,       setLoading]      = useState(true);
+  const [showAdd,       setShowAdd]      = useState(false);
+  const [showImporter,  setShowImporter] = useState(false);
+
+  const load = useCallback(() => {
+    setLoading(true);
+    api.get<Policy[]>(`/api/clients/${clientId}/policies`)
+      .then(setPolicies)
+      .catch(() => setPolicies([]))
+      .finally(() => setLoading(false));
+  }, [clientId]);
+
+  useEffect(() => { load(); }, [load]);
+
+  // ── Computed intelligence ────────────────────────────────────────────────────
+
+  const totalLife = policies
+    .filter(p => p.type.toLowerCase().includes("life"))
+    .reduce((s, p) => s + parseFloat(p.coverageAmount || "0"), 0);
+
+  const totalDisability = policies
+    .filter(p => p.type.toLowerCase().includes("disability"))
+    .reduce((s, p) => s + parseFloat(p.coverageAmount || "0"), 0);
+
+  const totalCritical = policies
+    .filter(p => p.type.toLowerCase().includes("critical"))
+    .reduce((s, p) => s + parseFloat(p.coverageAmount || "0"), 0);
+
+  const totalAnnualPremium = policies.reduce((s, p) => s + annualPremium(p), 0);
+
+  const income = parseFloat(client?.annualIncome || "0");
+  const mortgage = 0; // TODO: pull from net worth
+
+  // Protection score (0-100)
+  const incomeReplPct  = income > 0 ? Math.min(100, (totalLife / (income * 10)) * 100) : 0;
+  const disabilityOk   = totalDisability > 0;
+  const criticalOk     = totalCritical > 0;
+  const protectionScore = Math.round(
+    (incomeReplPct * 0.5) +
+    (disabilityOk ? 25 : 0) +
+    (criticalOk   ? 15 : 0) +
+    (policies.length > 0 ? 10 : 0)
+  );
+
+  const expiringPolicies = policies.filter(p => {
+    const d = daysUntilExpiry(p.expiryDate);
+    return d !== null && d >= 0 && d < 365;
+  });
+
+  // Advisor alerts
+  const alerts: { level: "crit" | "warn" | "ok"; msg: string }[] = [];
+  if (!disabilityOk) alerts.push({ level: "crit", msg: "No disability coverage — income unprotected" });
+  if (!criticalOk)   alerts.push({ level: "warn", msg: "No critical illness coverage on file" });
+  if (income > 0 && totalLife < income * 5)
+    alerts.push({ level: "crit", msg: `Life coverage below 5× income — gap ~${fmt$(income * 10 - totalLife)}` });
+  if (expiringPolicies.length > 0)
+    alerts.push({ level: "warn", msg: `${expiringPolicies.length} polic${expiringPolicies.length > 1 ? "ies" : "y"} expiring within 12 months` });
+  if (policies.length === 0)
+    alerts.push({ level: "crit", msg: "No policies on file — household unprotected" });
+  if (totalLife > 0 && income > 0 && totalLife >= income * 10)
+    alerts.push({ level: "ok", msg: `Life coverage adequate — ${Math.round(totalLife / income)}× income` });
+  if (disabilityOk)
+    alerts.push({ level: "ok", msg: "Disability coverage in place" });
+
+  // ── CRUD ─────────────────────────────────────────────────────────────────────
+
+  async function handleAdd(data: Omit<Policy, "id">) {
+    const p = await api.post<Policy>(`/api/clients/${clientId}/policies`, data);
+    setPolicies(prev => [...prev, p]);
+    setShowAdd(false);
+    toast({ title: "Policy added", description: `${data.type} policy added successfully` });
+  }
+
+  async function handleSave(data: Policy) {
+    await api.patch(`/api/clients/${clientId}/policies/${data.id}`, data);
+    setPolicies(prev => prev.map(p => p.id === data.id ? data : p));
+    toast({ title: "Saved", description: "Policy updated" });
+  }
+
+  async function handleDelete(id: number) {
+    await api.delete(`/api/clients/${clientId}/policies/${id}`);
+    setPolicies(prev => prev.filter(p => p.id !== id));
+    toast({ title: "Removed", description: "Policy removed from file" });
+  }
+
+  const scoreColor = protectionScore >= 75 ? "text-emerald-600"
+    : protectionScore >= 50 ? "text-amber-600" : "text-red-600";
+  const scoreRing = protectionScore >= 75 ? "stroke-emerald-500"
+    : protectionScore >= 50 ? "stroke-amber-500" : "stroke-red-500";
+
+  return (
+    <div className="flex gap-0 h-full min-h-0">
+
+      {/* ══ LEFT — Main content (70%) ══════════════════════════════════════════ */}
+      <div className="flex-1 min-w-0 flex flex-col overflow-auto">
+
+        {/* ── Executive Summary Strip ── */}
+        <div className="flex-shrink-0 border-b border-slate-200 bg-white">
+          <div className="grid grid-cols-3 md:grid-cols-6 divide-x divide-slate-100">
+            {[
+              { label: "Life Coverage",    value: totalLife > 0 ? fmt$(totalLife) : "—",          sub: "total",           hi: totalLife > 0 },
+              { label: "Disability",        value: totalDisability > 0 ? fmt$(totalDisability) : "Missing", sub: "coverage",     hi: totalDisability > 0 },
+              { label: "Critical Illness",  value: totalCritical > 0 ? fmt$(totalCritical) : "—", sub: "coverage",        hi: totalCritical > 0 },
+              { label: "Annual Premium",    value: fmt$(totalAnnualPremium),                       sub: "combined",        hi: true },
+              { label: "Policies",          value: String(policies.length),                        sub: "on file",         hi: policies.length > 0 },
+              { label: "Expiring Soon",     value: String(expiringPolicies.length),               sub: "within 12 mo.",   hi: expiringPolicies.length === 0 },
+            ].map(s => (
+              <div key={s.label} className="px-4 py-3">
+                <div className="text-[9px] font-semibold uppercase tracking-widest text-slate-400 mb-1">{s.label}</div>
+                <div className={`text-sm font-bold leading-none ${
+                  s.label === "Disability" && !s.hi ? "text-red-600" :
+                  s.label === "Expiring Soon" && expiringPolicies.length > 0 ? "text-amber-600" :
+                  "text-slate-900"
+                }`}>{s.value}</div>
+                <div className="text-[9px] text-slate-400 mt-0.5">{s.sub}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* ── Table header ── */}
+        <div className="flex-shrink-0 bg-slate-50 border-b border-slate-200 sticky top-0 z-10">
+          <div className="flex items-center justify-between px-4 py-2.5">
+            <div
+              className="grid gap-2 flex-1 text-[9px] font-semibold uppercase tracking-widest text-slate-400"
+              style={{ gridTemplateColumns: "1fr 100px 90px 70px 60px 80px" }}
+            >
+              <span>Policy / Insured</span>
+              <span className="text-right">Coverage</span>
+              <span className="text-right">Premium</span>
+              <span className="text-center">Status</span>
+              <span className="text-center">Risk</span>
+              <span className="text-right">Actions</span>
+            </div>
+          </div>
+        </div>
+
+        {/* ── Policy rows ── */}
+        <div className="flex-1 bg-white">
+          {loading ? (
+            <div className="flex items-center justify-center py-16">
+              <div className="w-5 h-5 border-2 border-blue-200 border-t-blue-500 rounded-full animate-spin" />
+            </div>
+          ) : (
+            <>
+              {showAdd && (
+                <AddPolicyForm onSave={handleAdd} onCancel={() => setShowAdd(false)} />
+              )}
+
+              {policies.length === 0 && !showAdd ? (
+                <div className="flex flex-col items-center justify-center py-16 text-center">
+                  <div className="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center mb-3">
+                    <Shield className="w-5 h-5 text-slate-400" />
+                  </div>
+                  <p className="text-sm font-semibold text-slate-700 mb-1">No policies on file</p>
+                  <p className="text-xs text-slate-400 mb-4">Add a policy to begin building this household's protection profile</p>
+                  <button onClick={() => setShowAdd(true)}
+                    className="flex items-center gap-1.5 text-xs font-semibold bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+                    <Plus className="w-3.5 h-3.5" /> Add First Policy
+                  </button>
+                </div>
+              ) : (
+                policies.map(p => (
+                  <PolicyRow key={p.id} policy={p} onSave={handleSave} onDelete={handleDelete} />
+                ))
+              )}
+            </>
+          )}
+        </div>
+
+        {/* ── Bottom toolbar ── */}
+        <div className="flex-shrink-0 border-t border-slate-200 bg-white px-4 py-2.5 flex items-center gap-2">
+          <button onClick={() => setShowAdd(a => !a)}
+            className="flex items-center gap-1.5 text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white px-3.5 py-1.5 rounded-lg transition-colors">
+            <Plus className="w-3.5 h-3.5" />
+            {showAdd ? "Cancel" : "Add Policy"}
+          </button>
+          <button onClick={() => setShowImporter(true)}
+            className="flex items-center gap-1.5 text-xs font-medium text-slate-600 border border-slate-200 hover:bg-slate-50 px-3.5 py-1.5 rounded-lg transition-colors">
+            <Table className="w-3.5 h-3.5" /> Import Excel
+          </button>
+          <div className="ml-auto text-[10px] text-slate-400">
+            {policies.length} polic{policies.length !== 1 ? "ies" : "y"} · {fmt$(totalAnnualPremium)}/yr
+          </div>
+        </div>
+      </div>
+
+      {/* ══ RIGHT — Intelligence Rail (30%) ════════════════════════════════════ */}
+      <div className="w-72 flex-shrink-0 border-l border-slate-200 bg-white flex flex-col overflow-auto">
+
+        {/* Protection Score */}
+        <div className="px-4 py-4 border-b border-slate-100">
+          <div className="text-[9px] font-semibold uppercase tracking-widest text-slate-400 mb-3">Protection Score</div>
+          <div className="flex items-center gap-4">
+            {/* Circular score gauge */}
+            <div className="relative w-16 h-16 flex-shrink-0">
+              <svg viewBox="0 0 36 36" className="w-16 h-16 -rotate-90">
+                <circle cx="18" cy="18" r="15" fill="none" stroke="#f1f5f9" strokeWidth="3" />
+                <circle cx="18" cy="18" r="15" fill="none"
+                  className={scoreRing}
+                  strokeWidth="3"
+                  strokeDasharray={`${(protectionScore / 100) * 94.2} 94.2`}
+                  strokeLinecap="round" />
+              </svg>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <span className={`text-sm font-bold ${scoreColor}`}>{protectionScore}</span>
+              </div>
+            </div>
+            <div>
+              <div className={`text-sm font-bold ${scoreColor}`}>
+                {protectionScore >= 75 ? "Well Protected" : protectionScore >= 50 ? "Needs Attention" : "At Risk"}
+              </div>
+              <div className="text-[10px] text-slate-400 mt-0.5 leading-relaxed">
+                {protectionScore >= 75 ? "Household coverage meets baseline thresholds" :
+                 protectionScore >= 50 ? "Some gaps detected — review recommended" :
+                 "Critical protection gaps require immediate action"}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Coverage Adequacy */}
+        <div className="px-4 py-4 border-b border-slate-100 space-y-3">
+          <div className="text-[9px] font-semibold uppercase tracking-widest text-slate-400">Coverage Adequacy</div>
+          <CoverageBar
+            label="Income Replacement"
+            pct={incomeReplPct}
+            tone={incomeReplPct >= 80 ? "green" : incomeReplPct >= 50 ? "amber" : "red"}
+          />
+          <CoverageBar
+            label="Disability Protection"
+            pct={totalDisability > 0 ? 100 : 0}
+            tone={totalDisability > 0 ? "green" : "red"}
+          />
+          <CoverageBar
+            label="Critical Illness"
+            pct={totalCritical > 0 ? 100 : 0}
+            tone={totalCritical > 0 ? "green" : "amber"}
+          />
+        </div>
+
+        {/* Advisor Alerts */}
+        <div className="px-4 py-4 flex-1">
+          <div className="text-[9px] font-semibold uppercase tracking-widest text-slate-400 mb-3">Advisor Intelligence</div>
+          {alerts.length === 0 ? (
+            <div className="text-xs text-slate-400">Add policies to generate intelligence</div>
+          ) : (
+            <div className="space-y-2">
+              {alerts.map((a, i) => (
+                <div key={i} className={`flex items-start gap-2 p-2.5 rounded-lg ${
+                  a.level === "crit" ? "bg-red-50 border border-red-100" :
+                  a.level === "warn" ? "bg-amber-50 border border-amber-100" :
+                  "bg-emerald-50 border border-emerald-100"
+                }`}>
+                  {a.level === "ok"
+                    ? <CheckCircle className="w-3 h-3 text-emerald-500 flex-shrink-0 mt-0.5" />
+                    : <AlertTriangle className={`w-3 h-3 flex-shrink-0 mt-0.5 ${a.level === "crit" ? "text-red-500" : "text-amber-500"}`} />
+                  }
+                  <p className={`text-[10px] leading-relaxed font-medium ${
+                    a.level === "crit" ? "text-red-700" :
+                    a.level === "warn" ? "text-amber-700" :
+                    "text-emerald-700"
+                  }`}>{a.msg}</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Household scenarios */}
+        {policies.length > 0 && (
+          <div className="px-4 py-4 border-t border-slate-100">
+            <div className="text-[9px] font-semibold uppercase tracking-widest text-slate-400 mb-3">Household Scenarios</div>
+            <div className="space-y-2">
+              {[
+                { label: "Survivor Income",    ok: totalLife >= (income * 5), desc: totalLife >= (income * 5) ? "Protected" : "Gap exists" },
+                { label: "Disability Income",  ok: totalDisability > 0,      desc: totalDisability > 0 ? "Covered" : "Unprotected" },
+                { label: "Critical Illness",   ok: totalCritical > 0,        desc: totalCritical > 0 ? "Covered" : "No coverage" },
+                { label: "Estate Liquidity",   ok: totalLife > 500000,       desc: totalLife > 500000 ? "Adequate" : "Review needed" },
+              ].map(s => (
+                <div key={s.label} className="flex items-center justify-between py-1 border-b border-slate-50 last:border-0">
+                  <div className="flex items-center gap-1.5">
+                    <StatusDot level={s.ok ? "ok" : "warn"} />
+                    <span className="text-[10px] text-slate-600">{s.label}</span>
+                  </div>
+                  <span className={`text-[10px] font-semibold ${s.ok ? "text-emerald-600" : "text-amber-600"}`}>
+                    {s.desc}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* ── Importer modal ── */}
       {showImporter && (
         <PolicyImporter
           clientId={clientId}
-          client={client}
-          onImported={() => { load(); setShowImporter(false); }}
           onClose={() => setShowImporter(false)}
+          onImported={() => { load(); setShowImporter(false); }}
         />
       )}
     </div>

@@ -98,7 +98,7 @@ function Field({
 
 // ── Main Login Component ──────────────────────────────────────────────────────
 
-export default function Login() {
+export default function Login({ isGaPortal = false }: { isGaPortal?: boolean }) {
   const { login, register } = useAuth();
   const [mode, setMode]         = useState<Mode>("login");
   const [form, setForm]         = useState({ ...EMPTY_FORM });
@@ -283,8 +283,9 @@ export default function Login() {
               </div>
 
               {/* Tab switcher */}
-              <div className="flex bg-slate-100 rounded-xl p-1 mb-6">
-                {(["login", "register"] as const).map(m => (
+              {isGaPortal && (
+                <div className="flex bg-slate-100 rounded-xl p-1 mb-6">
+                  {(["login", "register"] as const).map(m => (
                   <button key={m} onClick={() => { setMode(m); reset(); }}
                     className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-all duration-200 ${
                       mode === m
@@ -295,6 +296,7 @@ export default function Login() {
                   </button>
                 ))}
               </div>
+             )}
 
               <div className="space-y-3">
                 {mode === "register" && (

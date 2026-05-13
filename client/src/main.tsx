@@ -29,7 +29,8 @@ registerToast(({ title, description, variant }) =>
       </div>
     </div>
   );
-  return user ? <FPApp /> : <Login />;
+  const isGaPortal = window.location.search.includes("ga=1");
+  return user ? <FPApp /> : <Login isGaPortal={isGaPortal} />;
 }
 
 ReactDOM.createRoot(document.getElementById("root")!).render(

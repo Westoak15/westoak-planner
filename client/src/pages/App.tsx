@@ -864,7 +864,6 @@ export default function App() {
               <MeetingRecorderTrigger
                 clientId={client.id}
                 clientName={client.spouseFirstName ? `${client.lastName} Family` : `${client.firstName} ${client.lastName}`}
-                onRecordsCreated={() => queryClient.invalidateQueries()}
               />
             )}
             <span className="text-xs text-slate-500 font-medium">{user?.firmName ?? `${user?.firstName} ${user?.lastName}`}</span>

@@ -3,6 +3,7 @@ import { Receipt, ScrollText, Scale } from "lucide-react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { HubShell } from "./insightled";
 import { TaxTab, EstateNotesTab } from "../pages/FinancialPlanning";
+import { UsTaxTab } from "../pages/UsTaxTab";
 
 const queryClient = new QueryClient();
 
@@ -48,13 +49,16 @@ export function TaxEstateHub({ clientId, client, person, onPersonChange }: Props
         }
       >
         <div className="p-6">
-          {subtab === "tax" && (
-            <TaxTab clientId={clientId} client={client} person={person === "combined" ? "primary" : person} />
-          )}
-          {subtab === "estate" && (
-            <EstateNotesTab clientId={clientId} planId={null} client={client} />
-          )}
-        </div>
+  {subtab === "tax" && client?.jurisdiction === "US" && (
+    <UsTaxTab clientId={clientId} client={client} />
+  )}
+  {subtab === "tax" && client?.jurisdiction !== "US" && (
+    <TaxTab clientId={clientId} client={client} person={person === "combined" ? "primary" : person} />
+  )}
+  {subtab === "estate" && (
+    <EstateNotesTab clientId={clientId} planId={null} client={client} />
+  )}
+</div>
       </HubShell>
     </QueryClientProvider>
   );

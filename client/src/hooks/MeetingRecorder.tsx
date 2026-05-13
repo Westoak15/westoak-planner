@@ -56,7 +56,7 @@ interface ModalProps {
 
 function MeetingRecorderModal({ clientId, clientName, onClose }: ModalProps) {
   const { state, transcript, summary, error, duration, startRecording, stopRecording, reset } =
-    useMeetingRecorder(clientId, clientName);
+  useMeetingRecorder(clientId);
 
   const [copied, setCopied] = useState(false);
 

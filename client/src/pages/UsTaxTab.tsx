@@ -15,6 +15,7 @@
  */
 
 import React, { useState } from "react";
+import { UsRetirementPanel } from "../components/planning/UsRetirementPanel";
 import {
   DollarSign, TrendingUp, TrendingDown, Calculator,
   PiggyBank, BarChart3, AlertTriangle, CheckCircle,
@@ -29,7 +30,8 @@ type UsSubTab =
   | "ira"
   | "capgains"
   | "ss"
-  | "roth";
+  | "roth"
+  | "retirement";
 
 const US_SUBTABS: Array<{ key: UsSubTab; label: string }> = [
   { key: "projection", label: "Tax Projection"   },
@@ -38,6 +40,7 @@ const US_SUBTABS: Array<{ key: UsSubTab; label: string }> = [
   { key: "capgains",   label: "Capital Gains"    },
   { key: "ss",         label: "Social Security"  },
   { key: "roth",       label: "Roth Conversion"  },
+  { key: "retirement", label: "Retirement" },
 ];
 
 const US_STATES = [
@@ -951,6 +954,7 @@ export function UsTaxTab({
         {activeSubTab === "capgains"   && <PanelCapGains    clientId={clientId} client={client} />}
         {activeSubTab === "ss"         && <PanelSS          clientId={clientId} prefill={prefill} />}
         {activeSubTab === "roth"       && <PanelRothConversion clientId={clientId} prefill={prefill} />}
+        {activeSubTab === "retirement" && <UsRetirementPanel clientId={clientId} client={client} />}
       </div>
     </div>
   );

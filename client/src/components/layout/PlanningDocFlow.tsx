@@ -155,10 +155,11 @@ export function PlanningDocFlow({
         r.continuous = true;
         r.interimResults = false;
         r.lang = "en-CA";
-        r.onresult = (ev: SpeechRecognitionEvent) => {
-          for (let i = ev.resultIndex; i < ev.results.length; i++) {
-            if (ev.results[i].isFinal) transcriptRef.current += ev.results[i][0].transcript + " ";
-          }
+        r.onresult = (ev: Event) => {
+          const e = ev as any;
+          for (let i = e.resultIndex; i < e.results.length; i++) {
+            if (e.results[i].isFinal) transcriptRef.current += e.results[i][0].transcript + " ";
+        }
         };
         r.start();
       }

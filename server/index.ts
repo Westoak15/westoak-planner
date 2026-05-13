@@ -11,9 +11,6 @@ import { pool } from "./db/index.js";
 import { authRouter }       from "./routes/auth.js";
 import { clientsRouter }    from "./routes/clients.js";
 import { financialRouter } from "./routes/financial.js";
-//import { fpRouter } from "./routes/fp.js";
-//import { fpAliasesRouter } from "./routes/fp-aliases.js";
-//import { fpFullRouter }     from "./routes/fp-full.js";
 import { simulateRouter }   from "./routes/simulate.js";
 import { simulationRouter } from "./routes/simulation.js";   // ← FIX 1: was missing
 import { reportsRouter }    from "./routes/reports.js";
@@ -60,9 +57,6 @@ app.use("/api", pensionRouter);
 app.use("/api/tax",     taxRouter);
 app.use("/api/us-tax",  usTaxRouter);
 app.use("/api", financialRouter);
-//app.use("/api",         fpRouter);
-//app.use("/api",         fpAliasesRouter);
-//app.use("/api",         fpFullRouter);
 app.use("/api/clients", clientsRouter);
 app.use("/api",         simulateRouter);
 app.use("/api",         simulationRouter);   // ← FIX 1: mounts /api/simulation/:clientId/*

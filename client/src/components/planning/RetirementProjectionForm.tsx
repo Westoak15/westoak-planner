@@ -673,9 +673,9 @@ export function RetirementTab({ clientId, clientName, person: personProp }: { cl
                .reduce((s: number, e: any) => s + parseFloat(e.value || "0"), 0);
 
     if (person === "spouse") {
-      const rrsp   = nwSum("RRSP", "spouse");
-      const tfsa   = nwSum("TFSA", "spouse");
-      const nonReg = nwSum("Non-Registered", "spouse");
+      const rrsp   = nwSum("RRSP", "primary")   + nwSum("RRSP", "joint");
+      const tfsa   = nwSum("TFSA", "primary")   + nwSum("TFSA", "joint");
+      const nonReg = nwSum("Non-Registered", "primary") + nwSum("Non-Registered", "joint");
       const dob    = clientData.spouseDateOfBirth ? new Date(clientData.spouseDateOfBirth) : null;
       return {
         person:                  "spouse",
@@ -688,9 +688,9 @@ export function RetirementTab({ clientId, clientName, person: personProp }: { cl
       };
     }
 
-    const rrsp   = nwSum("RRSP", "primary")   || nwSum("RRSP");
-    const tfsa   = nwSum("TFSA", "primary")   || nwSum("TFSA");
-    const nonReg = nwSum("Non-Registered", "primary") || nwSum("Non-Registered");
+    const rrsp   = nwSum("RRSP", "primary")   + nwSum("RRSP", "joint");
+    const tfsa   = nwSum("TFSA", "primary")   + nwSum("TFSA", "joint");
+    const nonReg = nwSum("Non-Registered", "primary") + nwSum("Non-Registered", "joint");
     const pensionIncome = pensions.reduce((sum: number, p: any) => {
       if (p.pensionType === "dbpp" && p.accrualRate && p.projectedYearsAtRetirement && p.bestAverageEarnings)
         return sum + (Number(p.accrualRate) * Number(p.projectedYearsAtRetirement) * Number(p.bestAverageEarnings));

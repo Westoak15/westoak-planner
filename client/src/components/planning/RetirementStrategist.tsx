@@ -167,12 +167,49 @@ export function RetirementStrategist({ clientId, client, person = "primary" }: P
 
   const proj = projections.find(p => (p.person ?? "primary") === (person === "spouse" ? "spouse" : "primary"))
   ?? projections[0];
-  const isPrimary = person !== "spouse";
 
-  const rrsp    = nw.filter(e => e.type === "asset" && e.category === "RRSP"           && (isPrimary ? e.owner !== "spouse" : e.owner === "spouse")).reduce((s, e) => s + Number(e.value), 0);
-  const tfsa    = nw.filter(e => e.type === "asset" && e.category === "TFSA"           && (isPrimary ? e.owner !== "spouse" : e.owner === "spouse")).reduce((s, e) => s + Number(e.value), 0);
-  const nonReg  = nw.filter(e => e.type === "asset" && e.category === "Non-Registered" && (isPrimary ? e.owner !== "spouse" : e.owner === "spouse")).reduce((s, e) => s + Number(e.value), 0);
-  const totalSavings = rrsp + tfsa + nonReg;
+// After:
+const personKey = person === "combined" ? "primary" : (person ?? "primary");
+const proj = projections.find(p => (p.person ?? "primary") === personKey)
+  ?? projections[0];
+
+const retAge = proj?.retirementAge
+  ?? (person === "spouse" ? client?.spouseRetirementAge : client?.retirementAge)
+  ?? 65;
+
+const desired = Number(
+  proj?.desiredRetirementIncome
+  ?? (person === "spouse" ? client?.spouseDesiredRetirementIncome : client?.desiredRetirementIncome)
+  ?? 80000
+);
+
+const currentAge = proj?.currentAge ?? (() => {
+  const dob = person === "spouse"
+    ? (client?.spouseDateOfBirth ?? client?.spouseDob)
+    : (client?.dateOfBirth ?? client?.dob);
+  return dob ? Math.floor((Date.now() - new Date(dob).getTime()) / (365.25 * 24 * 3600 * 1000)) : 45;
+})();
+  const nwSum = (cat: string, owner?: string) =>
+  nw.filter(e => e.type === "asset" && e.category === cat && (!owner || e.owner === owner))
+    .reduce((s, e) => s + Number(e.value), 0);
+
+const rrsp = person === "combined"
+  ? nwSum("RRSP")
+  : person === "spouse"
+  ? nwSum("RRSP", "spouse")
+  : nwSum("RRSP", "primary") + nwSum("RRSP", "joint");
+
+const tfsa = person === "combined"
+  ? nwSum("TFSA")
+  : person === "spouse"
+  ? nwSum("TFSA", "spouse")
+  : nwSum("TFSA", "primary") + nwSum("TFSA", "joint");
+
+const nonReg = person === "combined"
+  ? nwSum("Non-Registered")
+  : person === "spouse"
+  ? nwSum("Non-Registered", "spouse")
+  : nwSum("Non-Registered", "primary") + nwSum("Non-Registered", "joint");
 
   const pensionIncome = pensions.reduce((s, p) => {
     if (p.pensionType === "dbpp") return s + Number(p.accrualRate || 0) * Number(p.projectedYearsAtRetirement || 0) * Number(p.bestAverageEarnings || 0);

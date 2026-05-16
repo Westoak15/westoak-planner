@@ -616,25 +616,15 @@ export function RetirementTab({ clientId, clientName, person: personProp }: { cl
   setCheckupLoading(true);
   setCheckupError(null);
   try {
-    await apiFetch(`/api/clients/${clientId}/simulate`, { method: "POST", body: JSON.stringify({}) });
-    // Update success rate on each projection
-    for (const proj of allProjections) {
-      if (proj.id) {
-        await apiFetch(`/api/retirement/${proj.id}`, {
-          method: "PATCH",
-          body: JSON.stringify({ successRate: proj.successRate }),
-        });
-      }
-    }
-    await qc.invalidateQueries({ queryKey: [`/api/clients/${clientId}/retirement`] });
     const token = localStorage.getItem("fp_token") ?? "";
     const res = await fetch(`/api/reports/${clientId}/retirement`, {
       headers: { Authorization: `Bearer ${token}` },
     });
-    if (!res.ok) throw new Error("Report failed to generate");
+    if (!res.ok) throw new Error(`Report error: ${res.status}`);
     const html = await res.text();
     const win = window.open("", "_blank");
     if (win) { win.document.write(html); win.document.close(); }
+    else setCheckupError("Pop-up blocked — please allow pop-ups for this site");
   } catch (e: any) {
     setCheckupError(e.message ?? "Checkup failed");
   } finally {

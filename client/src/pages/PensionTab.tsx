@@ -21,13 +21,17 @@ interface PensionPlan {
   survivorBenefitPct: string | null;
   isVested: boolean | null;
   notes: string | null;
+  annuityMonthlyAmount: string | null;
+  annuityStartAge: number | null;
+  annuityIsVested: boolean | null;
 }
 
 const PENSION_TYPES = [
-  { key: "dbpp",       label: "DBPP — Defined Benefit" },
-  { key: "dcpp",       label: "DCPP — Defined Contribution" },
-  { key: "group_rrsp", label: "Group RRSP" },
-  { key: "dpsp",       label: "DPSP — Deferred Profit Sharing" },
+  { key: "dbpp",          label: "DBPP — Defined Benefit" },
+  { key: "dcpp",          label: "DCPP — Defined Contribution" },
+  { key: "group_rrsp",    label: "Group RRSP" },
+  { key: "dpsp",          label: "DPSP — Deferred Profit Sharing" },
+  { key: "life_annuity",  label: "Life Annuity" },
 ];
 const INDEXING_TYPES = [
   { key: "none",    label: "No Indexing" },
@@ -207,7 +211,7 @@ export function PensionTab({ clientId, client, person = "primary" }: {
         <div className="text-center py-16 border-2 border-dashed border-gray-200 rounded-2xl">
           <Building2 className="w-10 h-10 text-gray-300 mx-auto mb-3" />
           <p className="text-gray-500 font-semibold">No pension plans on file</p>
-          <p className="text-sm text-gray-400 mt-1">Add DBPP, DCPP, Group RRSP, or DPSP plans</p>
+          <p className="text-sm text-gray-400 mt-1">Add DBPP, DCPP, Group RRSP, DPSP, or Life Annuity plans</p>
         </div>
       ) : (
         <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
@@ -382,7 +386,7 @@ export function PensionTab({ clientId, client, person = "primary" }: {
               )}
 
               {/* DC / Group RRSP / DPSP fields */}
-              {form.pensionType !== "dbpp" && (
+              {(form.pensionType === "dcpp" || form.pensionType === "group_rrsp" || form.pensionType === "dpsp") && (
                 <>
                   <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Balance Details</p>
                   <div className="grid grid-cols-2 gap-3">
@@ -397,6 +401,59 @@ export function PensionTab({ clientId, client, person = "primary" }: {
                   </div>
                 </>
               )}
+
+{form.pensionType === "life_annuity" && (
+  <>
+    <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Life Annuity Details</p>
+    <div className="grid grid-cols-2 gap-3">
+      <div>
+        <label className="text-xs font-semibold text-gray-500 mb-1 block">Payment Amount ($)</label>
+        <input type="number" value={form.currentBalance ?? ""} onChange={e => upd("currentBalance", e.target.value)} className={INPUT} placeholder="0" />
+      </div>
+      <div>
+        <label className="text-xs font-semibold text-gray-500 mb-1 block">Payment Frequency</label>
+        <select value={form.indexingType ?? "monthly"} onChange={e => upd("indexingType", e.target.value)} className={INPUT}>
+          <option value="monthly">Monthly</option>
+          <option value="annual">Annual</option>
+        </select>
+      </div>
+    </div>
+    <div className="grid grid-cols-3 gap-3">
+      <div>
+        <label className="text-xs font-semibold text-gray-500 mb-1 block">Start Age</label>
+        <input type="number" value={form.retirementAge ?? 65} onChange={e => upd("retirementAge", +e.target.value)} className={INPUT} />
+      </div>
+      <div>
+        <label className="text-xs font-semibold text-gray-500 mb-1 block">Survivor Benefit</label>
+        <select value={form.survivorBenefitPct ?? "0"} onChange={e => upd("survivorBenefitPct", e.target.value)} className={INPUT}>
+          <option value="0">None</option>
+          <option value="0.50">50%</option>
+          <option value="0.60">60%</option>
+          <option value="0.662">66.2%</option>
+          <option value="1.0">100%</option>
+        </select>
+      </div>
+      <div>
+        <label className="text-xs font-semibold text-gray-500 mb-1 block">Indexing</label>
+        <select value={form.indexingType ?? "none"} onChange={e => upd("indexingType", e.target.value)} className={INPUT}>
+          {INDEXING_TYPES.map(t => <option key={t.key} value={t.key}>{t.label}</option>)}
+        </select>
+      </div>
+    </div>
+    {/* Live preview */}
+    {form.currentBalance && (
+      <div className="bg-purple-50 border border-purple-200 rounded-xl p-4">
+        <p className="text-xs font-semibold text-purple-600 uppercase tracking-widest mb-1">Annuity Income</p>
+        <p className="text-2xl font-bold text-purple-800">
+          {fmt$(form.indexingType === "annual" ? Number(form.currentBalance) : Number(form.currentBalance) * 12)}/yr
+        </p>
+        <p className="text-xs text-purple-500 mt-0.5">
+          {fmt$(form.currentBalance)}/{form.indexingType === "annual" ? "yr" : "mo"} · Survivor {form.survivorBenefitPct > 0 ? `${Math.round(Number(form.survivorBenefitPct) * 100)}%` : "none"}
+        </p>
+      </div>
+    )}
+  </>
+)}
 
               {/* Vested + Notes */}
               <div className="grid grid-cols-2 gap-3 items-start">

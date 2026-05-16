@@ -1,14 +1,16 @@
 import { useState } from "react";
-import { PiggyBank, Building2, TrendingUp, TrendingDown, Calendar } from "lucide-react";
+import { PiggyBank, Building2, TrendingUp, TrendingDown, Calendar, Sparkles } from "lucide-react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { HubShell } from "./insightled";
 import { RetirementTab } from "./planning/RetirementProjectionForm";
 import { PensionTab } from "../pages/PensionTab";
 import { MeltdownTab } from "../pages/MeltdownTab";
+import { RetirementStrategist } from "./planning/RetirementStrategist";
+
 
 const queryClient = new QueryClient();
 
-type Subtab = "projection" | "pension" | "meltdown";
+type Subtab = "projection" | "pension" | "meltdown" | "strategist";
 
 interface Props {
   clientId: number;
@@ -38,6 +40,7 @@ export function RetirementHub({ clientId, client, person, onPersonChange }: Prop
         subtabs={[
           { key: "pension",    label: "Pension",     icon: Building2,    badgeTone: "purple" },
           { key: "meltdown",   label: "RRSP Meltdown", icon: TrendingDown, badge: "NEW", badgeTone: "cyan" },
+          { key: "strategist", label: "Strategist", icon: Sparkles, badge: "AI", badgeTone: "purple" },
           { key: "projection", label: "Projection",  icon: TrendingUp,   badgeTone: "cyan" },
         ]}
         activeSubtab={subtab}
@@ -59,6 +62,9 @@ export function RetirementHub({ clientId, client, person, onPersonChange }: Prop
           )}
           {subtab === "meltdown" && (
             <MeltdownTab clientId={clientId} client={client} person={person} />
+          )}
+          {subtab === "strategist" && (
+            <RetirementStrategist clientId={clientId} client={client} person={person} />
           )}
         </div>
       </HubShell>

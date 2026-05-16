@@ -397,6 +397,7 @@ export const pensionPlans = pgTable("pension_plans", {
   id:                         serial("id").primaryKey(),
   clientId:                   integer("client_id").notNull().references(() => clients.id, { onDelete: "cascade" }),
   pensionType:                text("pension_type").notNull().default("dbpp"),
+  subscriberOwner:            text("subscriber_owner").default("primary"),
   employerName:               text("employer_name"),
   accrualRate:                decimal("accrual_rate", { precision: 5, scale: 4 }),
   yearsOfService:             decimal("years_of_service", { precision: 5, scale: 2 }),

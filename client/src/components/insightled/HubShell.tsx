@@ -117,7 +117,7 @@ export function HubShell({
       )}
 
       {/* Content area — wraps children in .fp-insightled scope so legacy tabs get themed */}
-      <div className={`flex-1 fp-insightled-scrollbar bg-slate-100 ${contentClassName ?? "overflow-y-auto"}`}>
+      <div className={`flex-1 min-h-0 fp-insightled-scrollbar bg-slate-100 ${contentClassName ?? "overflow-y-auto"}`}>
         {children}
       </div>
     </div>

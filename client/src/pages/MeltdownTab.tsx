@@ -216,6 +216,18 @@ const fmtK = (n: number) => "$" + Math.round(n / 1000) + "k";
 
 export function MeltdownTab({ clientId, client, person }: Props) {
   const [strategyIdx, setStrategyIdx] = useState(2);
+  
+
+  // Manual overrides — allow advisor to adjust without editing source records
+const [overrides, setOverrides] = useState<{
+  rrsp?: number; tfsa?: number; nonReg?: number; pension?: number;
+  cppAge?: number; oasAge?: number; planEnd?: number; growth?: number;
+  customDraw?: number; customEnd?: number;
+}>({});
+
+const ov = (k: keyof typeof overrides) => (v: string) =>
+  setOverrides(o => ({ ...o, [k]: v === "" ? undefined : Number(v) }));
+const resetOverrides = () => setOverrides({});
 
   const nwQ = useQuery<NWEntry[]>({
     queryKey: [`/api/clients/${clientId}/net-worth`],
@@ -265,6 +277,14 @@ export function MeltdownTab({ clientId, client, person }: Props) {
   const cppAge = proj?.cppStartAge ?? 65;
   const oasAge = proj?.oasStartAge ?? 65;
   const planEnd = proj?.planningHorizonAge ?? 95;
+  const rrspEff       = overrides.rrsp     ?? rrspStart;
+ const tfsaEff       = overrides.tfsa     ?? tfsaStart;
+ const nonRegEff     = overrides.nonReg   ?? nonRegStart;
+ const pensionEff    = overrides.pension  ?? pensionIncome;
+ const cppAgeEff     = overrides.cppAge   ?? cppAge;
+ const oasAgeEff     = overrides.oasAge   ?? oasAge;
+ const planEndEff    = overrides.planEnd  ?? planEnd;
+ const growthEff     = (overrides.growth  ?? 5) / 100;
   const startAge = (() => {
     if (proj?.retirementAge) return Number(proj.retirementAge);
     const dob = person === "spouse"
@@ -282,23 +302,23 @@ export function MeltdownTab({ clientId, client, person }: Props) {
     { name: "Light", desc: "Stay under OAS clawback (~$90k income)", draw: Math.round(rrspStart * 0.035), end: 70 },
     { name: "Moderate", desc: "Fill 30% bracket — recommended", draw: Math.round(rrspStart * 0.05), end: 70 },
     { name: "Aggressive", desc: "Fill 40% bracket — leveraged option", draw: Math.round(rrspStart * 0.07), end: 70 },
-    { name: "Custom", desc: "Set your own annual draw", draw: 0, end: 70 },
+    { name: "Custom", desc: "Set your own annual draw", draw: overrides.customDraw ?? Math.round(rrspEff * 0.04), end: overrides.customEnd ?? 70 },
   ];
   const active = strategies[strategyIdx];
 
   const baseline = useMemo(() => simulate({
-    startAge, endAge: planEnd, rrspStart, tfsaStart, nonRegStart,
-    pensionIncome, cppAge, oasAge,
-    meltdownDraw: 0, meltdownStart: startAge, meltdownEnd: startAge,
-    growth: 0.05, tfsaRoom: 7000,
-  }), [startAge, planEnd, rrspStart, tfsaStart, nonRegStart, pensionIncome, cppAge, oasAge]);
+  startAge, endAge: planEndEff, rrspStart: rrspEff, tfsaStart: tfsaEff, nonRegStart: nonRegEff,
+  pensionIncome: pensionEff, cppAge: cppAgeEff, oasAge: oasAgeEff,
+  meltdownDraw: 0, meltdownStart: startAge, meltdownEnd: startAge,
+  growth: growthEff, tfsaRoom: 7000,
+}), [startAge, planEndEff, rrspEff, tfsaEff, nonRegEff, pensionEff, cppAgeEff, oasAgeEff, growthEff]);
 
-  const meltdown = useMemo(() => simulate({
-    startAge, endAge: planEnd, rrspStart, tfsaStart, nonRegStart,
-    pensionIncome, cppAge, oasAge,
-    meltdownDraw: active.draw, meltdownStart: startAge, meltdownEnd: active.end,
-    growth: 0.05, tfsaRoom: 7000,
-  }), [startAge, planEnd, rrspStart, tfsaStart, nonRegStart, pensionIncome, cppAge, oasAge, active.draw, active.end]);
+const meltdown = useMemo(() => simulate({
+  startAge, endAge: planEndEff, rrspStart: rrspEff, tfsaStart: tfsaEff, nonRegStart: nonRegEff,
+  pensionIncome: pensionEff, cppAge: cppAgeEff, oasAge: oasAgeEff,
+  meltdownDraw: active.draw, meltdownStart: startAge, meltdownEnd: active.end,
+  growth: growthEff, tfsaRoom: 7000,
+}), [startAge, planEndEff, rrspEff, tfsaEff, nonRegEff, pensionEff, cppAgeEff, oasAgeEff, growthEff, active.draw, active.end]);
 
   const lifetimeTaxSaved = baseline.totals.lifetimeTax - meltdown.totals.lifetimeTax;
   const estateUplift = meltdown.totals.estateAfterTax - baseline.totals.estateAfterTax;
@@ -425,31 +445,65 @@ export function MeltdownTab({ clientId, client, person }: Props) {
         </Section>
 
         <Section
-          title="Assumptions"
-          eyebrow="Pulled from Client File"
-          defaultOpen={false}
-          summary={`${fmtK(rrspStart)} RRSP · ${fmtK(tfsaStart)} TFSA · Age ${planEnd} horizon`}
-          right={<span className="text-xs text-slate-500">Edit source fields to re-run</span>}
-        >
-          <div className="grid grid-cols-4 gap-5">
-            {[
-              ["RRSP Balance", fmt$(rrspStart), "Net Worth"],
-              ["TFSA Balance", fmt$(tfsaStart), "Net Worth · $7k/yr room"],
-              ["Non-Registered", fmt$(nonRegStart), "Net Worth"],
-              ["DB Pension Income", fmt$(pensionIncome) + "/yr", "Pension"],
-              ["CPP Start Age", String(cppAge), "Retirement Form"],
-              ["OAS Start Age", String(oasAge), "Retirement Form"],
-              ["Province", "Ontario", "Client File"],
-              ["Planning Horizon", `Age ${planEnd}`, "Retirement Form"],
-            ].map(([label, value, src]) => (
-              <div key={label}>
-                <div className="text-[10px] font-semibold tracking-wider uppercase text-slate-500 mb-1">{label}</div>
-                <div className="text-base font-semibold text-slate-900" style={{ fontFamily: "JetBrains Mono, monospace" }}>{value}</div>
-                <div className="text-[10px] text-slate-400 mt-0.5">{src}</div>
-              </div>
-            ))}
-          </div>
-        </Section>
+  title="Assumptions"
+  eyebrow="Pulled from Client File"
+  defaultOpen={false}
+  summary={`${fmtK(rrspEff)} RRSP · ${fmtK(tfsaEff)} TFSA · Age ${planEndEff} horizon`}
+  right={
+    <button onClick={resetOverrides}
+      className="text-xs text-blue-600 hover:text-blue-800 font-medium">
+      Reset to client values
+    </button>
+  }
+>
+  <div className="grid grid-cols-4 gap-4">
+    {[
+      { label: "RRSP Balance",       key: "rrsp",    val: rrspEff,    src: "Net Worth",        prefix: "$" },
+      { label: "TFSA Balance",       key: "tfsa",    val: tfsaEff,    src: "Net Worth",        prefix: "$" },
+      { label: "Non-Registered",     key: "nonReg",  val: nonRegEff,  src: "Net Worth",        prefix: "$" },
+      { label: "DB Pension/yr",      key: "pension", val: pensionEff, src: "Pension",          prefix: "$" },
+      { label: "CPP Start Age",      key: "cppAge",  val: cppAgeEff,  src: "Retirement Form",  prefix: ""  },
+      { label: "OAS Start Age",      key: "oasAge",  val: oasAgeEff,  src: "Retirement Form",  prefix: ""  },
+      { label: "Planning Horizon",   key: "planEnd", val: planEndEff, src: "Retirement Form",  prefix: "Age " },
+      { label: "Growth Rate %",      key: "growth",  val: overrides.growth ?? 5, src: "Default 5%", prefix: "" },
+    ].map(({ label, key, val, src, prefix }) => (
+      <div key={label}>
+        <div className="text-[10px] font-semibold tracking-wider uppercase text-slate-500 mb-1">{label}</div>
+        <div className="relative">
+          {prefix && <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-slate-400">{prefix}</span>}
+          <input
+            type="number"
+            value={overrides[key as keyof typeof overrides] ?? val}
+            onChange={e => ov(key as keyof typeof overrides)(e.target.value)}
+            className={`w-full bg-white border border-slate-200 rounded-lg py-1.5 text-sm font-semibold text-slate-900 focus:outline-none focus:ring-1 focus:ring-blue-400/40 focus:border-blue-400 font-mono ${prefix ? "pl-7 pr-2" : "px-2.5"}`}
+          />
+          {overrides[key as keyof typeof overrides] !== undefined && (
+            <div className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-blue-500 rounded-full" title="Overridden" />
+          )}
+        </div>
+        <div className="text-[9px] text-slate-400 mt-0.5">{src}</div>
+      </div>
+    ))}
+  </div>
+  {strategyIdx === 4 && (
+    <div className="mt-4 pt-4 border-t border-slate-100 grid grid-cols-2 gap-4">
+      <div>
+        <div className="text-[10px] font-semibold tracking-wider uppercase text-slate-500 mb-1">Custom Annual Draw</div>
+        <input type="number" placeholder="e.g. 40000"
+          value={overrides.customDraw ?? ""}
+          onChange={e => ov("customDraw")(e.target.value)}
+          className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-sm font-semibold font-mono focus:outline-none focus:ring-1 focus:ring-blue-400/40 focus:border-blue-400" />
+      </div>
+      <div>
+        <div className="text-[10px] font-semibold tracking-wider uppercase text-slate-500 mb-1">Draw Until Age</div>
+        <input type="number" placeholder="e.g. 70"
+          value={overrides.customEnd ?? ""}
+          onChange={e => ov("customEnd")(e.target.value)}
+          className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-sm font-semibold font-mono focus:outline-none focus:ring-1 focus:ring-blue-400/40 focus:border-blue-400" />
+      </div>
+    </div>
+  )}
+</Section>
 
         <div className="grid grid-cols-2 gap-4">
           <Section title="Taxable Income by Year" eyebrow="Smoothed vs. Spike" summary={`Bar chart, ages ${startAge}–${planEnd}`}

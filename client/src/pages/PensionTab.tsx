@@ -165,19 +165,66 @@ export function PensionTab({ clientId, client, person = "primary" }: {
   }
 
   function openEdit(p: PensionPlan) {
-    setEditingId(p.id);
-    setForm({ ...p, isVested: p.isVested ?? true });
-    setShowForm(true);
-  }
-
-  async function save() {
-    setBusy(true);
+  setEditingId(p.id);
+  if (p.pensionType === "no_pension" && p.notes) {
     try {
-      if (editingId) await api.patch(`/api/pensions/${editingId}`, form);
-      else           await api.post(`/api/clients/${clientId}/pensions`, form);
-      setShowForm(false); load();
-    } finally { setBusy(false); }
+      const n = JSON.parse(p.notes);
+      setForm({
+        ...p,
+        bestAverageEarnings: n.desiredIncome ?? "",
+        currentBalance:      n.annualContrib ?? "",
+        survivorBenefitPct:  n.cppStartAge ?? "65",
+        projectedYearsAtRetirement: n.oasStartAge ?? "65",
+        yearsOfService:      n.planningHorizon ?? "90",
+        indexingType:        n.riskProfile ?? "balanced",
+        indexingRate:        n.spendingProfile ?? "mixed",
+        bridgeBenefit:       n.bridgeIncome ?? "",
+        bridgeBenefitEndAge: n.bridgeEndsAge ?? 70,
+        notes:               n.userNotes ?? "",
+        isVested: true,
+      });
+    } catch { setForm({ ...p, isVested: p.isVested ?? true }); }
+  } else {
+    setForm({ ...p, isVested: p.isVested ?? true });
   }
+  setShowForm(true);
+}
+
+ async function save() {
+  setBusy(true);
+  try {
+    let payload = { ...form };
+
+    // For no_pension, pack extra fields into notes as JSON
+    // and map to DB-safe columns
+    if (form.pensionType === "no_pension") {
+      payload = {
+        ...form,
+        // survivorBenefitPct stores CPP age as text — convert to safe decimal
+        survivorBenefitPct: null,
+        // projectedYearsAtRetirement stores OAS age — clear it
+        projectedYearsAtRetirement: null,
+        // Store everything in notes as JSON
+        notes: JSON.stringify({
+          desiredIncome:    form.bestAverageEarnings,
+          annualContrib:    form.currentBalance,
+          cppStartAge:      form.survivorBenefitPct,
+          oasStartAge:      form.projectedYearsAtRetirement,
+          planningHorizon:  form.yearsOfService,
+          riskProfile:      form.indexingType,
+          spendingProfile:  form.indexingRate,
+          bridgeIncome:     form.bridgeBenefit,
+          bridgeEndsAge:    form.bridgeBenefitEndAge,
+          userNotes:        form.notes,
+        }),
+      };
+    }
+
+    if (editingId) await api.patch(`/api/pensions/${editingId}`, payload);
+    else           await api.post(`/api/clients/${clientId}/pensions`, payload);
+    setShowForm(false); load();
+  } finally { setBusy(false); }
+}
 
   async function del(id: number) {
     if (!confirm("Delete this pension plan?")) return;

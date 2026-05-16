@@ -36,6 +36,7 @@ r.post("/clients/:id/pensions", async (req: AuthRequest, res: Response) => {
     bridgeBenefitEndAge: body.bridgeBenefitEndAge || 65,
     survivorBenefitPct: body.survivorBenefitPct != null && body.survivorBenefitPct !== "" ? body.survivorBenefitPct : null,
     isVested: body.isVested ?? true,
+    subscriberOwner: body.subscriberOwner || "primary",
     notes: body.notes || null,
   }).returning();
   res.status(201).json(row);
@@ -62,6 +63,7 @@ r.patch("/pensions/:id", async (req: AuthRequest, res: Response) => {
     bridgeBenefitEndAge: body.bridgeBenefitEndAge || 65,
     survivorBenefitPct: body.survivorBenefitPct != null && body.survivorBenefitPct !== "" ? body.survivorBenefitPct : null,
     isVested: body.isVested ?? true,
+    subscriberOwner: body.subscriberOwner || "primary",
     notes: body.notes || null,
     updatedAt: new Date(),
   } as any).where(eq(pensionPlans.id, ex.id)).returning();

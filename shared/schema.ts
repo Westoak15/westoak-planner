@@ -410,6 +410,7 @@ export const pensionPlans = pgTable("pension_plans", {
   bridgeBenefit:              decimal("bridge_benefit", { precision: 15, scale: 2 }),
   bridgeBenefitEndAge:        integer("bridge_benefit_end_age").default(65),
   survivorBenefitPct:         decimal("survivor_benefit_pct", { precision: 5, scale: 4 }),
+  subscriberOwner:            text("subscriber_owner").default("primary"),
   isVested:                   boolean("is_vested").default(true),
   notes:                      text("notes"),
   createdAt:                  timestamp("created_at").defaultNow().notNull(),

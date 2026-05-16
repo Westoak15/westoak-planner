@@ -326,7 +326,7 @@ export function PensionTab({ clientId, client, person = "primary" }: {
                   <input value={form.employerName ?? ""} onChange={e => upd("employerName", e.target.value)} className={INPUT} placeholder="e.g. Ontario Teachers'" />
                 </div>
                 <div>
-                  <label className="text-xs font-semibold text-gray-500 mb-1 block">Retirement Age</label>
+                  <label className="text-xs font-semibold text-gray-500 mb-1 block">Pension Start Age</label>
                   <input type="number" value={form.retirementAge ?? 65} onChange={e => upd("retirementAge", +e.target.value)} className={INPUT} />
                 </div>
               </div>

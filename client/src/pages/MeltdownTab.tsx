@@ -222,7 +222,7 @@ export function MeltdownTab({ clientId, client, person }: Props) {
 const [overrides, setOverrides] = useState<{
   rrsp?: number; tfsa?: number; nonReg?: number; pension?: number;
   cppAge?: number; oasAge?: number; planEnd?: number; growth?: number;
-  customDraw?: number; customEnd?: number;
+  customDraw?: number; customStart?: number; customEnd?: number;
 }>({});
 
 const ov = (k: keyof typeof overrides) => (v: string) =>
@@ -302,7 +302,7 @@ const resetOverrides = () => setOverrides({});
     { name: "Light", desc: "Stay under OAS clawback (~$90k income)", draw: Math.round(rrspStart * 0.035), end: 70 },
     { name: "Moderate", desc: "Fill 30% bracket — recommended", draw: Math.round(rrspStart * 0.05), end: 70 },
     { name: "Aggressive", desc: "Fill 40% bracket — leveraged option", draw: Math.round(rrspStart * 0.07), end: 70 },
-    { name: "Custom", desc: "Set your own annual draw", draw: overrides.customDraw ?? Math.round(rrspEff * 0.04), end: overrides.customEnd ?? 70 },
+    { name: "Custom", desc: "Set your own annual draw", draw: overrides.customDraw ?? Math.round(rrspEff * 0.04), end: overrides.customEnd ?? 70, start: overrides.customStart ?? startAge },
   ];
   const active = strategies[strategyIdx];
 
@@ -316,7 +316,7 @@ const resetOverrides = () => setOverrides({});
 const meltdown = useMemo(() => simulate({
   startAge, endAge: planEndEff, rrspStart: rrspEff, tfsaStart: tfsaEff, nonRegStart: nonRegEff,
   pensionIncome: pensionEff, cppAge: cppAgeEff, oasAge: oasAgeEff,
-  meltdownDraw: active.draw, meltdownStart: startAge, meltdownEnd: active.end,
+  meltdownDraw: active.draw, meltdownStart: (active as any).start ?? startAge, meltdownEnd: active.end,
   growth: growthEff, tfsaRoom: 7000,
 }), [startAge, planEndEff, rrspEff, tfsaEff, nonRegEff, pensionEff, cppAgeEff, oasAgeEff, growthEff, active.draw, active.end]);
 
@@ -486,7 +486,7 @@ const meltdown = useMemo(() => simulate({
     ))}
   </div>
   {strategyIdx === 4 && (
-    <div className="mt-4 pt-4 border-t border-slate-100 grid grid-cols-2 gap-4">
+    <div className="mt-4 pt-4 border-t border-slate-100 grid grid-cols-3 gap-4">
       <div>
         <div className="text-[10px] font-semibold tracking-wider uppercase text-slate-500 mb-1">Custom Annual Draw</div>
         <input type="number" placeholder="e.g. 40000"
@@ -494,6 +494,13 @@ const meltdown = useMemo(() => simulate({
           onChange={e => ov("customDraw")(e.target.value)}
           className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-sm font-semibold font-mono focus:outline-none focus:ring-1 focus:ring-blue-400/40 focus:border-blue-400" />
       </div>
+      <div>
+  <div className="text-[10px] font-semibold tracking-wider uppercase text-slate-500 mb-1">Begin Meltdown Age</div>
+  <input type="number" placeholder={String(startAge)}
+    value={overrides.customStart ?? ""}
+    onChange={e => ov("customStart")(e.target.value)}
+    className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-sm font-semibold font-mono focus:outline-none focus:ring-1 focus:ring-blue-400/40 focus:border-blue-400" />
+</div>
       <div>
         <div className="text-[10px] font-semibold tracking-wider uppercase text-slate-500 mb-1">Draw Until Age</div>
         <input type="number" placeholder="e.g. 70"

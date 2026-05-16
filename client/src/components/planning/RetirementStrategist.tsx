@@ -25,7 +25,7 @@ interface PensionPlan {
   bestAverageEarnings: string | null; pensionIncome?: string | null;
 }
 interface RetirementProj {
-  id: number; currentAge: number; retirementAge: number; lifeExpectancy: number;
+  id: number; person?: string; currentAge: number; retirementAge: number; lifeExpectancy: number;
   currentSavings: string; annualContribution: string; desiredRetirementIncome: string;
   expectedReturn: string; inflationRate: string; pensionIncome: string;
   cppStartAge: number; oasStartAge: number; successRate: string;
@@ -165,69 +165,41 @@ export function RetirementStrategist({ clientId, client, person = "primary" }: P
 
   // ── Build data picture ────────────────────────────────────────────────────
 
-  const proj = projections.find(p => (p.person ?? "primary") === (person === "spouse" ? "spouse" : "primary"))
-  ?? projections[0];
+  const personKey = person === "combined" ? "primary" : (person ?? "primary");
+  const proj = projections.find(p => (p.person ?? "primary") === personKey)
+    ?? projections[0];
 
-// After:
-const personKey = person === "combined" ? "primary" : (person ?? "primary");
-const proj = projections.find(p => (p.person ?? "primary") === personKey)
-  ?? projections[0];
-
-const retAge = proj?.retirementAge
-  ?? (person === "spouse" ? client?.spouseRetirementAge : client?.retirementAge)
-  ?? 65;
-
-const desired = Number(
-  proj?.desiredRetirementIncome
-  ?? (person === "spouse" ? client?.spouseDesiredRetirementIncome : client?.desiredRetirementIncome)
-  ?? 80000
-);
-
-const currentAge = proj?.currentAge ?? (() => {
-  const dob = person === "spouse"
-    ? (client?.spouseDateOfBirth ?? client?.spouseDob)
-    : (client?.dateOfBirth ?? client?.dob);
-  return dob ? Math.floor((Date.now() - new Date(dob).getTime()) / (365.25 * 24 * 3600 * 1000)) : 45;
-})();
   const nwSum = (cat: string, owner?: string) =>
-  nw.filter(e => e.type === "asset" && e.category === cat && (!owner || e.owner === owner))
-    .reduce((s, e) => s + Number(e.value), 0);
+    nw.filter(e => e.type === "asset" && e.category === cat && (!owner || e.owner === owner))
+      .reduce((s, e) => s + Number(e.value), 0);
 
-const rrsp = person === "combined"
-  ? nwSum("RRSP")
-  : person === "spouse"
-  ? nwSum("RRSP", "spouse")
-  : nwSum("RRSP", "primary") + nwSum("RRSP", "joint");
-
-const tfsa = person === "combined"
-  ? nwSum("TFSA")
-  : person === "spouse"
-  ? nwSum("TFSA", "spouse")
-  : nwSum("TFSA", "primary") + nwSum("TFSA", "joint");
-
-const nonReg = person === "combined"
-  ? nwSum("Non-Registered")
-  : person === "spouse"
-  ? nwSum("Non-Registered", "spouse")
-  : nwSum("Non-Registered", "primary") + nwSum("Non-Registered", "joint");
+  const rrsp   = person === "combined" ? nwSum("RRSP")             : person === "spouse" ? nwSum("RRSP", "spouse")             : nwSum("RRSP", "primary")             + nwSum("RRSP", "joint");
+  const tfsa   = person === "combined" ? nwSum("TFSA")             : person === "spouse" ? nwSum("TFSA", "spouse")             : nwSum("TFSA", "primary")             + nwSum("TFSA", "joint");
+  const nonReg = person === "combined" ? nwSum("Non-Registered")   : person === "spouse" ? nwSum("Non-Registered", "spouse")   : nwSum("Non-Registered", "primary")   + nwSum("Non-Registered", "joint");
+  const totalSavings = rrsp + tfsa + nonReg;
 
   const pensionIncome = pensions.reduce((s, p) => {
     if (p.pensionType === "dbpp") return s + Number(p.accrualRate || 0) * Number(p.projectedYearsAtRetirement || 0) * Number(p.bestAverageEarnings || 0);
     return s;
   }, 0);
 
-  const currentAge    = proj?.currentAge    ?? (client?.dateOfBirth ? Math.floor((Date.now() - new Date(client.dateOfBirth).getTime()) / (365.25 * 24 * 3600 * 1000)) : 45);
-  const retAge        = proj?.retirementAge ?? client?.retirementAge ?? 65;
-  const lifeExp       = proj?.lifeExpectancy ?? 90;
+  const currentAge = proj?.currentAge ?? (() => {
+    const dob = person === "spouse"
+      ? (client?.spouseDateOfBirth ?? client?.spouseDob)
+      : (client?.dateOfBirth ?? client?.dob);
+    return dob ? Math.floor((Date.now() - new Date(dob).getTime()) / (365.25 * 24 * 3600 * 1000)) : 45;
+  })();
+  const retAge     = proj?.retirementAge ?? (person === "spouse" ? client?.spouseRetirementAge : client?.retirementAge) ?? 65;
+  const lifeExp    = proj?.lifeExpectancy ?? 90;
   const annualContrib = Number(proj?.annualContribution ?? 0);
-  const desired       = Number(proj?.desiredRetirementIncome ?? 80000);
-  const cppAge        = proj?.cppStartAge ?? 65;
-  const oasAge        = proj?.oasStartAge ?? 65;
-  const hasPension    = pensionIncome > 0;
-  const hasRrsp       = rrsp > 0;
-  const hasTfsa       = tfsa > 0;
-  const yearsToRet    = Math.max(0, retAge - currentAge);
-  const income        = Number(client?.annualIncome ?? 0);
+  const desired    = Number(proj?.desiredRetirementIncome ?? (person === "spouse" ? client?.spouseDesiredRetirementIncome : client?.desiredRetirementIncome) ?? 80000);
+  const cppAge     = proj?.cppStartAge ?? 65;
+  const oasAge     = proj?.oasStartAge ?? 65;
+  const hasPension = pensionIncome > 0;
+  const hasRrsp    = rrsp > 0;
+  const hasTfsa    = tfsa > 0;
+  const yearsToRet = Math.max(0, retAge - currentAge);
+  const income     = Number(client?.annualIncome ?? 0);
 
   const baseOpts = {
     rrsp, tfsa, nonReg, pension: pensionIncome,

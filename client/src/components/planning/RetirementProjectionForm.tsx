@@ -613,28 +613,34 @@ export function RetirementTab({ clientId, clientName, person: personProp }: { cl
   const [checkupError, setCheckupError] = useState<string | null>(null);
 
   const runCheckup = async () => {
-    setCheckupLoading(true);
-    setCheckupError(null);
-    try {
-      // Run Monte Carlo simulation
-      await apiFetch(`/api/clients/${clientId}/simulate`, { method: "POST", body: JSON.stringify({}) });
-      // Invalidate projections so success rate updates
-      await qc.invalidateQueries({ queryKey: [`/api/clients/${clientId}/retirement`] });
-      // Open retirement report in new tab
-      const token = localStorage.getItem("fp_token") ?? "";
-      const res = await fetch(`/api/reports/${clientId}/retirement`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!res.ok) throw new Error("Report failed to generate");
-      const html = await res.text();
-      const win = window.open("", "_blank");
-      if (win) { win.document.write(html); win.document.close(); }
-    } catch (e: any) {
-      setCheckupError(e.message ?? "Checkup failed");
-    } finally {
-      setCheckupLoading(false);
+  setCheckupLoading(true);
+  setCheckupError(null);
+  try {
+    await apiFetch(`/api/clients/${clientId}/simulate`, { method: "POST", body: JSON.stringify({}) });
+    // Update success rate on each projection
+    for (const proj of allProjections) {
+      if (proj.id) {
+        await apiFetch(`/api/retirement/${proj.id}`, {
+          method: "PATCH",
+          body: JSON.stringify({ successRate: proj.successRate }),
+        });
+      }
     }
-  };
+    await qc.invalidateQueries({ queryKey: [`/api/clients/${clientId}/retirement`] });
+    const token = localStorage.getItem("fp_token") ?? "";
+    const res = await fetch(`/api/reports/${clientId}/retirement`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) throw new Error("Report failed to generate");
+    const html = await res.text();
+    const win = window.open("", "_blank");
+    if (win) { win.document.write(html); win.document.close(); }
+  } catch (e: any) {
+    setCheckupError(e.message ?? "Checkup failed");
+  } finally {
+    setCheckupLoading(false);
+  }
+};
 
   // Fetch all projections for this client
   const { data: allProjections = [], isLoading } = useQuery<RetirementProjection[]>({

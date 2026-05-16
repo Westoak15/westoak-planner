@@ -165,7 +165,8 @@ export function RetirementStrategist({ clientId, client, person = "primary" }: P
 
   // ── Build data picture ────────────────────────────────────────────────────
 
-  const proj = projections[0];
+  const proj = projections.find(p => (p.person ?? "primary") === (person === "spouse" ? "spouse" : "primary"))
+  ?? projections[0];
   const isPrimary = person !== "spouse";
 
   const rrsp    = nw.filter(e => e.type === "asset" && e.category === "RRSP"           && (isPrimary ? e.owner !== "spouse" : e.owner === "spouse")).reduce((s, e) => s + Number(e.value), 0);
@@ -199,14 +200,18 @@ export function RetirementStrategist({ clientId, client, person = "primary" }: P
 
   // Run baseline on mount
   useEffect(() => {
-    if (loading) return;
-    setRunning(true);
-    setTimeout(() => {
-      const rate = simSuccessRate(baseOpts);
-      setBaseRate(rate);
-      setRunning(false);
-    }, 100);
-  }, [loading]);
+  if (loading) return;
+  runAnalysis();
+}, [loading]);
+
+function runAnalysis() {
+  setRunning(true);
+  setTimeout(() => {
+    const rate = simSuccessRate(baseOpts);
+    setBaseRate(rate);
+    setRunning(false);
+  }, 100);
+}
 
   // ── Generate recommendations ──────────────────────────────────────────────
 
@@ -400,9 +405,11 @@ export function RetirementStrategist({ clientId, client, person = "primary" }: P
         </div>
         <div className="flex items-center gap-3">
           {running && (
-            <div className="flex items-center gap-1.5 text-xs text-slate-400">
-              <RefreshCw className="w-3.5 h-3.5 animate-spin" /> Analyzing…
-            </div>
+           <button onClick={runAnalysis} disabled={running}
+              className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-700 border border-slate-200 px-2.5 py-1.5 rounded-lg transition-colors disabled:opacity-50">
+            <RefreshCw className={`w-3.5 h-3.5 ${running ? "animate-spin" : ""}`} />
+            {running ? "Analyzing…" : "Re-run Analysis"}
+           </button>
           )}
           {baseRate !== null && !running && (
             <div className={`text-center px-4 py-2.5 rounded-xl border ${

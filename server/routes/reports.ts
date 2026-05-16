@@ -145,8 +145,18 @@ r.get("/:clientId/retirement", async (req: AuthRequest, res: Response) => {
       const retirementAge = ret?.retirementAge ?? client.retirementAge ?? 65;
       const lifeExpectancy = ret?.lifeExpectancy ?? 90;
       const desiredIncome  = Number(ret?.desiredRetirementIncome ?? client.desiredRetirementIncome ?? 50000);
-      const rrsp  = Number(ret?.currentSavings ?? 0);
-      const annualContrib = Number(ret?.annualContribution ?? 0);
+      const nwRows = await db.select().from(netWorthEntries).where(eq(netWorthEntries.clientId, +req.params.clientId));
+const rrsp = nwRows.filter((e: any) => e.type === "asset" && e.category === "RRSP")
+  .reduce((s: number, e: any) => s + Number(e.value || 0), 0)
+  + Number(ret?.rrspBalance ?? ret?.currentSavings ?? 0);
+const tfsa = nwRows.filter((e: any) => e.type === "asset" && e.category === "TFSA")
+  .reduce((s: number, e: any) => s + Number(e.value || 0), 0)
+  + Number(ret?.tfsaBalance ?? 0);
+const nonReg = nwRows.filter((e: any) => e.type === "asset" && e.category === "Non-Registered")
+  .reduce((s: number, e: any) => s + Number(e.value || 0), 0)
+  + Number(ret?.nonRegBalance ?? 0);
+const totalPortfolio = rrsp + tfsa + nonReg;
+const annualContrib = Number(ret?.annualContribution ?? 0);
       const cppMonthly = 900;
       const oasMonthly = 700;
       const cppAge = ret?.cppStartAge ?? 65;
@@ -161,7 +171,7 @@ r.get("/:clientId/retirement", async (req: AuthRequest, res: Response) => {
       const yearlyBands: number[][] = Array.from({ length: totalYears }, () => []);
       let successCount = 0;
       for (let s = 0; s < simCount; s++) {
-        let bal = rrsp;
+        let bal = totalPortfolio;
         let spending = desiredIncome;
         for (let yr = 0; yr < totalYears; yr++) {
           const age = currentAge + yr;

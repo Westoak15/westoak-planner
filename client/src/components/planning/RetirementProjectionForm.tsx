@@ -634,8 +634,8 @@ export function RetirementTab({ clientId, clientName, person: personProp }: { cl
 
   // Fetch all projections for this client
   const { data: allProjections = [], isLoading } = useQuery<RetirementProjection[]>({
-    queryKey: [`/api/clients/${clientId}/retirement`],
-    queryFn: () => apiFetch(`/api/clients/${clientId}/retirement`),
+  queryKey: [`/api/clients/${clientId}/retirement`, view],
+  queryFn: () => apiFetch(`/api/clients/${clientId}/retirement`),
     enabled: !!clientId && clientId > 0,
   });
 

@@ -50,7 +50,7 @@ export function RetirementHub({ clientId, client, person, onPersonChange }: Prop
           onPersonChange,
           primaryLabel: client?.firstName ?? "Primary",
           spouseLabel: hasSpouse ? client.spouseFirstName : null,
-          showCombined: True,
+          showCombined: true,
         }}
       >
         <div className="p-6">

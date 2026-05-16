@@ -26,12 +26,24 @@ interface PensionPlan {
   annuityIsVested: boolean | null;
 }
 
+// These existing fields are repurposed for no_pension:
+// currentBalance      → annual savings contribution
+// bestAverageEarnings → desired retirement income
+// accrualRate         → expected return rate (0.04/0.06/0.08)
+// indexingType        → risk profile
+// yearsOfService      → life expectancy / planning horizon
+// survivorBenefitPct  → CPP start age
+// projectedYearsAtRetirement → OAS start age
+// bridgeBenefit       → part-time bridge income
+// bridgeBenefitEndAge → bridge income ends age
+
 const PENSION_TYPES = [
   { key: "dbpp",          label: "DBPP — Defined Benefit" },
   { key: "dcpp",          label: "DCPP — Defined Contribution" },
   { key: "group_rrsp",    label: "Group RRSP" },
   { key: "dpsp",          label: "DPSP — Deferred Profit Sharing" },
   { key: "life_annuity",  label: "Life Annuity" },
+  { key: "no_pension", label: "No Pension — Investment Plan" },
 ];
 const INDEXING_TYPES = [
   { key: "none",    label: "No Indexing" },
@@ -57,6 +69,7 @@ function calcDCPPDrawdown(plan: PensionPlan): number {
 }
 
 function pensionLabel(type: string) {
+  if (type === "no_pension") return "Inv. Plan";
   return PENSION_TYPES.find(t => t.key === type)?.label.split(" — ")[0] ?? type.toUpperCase();
 }
 
@@ -87,15 +100,16 @@ const PENSION_TYPE_MAP: Record<string, string> = {
   "DCPP": "dcpp",
   "Group RRSP": "group_rrsp",
   "DPSP": "dpsp",
+  "No Pension": "no_pension",
 };
 
 const emptyPlan = (owner = "primary", retirementAge = 65, pensionType = "dbpp", salary: string | number | null = ""): any => ({
-  pensionType, subscriberOwner: owner, employerName: "", accrualRate: "0.02",
-  yearsOfService: "", projectedYearsAtRetirement: "",
+  pensionType, subscriberOwner: owner, employerName: "", accrualRate: "0.06",
+  yearsOfService: "90", projectedYearsAtRetirement: "65",
   bestAverageEarnings: salary ? String(salary) : "",
   currentBalance: "", employerMatchPct: "", retirementAge,
-  indexingType: "none", indexingRate: "", bridgeBenefit: "",
-  bridgeBenefitEndAge: 65, survivorBenefitPct: "0.60", isVested: true, notes: "",
+  indexingType: "balanced", indexingRate: "", bridgeBenefit: "",
+  bridgeBenefitEndAge: 65, survivorBenefitPct: "65", isVested: true, notes: "",
 });
 
 export function PensionTab({ clientId, client, person = "primary" }: {
@@ -180,6 +194,7 @@ export function PensionTab({ clientId, client, person = "primary" }: {
   const totalDCPP = filteredPlans
     .filter(p => p.pensionType !== "dbpp")
     .reduce((s, p) => s + Number(p.currentBalance || 0), 0);
+  
 
   return (
     <div className="p-6 max-w-5xl mx-auto">
@@ -211,7 +226,7 @@ export function PensionTab({ clientId, client, person = "primary" }: {
         <div className="text-center py-16 border-2 border-dashed border-gray-200 rounded-2xl">
           <Building2 className="w-10 h-10 text-gray-300 mx-auto mb-3" />
           <p className="text-gray-500 font-semibold">No pension plans on file</p>
-          <p className="text-sm text-gray-400 mt-1">Add DBPP, DCPP, Group RRSP, DPSP, or Life Annuity plans</p>
+          <p className="text-sm text-gray-400 mt-1">Add DBPP, DCPP, Group RRSP, DPSP, Life Annuity, or Investment Plan</p>
         </div>
       ) : (
         <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
@@ -230,7 +245,7 @@ export function PensionTab({ clientId, client, person = "primary" }: {
             </thead>
             <tbody className="divide-y divide-gray-100">
               {filteredPlans.map(p => {
-                const income = p.pensionType === "dbpp" ? calcDBPPAnnual(p) : calcDCPPDrawdown(p);
+                const income = p.pensionType === "dbpp" ? calcDBPPAnnual(p) : p.pensionType === "no_pension" ? 0 : calcDCPPDrawdown(p);
                 return (
                   <tr key={p.id} className="hover:bg-gray-50 transition-colors">
                     <TD>
@@ -450,6 +465,107 @@ export function PensionTab({ clientId, client, person = "primary" }: {
         <p className="text-xs text-purple-500 mt-0.5">
           {fmt$(form.currentBalance)}/{form.indexingType === "annual" ? "yr" : "mo"} · Survivor {form.survivorBenefitPct > 0 ? `${Math.round(Number(form.survivorBenefitPct) * 100)}%` : "none"}
         </p>
+      </div>
+    )}
+  </>
+)}
+
+{/* No Pension — Investment Plan fields */}
+{form.pensionType === "no_pension" && (
+  <>
+    <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Retirement Investment Profile</p>
+
+    <div className="grid grid-cols-2 gap-3">
+      <div>
+        <label className="text-xs font-semibold text-gray-500 mb-1 block">Desired Retirement Income ($/yr)</label>
+        <input type="number" value={form.bestAverageEarnings ?? ""} onChange={e => upd("bestAverageEarnings", e.target.value)} className={INPUT} placeholder="e.g. 80000" />
+        <p className="text-[10px] text-gray-400 mt-0.5">Total annual income needed in retirement</p>
+      </div>
+      <div>
+        <label className="text-xs font-semibold text-gray-500 mb-1 block">Annual Savings Contribution ($/yr)</label>
+        <input type="number" value={form.currentBalance ?? ""} onChange={e => upd("currentBalance", e.target.value)} className={INPUT} placeholder="e.g. 25000" />
+        <p className="text-[10px] text-gray-400 mt-0.5">Combined RRSP + TFSA + other annual contributions</p>
+      </div>
+    </div>
+
+    <div className="grid grid-cols-3 gap-3">
+      <div>
+        <label className="text-xs font-semibold text-gray-500 mb-1 block">CPP Start Age</label>
+        <select value={form.survivorBenefitPct ?? "65"} onChange={e => upd("survivorBenefitPct", e.target.value)} className={INPUT}>
+          <option value="60">60 — Early (reduced)</option>
+          <option value="65">65 — Standard</option>
+          <option value="67">67 — Deferred</option>
+          <option value="70">70 — Maximum (+42%)</option>
+        </select>
+      </div>
+      <div>
+        <label className="text-xs font-semibold text-gray-500 mb-1 block">OAS Start Age</label>
+        <select value={form.projectedYearsAtRetirement ?? "65"} onChange={e => upd("projectedYearsAtRetirement", e.target.value)} className={INPUT}>
+          <option value="65">65 — Standard</option>
+          <option value="67">67 — Deferred</option>
+          <option value="70">70 — Maximum (+36%)</option>
+        </select>
+      </div>
+      <div>
+        <label className="text-xs font-semibold text-gray-500 mb-1 block">Planning Horizon (age)</label>
+        <input type="number" value={form.yearsOfService ?? "90"} onChange={e => upd("yearsOfService", e.target.value)} className={INPUT} placeholder="90" />
+        <p className="text-[10px] text-gray-400 mt-0.5">Life expectancy for plan modelling</p>
+      </div>
+    </div>
+
+    <div className="grid grid-cols-2 gap-3">
+      <div>
+        <label className="text-xs font-semibold text-gray-500 mb-1 block">Investment Risk Profile</label>
+        <select value={form.indexingType ?? "balanced"} onChange={e => upd("indexingType", e.target.value)} className={INPUT}>
+          <option value="conservative">Conservative — 4% expected return</option>
+          <option value="balanced">Balanced — 6% expected return</option>
+          <option value="growth">Growth — 8% expected return</option>
+        </select>
+      </div>
+      <div>
+        <label className="text-xs font-semibold text-gray-500 mb-1 block">Spending Profile</label>
+        <select value={form.indexingRate ?? "mixed"} onChange={e => upd("indexingRate", e.target.value)} className={INPUT}>
+          <option value="essential">Mostly Essential — stable, predictable</option>
+          <option value="mixed">Mixed — essential + discretionary</option>
+          <option value="discretionary">Lifestyle-heavy — travel, giving, flex</option>
+        </select>
+      </div>
+    </div>
+
+    <div className="pt-2 border-t border-gray-100">
+      <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">Part-Time / Bridge Income (optional)</p>
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="text-xs font-semibold text-gray-500 mb-1 block">Bridge Income ($/yr)</label>
+          <input type="number" value={form.bridgeBenefit ?? ""} onChange={e => upd("bridgeBenefit", e.target.value)} className={INPUT} placeholder="e.g. 20000" />
+          <p className="text-[10px] text-gray-400 mt-0.5">Part-time work, consulting, rental etc.</p>
+        </div>
+        <div>
+          <label className="text-xs font-semibold text-gray-500 mb-1 block">Bridge Income Ends (age)</label>
+          <input type="number" value={form.bridgeBenefitEndAge ?? ""} onChange={e => upd("bridgeBenefitEndAge", +e.target.value)} className={INPUT} placeholder="e.g. 70" />
+        </div>
+      </div>
+    </div>
+
+    {/* Live summary */}
+    {form.bestAverageEarnings && form.currentBalance && (
+      <div className="bg-gradient-to-r from-blue-50 to-cyan-50 border border-blue-200 rounded-xl p-4">
+        <p className="text-xs font-semibold text-blue-600 uppercase tracking-widest mb-2">Investment Plan Summary</p>
+        <div className="grid grid-cols-3 gap-4">
+          <div>
+            <p className="text-[10px] text-blue-500 mb-0.5">Income Goal</p>
+            <p className="text-base font-bold text-blue-900">{fmt$(Number(form.bestAverageEarnings))}/yr</p>
+          </div>
+          <div>
+            <p className="text-[10px] text-blue-500 mb-0.5">Gov. Benefits</p>
+            <p className="text-base font-bold text-blue-900">~$19K/yr</p>
+            <p className="text-[10px] text-blue-400">CPP + OAS estimate</p>
+          </div>
+          <div>
+            <p className="text-[10px] text-blue-500 mb-0.5">Portfolio Must Cover</p>
+            <p className="text-base font-bold text-blue-900">{fmt$(Math.max(0, Number(form.bestAverageEarnings) - 19000))}/yr</p>
+          </div>
+        </div>
       </div>
     )}
   </>

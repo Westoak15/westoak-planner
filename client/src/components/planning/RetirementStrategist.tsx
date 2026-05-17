@@ -200,6 +200,7 @@ export function RetirementStrategist({ clientId, client, person = "primary" }: P
   const hasTfsa    = tfsa > 0;
   const yearsToRet = Math.max(0, retAge - currentAge);
   const income     = Number(client?.annualIncome ?? 0);
+  const [goal, setGoal] = useState<"spending" | "tax" | "estate">("spending");
 
   const baseOpts = {
     rrsp, tfsa, nonReg, pension: pensionIncome,
@@ -223,7 +224,19 @@ function runAnalysis() {
 }
 
   // ── Generate recommendations ──────────────────────────────────────────────
-
+const goalWeights: Record<string, number> = {
+  spending: goal === "spending" ? 1.5 : 1,
+  tax:      goal === "tax"      ? 1.5 : 1,
+  estate:   goal === "estate"   ? 1.5 : 1,
+};
+const applyWeight = (id: string, val: number) => {
+  if (goal === "tax"     && ["cpp-delay","oas-delay","rrsp-meltdown","tfsa-build"].includes(id)) return val * 1.5;
+  if (goal === "estate"  && ["tfsa-build","income-floor","longevity"].includes(id)) return val * 1.5;
+  if (goal === "spending"&& ["retire-later","max-rrsp","low-success"].includes(id)) return val * 1.5;
+  return val;
+};
+  
+  
   const recommendations = useMemo((): Recommendation[] => {
     if (baseRate === null) return [];
     const recs: Recommendation[] = [];
@@ -364,8 +377,10 @@ function runAnalysis() {
     }
 
     // Sort by impactVal descending
-    return recs.sort((a, b) => b.impactVal - a.impactVal);
-  }, [baseRate, rrsp, tfsa, nonReg, pensionIncome, currentAge, retAge, lifeExp, cppAge, oasAge, annualContrib, desired, income]);
+    return recs
+  .map(r => ({ ...r, impactVal: applyWeight(r.id, r.impactVal) }))
+  .sort((a, b) => b.impactVal - a.impactVal);
+  }, [baseRate, rrsp, tfsa, nonReg, pensionIncome, currentAge, retAge, lifeExp, cppAge, oasAge, annualContrib, desired, income, goal]);
 
   // ── Render ────────────────────────────────────────────────────────────────
 
@@ -399,7 +414,37 @@ function runAnalysis() {
 
   return (
     <div className="max-w-4xl mx-auto px-6 py-6 space-y-6">
-
+      <div className="bg-white border border-slate-200 rounded-xl p-4">
+  <div className="text-[9px] font-semibold uppercase tracking-widest text-slate-400 mb-3">
+    Primary Planning Goal — recommendations ranked accordingly
+  </div>
+  <div className="grid grid-cols-3 gap-3">
+    {([
+      { key: "spending", label: "Maximize Retirement Spending", desc: "Live well, never run out", icon: "💰", color: "emerald" },
+      { key: "tax",      label: "Minimize Lifetime Taxes",      desc: "Keep more of what you've built", icon: "📊", color: "purple" },
+      { key: "estate",   label: "Maximize After-Tax Estate",    desc: "Leave the largest legacy", icon: "🏛️", color: "blue" },
+    ] as const).map(g => (
+      <button key={g.key} onClick={() => setGoal(g.key)}
+        className={`text-left p-3.5 rounded-xl border-2 transition-all ${
+          goal === g.key
+            ? g.color === "emerald" ? "border-emerald-400 bg-emerald-50"
+            : g.color === "purple"  ? "border-purple-400 bg-purple-50"
+            : "border-blue-400 bg-blue-50"
+            : "border-slate-200 bg-white hover:border-slate-300"
+        }`}>
+        <div className="text-lg mb-1">{g.icon}</div>
+        <div className={`text-xs font-bold mb-0.5 ${
+          goal === g.key
+            ? g.color === "emerald" ? "text-emerald-800"
+            : g.color === "purple"  ? "text-purple-800"
+            : "text-blue-800"
+            : "text-slate-700"
+        }`}>{g.label}</div>
+        <div className="text-[10px] text-slate-400 leading-relaxed">{g.desc}</div>
+      </button>
+    ))}
+  </div>
+</div>
       {/* Header strip */}
       <div className="flex items-center justify-between">
         <div>
@@ -409,7 +454,7 @@ function runAnalysis() {
           </div>
           <h2 className="text-xl font-bold text-slate-900">Retirement Optimization Report</h2>
           <p className="text-sm text-slate-500 mt-0.5">
-            {recommendations.length} opportunities ranked by impact · {client?.firstName ?? "Client"}'s plan
+            {recommendations.length} opportunities · ranked for {goal === "spending" ? "maximum retirement income" : goal === "tax" ? "minimum lifetime tax" : "maximum estate value"}
           </p>
         </div>
         <div className="flex items-center gap-3">

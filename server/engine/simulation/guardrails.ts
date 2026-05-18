@@ -4,7 +4,8 @@
 // Continuously validates financial plans using Monte Carlo stress testing
 // Flags plans that need recalculation or have low probability of success
 
-import { runMonteCarloSimulation, PortfolioAllocation, PRESET_ALLOCATIONS } from "./monteCarlo.js";
+import type { PortfolioAllocation} from "./monteCarlo.js";
+import { runMonteCarloSimulation, PRESET_ALLOCATIONS } from "./monteCarlo.js";
 import type { Client } from "../../../shared/schema.js";
 
 // ── Guardrail Thresholds ───────────────────────────────────────────────────

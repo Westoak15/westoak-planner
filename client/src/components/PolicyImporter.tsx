@@ -82,7 +82,7 @@ function parseSheet(ws: XLSX.WorkSheet, client?: Props["client"]): ParsedPolicy[
 
   // Find the header row (contains "Policy #" or "Policy Number")
   let headerIdx = -1;
-  let colMap: Record<string, number> = {};
+  const colMap: Record<string, number> = {};
 
   for (let i = 0; i < Math.min(10, rows.length); i++) {
     const row = rows[i].map((c: any) => String(c).toLowerCase().trim());

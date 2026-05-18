@@ -6,7 +6,8 @@
  *   app.use("/api/ai", aiVoiceRouter);
  */
 
-import { Router, Response } from "express";
+import type { Response } from "express";
+import { Router } from "express";
 import Anthropic from "@anthropic-ai/sdk";
 import { isAuthenticated, type AuthRequest } from "../auth/index.js";
 

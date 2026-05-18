@@ -16,6 +16,7 @@ export function InlineEdit({ value, onSave, type = "text", format, className = "
   const [val, setVal] = useState(String(value));
   const inputRef = useRef<HTMLInputElement>(null);
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { if (!editing) setVal(String(value)); }, [value, editing]);
 
   function commit() {

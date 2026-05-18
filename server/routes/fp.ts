@@ -1,4 +1,5 @@
-import { Router, Response } from "express";
+import type { Response } from "express";
+import { Router } from "express";
 import { db } from "../db/index.js";
 import {
   clients, financialPlans as plans, netWorthEntries, retirementProjections,
@@ -101,7 +102,7 @@ r.get("/clients/:id/retirement", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.id;
   if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
   const person = req.query.person as string | undefined;
-  let query = db.select().from(retirementProjections).where(eq(retirementProjections.clientId, cid));
+  const query = db.select().from(retirementProjections).where(eq(retirementProjections.clientId, cid));
   const rows = await query;
   const filtered = person
     ? rows.filter(r => (r.person ?? "primary") === person)

@@ -151,6 +151,16 @@ export function RetirementStrategist({ clientId, client, person = "primary" }: P
   const [expanded,   setExpanded]   = useState<string | null>(null);
   const [baseRate,   setBaseRate]   = useState<number | null>(null);
 
+
+function runAnalysis() {
+  setRunning(true);
+  setTimeout(() => {
+    const rate = simSuccessRate(baseOpts);
+    setBaseRate(rate);
+    setRunning(false);
+  }, 100);
+}
+
   useEffect(() => {
     Promise.all([
       api.get<NWEntry[]>(`/api/clients/${clientId}/net-worth`),
@@ -162,6 +172,7 @@ export function RetirementStrategist({ clientId, client, person = "primary" }: P
       setProjections(Array.isArray(projData) ? projData : projData ? [projData] : []);
     }).finally(() => setLoading(false));
   }, [clientId]);
+
 
   // ── Build data picture ────────────────────────────────────────────────────
 
@@ -214,14 +225,7 @@ export function RetirementStrategist({ clientId, client, person = "primary" }: P
   runAnalysis();
 }, [loading]);
 
-function runAnalysis() {
-  setRunning(true);
-  setTimeout(() => {
-    const rate = simSuccessRate(baseOpts);
-    setBaseRate(rate);
-    setRunning(false);
-  }, 100);
-}
+
 
   // ── Generate recommendations ──────────────────────────────────────────────
 const goalWeights: Record<string, number> = {

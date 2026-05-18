@@ -1,6 +1,6 @@
 // server/planning/routes.ts
 // ─────────────────────────────────────────────────────────────────────────────
-// Financial Planning Report Routes – adapted for fp-standalone schema
+// Financial Planning Report Routes
 // Mount in server/index.ts:
 //   import { planningRouter } from "./planning/routes.js";
 //   app.use("/api/planning", planningRouter);
@@ -137,7 +137,7 @@ async function loadClientAndAdvisor(
     lastName:    userRow?.lastName  ?? "",
     fullName:    userRow ? `${userRow.firstName} ${userRow.lastName}` : "Your Advisor",
     email:       userRow?.email ?? "",
-    companyName: userRow?.firmName ?? "fp-standalone",
+    companyName: userRow?.firmName ?? "westoak-planner",
   };
 
   return {

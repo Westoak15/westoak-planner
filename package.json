@@ -1,5 +1,5 @@
 {
-  "name": "fp-standalone",
+  "name": "westoak-planner",
   "version": "1.0.1",
   "description": "Financial Planning App",
   "type": "module",
@@ -77,6 +77,8 @@
     "@types/pg": "^8.11.6",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
+    "@typescript-eslint/eslint-plugin": "^8.59.3",
+    "@typescript-eslint/parser": "^8.59.3",
     "@vitejs/plugin-react": "^4.3.1",
     "autoprefixer": "^10.4.19",
     "class-variance-authority": "^0.7.0",
@@ -85,6 +87,10 @@
     "date-fns": "^3.6.0",
     "drizzle-kit": "^0.31.10",
     "esbuild": "^0.28.0",
+    "eslint": "^9.39.4",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "eslint-plugin-react-refresh": "^0.5.2",
     "lucide-react": "^0.383.0",
     "postcss": "^8.4.38",
     "react": "^18.3.1",
@@ -95,5 +101,18 @@
     "tsx": "^4.15.6",
     "typescript": "^5.4.5",
     "vite": "^5.4.21"
-  }
+  },
+"scripts": {
+  "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
+  "dev:server": "tsx watch server/index.ts",
+  "dev:client": "vite",
+  "build": "vite build && tsc -p tsconfig.server.json",
+  "start": "node dist/server/index.js",
+  "db:push": "drizzle-kit push",
+  "lint": "eslint .",
+  "lint:fix": "eslint . --fix",
+  "lint:client": "eslint client/src",
+  "lint:server": "eslint server shared",
+  "typecheck": "tsc --noEmit && tsc -p tsconfig.server.json --noEmit"
+}
 }

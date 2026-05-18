@@ -200,7 +200,7 @@ function MeetingRecorderModal({ clientId, clientName, onClose }: ModalProps) {
               </div>
 
               <p className="text-sm text-gray-400 mb-6 max-w-sm">
-                The AI will transcribe in real time and generate a financial planning summary when you're done.
+                {"The AI will transcribe in real time and generate a financial planning summary when you're done."}
               </p>
               <button
                 onClick={startRecording}

@@ -239,8 +239,6 @@ export function InsightLedDashboard({ clientId, client, onNavigate }: InsightLed
 
   useEffect(() => {
     let alive = true;
-    setStatus("loading");
-    setErrMsg("");
     Promise.all([
       api.get<Overview>(`/api/clients/${clientId}/overview`),
       api.get<NWEntry[]>(`/api/clients/${clientId}/net-worth`).catch(() => [] as NWEntry[]),

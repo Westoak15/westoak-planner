@@ -247,7 +247,7 @@ export function VoiceAddDialog({
             <>
               <div>
                 <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide mb-1.5">Heard</p>
-                <p className="text-xs text-gray-500 italic bg-gray-50 rounded-lg p-2.5 mb-3">"{transcript}"</p>
+                <p className="text-xs text-gray-500 italic bg-gray-50 rounded-lg p-2.5 mb-3">{'"'}{transcript}{'"'}</p>
               </div>
               <div>
                 <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide mb-2">AI extracted</p>

@@ -1,4 +1,5 @@
-import { Router, Response } from "express";
+import type { Response } from "express";
+import { Router } from "express";
 import { db } from "../db/index.js";
 import { isAuthenticated, type AuthRequest } from "../auth/index.js";
 import { ownsClient } from "../fpUtils.js";

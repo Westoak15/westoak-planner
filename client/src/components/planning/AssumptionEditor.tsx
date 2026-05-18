@@ -41,7 +41,9 @@ export function AssumptionEditor({ planId }: { planId: number }) {
         else vals[f.key] = String(raw);
       }
       vals.province = current.province;
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setEditing(vals);
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setDirty(false);
     }
   }, [current?.id, activeScenario]);

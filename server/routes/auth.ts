@@ -1,4 +1,5 @@
-import { Router, Request, Response } from "express";
+import type { Request, Response } from "express";
+import { Router } from "express";
 import { db } from "../db/index.js";
 import { users, insertUserSchema } from "../../shared/schema.js";
 import { hashPassword, checkPassword, signToken, isAuthenticated, getUser, type AuthRequest } from "../auth/index.js";

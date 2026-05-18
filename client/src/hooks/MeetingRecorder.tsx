@@ -120,8 +120,7 @@ function MeetingRecorderModal({ clientId, clientName, onClose }: ModalProps) {
               </div>
               <h3 className="font-bold text-gray-800 mb-1">Ready to record</h3>
               <p className="text-sm text-gray-400 mb-6 max-w-sm">
-                Hit record to start capturing the meeting. The AI will transcribe in real time
-                and generate a financial planning summary when you're done.
+                {"Hit record to start capturing the meeting. The AI will transcribe in real time and generate a financial planning summary when you're done."}
               </p>
               <button
                 onClick={startRecording}

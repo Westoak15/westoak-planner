@@ -1,6 +1,6 @@
 ﻿/**
  * server/services/reportGenerator.ts
- * fp-standalone - -  HTML reports with inline SVG charts
+ * westoak-planner - -  HTML reports with inline SVG charts
  */
 
 function esc(s: unknown): string {

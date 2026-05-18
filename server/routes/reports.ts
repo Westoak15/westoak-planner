@@ -1,4 +1,5 @@
-import { Router, Response } from "express";
+import type { Response } from "express";
+import { Router } from "express";
 import { db } from "../db/index.js";
 import { clients, netWorthEntries, insuranceAnalyses, debtEntries, educationSavings, users, retirementProjections, taxPlanningNotes, estatePlanningNotes, householdExpenses, pensionPlans } from "../../shared/schema.js";
 import { eq, and, inArray } from "drizzle-orm";

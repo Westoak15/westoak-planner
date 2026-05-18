@@ -1,5 +1,6 @@
 // Auto-generated path aliases — maps use-plans.ts paths to fp.ts handlers
-import { Router, Response } from "express";
+import type { Response } from "express";
+import { Router } from "express";
 import { db } from "../db/index.js";
 import {
   netWorthEntries, retirementProjections, insuranceAnalyses,

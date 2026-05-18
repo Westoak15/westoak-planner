@@ -1,4 +1,5 @@
-import { Router, Response } from "express";
+import type { Response } from "express";
+import { Router } from "express";
 import { z } from "zod";
 import { isAuthenticated, type AuthRequest } from "../auth/index.js";
 import { db } from "../db/index.js";

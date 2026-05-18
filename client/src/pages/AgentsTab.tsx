@@ -296,7 +296,7 @@ export function AgentsTab({ onSelectClient }: { onSelectClient?: (clientId: numb
           <div className="flex justify-between items-center mb-4">
             <div>
               <h1 className="text-2xl font-bold text-gray-900">
-                {selectedAgent?.firstName}'s Clients
+                {selectedAgent?.firstName}{"'s Clients"}
               </h1>
               <div className="flex items-center gap-2 mt-0.5">
                 <span className="text-sm text-gray-400">{clients.length} client{clients.length !== 1 ? "s" : ""}</span>
@@ -342,7 +342,7 @@ export function AgentsTab({ onSelectClient }: { onSelectClient?: (clientId: numb
         <>
           <div className="flex justify-between items-center mb-4">
             <h1 className="text-2xl font-bold text-gray-900">
-              {selectedClient?.firstName} {selectedClient?.lastName}'s Plans
+              {selectedClient?.lastName}{"'s Plans"}
             </h1>
             <span className="text-sm text-gray-400">{plans.length} plan{plans.length !== 1 ? "s" : ""}</span>
           </div>

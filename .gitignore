@@ -3,3 +3,7 @@ dist/
 .env
 drizzle/
 .DS_Store
+lint-errors*.txt
+lint-results.txt
+typecheck-errors*.txt
+eslint-report.txt

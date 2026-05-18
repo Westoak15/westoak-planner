@@ -4,7 +4,7 @@
  * — all support adding multiple rows before saving
  */
 import { toast } from "@/hooks/use-toast";
-import { useState, useEffect, useContext } from "react";
+import { useState, useEffect, useContext, useCallback } from "react";
 import { NWSubtabCtx } from "../components/layout/PlanningDocFlow";
 import { api } from "../lib/api";
 import { fmt$, fmtPct, cn } from "../lib/utils";
@@ -337,6 +337,19 @@ function normalizeCat(e: NWEntry): NWEntry {
 const LABEL_CLS = "text-[10px] text-slate-400 uppercase font-semibold block mb-0.5";
 const SELECT_CLS = "border border-slate-200 bg-white text-slate-800 rounded-lg px-2 py-1.5 text-sm w-full focus:outline-none focus:border-cyan-400";
 
+function CustomTooltip({ active, payload, totalA }: { active?: boolean; payload?: any[]; totalA: number }) {
+  if (!active || !payload?.length) return null;
+  const d = payload[0].payload;
+  const pct = totalA > 0 ? (d.value / totalA) * 100 : 0;
+    return (
+      <div className="rounded-lg px-3 py-2 text-xs shadow-lg bg-slate-900 border border-white/10">
+        <div className="font-semibold mb-0.5" style={{ color: d.color }}>{d.name}</div>
+        <div className="text-white">{fmt$(d.value)}</div>
+        <div className="text-slate-400">{pct.toFixed(1)}% of total</div>
+      </div>
+    );
+  };
+
 // ── NetWorthTab ───────────────────────────────────────────────────────────────
 export function NetWorthTab({ clientId, client }: { clientId: number; client?: { firstName: string; lastName: string; spouseFirstName?: string | null; spouseLastName?: string | null } }) {
   const [entries, setEntries] = useState<NWEntry[]>([]);
@@ -536,19 +549,6 @@ export function NetWorthTab({ clientId, client }: { clientId: number; client?: {
       color: NW_ASSET_COLORS[cat] ?? "#6b7280",
     }))
     .filter(d => d.value > 0);
-
-  const CustomTooltip = ({ active, payload }: any) => {
-    if (!active || !payload?.length) return null;
-    const d = payload[0].payload;
-    const pct = totalA > 0 ? (d.value / totalA) * 100 : 0;
-    return (
-      <div className="rounded-lg px-3 py-2 text-xs shadow-lg bg-slate-900 border border-white/10">
-        <div className="font-semibold mb-0.5" style={{ color: d.color }}>{d.name}</div>
-        <div className="text-white">{fmt$(d.value)}</div>
-        <div className="text-slate-400">{pct.toFixed(1)}% of total</div>
-      </div>
-    );
-  };
 
   return (
     <div className="p-6 h-full flex flex-col">
@@ -809,7 +809,7 @@ export function NetWorthTab({ clientId, client }: { clientId: number; client?: {
                       paddingAngle={2} dataKey="value" startAngle={90} endAngle={-270}>
                       {pieData.map((entry, i) => <Cell key={i} fill={entry.color} stroke="transparent" />)}
                     </Pie>
-                    <Tooltip content={<CustomTooltip />} />
+                    <Tooltip content={<CustomTooltip totalA={totalA} />} />
                   </PieChart>
                 </ResponsiveContainer>
               </div>
@@ -940,7 +940,9 @@ type RetDraft = {
 };
 
 export function RetirementTab({ clientId, client, person = "primary" }: { clientId: number; client?: any; person?: string }) {
-  const calcAge = (dob: string | null) => dob ? Math.floor((Date.now() - new Date(dob).getTime()) / (365.25 * 24 * 60 * 60 * 1000)) : null;
+  const calcAge = useCallback((dob: string | null) => 
+  dob ? Math.floor((Date.now() - new Date(dob).getTime()) / (365.25 * 24 * 60 * 60 * 1000)) : null
+, []);
   const clientAge = calcAge(client?.dateOfBirth);
   const spouseAge = calcAge(client?.spouseDateOfBirth);
   const clientName = client ? client.firstName : "Primary";

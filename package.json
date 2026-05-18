@@ -4,13 +4,18 @@
   "description": "Financial Planning App",
   "type": "module",
   "scripts": {
-    "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
-    "dev:server": "tsx watch server/index.ts",
-    "dev:client": "vite",
-    "build": "vite build && tsc -p tsconfig.server.json",
-    "start": "node dist/server/index.js",
-    "db:push": "drizzle-kit push"
-  },
+  "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
+  "dev:server": "tsx watch server/index.ts",
+  "dev:client": "vite",
+  "build": "vite build && tsc -p tsconfig.server.json",
+  "start": "node dist/server/index.js",
+  "db:push": "drizzle-kit push",
+  "lint": "eslint .",
+  "lint:fix": "eslint . --fix",
+  "lint:client": "eslint client/src",
+  "lint:server": "eslint server shared",
+  "typecheck": "tsc --noEmit && tsc -p tsconfig.server.json --noEmit"
+},
   "dependencies": {
     "@anthropic-ai/sdk": "^0.92.0",
     "@marsidev/react-turnstile": "^1.5.0",
@@ -101,18 +106,5 @@
     "tsx": "^4.15.6",
     "typescript": "^5.4.5",
     "vite": "^5.4.21"
-  },
-"scripts": {
-  "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
-  "dev:server": "tsx watch server/index.ts",
-  "dev:client": "vite",
-  "build": "vite build && tsc -p tsconfig.server.json",
-  "start": "node dist/server/index.js",
-  "db:push": "drizzle-kit push",
-  "lint": "eslint .",
-  "lint:fix": "eslint . --fix",
-  "lint:client": "eslint client/src",
-  "lint:server": "eslint server shared",
-  "typecheck": "tsc --noEmit && tsc -p tsconfig.server.json --noEmit"
-}
+  }
 }

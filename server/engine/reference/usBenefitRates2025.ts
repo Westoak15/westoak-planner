@@ -44,6 +44,7 @@ export const US_ROTH_IRA_PHASEOUT_2025 = {
   single:    { lower: 150_000, upper: 165_000 },
   mfj:       { lower: 236_000, upper: 246_000 },
   mfs:       { lower: 0,       upper: 10_000  }, // MFS living with spouse
+  hoh:    { lower: 150000, upper: 165000 },
 };
 
 // ── Traditional IRA Deductibility Phase-Out (covered by workplace plan) ──────
@@ -51,9 +52,10 @@ export const US_TRAD_IRA_DEDUCTIBLE_PHASEOUT_2025 = {
   single:    { lower: 79_000,  upper: 89_000  },
   mfj:       { lower: 126_000, upper: 146_000 },
   mfs:       { lower: 0,       upper: 10_000  },
+  hoh:    { lower: 150000, upper: 165000 },
   // No workplace plan but spouse has one (MFJ):
   mfj_spouse_covered: { lower: 236_000, upper: 246_000 },
-};
+    };
 
 // ── Social Security Full Retirement Age (FRA) by birth year ──────────────────
 export const SS_FRA_BY_BIRTH_YEAR: Record<number, number> = {

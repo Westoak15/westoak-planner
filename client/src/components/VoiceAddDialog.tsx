@@ -89,7 +89,7 @@ export function VoiceAddDialog({
     };
     r.onend = () => {
       if (state === "listening") {
-        try { recognitionRef.current?.start(); } catch (_) {}
+        try { recognitionRef.current?.start(); } catch (_) { /* retry suppressed */ }
       }
     };
     r.onerror = () => {

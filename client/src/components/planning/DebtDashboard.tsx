@@ -143,7 +143,7 @@ export function DebtDashboard({ rows }: { rows: DebtRow[] }) {
   return (
     <div
       className="mb-6 rounded-2xl overflow-hidden shadow-lg border border-slate-200"
-      style={{ background: "linear-gradient(to right, #0c1e3a 0%, #1e4a8a 40%, #bfdbfe 75%, #eff6ff 100%)" }}
+      style={{ background: "linear-gradient(to right, #0c2f3a 0%, #305b9b 40%, #bfdbfe 75%, #eff6ff 100%)" }}
     >
       {/* ── KPI Strip ─────────────────────────────────────────────────────── */}
       <div className="grid grid-cols-4" style={{ borderBottom: "1px solid rgba(255,255,255,0.12)" }}>

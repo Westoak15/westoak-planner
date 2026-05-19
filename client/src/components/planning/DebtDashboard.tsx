@@ -1,22 +1,20 @@
 // client/src/components/planning/DebtDashboard.tsx
 // Household Liability Optimization — Phase 1
-// KPI strip · debt composition donut · payoff timeline
-// Drop in above the existing DebtTab table.
+// Gradient: dark navy left → light blue-white right
 
 import { useMemo } from "react";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
 
-// ── Types (mirrors DebtEntry in MultiEntryTabs) ───────────────────────────────
 export interface DebtRow {
   id: number;
   name: string;
-  type?: string;      // debt_entries have "type", liabilities have "category"
+  type?: string;
   category?: string;
-  balance: number | string;
-  interestRate: number | string | null;
-  minimumPayment: number | string | null;
+  balance: string | number;
+  interestRate: string | number | null;
+  minimumPayment: string | number | null;
   payoffStrategy?: string | null;
-  source?: string;    // "debt_entries" | "net_worth"
+  source?: string;
 }
 
 // ── Calculations ──────────────────────────────────────────────────────────────
@@ -25,7 +23,7 @@ function monthsToPayoff(balance: number, annualRate: number, monthlyPayment: num
   if (balance <= 0 || monthlyPayment <= 0) return null;
   const r = annualRate / 100 / 12;
   if (r === 0) return Math.ceil(balance / monthlyPayment);
-  if (monthlyPayment <= balance * r) return null; // payment doesn't cover interest
+  if (monthlyPayment <= balance * r) return null;
   return Math.ceil(-Math.log(1 - (balance * r) / monthlyPayment) / Math.log(1 + r));
 }
 
@@ -38,86 +36,54 @@ function calcLifetimeInterest(balance: number, annualRate: number, monthlyPaymen
 // ── Display maps ──────────────────────────────────────────────────────────────
 
 const TYPE_LABEL: Record<string, string> = {
-  mortgage:       "Mortgage",
-  heloc:          "HELOC",
-  car_loan:       "Car Loan",
-  credit_card:    "Credit Card",
-  student_loan:   "Student Loan",
-  line_of_credit: "Line of Credit",
-  other:          "Other",
+  mortgage: "Mortgage", heloc: "HELOC", car_loan: "Car Loan",
+  credit_card: "Credit Card", student_loan: "Student Loan",
+  line_of_credit: "Line of Credit", other: "Other",
 };
 
 const TYPE_COLOR: Record<string, string> = {
-  mortgage:       "#0ea5e9",
-  heloc:          "#06b6d4",
-  car_loan:       "#f59e0b",
-  credit_card:    "#f43f5e",
-  student_loan:   "#8b5cf6",
-  line_of_credit: "#38bdf8",
-  other:          "#94a3b8",
+  mortgage: "#3b82f6", heloc: "#06b6d4", car_loan: "#f59e0b",
+  credit_card: "#ef4444", student_loan: "#8b5cf6",
+  line_of_credit: "#38bdf8", other: "#94a3b8",
 };
 
-// ── Formatters ────────────────────────────────────────────────────────────────
-
 const fmt$ = (v: number) =>
-  new Intl.NumberFormat("en-CA", {
-    style: "currency",
-    currency: "CAD",
-    maximumFractionDigits: 0,
-  }).format(v);
+  new Intl.NumberFormat("en-CA", { style: "currency", currency: "CAD", maximumFractionDigits: 0 }).format(v);
 
 const fmtPct = (v: number) => `${v.toFixed(2)}%`;
 
-// ── Sub-components ────────────────────────────────────────────────────────────
+// ── KPI Card ─────────────────────────────────────────────────────────────────
+// dark=true → white text (left side of gradient)
+// dark=false → navy text (right side of gradient)
 
-function KpiCard({
-  label,
-  value,
-  sub,
-  tone = "neutral",
-}: {
-  label: string;
-  value: string;
-  sub?: string;
-  tone?: "red" | "amber" | "green" | "cyan" | "neutral";
+function KpiCard({ label, value, sub, dark, valueColor }: {
+  label: string; value: string; sub?: string; dark: boolean; valueColor: string;
 }) {
-  const valueColor = {
-    red:     "text-red-400",
-    amber:   "text-amber-400",
-    green:   "text-emerald-400",
-    cyan:    "text-cyan-300",
-    neutral: "text-slate-200",
-  }[tone];
-
   return (
     <div className="flex flex-col gap-1 px-5 py-4">
-      <span className="text-[10px] font-semibold uppercase tracking-widest text-slate-500">
+      <span className={`text-[10px] font-semibold uppercase tracking-widest ${dark ? "text-slate-400" : "text-slate-500"}`}>
         {label}
       </span>
       <span className={`text-xl font-bold tabular-nums leading-tight ${valueColor}`}>
         {value}
       </span>
       {sub && (
-        <span className="text-[11px] text-slate-600">{sub}</span>
+        <span className={`text-[11px] ${dark ? "text-slate-500" : "text-slate-400"}`}>{sub}</span>
       )}
     </div>
   );
 }
 
-function DonutTooltip({
-  active,
-  payload,
-  total,
-}: {
+function DonutTooltip({ active, payload, total }: {
   active?: boolean;
-  payload?: { payload: { label: string; value: number; color: string } }[];
+  payload?: { payload: { label: string; value: number } }[];
   total: number;
 }) {
   if (!active || !payload?.length) return null;
   const d = payload[0].payload;
   const pct = total > 0 ? ((d.value / total) * 100).toFixed(1) : "0";
   return (
-    <div className="bg-[#0c1e3a] border border-white/10 rounded-lg px-3 py-2 text-xs shadow-xl">
+    <div className="bg-slate-900 border border-white/10 rounded-lg px-3 py-2 text-xs shadow-xl">
       <div className="font-semibold text-white mb-0.5">{d.label}</div>
       <div className="text-slate-300">{fmt$(d.value)}</div>
       <div className="text-slate-500">{pct}% of total</div>
@@ -125,40 +91,31 @@ function DonutTooltip({
   );
 }
 
-// ── Main component ────────────────────────────────────────────────────────────
+// ── Main ──────────────────────────────────────────────────────────────────────
 
 export function DebtDashboard({ rows }: { rows: DebtRow[] }) {
   const computed = useMemo(() => {
     const debts = rows.map(r => ({
-  ...r,
-  balance:        parseFloat(String(r.balance)) || 0,
-  interestRate:   parseFloat(String(r.interestRate ?? "0")) || 0,
-  minimumPayment: parseFloat(String(r.minimumPayment ?? "0")) || 0,
-  type:           r.type ?? r.category ?? "other",
-}));
-
-    const totalDebt       = debts.reduce((s, d) => s + d.balance, 0);
-    const monthlyServicing = debts.reduce((s, d) => s + d.minimumPayment, 0);
-    const totalInterest   = debts.reduce((s, d) =>
-      s + calcLifetimeInterest(d.balance, d.interestRate, d.minimumPayment), 0);
-
-    const weightedRate = totalDebt > 0
-      ? debts.reduce((s, d) => s + d.interestRate * d.balance, 0) / totalDebt
-      : 0;
-
-    // Donut data — grouped by type
-    const byType: Record<string, number> = {};
-    for (const d of debts) {
-      byType[d.type] = (byType[d.type] ?? 0) + d.balance;
-    }
-    const pieData = Object.entries(byType).map(([type, value]) => ({
-      type,
-      value,
-      label: TYPE_LABEL[type] ?? type,
-      color: TYPE_COLOR[type] ?? "#94a3b8",
+      ...r,
+      balance:        parseFloat(String(r.balance)) || 0,
+      interestRate:   parseFloat(String(r.interestRate ?? "0")) || 0,
+      minimumPayment: parseFloat(String(r.minimumPayment ?? "0")) || 0,
+      type:           r.type ?? r.category ?? "other",
     }));
 
-    // Payoff timeline — sorted earliest first
+    const totalDebt        = debts.reduce((s, d) => s + d.balance, 0);
+    const monthlyServicing = debts.reduce((s, d) => s + d.minimumPayment, 0);
+    const totalInterest    = debts.reduce((s, d) =>
+      s + calcLifetimeInterest(d.balance, d.interestRate, d.minimumPayment), 0);
+    const weightedRate = totalDebt > 0
+      ? debts.reduce((s, d) => s + d.interestRate * d.balance, 0) / totalDebt : 0;
+
+    const byType: Record<string, number> = {};
+    for (const d of debts) byType[d.type] = (byType[d.type] ?? 0) + d.balance;
+    const pieData = Object.entries(byType).map(([type, value]) => ({
+      type, value, label: TYPE_LABEL[type] ?? type, color: TYPE_COLOR[type] ?? "#94a3b8",
+    }));
+
     const now = new Date();
     const timeline = debts
       .map(d => {
@@ -166,12 +123,9 @@ export function DebtDashboard({ rows }: { rows: DebtRow[] }) {
         if (!months) return null;
         const payoffDate = new Date(now.getFullYear(), now.getMonth() + months);
         return {
-          name:       d.name,
-          type:       d.type,
-          balance:    d.balance,
-          months,
+          name: d.name, type: d.type, months,
           payoffLabel: payoffDate.toLocaleDateString("en-CA", { month: "short", year: "numeric" }),
-          interest:   calcLifetimeInterest(d.balance, d.interestRate, d.minimumPayment),
+          interest: calcLifetimeInterest(d.balance, d.interestRate, d.minimumPayment),
         };
       })
       .filter((x): x is NonNullable<typeof x> => x !== null)
@@ -183,97 +137,71 @@ export function DebtDashboard({ rows }: { rows: DebtRow[] }) {
   if (rows.length === 0) return null;
 
   const { totalDebt, monthlyServicing, totalInterest, weightedRate, pieData, timeline } = computed;
-
-  const rateTone = weightedRate > 15 ? "red" : weightedRate > 8 ? "amber" : "green";
-
   const maxMonths = timeline.length > 0 ? timeline[timeline.length - 1].months : 1;
+  const rateTone  = weightedRate > 15 ? "text-red-500" : weightedRate > 8 ? "text-amber-500" : "text-emerald-600";
 
   return (
-    <div className="mb-6 rounded-2xl overflow-hidden border border-slate-800 bg-[#0c1e3a] shadow-xl">
-
+    <div
+      className="mb-6 rounded-2xl overflow-hidden shadow-lg border border-slate-200"
+      style={{ background: "linear-gradient(to right, #0c1e3a 0%, #1e4a8a 40%, #bfdbfe 75%, #eff6ff 100%)" }}
+    >
       {/* ── KPI Strip ─────────────────────────────────────────────────────── */}
-      <div className="grid grid-cols-4 divide-x divide-white/10 border-b border-white/10">
-        <KpiCard
-          label="Total Liability"
-          value={fmt$(totalDebt)}
-          tone="red"
-        />
-        <KpiCard
-          label="Monthly Servicing"
-          value={fmt$(monthlyServicing)}
-          sub="minimum payments"
-          tone="amber"
-        />
-        <KpiCard
-          label="Avg Interest Rate"
-          value={fmtPct(weightedRate)}
-          sub="debt-weighted"
-          tone={rateTone}
-        />
-        <KpiCard
-          label="Lifetime Interest"
-          value={fmt$(totalInterest)}
-          sub="at current payments"
-          tone="red"
-        />
+      <div className="grid grid-cols-4" style={{ borderBottom: "1px solid rgba(255,255,255,0.12)" }}>
+        {/* Left two KPIs — dark bg, light text */}
+        <div style={{ borderRight: "1px solid rgba(255,255,255,0.12)" }}>
+          <KpiCard label="Total Liability" value={fmt$(totalDebt)} dark={true} valueColor="text-red-400" />
+        </div>
+        <div style={{ borderRight: "1px solid rgba(255,255,255,0.12)" }}>
+          <KpiCard label="Monthly Servicing" value={fmt$(monthlyServicing)} sub="minimum payments" dark={true} valueColor="text-amber-300" />
+        </div>
+        {/* Right two KPIs — light bg, dark text */}
+        <div style={{ borderRight: "1px solid rgba(100,130,200,0.25)" }}>
+          <KpiCard label="Avg Interest Rate" value={fmtPct(weightedRate)} sub="debt-weighted" dark={false} valueColor={rateTone} />
+        </div>
+        <div>
+          <KpiCard label="Lifetime Interest" value={fmt$(totalInterest)} sub="at current payments" dark={false} valueColor="text-red-600" />
+        </div>
       </div>
 
       {/* ── Body ──────────────────────────────────────────────────────────── */}
-      <div className="grid grid-cols-5 divide-x divide-white/10 min-h-[180px]">
+      <div className="grid grid-cols-5" style={{ minHeight: 180 }}>
 
-        {/* Donut chart */}
-        <div className="col-span-2 p-5">
-          <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-500 mb-3">
+        {/* Donut — dark side */}
+        <div className="col-span-2 p-5" style={{ borderRight: "1px solid rgba(255,255,255,0.12)" }}>
+          <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400 mb-3">
             Debt Composition
           </p>
           <div className="flex items-center gap-4">
             <div className="w-[120px] h-[120px] flex-shrink-0">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
-                  <Pie
-                    data={pieData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={34}
-                    outerRadius={54}
-                    dataKey="value"
-                    strokeWidth={0}
-                    paddingAngle={2}
-                  >
-                    {pieData.map((entry, i) => (
-                      <Cell key={i} fill={entry.color} />
-                    ))}
+                  <Pie data={pieData} cx="50%" cy="50%" innerRadius={34} outerRadius={54}
+                    dataKey="value" strokeWidth={0} paddingAngle={2}>
+                    {pieData.map((entry, i) => <Cell key={i} fill={entry.color} />)}
                   </Pie>
-                  <Tooltip
-                    content={<DonutTooltip total={totalDebt} />}
-                  />
+                  <Tooltip content={<DonutTooltip total={totalDebt} />} />
                 </PieChart>
               </ResponsiveContainer>
             </div>
             <div className="flex flex-col gap-2 min-w-0 flex-1">
               {pieData.map(d => (
                 <div key={d.type} className="flex items-center gap-2 min-w-0">
-                  <span
-                    className="w-2 h-2 rounded-full flex-shrink-0"
-                    style={{ backgroundColor: d.color }}
-                  />
-                  <span className="text-xs text-slate-400 truncate flex-1">{d.label}</span>
-                  <span className="text-xs text-slate-500 flex-shrink-0 tabular-nums">
-                    {fmt$(d.value)}
-                  </span>
+                  <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: d.color }} />
+                  <span className="text-xs text-slate-300 truncate flex-1">{d.label}</span>
+                  <span className="text-xs text-white font-medium flex-shrink-0 tabular-nums">{fmt$(d.value)}</span>
                 </div>
               ))}
             </div>
           </div>
         </div>
 
-        {/* Payoff Timeline */}
+        {/* Timeline — light side */}
         <div className="col-span-3 p-5">
           <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-500 mb-3">
             Payoff Timeline
           </p>
           {timeline.length === 0 ? (
-            <p className="text-xs text-slate-600 italic mt-4">
+            <p className="text-xs text-slate-400 italic mt-4">
               Enter minimum payments to see payoff projections.
             </p>
           ) : (
@@ -283,20 +211,20 @@ export function DebtDashboard({ rows }: { rows: DebtRow[] }) {
                 const color  = TYPE_COLOR[item.type] ?? "#94a3b8";
                 return (
                   <div key={i} className="flex items-center gap-3">
-                    <div className="w-28 text-xs text-slate-400 truncate flex-shrink-0">
+                    <div className="w-28 text-xs text-slate-700 font-medium truncate flex-shrink-0">
                       {item.name}
                     </div>
-                    <div className="flex-1 relative h-5 bg-white/5 rounded-full overflow-hidden">
+                    <div className="flex-1 relative h-5 bg-slate-200/60 rounded-full overflow-hidden">
                       <div
                         className="absolute inset-y-0 left-0 rounded-full transition-all duration-700"
-                        style={{ width: `${barPct}%`, backgroundColor: color + "55" }}
+                        style={{ width: `${barPct}%`, backgroundColor: color + "99" }}
                       />
-                      <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[11px] font-medium"
-                        style={{ color }}>
+                      <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[11px] font-semibold"
+                        style={{ color: "#1e3a5f" }}>
                         {item.payoffLabel}
                       </span>
                     </div>
-                    <div className="text-[11px] text-slate-600 w-20 text-right flex-shrink-0 tabular-nums">
+                    <div className="text-[11px] text-slate-500 w-20 text-right flex-shrink-0 tabular-nums">
                       +{fmt$(item.interest)}
                     </div>
                   </div>

@@ -739,9 +739,11 @@ const cleaned = start !== -1 && end !== -1 ? rawText.slice(start, end + 1) : raw
 
     let aiRecs: any[];
     try {
+      console.log("[ai-recs] cleaned:", cleaned.slice(0, 300));
       aiRecs = JSON.parse(cleaned);
       if (!Array.isArray(aiRecs)) throw new Error("Not an array");
-    } catch {
+    } catch (parseErr: any) {
+      console.error("[ai-recs] parse failed:", parseErr.message, "| raw:", rawText.slice(0, 200));
       throw new Error("Failed to parse AI response");
     }
 

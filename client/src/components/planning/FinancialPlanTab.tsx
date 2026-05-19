@@ -155,7 +155,7 @@ function SectionCard({ section, forceExpand = false }: { section: PlanSection; f
             </span>
           </div>
           {!isExpanded && (
-            <p className="text-xs text-gray-500 mt-0.5 line-clamp-1">{(section.narrative ?? "").split("\n")[0].slice(0, 120)}...</p>
+            <p className="text-xs text-gray-500 mt-0.5 line-clamp-1">{(String(section.narrative ?? "")).split("\n")[0].slice(0, 120)}...</p>
           )}
         </div>
         <div className="flex items-center gap-2 flex-shrink-0 ml-2">
@@ -168,7 +168,7 @@ function SectionCard({ section, forceExpand = false }: { section: PlanSection; f
         <div className="px-4 pb-4 border-t border-white/50 pt-3 fp-section-expanded">
           {/* Narrative */}
           <div className="prose prose-sm max-w-none mb-4">
-            {(section.narrative ?? "").split("\n\n").map((para, i) => (
+            {(String(section.narrative ?? "")).split("\n\n").map((para, i) => (
               para.trim() && <p key={i} className="text-sm text-gray-700 leading-relaxed mb-2">{para.trim()}</p>
             ))}
           </div>
@@ -309,7 +309,7 @@ function ExecutiveSummary({ es }: { es: FinancialPlan["executiveSummary"] }) {
     <div className="bg-white border border-gray-200 rounded-xl p-4">
       <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide mb-3">Executive Summary</p>
       <div className="space-y-2 mb-4">
-        {(es.narrative ?? "").split("\n\n").map((para, i) => (
+        {(String(es.narrative ?? "")).split("\n\n").map((para, i) => (
           para.trim() && <p key={i} className="text-sm text-gray-700 leading-relaxed">{para.trim()}</p>
         ))}
       </div>
@@ -351,7 +351,6 @@ export function FinancialPlanTab({ clientId, clientName }: { clientId: number; c
   const [error, setError]       = useState<string | null>(null);
   const [view, setView]         = useState<"plan" | "history">("plan");
   const [expandAll, setExpandAll] = useState(false);
-  const token = () => localStorage.getItem("fp_token") ?? "";
 
   // Inject print styles once
   useEffect(() => {

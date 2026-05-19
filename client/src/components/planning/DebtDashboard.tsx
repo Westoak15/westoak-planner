@@ -42,9 +42,13 @@ const TYPE_LABEL: Record<string, string> = {
 };
 
 const TYPE_COLOR: Record<string, string> = {
-  mortgage: "#3b82f6", heloc: "#06b6d4", car_loan: "#f59e0b",
-  credit_card: "#ef4444", student_loan: "#8b5cf6",
-  line_of_credit: "#38bdf8", other: "#94a3b8",
+  mortgage:       "#6366f1",  // indigo
+  heloc:          "#f59e0b",  // amber
+  car_loan:       "#10b981",  // emerald
+  credit_card:    "#ef4444",  // red
+  student_loan:   "#8b5cf6",  // purple
+  line_of_credit: "#06b6d4",  // cyan
+  other:          "#f97316",  // orange
 };
 
 const fmt$ = (v: number) =>
@@ -143,7 +147,7 @@ export function DebtDashboard({ rows }: { rows: DebtRow[] }) {
   return (
     <div
       className="mb-6 rounded-2xl overflow-hidden shadow-lg border border-slate-200"
-      style={{ background: "linear-gradient(to right, #0c2f3a 0%, #305b9b 40%, #bfdbfe 75%, #eff6ff 100%)" }}
+      style={{ background: "linear-gradient(to right, #184553 0%, #4c72ac 40%, #88a7cc 75%, #b3c9e6 100%)" }}
     >
       {/* ── KPI Strip ─────────────────────────────────────────────────────── */}
       <div className="grid grid-cols-4" style={{ borderBottom: "1px solid rgba(255,255,255,0.12)" }}>

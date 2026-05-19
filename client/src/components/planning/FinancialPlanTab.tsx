@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { api } from "../../lib/api";
 import {
   Sparkles, RefreshCw, ChevronDown, ChevronUp, CheckCircle,
   AlertTriangle, XCircle, Clock, TrendingUp, Shield, CreditCard,
@@ -74,6 +73,8 @@ interface SavedPlan {
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
+
+const token = () => localStorage.getItem("fp_token") ?? "";
 
 const fmt$ = (n: number) => "$" + Math.round(n).toLocaleString("en-CA");
 
@@ -350,6 +351,7 @@ export function FinancialPlanTab({ clientId, clientName }: { clientId: number; c
   const [error, setError]       = useState<string | null>(null);
   const [view, setView]         = useState<"plan" | "history">("plan");
   const [expandAll, setExpandAll] = useState(false);
+  const token = () => localStorage.getItem("fp_token") ?? "";
 
   // Inject print styles once
   useEffect(() => {
@@ -364,21 +366,26 @@ export function FinancialPlanTab({ clientId, clientName }: { clientId: number; c
 
   const [printing, setPrinting] = useState(false);
 
-  
   async function printPlan() {
-  if (!plan) return;
-  setPrinting(true);
-  try {
-    const html = await api.post<string>(`/api/clients/${clientId}/financial-plan-report`, { plan });
-    const blob = new Blob([html], { type: "text/html" });
-    const win  = window.open(URL.createObjectURL(blob), "_blank");
-    if (!win) alert("Please allow pop-ups to view the report");
-  } catch (e: any) {
-    setError(e.message);
-  } finally {
-    setPrinting(false);
+    if (!plan) return;
+    setPrinting(true);
+    try {
+      const res = await fetch(`/api/clients/${clientId}/financial-plan-report`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token()}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ plan }),
+      });
+      if (!res.ok) throw new Error("Report generation failed");
+      const html = await res.text();
+      const blob = new Blob([html], { type: "text/html" });
+      const win  = window.open(URL.createObjectURL(blob), "_blank");
+      if (!win) alert("Please allow pop-ups to view the report");
+    } catch (e: any) {
+      setError(e.message);
+    } finally {
+      setPrinting(false);
+    }
   }
-}
 
   useEffect(() => { loadSaved(); }, [clientId]);
 
@@ -391,7 +398,6 @@ export function FinancialPlanTab({ clientId, clientName }: { clientId: number; c
   async function loadSaved() {
     setLoadingSaved(true);
     try {
-      const data = await api.post<FinancialPlan>(`/api/clients/${clientId}/generate-plan`, {});
       const res = await fetch(`/api/clients/${clientId}/saved-plans`, {
         headers: { Authorization: `Bearer ${token()}` },
       });
@@ -401,7 +407,6 @@ export function FinancialPlanTab({ clientId, clientName }: { clientId: number; c
   }
 
   async function generate() {
-async function generate() {
     setLoading(true);
     setError(null);
     try {
@@ -421,30 +426,15 @@ async function generate() {
       setPlan(data);
       setView("plan");
       await loadSaved();
-    } catch (e: unknown) {
-      setError((e as Error).message);
+    } catch (e: any) {
+      setError(e.message);
     } finally {
       setLoading(false);
     }
-
-
-//    setLoading(true);
-//setError(null);
-//try {
- // const data = await api.post<FinancialPlan>(`/api/clients/${clientId}/generate-plan`, {});
- // setPlan(data);
-  //setView("plan");
- // await loadSaved();
-//} catch (e: any) {
-//  setError(e.message);
-//} finally {
-//  setLoading(false);
-}
-}
+  }
 
   async function deleteSaved(id: number) {
     if (!confirm("Delete this saved plan?")) return;
-    await api.delete(`/api/saved-plans/${id}`);
     await fetch(`/api/saved-plans/${id}`, {
       method: "DELETE",
       headers: { Authorization: `Bearer ${token()}` },

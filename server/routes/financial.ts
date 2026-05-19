@@ -1152,7 +1152,13 @@ r.post("/clients/:clientId/generate-plan", async (req: AuthRequest, res: Respons
       estate: estate.map(e => ({ category: (e as any).category, title: (e as any).title, content: (e as any).content })),
       pensions,
     };
-    const apiKey = process.env.ANTHROPIC_API_KEY;
+    const trimmedContext = {
+  ...context,
+  tax: context.tax.slice(0, 3),
+  estate: context.estate.slice(0, 3),
+  goals: context.goals.slice(0, 5),
+};
+const apiKey = process.env.ANTHROPIC_API_KEY;
     if (!apiKey) return res.status(500).json({ message: "ANTHROPIC_API_KEY not configured" });
     const claudeRes = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",

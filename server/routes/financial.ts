@@ -1,13 +1,9 @@
-/**
  * server/routes/financial.ts
- *
  * Single source of truth for all client financial data routes.
  * Replaces fp.ts + fp-aliases.ts + fp-full.ts.
- *
  * Mount in server/index.ts:
  *   import { financialRouter } from "./routes/financial.js";
  *   app.use("/api", financialRouter);
- */
 import { runRetirementProjection } from "../engine/retirementProjection.js";
 import type { Response } from "express";
 import { Router } from "express";
@@ -25,19 +21,12 @@ import { isAuthenticated, type AuthRequest } from "../auth/index.js";
 import { safe, ownsClient, ownsPlan } from "../fpUtils.js";
 import { eq, and } from "drizzle-orm";
 import { runDrawdownStrategies, type DrawdownInput } from "../engine/drawdown.js";
-
 const r = Router();
 r.use((req: any, res: any, next: any) => {
   if (req.query.token && !req.headers.authorization) {
     req.headers.authorization = `Bearer ${req.query.token}`;
-  }
   return isAuthenticated(req, res, next);
-});
-
-// ─────────────────────────────────────────────────────────────────────────────
 // OVERVIEW
-// ─────────────────────────────────────────────────────────────────────────────
-
 r.get("/clients/:id/overview", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.id;
   if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
@@ -62,8 +51,6 @@ r.get("/clients/:id/overview", async (req: AuthRequest, res: Response) => {
     aiRecommendations: ai.length, pendingAi: ai.filter(a => a.status === "pending").length,
     plans: clientPlans.length,
   });
-});
-
 r.get("/clients/:clientId/financial-planning-overview", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.clientId;
   if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
@@ -87,18 +74,11 @@ r.get("/clients/:clientId/financial-planning-overview", async (req: AuthRequest,
     educationPlans: edu.length, taxNotes: tax.length, estateNotes: estate.length,
     aiRecommendations: ai.length, pendingRecommendations: ai.filter((a: any) => a.status === "pending").length,
   });
-});
-
-// ─────────────────────────────────────────────────────────────────────────────
 // NET WORTH
-// ─────────────────────────────────────────────────────────────────────────────
-
 r.get("/clients/:id/net-worth", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.id;
   if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
   res.json(await db.select().from(netWorthEntries).where(eq(netWorthEntries.clientId, cid)));
-});
-
 r.post("/clients/:id/net-worth", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.id;
   if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
@@ -112,25 +92,18 @@ r.post("/clients/:id/net-worth", async (req: AuthRequest, res: Response) => {
   } catch (e: any) {
     console.error("[net-worth/post]", e.message);
     res.status(500).json({ message: e.message });
-  }
-});
-
 r.put("/net-worth/:id", async (req: AuthRequest, res: Response) => {
   const [ex] = await db.select({ id: netWorthEntries.id, clientId: netWorthEntries.clientId })
     .from(netWorthEntries).where(eq(netWorthEntries.id, +req.params.id));
   if (!ex || !await ownsClient(ex.clientId, req.userId!)) return res.status(404).json({ message: "Not found" });
   const [u] = await db.update(netWorthEntries).set(safe(req.body)).where(eq(netWorthEntries.id, ex.id)).returning();
   res.json(u);
-});
-
 r.delete("/net-worth/:id", async (req: AuthRequest, res: Response) => {
   const [ex] = await db.select({ id: netWorthEntries.id, clientId: netWorthEntries.clientId })
     .from(netWorthEntries).where(eq(netWorthEntries.id, +req.params.id));
   if (!ex || !await ownsClient(ex.clientId, req.userId!)) return res.status(404).json({ message: "Not found" });
   await db.delete(netWorthEntries).where(eq(netWorthEntries.id, ex.id));
   res.json({ ok: true });
-});
-
 r.get("/clients/:clientId/liabilities", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.clientId;
   if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
@@ -151,12 +124,7 @@ r.get("/clients/:clientId/liabilities", async (req: AuthRequest, res: Response) 
       merged.push({ id: d.id, name: d.name, category: d.category, balance: Number(d.balance), interestRate: Number(d.interestRate), minimumPayment: Number(d.minimumPayment), annualCost: Number(d.minimumPayment) * 12, source: "debt_entries" });
   });
   res.json(merged);
-});
-
-// ─────────────────────────────────────────────────────────────────────────────
 // RETIREMENT  (canonical: /clients/:id/retirement | alias: /retirement-projections)
-// ─────────────────────────────────────────────────────────────────────────────
-
 r.get("/clients/:id/retirement", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.id;
   if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
@@ -174,8 +142,6 @@ r.get("/clients/:id/retirement", async (req: AuthRequest, res: Response) => {
     projectedBalance: row.projectedBalance ?? "0",
     shortfallSurplus: row.shortfallSurplus ?? "0",
   })));
-});
-
 r.post("/clients/:id/retirement", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.id;
   if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
@@ -187,9 +153,6 @@ r.post("/clients/:id/retirement", async (req: AuthRequest, res: Response) => {
   } catch (err: any) {
     console.error("[retirement POST]", err.message);
     res.status(500).json({ message: err.message });
-  }
-});
-
 r.post("/clients/:id/retirement-projections", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.id;
   if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
@@ -222,8 +185,6 @@ const result = runRetirementProjection({
   spouseContribution:   Number(body.spouseContribution ?? 0),
   spousePensionIncome:  Number(body.spousePensionIncome ?? 0),
   spouseCppStartAge:    Number(body.spouseCppStartAge ?? 65),
-});
-
 const [row] = await (db.insert(retirementProjections) as any).values({
   clientId: cid, ...safe(body),
   projectedBalance: String(result.medianBalance),
@@ -231,76 +192,52 @@ const [row] = await (db.insert(retirementProjections) as any).values({
   successRate:      String(result.successRate),
   pensionIncome:    String(Math.round(result.pensionIncome)),
 }).returning();
-
 res.json(row);
-
   } catch (e: any) {
     console.error("[retirement projection sim]", e.message);
     const [row] = await (db.insert(retirementProjections) as any).values({ clientId: cid, ...safe(body) }).returning();
     res.json(row);
-  }
-});
-
 r.get("/clients/:id/retirement-projections", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.id;
   if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
   res.json(await db.select().from(retirementProjections).where(eq(retirementProjections.clientId, cid)));
-});
-
 r.patch("/retirement/:id", async (req: AuthRequest, res: Response) => {
   const [ex] = await db.select({ id: retirementProjections.id, clientId: retirementProjections.clientId })
     .from(retirementProjections).where(eq(retirementProjections.id, +req.params.id));
   if (!ex || !await ownsClient(ex.clientId, req.userId!)) return res.status(404).json({ message: "Not found" });
   const [u] = await db.update(retirementProjections).set(safe(req.body)).where(eq(retirementProjections.id, ex.id)).returning();
   res.json(u);
-});
-
 r.delete("/retirement/:id", async (req: AuthRequest, res: Response) => {
   const [ex] = await db.select({ id: retirementProjections.id, clientId: retirementProjections.clientId })
     .from(retirementProjections).where(eq(retirementProjections.id, +req.params.id));
   if (!ex || !await ownsClient(ex.clientId, req.userId!)) return res.status(404).json({ message: "Not found" });
   await db.delete(retirementProjections).where(eq(retirementProjections.id, ex.id));
   res.json({ ok: true });
-});
-
 r.delete("/retirement-projections/:id", async (req: AuthRequest, res: Response) => {
   const [ex] = await db.select({ id: retirementProjections.id, clientId: retirementProjections.clientId })
     .from(retirementProjections).where(eq(retirementProjections.id, +req.params.id));
   if (!ex || !await ownsClient(ex.clientId, req.userId!)) return res.status(404).json({ message: "Not found" });
   await db.delete(retirementProjections).where(eq(retirementProjections.id, ex.id));
   res.json({ ok: true });
-});
-
-// ─────────────────────────────────────────────────────────────────────────────
 // INSURANCE
-// ─────────────────────────────────────────────────────────────────────────────
-
 r.get("/clients/:id/insurance", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.id;
   if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
   res.json(await db.select().from(insuranceAnalyses).where(eq(insuranceAnalyses.clientId, cid)));
-});
-
 r.get("/clients/:id/insurance-analyses", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.id;
   if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
   res.json(await db.select().from(insuranceAnalyses).where(eq(insuranceAnalyses.clientId, cid)));
-});
-
 r.post("/clients/:id/insurance", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.id;
   if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
   const [row] = await (db.insert(insuranceAnalyses) as any).values({ clientId: cid, ...safe(req.body) }).returning();
   res.status(201).json(row);
-});
-
 r.post("/clients/:id/insurance-analyses", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.id;
   if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
   const [row] = await (db.insert(insuranceAnalyses) as any).values({ clientId: cid, ...safe(req.body.data ?? req.body) }).returning();
   res.status(201).json(row);
-});
-
 r.post("/clients/:clientId/insurance-worksheet", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.clientId;
   if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
@@ -315,232 +252,162 @@ r.post("/clients/:clientId/insurance-worksheet", async (req: AuthRequest, res: R
     }).returning();
     res.status(201).json(row);
   } catch (err) { console.error("[insurance-worksheet]", err); res.status(500).json({ message: "Failed to save" }); }
-});
-
 r.patch("/insurance/:id", async (req: AuthRequest, res: Response) => {
   const [ex] = await db.select({ id: insuranceAnalyses.id, clientId: insuranceAnalyses.clientId })
     .from(insuranceAnalyses).where(eq(insuranceAnalyses.id, +req.params.id));
   if (!ex || !await ownsClient(ex.clientId, req.userId!)) return res.status(404).json({ message: "Not found" });
   const [u] = await db.update(insuranceAnalyses).set(safe(req.body)).where(eq(insuranceAnalyses.id, ex.id)).returning();
   res.json(u);
-});
-
 r.delete("/insurance/:id", async (req: AuthRequest, res: Response) => {
   const [ex] = await db.select({ id: insuranceAnalyses.id, clientId: insuranceAnalyses.clientId })
     .from(insuranceAnalyses).where(eq(insuranceAnalyses.id, +req.params.id));
   if (!ex || !await ownsClient(ex.clientId, req.userId!)) return res.status(404).json({ message: "Not found" });
   await db.delete(insuranceAnalyses).where(eq(insuranceAnalyses.id, ex.id));
   res.json({ ok: true });
-});
-
 r.delete("/insurance-analyses/:id", async (req: AuthRequest, res: Response) => {
   const [ex] = await db.select({ id: insuranceAnalyses.id, clientId: insuranceAnalyses.clientId })
     .from(insuranceAnalyses).where(eq(insuranceAnalyses.id, +req.params.id));
   if (!ex || !await ownsClient(ex.clientId, req.userId!)) return res.status(404).json({ message: "Not found" });
   await db.delete(insuranceAnalyses).where(eq(insuranceAnalyses.id, ex.id));
   res.json({ ok: true });
-});
-
-// ─────────────────────────────────────────────────────────────────────────────
 // EDUCATION / RESP
-// ─────────────────────────────────────────────────────────────────────────────
-
 r.get("/clients/:id/education", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.id;
   if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
   res.json(await db.select().from(educationPlans).where(eq(educationPlans.clientId, cid)));
-});
-
 r.get("/clients/:id/education-savings", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.id;
   if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
   res.json(await db.select().from(educationPlans).where(eq(educationPlans.clientId, cid)));
-});
-
 r.post("/clients/:id/education", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.id;
   if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
   const [row] = await (db.insert(educationPlans) as any).values({ clientId: cid, ...safe(req.body) }).returning();
   res.status(201).json(row);
-});
-
 r.post("/clients/:id/education-savings", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.id;
   if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
   const data = safe(req.body.data ?? req.body) as any;
   const [row] = await (db.insert(educationPlans) as any).values({ clientId: cid, childAge: data.childAge || 0, ...data }).returning();
   res.status(201).json(row);
-});
-
 r.patch("/education/:id", async (req: AuthRequest, res: Response) => {
   const [ex] = await db.select({ id: educationPlans.id, clientId: educationPlans.clientId })
     .from(educationPlans).where(eq(educationPlans.id, +req.params.id));
   if (!ex || !await ownsClient(ex.clientId, req.userId!)) return res.status(404).json({ message: "Not found" });
   const [u] = await db.update(educationPlans).set(safe(req.body)).where(eq(educationPlans.id, ex.id)).returning();
   res.json(u);
-});
-
 r.put("/education-savings/:id", async (req: AuthRequest, res: Response) => {
   const [ex] = await db.select({ id: educationPlans.id, clientId: educationPlans.clientId })
     .from(educationPlans).where(eq(educationPlans.id, +req.params.id));
   if (!ex || !await ownsClient(ex.clientId, req.userId!)) return res.status(404).json({ message: "Not found" });
   const [u] = await db.update(educationPlans).set(safe(req.body)).where(eq(educationPlans.id, ex.id)).returning();
   res.json(u);
-});
-
 r.delete("/education/:id", async (req: AuthRequest, res: Response) => {
   const [ex] = await db.select({ id: educationPlans.id, clientId: educationPlans.clientId })
     .from(educationPlans).where(eq(educationPlans.id, +req.params.id));
   if (!ex || !await ownsClient(ex.clientId, req.userId!)) return res.status(404).json({ message: "Not found" });
   await db.delete(educationPlans).where(eq(educationPlans.id, ex.id));
   res.json({ ok: true });
-});
-
 r.delete("/education-savings/:id", async (req: AuthRequest, res: Response) => {
   const [ex] = await db.select({ id: educationPlans.id, clientId: educationPlans.clientId })
     .from(educationPlans).where(eq(educationPlans.id, +req.params.id));
   if (!ex || !await ownsClient(ex.clientId, req.userId!)) return res.status(404).json({ message: "Not found" });
   await db.delete(educationPlans).where(eq(educationPlans.id, ex.id));
   res.json({ ok: true });
-});
-
-// ─────────────────────────────────────────────────────────────────────────────
 // DEBT
-// ─────────────────────────────────────────────────────────────────────────────
-
 r.get("/clients/:id/debt", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.id;
   if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
   res.json(await db.select().from(debtEntries).where(eq(debtEntries.clientId, cid)));
-});
-
 r.get("/clients/:id/debt-entries", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.id;
   if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
   res.json(await db.select().from(debtEntries).where(eq(debtEntries.clientId, cid)));
-});
-
 r.post("/clients/:id/debt", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.id;
   if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
   const [row] = await (db.insert(debtEntries) as any).values({ clientId: cid, ...safe(req.body) }).returning();
   res.status(201).json(row);
-});
-
 r.post("/clients/:id/debt-entries", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.id;
   if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
   const [row] = await (db.insert(debtEntries) as any).values({ clientId: cid, ...safe(req.body.data ?? req.body) }).returning();
   res.status(201).json(row);
-});
-
 r.patch("/debt/:id", async (req: AuthRequest, res: Response) => {
   const [ex] = await db.select({ id: debtEntries.id, clientId: debtEntries.clientId })
     .from(debtEntries).where(eq(debtEntries.id, +req.params.id));
   if (!ex || !await ownsClient(ex.clientId, req.userId!)) return res.status(404).json({ message: "Not found" });
   const [u] = await db.update(debtEntries).set(safe(req.body)).where(eq(debtEntries.id, ex.id)).returning();
   res.json(u);
-});
-
 r.put("/debt-entries/:id", async (req: AuthRequest, res: Response) => {
   const [ex] = await db.select({ id: debtEntries.id, clientId: debtEntries.clientId })
     .from(debtEntries).where(eq(debtEntries.id, +req.params.id));
   if (!ex || !await ownsClient(ex.clientId, req.userId!)) return res.status(404).json({ message: "Not found" });
   const [u] = await db.update(debtEntries).set(safe(req.body)).where(eq(debtEntries.id, ex.id)).returning();
   res.json(u);
-});
-
 r.delete("/debt/:id", async (req: AuthRequest, res: Response) => {
   const [ex] = await db.select({ id: debtEntries.id, clientId: debtEntries.clientId })
     .from(debtEntries).where(eq(debtEntries.id, +req.params.id));
   if (!ex || !await ownsClient(ex.clientId, req.userId!)) return res.status(404).json({ message: "Not found" });
   await db.delete(debtEntries).where(eq(debtEntries.id, ex.id));
   res.json({ ok: true });
-});
-
 r.delete("/debt-entries/:id", async (req: AuthRequest, res: Response) => {
   const [ex] = await db.select({ id: debtEntries.id, clientId: debtEntries.clientId })
     .from(debtEntries).where(eq(debtEntries.id, +req.params.id));
   if (!ex || !await ownsClient(ex.clientId, req.userId!)) return res.status(404).json({ message: "Not found" });
   await db.delete(debtEntries).where(eq(debtEntries.id, ex.id));
   res.json({ ok: true });
-});
-
-// ─────────────────────────────────────────────────────────────────────────────
 // TAX PLANNING NOTES  (canonical: /tax | alias: /tax-planning-notes)
-// ─────────────────────────────────────────────────────────────────────────────
-
 r.get("/clients/:id/tax", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.id;
   if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
   res.json(await db.select().from(taxPlanningNotes).where(eq(taxPlanningNotes.clientId, cid)));
-});
-
 r.get("/clients/:id/tax-planning-notes", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.id;
   if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
   res.json(await db.select().from(taxPlanningNotes).where(eq(taxPlanningNotes.clientId, cid)));
-});
-
 r.post("/clients/:id/tax", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.id;
   if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
   const data = safe(req.body.data ?? req.body) as any;
   const [row] = await (db.insert(taxPlanningNotes) as any).values({ clientId: cid, title: data.title || "Note", content: data.content || "", taxYear: data.taxYear || new Date().getFullYear(), category: data.category || "general", ...data }).returning();
   res.status(201).json(row);
-});
-
 r.post("/clients/:id/tax-planning-notes", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.id;
   if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
   const data = safe(req.body.data ?? req.body) as any;
   const [row] = await (db.insert(taxPlanningNotes) as any).values({ clientId: cid, title: data.title || "Note", content: data.content || "", taxYear: data.taxYear || new Date().getFullYear(), category: data.category || "general", ...data }).returning();
   res.status(201).json(row);
-});
-
 r.patch("/tax/:id", async (req: AuthRequest, res: Response) => {
   const [ex] = await db.select({ id: taxPlanningNotes.id, clientId: taxPlanningNotes.clientId })
     .from(taxPlanningNotes).where(eq(taxPlanningNotes.id, +req.params.id));
   if (!ex || !await ownsClient(ex.clientId, req.userId!)) return res.status(404).json({ message: "Not found" });
   const [u] = await db.update(taxPlanningNotes).set(safe(req.body)).where(eq(taxPlanningNotes.id, ex.id)).returning();
   res.json(u);
-});
-
 r.put("/tax-planning-notes/:id", async (req: AuthRequest, res: Response) => {
   const [ex] = await db.select({ id: taxPlanningNotes.id, clientId: taxPlanningNotes.clientId })
     .from(taxPlanningNotes).where(eq(taxPlanningNotes.id, +req.params.id));
   if (!ex || !await ownsClient(ex.clientId, req.userId!)) return res.status(404).json({ message: "Not found" });
   const [u] = await db.update(taxPlanningNotes).set(safe(req.body)).where(eq(taxPlanningNotes.id, ex.id)).returning();
   res.json(u);
-});
-
 r.delete("/tax/:id", async (req: AuthRequest, res: Response) => {
   const [ex] = await db.select({ id: taxPlanningNotes.id, clientId: taxPlanningNotes.clientId })
     .from(taxPlanningNotes).where(eq(taxPlanningNotes.id, +req.params.id));
   if (!ex || !await ownsClient(ex.clientId, req.userId!)) return res.status(404).json({ message: "Not found" });
   await db.delete(taxPlanningNotes).where(eq(taxPlanningNotes.id, ex.id));
   res.json({ ok: true });
-});
-
 r.delete("/tax-planning-notes/:id", async (req: AuthRequest, res: Response) => {
   const [ex] = await db.select({ id: taxPlanningNotes.id, clientId: taxPlanningNotes.clientId })
     .from(taxPlanningNotes).where(eq(taxPlanningNotes.id, +req.params.id));
   if (!ex || !await ownsClient(ex.clientId, req.userId!)) return res.status(404).json({ message: "Not found" });
   await db.delete(taxPlanningNotes).where(eq(taxPlanningNotes.id, ex.id));
   res.json({ ok: true });
-});
-
-// ─────────────────────────────────────────────────────────────────────────────
 // ESTATE PLANNING NOTES
-// ─────────────────────────────────────────────────────────────────────────────
-
 r.get("/clients/:id/estate", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.id;
   if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
   const [row] = await db.select().from(estatePlanningNotes).where(eq(estatePlanningNotes.clientId, cid)).limit(1);
   res.json(row ?? null);
-});
-
 r.put("/clients/:id/estate", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.id;
   if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
@@ -548,57 +415,39 @@ r.put("/clients/:id/estate", async (req: AuthRequest, res: Response) => {
   if (ex) {
     const [u] = await db.update(estatePlanningNotes).set(safe(req.body)).where(eq(estatePlanningNotes.id, ex.id)).returning();
     return res.json(u);
-  }
   const [row] = await (db.insert(estatePlanningNotes) as any).values({ clientId: cid, ...safe(req.body) }).returning();
   res.status(201).json(row);
-});
-
 r.get("/clients/:id/estate-planning-notes", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.id;
   if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
   res.json(await db.select().from(estatePlanningNotes).where(eq(estatePlanningNotes.clientId, cid)));
-});
-
 r.post("/clients/:id/estate-planning-notes", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.id;
   if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
   const data = safe(req.body.data ?? req.body) as any;
   const [row] = await (db.insert(estatePlanningNotes) as any).values({ clientId: cid, title: data.title || "Note", content: data.content || "", category: data.category || "general", ...data }).returning();
   res.status(201).json(row);
-});
-
 r.put("/estate-planning-notes/:id", async (req: AuthRequest, res: Response) => {
   const [ex] = await db.select({ id: estatePlanningNotes.id, clientId: estatePlanningNotes.clientId })
     .from(estatePlanningNotes).where(eq(estatePlanningNotes.id, +req.params.id));
   if (!ex || !await ownsClient(ex.clientId, req.userId!)) return res.status(404).json({ message: "Not found" });
   const [u] = await db.update(estatePlanningNotes).set(safe(req.body)).where(eq(estatePlanningNotes.id, ex.id)).returning();
   res.json(u);
-});
-
 r.delete("/estate-planning-notes/:id", async (req: AuthRequest, res: Response) => {
   const [ex] = await db.select({ id: estatePlanningNotes.id, clientId: estatePlanningNotes.clientId })
     .from(estatePlanningNotes).where(eq(estatePlanningNotes.id, +req.params.id));
   if (!ex || !await ownsClient(ex.clientId, req.userId!)) return res.status(404).json({ message: "Not found" });
   await db.delete(estatePlanningNotes).where(eq(estatePlanningNotes.id, ex.id));
   res.json({ ok: true });
-});
-
-// ─────────────────────────────────────────────────────────────────────────────
 // AI RECOMMENDATIONS
-// ─────────────────────────────────────────────────────────────────────────────
-
 r.get("/clients/:id/ai", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.id;
   if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
   res.json(await db.select().from(aiRecommendations).where(eq(aiRecommendations.clientId, cid)));
-});
-
 r.get("/clients/:id/ai-recommendations", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.id;
   if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
   res.json(await db.select().from(aiRecommendations).where(eq(aiRecommendations.clientId, cid)));
-});
-
 r.post("/clients/:id/ai/generate", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.id;
   if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
@@ -620,18 +469,13 @@ r.post("/clients/:id/ai/generate", async (req: AuthRequest, res: Response) => {
   if (assets > 0 && totalDebt === 0)            recs.push({ clientId: cid, runId, category: "tax",       priority: "low",    title: "Estate & Tax Efficiency", content: "Review beneficiary designations, TFSA maximization, and potential for spousal RRSP income splitting in retirement." });
   const inserted = await Promise.all(recs.map(rec => (db.insert(aiRecommendations) as any).values(rec).returning().then(([x]: any) => x)));
   res.status(201).json(inserted);
-});
-
-// ─────────────────────────────────────────────────────────────────────────────
-
 r.post("/clients/:id/ai-recommendations/generate", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.id;
   if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
-
   const runId = new Date().toISOString();
-
   try {
-    // ── Gather client data ──────────────────────────────────────────────────
+    // 
+ Gather client data 
     const [[client], nw, debt, ret, ins, goals] = await Promise.all([
       db.select().from(clients).where(eq(clients.id, cid)),
       db.select().from(netWorthEntries).where(eq(netWorthEntries.clientId, cid)),
@@ -640,13 +484,11 @@ r.post("/clients/:id/ai-recommendations/generate", async (req: AuthRequest, res:
       db.select().from(insuranceAnalyses).where(eq(insuranceAnalyses.clientId, cid)).limit(1),
       db.select().from(financialGoals).where(eq(financialGoals.clientId, cid)),
     ]);
-
     const assets    = nw.filter(e => e.type === "asset").reduce((s, e) => s + Number(e.value), 0);
     const liabs     = nw.filter(e => e.type === "liability").reduce((s, e) => s + Number(e.value), 0);
     const totalDebt = debt.reduce((s, d) => s + Number(d.balance), 0);
     const retProj   = ret[0] as any;
     const insRow    = ins[0] as any;
-
     const context = {
       client: {
         name:              `${client.firstName} ${client.lastName}`,
@@ -691,14 +533,13 @@ r.post("/clients/:id/ai-recommendations/generate", async (req: AuthRequest, res:
       } : null,
       goals: goals.map(g => ({ title: g.title, type: g.goalType, priority: g.priority, targetAmount: Number(g.targetAmount ?? 0), targetYear: g.targetYear })),
     };
-
-    // ── Call Claude ─────────────────────────────────────────────────────────
+    // 
+ Call Claude 
     const apiKey = process.env.ANTHROPIC_API_KEY;
     if (!apiKey) {
       // Fallback to smart rule-based recs if no API key
       throw new Error("NO_API_KEY");
     }
-
     const claudeRes = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
@@ -709,16 +550,14 @@ r.post("/clients/:id/ai-recommendations/generate", async (req: AuthRequest, res:
       body: JSON.stringify({
         model: "claude-sonnet-4-20250514",
         max_tokens: 2000,
-        system: `You are a senior Canadian Certified Financial Planner (CFP). Generate specific, actionable financial planning recommendations for a Canadian client based on their actual data. Each recommendation must be specific to their situation — not generic advice.
-
+        system: `You are a senior Canadian Certified Financial Planner (CFP). Generate specific, actionable financial planning recommendations for a Canadian client based on their actual data. Each recommendation must be specific to their situation 
+ not generic advice.
 Respond ONLY with a valid JSON array. No preamble, no markdown, no explanation outside the JSON.
-
 Each recommendation object must have:
 - category: one of "retirement" | "tax" | "insurance" | "estate" | "savings" | "debt" | "investment"  
 - priority: one of "high" | "medium" | "low"
 - title: concise action title (max 60 chars)
 - content: specific advice referencing their actual numbers (2-3 sentences)
-
 Generate 4-7 recommendations. Prioritize the most impactful issues first.`,
         messages: [{
           role: "user",
@@ -726,13 +565,10 @@ Generate 4-7 recommendations. Prioritize the most impactful issues first.`,
         }],
       }),
     });
-
     if (!claudeRes.ok) throw new Error(`Claude API error: ${claudeRes.status}`);
-
     const claudeData = await claudeRes.json() as any;
     const rawText = claudeData.content?.[0]?.text ?? "[]";
     const cleaned = rawText.replace(/^```json\s*/i, "").replace(/```\s*$/i, "").trim();
-
     let aiRecs: any[];
     try {
       aiRecs = JSON.parse(cleaned);
@@ -740,7 +576,6 @@ Generate 4-7 recommendations. Prioritize the most impactful issues first.`,
     } catch {
       throw new Error("Failed to parse AI response");
     }
-
     // Validate and sanitize each rec
     const validCategories = ["retirement", "tax", "insurance", "estate", "savings", "debt", "investment"];
     const validPriorities = ["high", "medium", "low"];
@@ -756,12 +591,10 @@ Generate 4-7 recommendations. Prioritize the most impactful issues first.`,
         content:  String(r.content).slice(0, 500),
         status:   "pending",
       }));
-
     const inserted = await Promise.all(
       sanitized.map(rec => db.insert(aiRecommendations).values(rec).returning().then(([x]) => x))
     );
     res.json(inserted);
-
   } catch (e: any) {
     if (e.message === "NO_API_KEY" || e.message.includes("parse")) {
       // Smart rule-based fallback
@@ -781,25 +614,18 @@ Generate 4-7 recommendations. Prioritize the most impactful issues first.`,
     }
     console.error("[ai generate]", e.message);
     res.status(500).json({ message: e.message });
-  }
-});
-
 r.patch("/ai/:id", async (req: AuthRequest, res: Response) => {
   const [ex] = await db.select({ id: aiRecommendations.id, clientId: aiRecommendations.clientId })
     .from(aiRecommendations).where(eq(aiRecommendations.id, +req.params.id));
   if (!ex || !await ownsClient(ex.clientId, req.userId!)) return res.status(404).json({ message: "Not found" });
   const [u] = await db.update(aiRecommendations).set(safe(req.body)).where(eq(aiRecommendations.id, ex.id)).returning();
   res.json(u);
-});
-
 r.put("/ai-recommendations/:id", async (req: AuthRequest, res: Response) => {
   const [ex] = await db.select({ id: aiRecommendations.id, clientId: aiRecommendations.clientId })
     .from(aiRecommendations).where(eq(aiRecommendations.id, +req.params.id));
   if (!ex || !await ownsClient(ex.clientId, req.userId!)) return res.status(404).json({ message: "Not found" });
   const [u] = await (db.update(aiRecommendations) as any).set(safe(req.body)).where(eq(aiRecommendations.id, ex.id)).returning();
   res.json(u);
-});
-
 r.delete("/clients/:id/ai/session/*", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.id;
   try {
@@ -810,34 +636,23 @@ r.delete("/clients/:id/ai/session/*", async (req: AuthRequest, res: Response) =>
     await db.delete(aiRecommendations).where(and(eq(aiRecommendations.clientId, cid), eq(aiRecommendations.runId, runId)));
     res.json({ ok: true });
   } catch (e: any) { console.error("[delete session]", e.message); res.status(500).json({ message: e.message }); }
-});
-
 r.delete("/ai/:id", async (req: AuthRequest, res: Response) => {
   const [ex] = await db.select({ id: aiRecommendations.id, clientId: aiRecommendations.clientId })
     .from(aiRecommendations).where(eq(aiRecommendations.id, +req.params.id));
   if (!ex || !await ownsClient(ex.clientId, req.userId!)) return res.status(404).json({ message: "Not found" });
   await db.delete(aiRecommendations).where(eq(aiRecommendations.id, ex.id));
   res.json({ ok: true });
-});
-
 r.delete("/ai-recommendations/:id", async (req: AuthRequest, res: Response) => {
   const [ex] = await db.select({ id: aiRecommendations.id, clientId: aiRecommendations.clientId })
     .from(aiRecommendations).where(eq(aiRecommendations.id, +req.params.id));
   if (!ex || !await ownsClient(ex.clientId, req.userId!)) return res.status(404).json({ message: "Not found" });
   await db.delete(aiRecommendations).where(eq(aiRecommendations.id, ex.id));
   res.json({ ok: true });
-});
-
-// ─────────────────────────────────────────────────────────────────────────────
 // CLIENT POLICIES
-// ─────────────────────────────────────────────────────────────────────────────
-
 r.get("/clients/:id/policies", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.id;
   if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
   res.json(await db.select().from(clientPolicies).where(eq(clientPolicies.clientId, cid)));
-});
-
 r.post("/clients/:id/policies", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.id;
   if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
@@ -845,33 +660,22 @@ r.post("/clients/:id/policies", async (req: AuthRequest, res: Response) => {
     const [row] = await (db.insert(clientPolicies) as any).values({ clientId: cid, ...safe(req.body) }).returning();
     res.status(201).json(row);
   } catch (err: any) { console.error("[policies POST]", err.message); res.status(500).json({ message: err.message }); }
-});
-
 r.patch("/clients/:id/policies/:pid", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.id;
   if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
   const [row] = await db.update(clientPolicies).set(safe(req.body))
     .where(and(eq(clientPolicies.id, +req.params.pid), eq(clientPolicies.clientId, cid))).returning();
   res.json(row);
-});
-
 r.delete("/clients/:id/policies/:pid", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.id;
   if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
   await db.delete(clientPolicies).where(and(eq(clientPolicies.id, +req.params.pid), eq(clientPolicies.clientId, cid)));
   res.json({ ok: true });
-});
-
-// ─────────────────────────────────────────────────────────────────────────────
 // HOUSEHOLD EXPENSES
-// ─────────────────────────────────────────────────────────────────────────────
-
 r.get("/clients/:id/expenses", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.id;
   if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
   res.json(await db.select().from(householdExpenses).where(eq(householdExpenses.clientId, cid)));
-});
-
 r.post("/clients/:id/expenses", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.id;
   if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
@@ -879,34 +683,23 @@ r.post("/clients/:id/expenses", async (req: AuthRequest, res: Response) => {
     const [row] = await (db.insert(householdExpenses) as any).values({ clientId: cid, ...safe(req.body) }).returning();
     res.status(201).json(row);
   } catch (err: any) { console.error("[expenses POST]", err.message); res.status(500).json({ message: err.message }); }
-});
-
 r.patch("/clients/:id/expenses/:eid", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.id;
   if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
   const [row] = await db.update(householdExpenses).set(safe(req.body))
     .where(and(eq(householdExpenses.id, +req.params.eid), eq(householdExpenses.clientId, cid))).returning();
   res.json(row);
-});
-
 r.delete("/clients/:id/expenses/:eid", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.id;
   if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
   await db.delete(householdExpenses).where(and(eq(householdExpenses.id, +req.params.eid), eq(householdExpenses.clientId, cid)));
   res.json({ ok: true });
-});
-
-// ─────────────────────────────────────────────────────────────────────────────
 // DRAWDOWN
-// ─────────────────────────────────────────────────────────────────────────────
-
 r.post("/clients/:clientId/drawdown", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.clientId;
   if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
   try { res.json(runDrawdownStrategies(req.body as DrawdownInput)); }
   catch (e: any) { res.status(500).json({ message: e.message }); }
-});
-
 r.get("/clients/:clientId/drawdown", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.clientId;
   if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
@@ -950,48 +743,30 @@ r.get("/clients/:clientId/drawdown", async (req: AuthRequest, res: Response) => 
     const results = runDrawdownStrategies(inp);
     res.json({ inputs: inp, useProjected, projectedTotal, nonregFirst: results.nonregFirst, meltdown: results.meltdown, blended: results.blended });
   } catch (e: any) { console.error("[drawdown GET]", e.message); res.status(500).json({ message: e.message }); }
-});
-
-// ─────────────────────────────────────────────────────────────────────────────
 // FINANCIAL PLANS
-// ─────────────────────────────────────────────────────────────────────────────
-
 r.get("/clients/:clientId/plans", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.clientId;
   if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
   res.json(await db.select().from(financialPlans).where(eq(financialPlans.clientId, cid)));
-});
-
 r.post("/clients/:clientId/plans", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.clientId;
   if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
   const [p] = await (db.insert(financialPlans) as any).values({ clientId: cid, userId: req.userId!, title: req.body.name ?? req.body.title ?? "Financial Plan", ...safe(req.body) }).returning();
   res.status(201).json(p);
-});
-
 r.get("/plans/:id", async (req: AuthRequest, res: Response) => {
   const p = await ownsPlan(+req.params.id, req.userId!);
   if (!p) return res.status(404).json({ message: "Not found" });
   const [plan] = await db.select().from(financialPlans).where(eq(financialPlans.id, +req.params.id));
   res.json(plan);
-});
-
 r.put("/plans/:id", async (req: AuthRequest, res: Response) => {
   if (!await ownsPlan(+req.params.id, req.userId!)) return res.status(404).json({ message: "Not found" });
   const [u] = await db.update(financialPlans).set(safe(req.body)).where(eq(financialPlans.id, +req.params.id)).returning();
   res.json(u);
-});
-
 r.delete("/plans/:id", async (req: AuthRequest, res: Response) => {
   if (!await ownsPlan(+req.params.id, req.userId!)) return res.status(404).json({ message: "Not found" });
   await db.delete(financialPlans).where(eq(financialPlans.id, +req.params.id));
   res.json({ ok: true });
-});
-
-// ─────────────────────────────────────────────────────────────────────────────
 // PLAN ASSUMPTIONS, SIMULATIONS, SNAPSHOTS, ACTION ITEMS
-// ─────────────────────────────────────────────────────────────────────────────
-
 r.get("/plans/:planId/assumptions", async (req: AuthRequest, res: Response) => {
   const p = await ownsPlan(+req.params.planId, req.userId!);
   if (!p) return res.status(404).json({ message: "Not found" });
@@ -1004,16 +779,11 @@ r.get("/plans/:planId/assumptions", async (req: AuthRequest, res: Response) => {
   for (const d of defaults) {
     const [ex] = await db.select({ id: planAssumptions.id }).from(planAssumptions).where(and(eq(planAssumptions.planId, pid), eq(planAssumptions.scenario, d.scenario)));
     if (!ex) await (db.insert(planAssumptions) as any).values(d);
-  }
   res.json(await db.select().from(planAssumptions).where(eq(planAssumptions.planId, pid)));
-});
-
 r.get("/plans/:planId/simulation-results", async (req: AuthRequest, res: Response) => {
   const p = await ownsPlan(+req.params.planId, req.userId!);
   if (!p) return res.status(404).json({ message: "Not found" });
   res.json(await db.select().from(simulationResults).where(eq(simulationResults.planId, +req.params.planId)));
-});
-
 r.post("/plans/:planId/run-simulation", async (req: AuthRequest, res: Response) => {
   const p = await ownsPlan(+req.params.planId, req.userId!);
   if (!p) return res.status(404).json({ message: "Not found" });
@@ -1052,8 +822,6 @@ r.post("/plans/:planId/run-simulation", async (req: AuthRequest, res: Response) 
     (result as any).goalEventSummary = goalEvents.map(e => ({ label: e.label, yearOffset: e.yearOffset, year: currentYear + e.yearOffset, amount: e.amount }));
     res.json(result);
   } catch (e: any) { console.error("[run-simulation]", e.message); res.status(500).json({ message: e.message }); }
-});
-
 r.get("/plans/:planId/stale-flags",          async (req: AuthRequest, res: Response) => { const p = await ownsPlan(+req.params.planId, req.userId!); if (!p) return res.status(404).json({ message: "Not found" }); res.json(await db.select().from(planStaleFlags).where(eq(planStaleFlags.planId, +req.params.planId))); });
 r.get("/plans/:planId/snapshots",            async (req: AuthRequest, res: Response) => { const p = await ownsPlan(+req.params.planId, req.userId!); if (!p) return res.status(404).json({ message: "Not found" }); res.json(await db.select().from(planSnapshots).where(eq(planSnapshots.planId, +req.params.planId))); });
 r.post("/plans/:planId/snapshots",           async (req: AuthRequest, res: Response) => { const p = await ownsPlan(+req.params.planId, req.userId!); if (!p) return res.status(404).json({ message: "Not found" }); const [row] = await (db.insert(planSnapshots) as any).values({ planId: +req.params.planId, snapshotData: req.body, trigger: req.body.trigger ?? "manual" }).returning(); res.status(201).json(row); });
@@ -1063,19 +831,13 @@ r.get("/plans/:planId/action-items",         async (req: AuthRequest, res: Respo
 r.post("/plans/:planId/action-items",        async (req: AuthRequest, res: Response) => { const p = await ownsPlan(+req.params.planId, req.userId!); if (!p) return res.status(404).json({ message: "Not found" }); const [row] = await (db.insert(planActionItems) as any).values({ planId: +req.params.planId, ...safe(req.body) }).returning(); res.status(201).json(row); });
 r.put("/action-items/:id",                   async (req: AuthRequest, res: Response) => { const [ex] = await db.select().from(planActionItems).where(eq(planActionItems.id, +req.params.id)); if (!ex) return res.status(404).json({ message: "Not found" }); const [u] = await db.update(planActionItems).set(safe(req.body)).where(eq(planActionItems.id, ex.id)).returning(); res.json(u); });
 r.delete("/action-items/:id",                async (req: AuthRequest, res: Response) => { const [ex] = await db.select({ id: planActionItems.id, planId: planActionItems.planId }).from(planActionItems).where(eq(planActionItems.id, +req.params.id)); if (!ex) return res.status(404).json({ message: "Not found" }); if (!await ownsPlan(ex.planId, req.userId!)) return res.status(404).json({ message: "Not found" }); await db.delete(planActionItems).where(eq(planActionItems.id, ex.id)); res.json({ ok: true }); });
-
-// ─────────────────────────────────────────────────────────────────────────────
 // REPORTS & PLAN GENERATION
-// ─────────────────────────────────────────────────────────────────────────────
-
 r.get("/reports/:clientId/available", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.clientId;
   if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
   const [ret] = await db.select({ id: retirementProjections.id }).from(retirementProjections).where(eq(retirementProjections.clientId, cid));
   const [ins] = await db.select({ id: insuranceAnalyses.id }).from(insuranceAnalyses).where(eq(insuranceAnalyses.clientId, cid));
   res.json({ retirement: !!ret, insurance: !!ins, netWorth: true });
-});
-
 r.get("/clients/:clientId/financial-planning-report", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.clientId;
   if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
@@ -1086,8 +848,6 @@ r.get("/clients/:clientId/financial-planning-report", async (req: AuthRequest, r
     res.setHeader("Content-Type", "text/html; charset=utf-8");
     res.send(generateComprehensiveReport({ plan, client } as any));
   } catch (e: any) { res.status(500).json({ message: e.message }); }
-});
-
 r.post("/clients/:clientId/financial-plan-report", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.clientId;
   if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
@@ -1101,8 +861,6 @@ r.post("/clients/:clientId/financial-plan-report", async (req: AuthRequest, res:
     res.setHeader("Content-Type", "text/html; charset=utf-8");
     res.send(html);
   } catch (e: any) { console.error("[financial-plan-report]", e.message); res.status(500).json({ message: e.message }); }
-});
-
 r.post("/clients/:clientId/generate-plan", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.clientId;
   if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
@@ -1130,7 +888,11 @@ r.post("/clients/:clientId/generate-plan", async (req: AuthRequest, res: Respons
       netWorth: { totalAssets: assets, totalLiabilities: liabilities, netWorth: assets - liabilities, assets: nw.filter(e => e.type === "asset").map(e => ({ name: e.name, category: e.category, value: Number(e.value) })), liabilities: nw.filter(e => e.type === "liability").map(e => ({ name: e.name, category: e.category, value: Number(e.value) })) },
       retirement: retProj ? { currentAge: retProj.currentAge, retirementAge: retProj.retirementAge, lifeExpectancy: retProj.lifeExpectancy, rrspBalance: Number(retProj.rrspBalance ?? 0), tfsaBalance: Number(retProj.tfsaBalance ?? 0), nonRegBalance: Number(retProj.nonRegBalance ?? 0), annualContribution: Number(retProj.annualContribution ?? 0), desiredIncome: Number(retProj.desiredRetirementIncome ?? 0), pensionIncome: Number(retProj.pensionIncome ?? 0), cppMonthly: Number(retProj.cppMonthly ?? 0), oasMonthly: Number(retProj.oasMonthly ?? 0), successRate: Number(retProj.successRate ?? 0), projectedBalance: Number(retProj.projectedBalance ?? 0), shortfallSurplus: Number(retProj.shortfallSurplus ?? 0) } : null,
       insurance: insData ? { lifeInsuranceGap: Number((insData as any).lifeInsuranceGap ?? 0), disabilityGap: Number((insData as any).disabilityGap ?? 0), criticalIllnessGap: Number((insData as any).criticalIllnessGap ?? 0) } : null,
-      debt: debt.map(d => ({ name: d.name, category: d.category, balance: Number(d.balance), interestRate: Number(d.interestRate), minimumPayment: Number(d.minimumPayment) })),
+      debt: [
+        ...debt.map(d => ({ name: d.name, category: d.category, balance: Number(d.balance), interestRate: Number(d.interestRate), minimumPayment: Number(d.minimumPayment), source: "debt_entries" })),
+        ...nw.filter(e => e.type === "liability" && !debt.find(d => d.name?.toLowerCase() === e.name?.toLowerCase()))
+           .map(e => ({ name: e.name, category: e.category, balance: Number(e.value), interestRate: null, minimumPayment: null, source: "net_worth" })),
+      ],
       education: edu.map(e => ({ childName: (e as any).childName, targetAmount: Number((e as any).targetAmount ?? 0), currentBalance: Number((e as any).currentBalance ?? 0), targetAge: (e as any).targetAge, childAge: (e as any).childAge })),
       goals: goals.map(g => ({ title: g.title, goalType: g.goalType, cashflowType: g.cashflowType, targetAmount: Number(g.targetAmount ?? 0), targetYear: g.targetYear, priority: g.priority, projectionImpact: g.projectionImpact, status: g.status })),
       tax: tax.map(t => ({ category: (t as any).category, title: (t as any).title, content: (t as any).content })),
@@ -1144,7 +906,8 @@ r.post("/clients/:clientId/generate-plan", async (req: AuthRequest, res: Respons
       headers: { "Content-Type": "application/json", "x-api-key": apiKey, "anthropic-version": "2023-06-01" },
       body: JSON.stringify({
         model: "claude-opus-4-5", max_tokens: 8000,
-        system: `You are a senior Canadian Certified Financial Planner (CFP) with 20 years of experience. Generate a comprehensive written financial plan for a Canadian client. Your analysis must be specific, quantitative where data is available, and written in clear advisor language suitable for client presentation. Respond ONLY with a valid JSON object — no preamble, no markdown fences, no explanation outside the JSON.`,
+        system: `You are a senior Canadian Certified Financial Planner (CFP) with 20 years of experience. Generate a comprehensive written financial plan for a Canadian client. Your analysis must be specific, quantitative where data is available, and written in clear advisor language suitable for client presentation. Respond ONLY with a valid JSON object 
+ no preamble, no markdown fences, no explanation outside the JSON.`,
         messages: [{ role: "user", content: `Generate a comprehensive financial plan. Client data:\n\n${JSON.stringify(context, null, 2)}\n\nReturn JSON with: executiveSummary (score 1-5, headline, narrative 3-4 paragraphs, keyStrengths[], keyGaps[]), sections[] (id, title, score 1-5, status, narrative, recommendations[{priority, action, impact, timeline}]), priorityActions[] (rank 1-5, title, description, section, priority, timeline), disclaimer string.` }],
       }),
     });
@@ -1156,25 +919,20 @@ r.post("/clients/:clientId/generate-plan", async (req: AuthRequest, res: Respons
     try { plan = JSON.parse(cleaned); }
     catch { return res.status(500).json({ message: "Failed to parse AI response" }); }
     plan.generatedAt = new Date().toISOString(); plan.clientId = cid; plan.clientName = `${client.firstName} ${client.lastName}`;
-    plan.dataSnapshot = { netWorth: assets - liabilities, totalDebt: debt.reduce((s, d) => s + Number(d.balance), 0), successRate: retProj ? Number(retProj.successRate ?? 0) : null };
-    await (db.insert(aiRecommendations) as any).values({ clientId: cid, title: "Financial Plan — " + new Date().toLocaleDateString("en-CA"), content: JSON.stringify(plan), category: "financial_plan", priority: "high", status: "active" }).catch(() => {});
+    plan.dataSnapshot = { netWorth: assets - liabilities, totalDebt: debt.length > 0 ? debt.reduce((s, d) => s + Number(d.balance), 0) : liabilities, successRate: retProj ? Number(retProj.successRate ?? 0) : null };
+    await (db.insert(aiRecommendations) as any).values({ clientId: cid, title: "Financial Plan 
+ " + new Date().toLocaleDateString("en-CA"), content: JSON.stringify(plan), category: "financial_plan", priority: "high", status: "active" }).catch(() => {});
     res.json(plan);
   } catch (e: any) { console.error("[generate-plan]", e.message); res.status(500).json({ message: e.message }); }
-});
-
 r.get("/clients/:clientId/saved-plans", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.clientId;
   if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
   const rows = await db.select({ id: aiRecommendations.id, title: aiRecommendations.title, createdAt: aiRecommendations.createdAt, content: aiRecommendations.content }).from(aiRecommendations)
     .where(and(eq(aiRecommendations.clientId, cid), eq(aiRecommendations.category, "financial_plan")));
   res.json(rows.map(r => ({ ...r, plan: (() => { try { return JSON.parse(r.content ?? "{}"); } catch { return null; } })() })));
-});
-
 r.delete("/saved-plans/:id", async (req: AuthRequest, res: Response) => {
   const [ex] = await db.select({ id: aiRecommendations.id, clientId: aiRecommendations.clientId }).from(aiRecommendations).where(eq(aiRecommendations.id, +req.params.id));
   if (!ex || !await ownsClient(ex.clientId, req.userId!)) return res.status(404).json({ message: "Not found" });
   await db.delete(aiRecommendations).where(eq(aiRecommendations.id, ex.id));
   res.json({ ok: true });
-});
-
 export { r as financialRouter };

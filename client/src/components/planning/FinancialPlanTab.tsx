@@ -233,7 +233,7 @@ function PriorityActionsPanel({ actions }: { actions: PriorityAction[] }) {
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-xs font-semibold text-white">{action.title}</p>
-                <p className="text-[10px] text-white/60 mt-0.5">{action.description}</p>
+                <p className="text-xs text-white/80 mt-0.5 leading-relaxed">{action.description}</p>
               </div>
               <div className="text-[9px] text-white/40 flex-shrink-0 mt-0.5">
                 {TIMELINE_LABELS[action.timeline] ?? action.timeline}
@@ -290,7 +290,7 @@ function OverallScoreCard({ plan }: { plan: FinancialPlan }) {
             const sc = STATUS_CONFIG[s.status] ?? STATUS_CONFIG.needs_attention;
             return (
               <div key={s.id} className="text-center">
-                <div className={`w-1.5 h-1.5 rounded-full mx-auto mb-0.5 ${sc.dot}`} />
+                <div className={`w-2 h-2 rounded-full mx-auto mb-0.5 ${sc.dot}`} />
                 <p className="text-[9px] text-gray-500 leading-tight">{(s.title ?? "").split(" ")[0]}</p>
                 <p className="text-[9px] font-bold text-gray-700">{s.score}/5</p>
               </div>
@@ -605,15 +605,15 @@ export function FinancialPlanTab({ clientId, clientName }: { clientId: number; c
           {/* Overall score */}
           {plan.executiveSummary && <OverallScoreCard plan={plan} />}
 
+          {/* Executive summary */}
+          {plan.executiveSummary && <ExecutiveSummary es={plan.executiveSummary} />}
+
           {/* Priority actions */}
           {plan.priorityActions?.length > 0 && (
             <div className="fp-priority-actions">
               <PriorityActionsPanel actions={plan.priorityActions} />
             </div>
           )}
-
-          {/* Executive summary */}
-          {plan.executiveSummary && <ExecutiveSummary es={plan.executiveSummary} />}
 
           {/* Section cards */}
           {plan.sections?.length > 0 && (

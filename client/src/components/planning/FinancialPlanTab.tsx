@@ -401,19 +401,46 @@ export function FinancialPlanTab({ clientId, clientName }: { clientId: number; c
   }
 
   async function generate() {
+async function generate() {
     setLoading(true);
-setError(null);
-try {
-  const data = await api.post<FinancialPlan>(`/api/clients/${clientId}/generate-plan`, {});
-  setPlan(data);
-  setView("plan");
-  await loadSaved();
-} catch (e: any) {
-  setError(e.message);
-} finally {
-  setLoading(false);
+    setError(null);
+    try {
+      const res = await fetch(`/api/clients/${clientId}/generate-plan`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token()}`, "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      });
+      if (!res.ok) {
+        const e = await res.json();
+        throw new Error(e.message ?? "Generation failed");
+      }
+      const data = await res.json();
+      console.log("[generate-plan] response keys:", Object.keys(data));
+      console.log("[generate-plan] has executiveSummary:", !!data.executiveSummary);
+      console.log("[generate-plan] has sections:", !!data.sections, data.sections?.length);
+      setPlan(data);
+      setView("plan");
+      await loadSaved();
+    } catch (e: unknown) {
+      setError((e as Error).message);
+    } finally {
+      setLoading(false);
+    }
+
+
+//    setLoading(true);
+//setError(null);
+//try {
+ // const data = await api.post<FinancialPlan>(`/api/clients/${clientId}/generate-plan`, {});
+ // setPlan(data);
+  //setView("plan");
+ // await loadSaved();
+//} catch (e: any) {
+//  setError(e.message);
+//} finally {
+//  setLoading(false);
 }
-  }
+}
 
   async function deleteSaved(id: number) {
     if (!confirm("Delete this saved plan?")) return;

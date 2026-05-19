@@ -1722,7 +1722,7 @@ export function RespTab({ clientId, client }: { clientId: number; client?: any }
 }
 
 // ── DEBT ──────────────────────────────────────────────────────────────────────
-interface DebtEntry { id: number; name: string; type: string; balance: string; interestRate: string|null; minimumPayment: string|null; payoffStrategy: string|null; notes: string|null; }
+interface DebtEntry { id: number; name: string; type: string; category?: string; balance: string; interestRate: string|null; minimumPayment: string|null; payoffStrategy: string|null; notes: string|null; }
 type DebtDraft = { name: string; type: string; balance: string; interestRate: string; minimumPayment: string; payoffStrategy: string; notes: string; };
 const emptyDebt = (): DebtDraft => ({ name:"", type:"credit_card", balance:"", interestRate:"", minimumPayment:"", payoffStrategy:"avalanche", notes:"" });
 
@@ -1765,7 +1765,7 @@ export function DebtTab({ clientId }: { clientId: number }) {
           <Plus className="w-3.5 h-3.5" /> Add Debt
         </button>
       </div>
-     {/*} <DebtDashboard rows={rows} />  */}
+     <DebtDashboard rows={rows} />
       {/* Draft debt rows */}
       {drafts.length > 0 && (
         <Card className="mb-5 border-blue-200 bg-blue-50/20">
@@ -1813,7 +1813,7 @@ export function DebtTab({ clientId }: { clientId: number }) {
               {rows.map(d => (
                 <tr key={d.id} className="hover:bg-gray-50">
                   <TD><span className="font-medium text-gray-800">{d.name}</span></TD>
-                  <TD><span className="bg-gray-100 text-gray-600 text-xs px-2 py-0.5 rounded-full">{d.type.replace("_"," ")}</span></TD>
+                  <TD><span className="bg-gray-100 text-gray-600 text-xs px-2 py-0.5 rounded-full">{(d.type ?? d.category ?? "").replace("_"," ")}</span></TD>
                   <TD right><span className="font-bold text-red-500">{fmt$(d.balance)}</span></TD>
                   <TD right>{fmtPct(d.interestRate)}</TD>
                   <TD right>{fmt$(d.minimumPayment)}</TD>

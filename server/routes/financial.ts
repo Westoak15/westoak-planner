@@ -696,6 +696,7 @@ r.post("/clients/:id/ai-recommendations/generate", async (req: AuthRequest, res:
     const apiKey = process.env.ANTHROPIC_API_KEY;
     if (!apiKey) {
       // Fallback to smart rule-based recs if no API key
+      
       throw new Error("NO_API_KEY");
     }
 
@@ -743,7 +744,7 @@ const cleaned = start !== -1 && end !== -1 ? rawText.slice(start, end + 1) : raw
       aiRecs = JSON.parse(cleaned);
       if (!Array.isArray(aiRecs)) throw new Error("Not an array");
     } catch (parseErr: any) {
-      console.error("[ai-recs] parse failed:", parseErr.message, "| raw:", rawText.slice(0, 200));
+      console.error("[ai-recs] raw response:", rawText.slice(0, 500));
       throw new Error("Failed to parse AI response");
     }
 

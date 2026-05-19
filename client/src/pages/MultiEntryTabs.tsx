@@ -11,6 +11,7 @@ import { fmt$, fmtPct, cn } from "../lib/utils";
 import { Plus, Trash2, Save, X, Pencil, Mic } from "lucide-react";
 import { DrawdownTab } from "../components/planning/DrawdownTab";
 import { VoiceAddDialog } from "../components/VoiceAddDialog";
+import { DebtDashboard } from "../components/planning/DebtDashboard";
 import { MonteCarloResults } from "../components/MonteCarloResults";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
 
@@ -1764,7 +1765,7 @@ export function DebtTab({ clientId }: { clientId: number }) {
           <Plus className="w-3.5 h-3.5" /> Add Debt
         </button>
       </div>
-
+      <DebtDashboard rows={rows} />  
       {/* Draft debt rows */}
       {drafts.length > 0 && (
         <Card className="mb-5 border-blue-200 bg-blue-50/20">

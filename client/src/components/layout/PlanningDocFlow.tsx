@@ -4,7 +4,7 @@ import {
   Mic, MicOff, Circle, X, Copy, Check, ChevronDown, ChevronUp,
   Loader2, FileText, Lightbulb, ListChecks,
   Wallet, Target, GraduationCap, Receipt, Sparkles,
-  TrendingUp, TrendingDown,
+  TrendingUp, TrendingDown, CreditCard,
   type LucideIcon,
 } from "lucide-react";
 import { useVoice } from "../../contexts/VoiceContext";
@@ -40,7 +40,7 @@ export const NWSubtabCtx = createContext<{ sub: string; setSub: (s: string) => v
 // Merged hubs (protection, retirementhub, taxestate, documents, fp) provide
 // their own dark Insight-Led shell and route outside this wrapper.
 export const PLANNING_TABS = [
-  "networth", "goals", "expenses", "ai",
+  "networth", "goals", "expenses", "debt", "ai",
 ] as const;
 
 export type PlanningTab = typeof PLANNING_TABS[number];
@@ -49,6 +49,7 @@ const TAB_META: Record<PlanningTab, { icon: LucideIcon; title: string; tagline: 
   networth: { icon: Wallet,    title: "Net Worth",   tagline: "Household assets, liabilities and education savings" },
   goals:    { icon: Target,    title: "Goals",       tagline: "Plan and prioritize household goals" },
   expenses: { icon: Receipt,   title: "Cash Flow",   tagline: "Monthly income vs. expenses" },
+  debt:     { icon: CreditCard, title: "Debt",        tagline: "Household liability optimization" },
   ai:       { icon: Sparkles,  title: "AI Insights", tagline: "Generated planning recommendations" },
 };
 
@@ -56,6 +57,7 @@ const VOICE_HINTS: Record<PlanningTab, string> = {
   networth: "Say assets and liabilities, e.g. RRSP $220k, mortgage $410k",
   goals:    "Describe goals, e.g. buy cottage in 5 years, budget $400k",
   expenses: "Say monthly expenses, e.g. rent $2,200, groceries $600, car $850",
+  debt:     "Describe debts, e.g. mortgage $480k at 5.2%, car loan $22k at 6.9%",
   ai:       "Ask for an analysis, e.g. what are the top planning gaps for this client?",
 };
 

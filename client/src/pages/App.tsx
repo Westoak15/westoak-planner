@@ -19,6 +19,7 @@ const TaxEstateHub     = lazy(() => import("../components/TaxEstateHub").then(m 
 const ProtectionHub    = lazy(() => import("../components/ProtectionHub").then(m => ({ default: m.ProtectionHub })));
 const DocumentsHub     = lazy(() => import("../components/DocumentsHub").then(m => ({ default: m.DocumentsHub })));
 const FinancialPlanHub = lazy(() => import("../components/FinancialPlanHub").then(m => ({ default: m.FinancialPlanHub })));
+const DebtTab = lazy(() => import("./MultiEntryTabs").then(m => ({ default: m.DebtTab })));
 const GoalsTab         = lazy(() => import("./GoalsTab").then(m => ({ default: m.GoalsTab })));
 const ExpensesTab      = lazy(() => import("./ExpensesTab").then(m => ({ default: m.ExpensesTab })));
 const ReportsTab       = lazy(() => import("./ReportsTab").then(m => ({ default: m.ReportsTab })));
@@ -1293,6 +1294,11 @@ export default function App() {
                 {tab === "goals"    && (
                   <QueryClientProvider client={queryClient}>
                     <GoalsTab clientId={client.id} client={client} />
+                 </QueryClientProvider>
+                )}
+                {tab === "debt"     && (
+                  <QueryClientProvider client={queryClient}>
+                    <DebtTab clientId={client.id} />
                   </QueryClientProvider>
                 )}
                 {tab === "expenses" && (

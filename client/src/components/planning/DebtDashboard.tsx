@@ -160,10 +160,10 @@ export function DebtDashboard({ rows }: { rows: DebtRow[] }) {
         </div>
         {/* Right two KPIs — light bg, dark text */}
         <div style={{ borderRight: "1px solid rgba(100, 143, 200, 0.25)" }}>
-          <KpiCard label="Avg Interest Rate" value={fmtPct(weightedRate)} sub="debt-weighted" dark={false} valueColor={rateTone} />
+          <KpiCard label="Avg Interest Rate" value={fmtPct(weightedRate)} sub="debt-weighted" dark={True} valueColor={rateTone} />
         </div>
         <div>
-          <KpiCard label="Lifetime Interest" value={fmt$(totalInterest)} sub="at current payments" dark={false} valueColor="text-red-600" />
+          <KpiCard label="Lifetime Interest" value={fmt$(totalInterest)} sub="at current payments" dark={True} valueColor="text-red-600" />
         </div>
       </div>
 

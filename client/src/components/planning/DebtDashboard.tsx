@@ -134,7 +134,7 @@ export function DebtDashboard({ rows }: { rows: DebtRow[] }) {
       })
       .filter((x): x is NonNullable<typeof x> => x !== null)
       .sort((a, b) => a.months - b.months);
-
+      console.log("pieData types:", pieData.map(d => d.type));
     return { totalDebt, monthlyServicing, totalInterest, weightedRate, pieData, timeline };
   }, [rows]);
 

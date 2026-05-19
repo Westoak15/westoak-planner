@@ -1147,7 +1147,7 @@ r.post("/clients/:clientId/generate-plan", async (req: AuthRequest, res: Respons
       method: "POST",
       headers: { "Content-Type": "application/json", "x-api-key": apiKey, "anthropic-version": "2023-06-01" },
       body: JSON.stringify({
-        model: "claude-opus-4-5", max_tokens: 8000,
+        model: "claude-sonnet-4-20250514", max_tokens: 8000,
         system: `You are a senior Canadian Certified Financial Planner (CFP) with 20 years of experience. Generate a comprehensive written financial plan for a Canadian client. Your analysis must be specific, quantitative where data is available, and written in clear advisor language suitable for client presentation. Respond ONLY with a valid JSON object — no preamble, no markdown fences, no explanation outside the JSON.`,
         messages: [{ role: "user", content: `Generate a comprehensive financial plan. Client data:\n\n${JSON.stringify(context, null, 2)}\n\nReturn JSON with: executiveSummary (score 1-5, headline, narrative 3-4 paragraphs, keyStrengths[], keyGaps[]), sections[] (id, title, score 1-5, status, narrative, recommendations[{priority, action, impact, timeline}]), priorityActions[] (rank 1-5, title, description, section, priority, timeline), disclaimer string.` }],
       }),

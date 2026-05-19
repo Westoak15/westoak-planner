@@ -70,14 +70,14 @@ function KpiCard({ label, value, sub, dark, valueColor }: {
 }) {
   return (
     <div className="flex flex-col gap-1 px-5 py-4">
-      <span className={`text-[10px] font-semibold uppercase tracking-widest ${dark ? "text-slate-400" : "text-slate-600"}`}>
+      <span className={`text-[10px] font-semibold uppercase tracking-widest ${dark ? "text-slate-400" : "text-slate-700"}`}>
         {label}
       </span>
       <span className={`text-xl font-bold tabular-nums leading-tight ${valueColor}`}>
         {value}
       </span>
       {sub && (
-        <span className={`text-[11px] ${dark ? "text-slate-500" : "text-slate-400"}`}>{sub}</span>
+        <span className={`text-[11px] ${dark ? "text-slate-400" : "text-slate-600"}`}>{sub}</span>
       )}
     </div>
   );
@@ -146,7 +146,7 @@ export function DebtDashboard({ rows }: { rows: DebtRow[] }) {
 
   const { totalDebt, monthlyServicing, totalInterest, weightedRate, pieData, timeline } = computed;
   const maxMonths = timeline.length > 0 ? timeline[timeline.length - 1].months : 1;
-  const rateTone  = weightedRate > 15 ? "text-red-500" : weightedRate > 8 ? "text-amber-500" : "text-emerald-600";
+  const rateTone  = weightedRate > 15 ? "text-red-500" : weightedRate > 8 ? "text-amber-500" : "text-emerald-700";
 
   return (
     <div

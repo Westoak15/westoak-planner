@@ -61,7 +61,7 @@ function KpiCard({ label, value, sub, dark, valueColor }: {
 }) {
   return (
     <div className="flex flex-col gap-1 px-5 py-4">
-      <span className={`text-[10px] font-semibold uppercase tracking-widest ${dark ? "text-slate-400" : "text-slate-500"}`}>
+      <span className={`text-[10px] font-semibold uppercase tracking-widest ${dark ? "text-slate-400" : "text-slate-600"}`}>
         {label}
       </span>
       <span className={`text-xl font-bold tabular-nums leading-tight ${valueColor}`}>
@@ -197,7 +197,7 @@ export function DebtDashboard({ rows }: { rows: DebtRow[] }) {
 
         {/* Timeline — light side */}
         <div className="col-span-3 p-5">
-          <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-500 mb-3">
+          <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-600 mb-3">
             Payoff Timeline
           </p>
           {timeline.length === 0 ? (
@@ -211,20 +211,20 @@ export function DebtDashboard({ rows }: { rows: DebtRow[] }) {
                 const color  = TYPE_COLOR[item.type] ?? "#94a3b8";
                 return (
                   <div key={i} className="flex items-center gap-3">
-                    <div className="w-28 text-xs text-slate-700 font-medium truncate flex-shrink-0">
+                    <div className="w-28 text-xs text-slate-900 font-semibold truncate flex-shrink-0">
                       {item.name}
                     </div>
-                    <div className="flex-1 relative h-5 bg-slate-200/60 rounded-full overflow-hidden">
+                    <div className="flex-1 relative h-5 bg-slate-300/70 rounded-full overflow-hidden">
                       <div
                         className="absolute inset-y-0 left-0 rounded-full transition-all duration-700"
                         style={{ width: `${barPct}%`, backgroundColor: color + "99" }}
                       />
                       <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[11px] font-semibold"
-                        style={{ color: "#1e3a5f" }}>
+                        style={{ color: "#0c1e3a" }}>
                         {item.payoffLabel}
                       </span>
                     </div>
-                    <div className="text-[11px] text-slate-500 w-20 text-right flex-shrink-0 tabular-nums">
+                    <div className="text-[11px] text-slate-700 w-20 text-right flex-shrink-0 tabular-nums">
                       +{fmt$(item.interest)}
                     </div>
                   </div>

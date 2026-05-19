@@ -36,19 +36,24 @@ function calcLifetimeInterest(balance: number, annualRate: number, monthlyPaymen
 // ── Display maps ──────────────────────────────────────────────────────────────
 
 const TYPE_LABEL: Record<string, string> = {
+  // lowercase_underscore (debt entries)
   mortgage: "Mortgage", heloc: "HELOC", car_loan: "Car Loan",
   credit_card: "Credit Card", student_loan: "Student Loan",
   line_of_credit: "Line of Credit", other: "Other",
+  // Title Case (from liabilities/net worth)
+  "Mortgage": "Mortgage", "Car Loan": "Car Loan", "Credit Card": "Credit Card",
+  "HELOC": "HELOC", "Student Loan": "Student Loan", "Line of Credit": "Line of Credit",
 };
 
 const TYPE_COLOR: Record<string, string> = {
-  mortgage:       "#6366f1",  // indigo
-  heloc:          "#f59e0b",  // amber
-  car_loan:       "#10b981",  // emerald
-  credit_card:    "#ef4444",  // red
-  student_loan:   "#8b5cf6",  // purple
-  line_of_credit: "#06b6d4",  // cyan
-  other:          "#f97316",  // orange
+  // lowercase_underscore
+  mortgage: "#6366f1", heloc: "#f59e0b", car_loan: "#10b981",
+  credit_card: "#ef4444", student_loan: "#8b5cf6",
+  line_of_credit: "#06b6d4", other: "#f97316",
+  // Title Case
+  "Mortgage": "#6366f1", "Car Loan": "#10b981", "Credit Card": "#ef4444",
+  "HELOC": "#f59e0b", "Student Loan": "#8b5cf6",
+  "Line of Credit": "#06b6d4", "Other": "#f97316",
 };
 
 const fmt$ = (v: number) =>
@@ -134,7 +139,6 @@ export function DebtDashboard({ rows }: { rows: DebtRow[] }) {
       })
       .filter((x): x is NonNullable<typeof x> => x !== null)
       .sort((a, b) => a.months - b.months);
-      console.log("pieData types:", pieData.map(d => d.type));
     return { totalDebt, monthlyServicing, totalInterest, weightedRate, pieData, timeline };
   }, [rows]);
 

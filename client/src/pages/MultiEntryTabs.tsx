@@ -1765,7 +1765,7 @@ export function DebtTab({ clientId }: { clientId: number }) {
           <Plus className="w-3.5 h-3.5" /> Add Debt
         </button>
       </div>
-      <DebtDashboard rows={rows} />  
+     {/*} <DebtDashboard rows={rows} />  */}
       {/* Draft debt rows */}
       {drafts.length > 0 && (
         <Card className="mb-5 border-blue-200 bg-blue-50/20">

@@ -623,7 +623,7 @@ Return a JSON object with EXACTLY this structure:
         "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
-        model: "claude-opus-4-5",
+        model: "claude-sonnet-4-5-20251101",
         max_tokens: 8000,
         system: systemPrompt,
         messages: [{ role: "user", content: userPrompt }],

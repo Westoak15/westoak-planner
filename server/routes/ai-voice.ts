@@ -35,7 +35,7 @@ r.post("/meeting-summary", async (req: AuthRequest, res: Response) => {
 
   try {
     const message = await anthropic.messages.create({
-      model: "claude-opus-4-5",
+      model: "claude-sonnet-4-5-20251101",
       max_tokens: 1024,
       system: `You are a financial planning assistant. Extract and structure key planning information from a meeting transcript between a Canadian financial advisor and their client.
 

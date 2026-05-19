@@ -707,7 +707,7 @@ r.post("/clients/:id/ai-recommendations/generate", async (req: AuthRequest, res:
         "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
-        model: "claude-sonnet-4-20250514",
+        model: "claude-sonnet-4-5-20251101",
         max_tokens: 2000,
         system: `You are a senior Canadian Certified Financial Planner (CFP). Generate specific, actionable financial planning recommendations for a Canadian client based on their actual data. Each recommendation must be specific to their situation — not generic advice.
 

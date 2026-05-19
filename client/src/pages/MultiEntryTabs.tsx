@@ -1731,7 +1731,7 @@ export function DebtTab({ clientId }: { clientId: number }) {
   const [drafts, setDrafts] = useState<DebtDraft[]>([]);
   const [saving, setSaving] = useState(false);
 
-  const load = () => api.get<DebtEntry[]>(`/api/clients/${clientId}/debt`).then(setRows);
+  const load = () => api.get<DebtEntry[]>(`/api/clients/${clientId}/liabilities`).then(setRows);
   useEffect(() => { load(); }, [clientId]);
 
   const totalDebt = rows.reduce((s, d) => s + Number(d.balance), 0);

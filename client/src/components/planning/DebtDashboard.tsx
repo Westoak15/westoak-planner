@@ -10,11 +10,13 @@ import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
 export interface DebtRow {
   id: number;
   name: string;
-  type: string;
-  balance: string;
-  interestRate: string | null;
-  minimumPayment: string | null;
-  payoffStrategy: string | null;
+  type?: string;      // debt_entries have "type", liabilities have "category"
+  category?: string;
+  balance: number | string;
+  interestRate: number | string | null;
+  minimumPayment: number | string | null;
+  payoffStrategy?: string | null;
+  source?: string;    // "debt_entries" | "net_worth"
 }
 
 // ── Calculations ──────────────────────────────────────────────────────────────
@@ -128,13 +130,12 @@ function DonutTooltip({
 export function DebtDashboard({ rows }: { rows: DebtRow[] }) {
   const computed = useMemo(() => {
     const debts = rows.map(r => ({
-      id:             r.id,
-      name:           r.name,
-      type:           r.type,
-      balance:        parseFloat(r.balance) || 0,
-      interestRate:   parseFloat(r.interestRate ?? "0") || 0,
-      minimumPayment: parseFloat(r.minimumPayment ?? "0") || 0,
-    }));
+  ...r,
+  balance:        parseFloat(String(r.balance)) || 0,
+  interestRate:   parseFloat(String(r.interestRate ?? "0")) || 0,
+  minimumPayment: parseFloat(String(r.minimumPayment ?? "0")) || 0,
+  type:           r.type ?? r.category ?? "other",
+}));
 
     const totalDebt       = debts.reduce((s, d) => s + d.balance, 0);
     const monthlyServicing = debts.reduce((s, d) => s + d.minimumPayment, 0);

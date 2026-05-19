@@ -155,7 +155,7 @@ export function DebtDashboard({ rows }: { rows: DebtRow[] }) {
           <KpiCard label="Monthly Servicing" value={fmt$(monthlyServicing)} sub="minimum payments" dark={true} valueColor="text-amber-300" />
         </div>
         {/* Right two KPIs — light bg, dark text */}
-        <div style={{ borderRight: "1px solid rgba(100,130,200,0.25)" }}>
+        <div style={{ borderRight: "1px solid rgba(100, 143, 200, 0.25)" }}>
           <KpiCard label="Avg Interest Rate" value={fmtPct(weightedRate)} sub="debt-weighted" dark={false} valueColor={rateTone} />
         </div>
         <div>

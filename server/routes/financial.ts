@@ -730,10 +730,12 @@ Generate 4-7 recommendations. Prioritize the most impactful issues first.`,
     if (!claudeRes.ok) throw new Error(`Claude API error: ${claudeRes.status}`);
 
     const claudeData = await claudeRes.json() as any;
-    const rawText = claudeData.content?.[0]?.text ?? "[]";
-    const start = rawText.indexOf("{");
-    const end = rawText.lastIndexOf("}");
-    const cleaned = start !== -1 && end !== -1 ? rawText.slice(start, end + 1) : rawText.replace(/^```json\s*/i, "").replace(/```\s*$/i, "").trim();
+   const rawText = claudeData.content?.[0]?.text ?? "[]";
+const startObj = rawText.indexOf("{");
+const startArr = rawText.indexOf("[");
+const start = startObj !== -1 && (startArr === -1 || startObj < startArr) ? startObj : startArr;
+const end = start !== -1 && rawText[start] === "[" ? rawText.lastIndexOf("]") : rawText.lastIndexOf("}");
+const cleaned = start !== -1 && end !== -1 ? rawText.slice(start, end + 1) : rawText.replace(/^```json\s*/i, "").replace(/```\s*$/i, "").trim();
 
     let aiRecs: any[];
     try {
@@ -1156,10 +1158,12 @@ r.post("/clients/:clientId/generate-plan", async (req: AuthRequest, res: Respons
     });
     if (!claudeRes.ok) return res.status(500).json({ message: "AI generation failed" });
     const claudeData = await claudeRes.json() as any;
-    const rawText = claudeData.content?.[0]?.text ?? "";
-    const start = rawText.indexOf("{");
-    const end = rawText.lastIndexOf("}");
-    const cleaned = start !== -1 && end !== -1 ? rawText.slice(start, end + 1) : rawText.replace(/^```json\s*/i, "").replace(/```\s*$/i, "").trim();
+    const rawText = claudeData.content?.[0]?.text ?? "[]";
+const startObj = rawText.indexOf("{");
+const startArr = rawText.indexOf("[");
+const start = startObj !== -1 && (startArr === -1 || startObj < startArr) ? startObj : startArr;
+const end = start !== -1 && rawText[start] === "[" ? rawText.lastIndexOf("]") : rawText.lastIndexOf("}");
+const cleaned = start !== -1 && end !== -1 ? rawText.slice(start, end + 1) : rawText.replace(/^```json\s*/i, "").replace(/```\s*$/i, "").trim();
     let plan: any;
     try { plan = JSON.parse(cleaned); }
     catch { return res.status(500).json({ message: "Failed to parse AI response" }); }

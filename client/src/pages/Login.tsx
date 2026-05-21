@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react";
 import { useAuth } from "../lib/auth";
-import { Eye, EyeOff, Check, X, ArrowLeft, ShieldCheck, Loader2 } from "lucide-react";
+import { Eye, EyeOff, Check, X, ArrowLeft, Loader2 } from "lucide-react";
 import { api } from "../lib/api";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -206,14 +206,12 @@ export default function Login({ isGaPortal = false }: { isGaPortal?: boolean }) 
 
         {/* Top — logo & wordmark */}
         <div className="relative z-10">
-          <div className="flex items-center gap-3 mb-12">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-400 flex items-center justify-center shadow-lg shadow-blue-500/30">
-              <ShieldCheck className="w-5 h-5 text-white" />
-            </div>
-            <div>
-              <div className="text-white font-bold text-lg tracking-tight leading-none">BrokersEdge</div>
-              <div className="text-white/40 text-[10px] font-medium tracking-widest uppercase mt-0.5">Financial Planning Suite</div>
-            </div>
+          <div className="mb-12">
+            <img
+              src="/brokersedge-logo.jpeg"
+              alt="Broker's Edge"
+              className="h-20 w-auto object-contain"
+            />
           </div>
 
           <h1 className="text-3xl font-bold text-white leading-tight mb-4">
@@ -261,11 +259,12 @@ export default function Login({ isGaPortal = false }: { isGaPortal?: boolean }) 
         <div className="w-full max-w-sm">
 
           {/* Mobile logo */}
-          <div className="lg:hidden flex items-center justify-center gap-2 mb-8">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-600 to-cyan-500 flex items-center justify-center shadow-lg shadow-blue-500/25">
-              <ShieldCheck className="w-4.5 h-4.5 text-white" />
-            </div>
-            <span className="font-bold text-slate-900 text-lg">BrokersEdge</span>
+          <div className="lg:hidden flex items-center justify-center mb-8">
+            <img
+              src="/brokersedge-logo.jpeg"
+              alt="Broker's Edge"
+              className="h-16 w-auto object-contain rounded-xl"
+            />
           </div>
 
           {/* ── Login / Register ── */}

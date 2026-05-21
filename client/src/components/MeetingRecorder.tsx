@@ -1,4 +1,5 @@
 import { useState } from "react";
+import type { ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { Mic, MicOff, Square, X, Download, Copy, Check, Loader2, FileText, Target, ListChecks, LayoutGrid, ShieldCheck, Mail, MessageSquare, PenLine } from "lucide-react";
 import { cn } from "../lib/utils";
@@ -9,7 +10,7 @@ import { useMeetingRecorder, type MeetingSummary } from "../hooks/useMeetingReco
 // ─────────────────────────────────────────────────────────────────────────────
 type ConsentType = "written" | "oral" | "email";
 
-const CONSENT_OPTIONS: { type: ConsentType; label: string; description: string; icon: React.ReactNode }[] = [
+const CONSENT_OPTIONS: { type: ConsentType; label: string; description: string; icon: ReactNode }[] = [
   {
     type: "written",
     label: "Written Consent",
@@ -447,7 +448,7 @@ const colorMap: Record<string, string> = {
 };
 
 function Section({ icon, title, color, children }: {
-  icon: React.ReactNode; title: string; color: string; children: React.ReactNode;
+  icon: ReactNode; title: string; color: string; children: React.ReactNode;
 }) {
   return (
     <div className={cn("rounded-xl border p-4", colorMap[color])}>

@@ -206,9 +206,9 @@ export default function Login({ isGaPortal = false }: { isGaPortal?: boolean }) 
 
         {/* Top — logo & wordmark */}
         <div className="relative z-10">
-          <div className="mb-12 bg-slate-900 rounded-xl inline-block">
+          <div className="mb-12">
             <img
-              src="/brokersedge-logo.jpeg"
+              src="/brokersedge-logo.png"
               alt="Broker's Edge"
               className="h-[211px] w-auto object-contain"
             />
@@ -261,7 +261,7 @@ export default function Login({ isGaPortal = false }: { isGaPortal?: boolean }) 
           {/* Mobile logo */}
           <div className="lg:hidden flex items-center justify-center mb-8">
             <img
-              src="/brokersedge-logo.jpeg"
+              src="/brokersedge-logo.png"
               alt="Broker's Edge"
               className="h-[170px] w-auto object-contain rounded-xl"
             />

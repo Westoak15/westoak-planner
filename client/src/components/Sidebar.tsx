@@ -62,7 +62,7 @@ export function Sidebar({ activeTab, onTab, clientName, role, level }: Props) {
 
       {/* Logo */}
       <div className="p-4 flex flex-col items-center gap-2 border-b border-slate-200">
-        <img src="/brokersedge-logo.jpeg" alt="Broker's Edge" className="w-16 h-16 object-contain" />
+        <img src="/brokersedge-logo-sidebar.png" alt="Broker's Edge" className="w-[86px] h-[86px] object-contain" style={{ mixBlendMode: "multiply" }} />
         <p className="text-xs text-slate-500 font-medium tracking-wide text-center">Financial Planning Suite</p>
       </div>
 

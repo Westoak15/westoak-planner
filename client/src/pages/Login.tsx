@@ -210,7 +210,7 @@ export default function Login({ isGaPortal = false }: { isGaPortal?: boolean }) 
             <img
               src="/brokersedge-logo.jpeg"
               alt="Broker's Edge"
-              className="h-[132px] w-auto object-contain"
+              className="h-[211px] w-auto object-contain"
             />
           </div>
 
@@ -263,7 +263,7 @@ export default function Login({ isGaPortal = false }: { isGaPortal?: boolean }) 
             <img
               src="/brokersedge-logo.jpeg"
               alt="Broker's Edge"
-              className="h-[106px] w-auto object-contain rounded-xl"
+              className="h-[170px] w-auto object-contain rounded-xl"
             />
           </div>
 

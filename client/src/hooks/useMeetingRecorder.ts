@@ -4,7 +4,13 @@ import { api } from "../lib/api";
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
 // ─────────────────────────────────────────────────────────────────────────────
-export type RecordingState = "idle" | "recording" | "processing" | "done" | "error";
+export type RecordingState =
+  | "idle"
+  | "recording"
+  | "transcribing"   // audio uploaded to Whisper, awaiting transcript
+  | "processing"     // transcript sent to Claude, awaiting summary
+  | "done"
+  | "error";
 
 export interface MeetingSummary {
   keyFigures: Array<{ label: string; value: string }>;
@@ -18,60 +24,39 @@ export interface MeetingSummary {
 // Hook
 // ─────────────────────────────────────────────────────────────────────────────
 export function useMeetingRecorder(clientId: number) {
-  const [state, setState]       = useState<RecordingState>("idle");
+  const [state, setState]           = useState<RecordingState>("idle");
   const [transcript, setTranscript] = useState("");
-  const [summary, setSummary]   = useState<MeetingSummary | null>(null);
-  const [error, setError]       = useState<string | null>(null);
-  const [duration, setDuration] = useState(0);
+  const [summary, setSummary]       = useState<MeetingSummary | null>(null);
+  const [error, setError]           = useState<string | null>(null);
+  const [duration, setDuration]     = useState(0);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const recognitionRef   = useRef<any>(null);
+  const audioChunksRef   = useRef<Blob[]>([]);
   const timerRef         = useRef<number | null>(null);
-  const finalTranscript  = useRef("");   // accumulates across recognition restarts
 
   // ── Start ──────────────────────────────────────────────────────────────────
   const startRecording = useCallback(async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
-      // MediaRecorder – keeps the audio blob available for download
-      const mr = new MediaRecorder(stream);
-      const chunks: Blob[] = [];
-      mr.ondataavailable = (e) => { if (e.data.size > 0) chunks.push(e.data); };
+      audioChunksRef.current = [];
+
+      // Pick the best supported container for Whisper (webm → mp4 → ogg)
+      const mimeType =
+        MediaRecorder.isTypeSupported("audio/webm;codecs=opus") ? "audio/webm;codecs=opus" :
+        MediaRecorder.isTypeSupported("audio/webm")             ? "audio/webm" :
+        MediaRecorder.isTypeSupported("audio/mp4")              ? "audio/mp4" :
+        "";                                                        // browser default
+
+      const mr = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
+
+      mr.ondataavailable = (e) => {
+        if (e.data.size > 0) audioChunksRef.current.push(e.data);
+      };
+
+      // Collect chunks every second so we have them if the tab is backgrounded
       mr.start(1000);
       mediaRecorderRef.current = mr;
-
-      // Web Speech API – live rolling transcript
-      const SR = (window as any).SpeechRecognition ?? (window as any).webkitSpeechRecognition;
-      if (SR) {
-        const r = new SR();
-        r.continuous = true;
-        r.interimResults = true;
-        r.lang = "en-CA";
-        recognitionRef.current = r;
-        finalTranscript.current = "";
-
-        r.onresult = (ev: any) => {
-          let interim = "";
-          for (let i = ev.resultIndex; i < ev.results.length; i++) {
-            if (ev.results[i].isFinal) {
-              finalTranscript.current += ev.results[i][0].transcript + " ";
-            } else {
-              interim += ev.results[i][0].transcript;
-            }
-          }
-          setTranscript(finalTranscript.current + interim);
-        };
-
-        // Chrome stops recognition after ~60 s of silence; auto-restart
-        r.onend = () => {
-          if (mediaRecorderRef.current?.state === "recording") {
-            try { recognitionRef.current?.start(); } catch (_) {}
-          }
-        };
-
-        r.start();
-      }
 
       // Duration counter
       setDuration(0);
@@ -87,40 +72,68 @@ export function useMeetingRecorder(clientId: number) {
 
   // ── Stop ───────────────────────────────────────────────────────────────────
   const stopRecording = useCallback(async () => {
-    setState("processing");
-
     if (timerRef.current) clearInterval(timerRef.current);
 
-    // Stop speech recognition
-    if (recognitionRef.current) {
-      recognitionRef.current.onend = null;   // prevent auto-restart
-      recognitionRef.current.stop();
-      recognitionRef.current = null;
-    }
+    // Wrap MediaRecorder.stop() in a Promise so we can await all chunks
+    const audioBlob = await new Promise<Blob>((resolve) => {
+      const mr = mediaRecorderRef.current;
+      if (!mr) return resolve(new Blob([]));
 
-    // Stop media stream
-    if (mediaRecorderRef.current) {
-      mediaRecorderRef.current.stop();
-      mediaRecorderRef.current.stream.getTracks().forEach((t) => t.stop());
-    }
+      mr.onstop = () => {
+        const mimeType = mr.mimeType || "audio/webm";
+        resolve(new Blob(audioChunksRef.current, { type: mimeType }));
+      };
 
-    const text = finalTranscript.current.trim();
+      mr.stop();
+      mr.stream.getTracks().forEach((t) => t.stop());
+    });
 
-    if (!text) {
-      setError("No speech was detected. Please try again.");
+    mediaRecorderRef.current = null;
+
+    if (audioBlob.size === 0) {
+      setError("No audio was captured. Please check your microphone and try again.");
       setState("error");
       return;
     }
 
+    // ── Phase 1: Whisper transcription ───────────────────────────────────────
+    setState("transcribing");
+
     try {
+      const formData = new FormData();
+      formData.append("audio", audioBlob, "recording.webm");
+
+      const transcribeRes = await fetch("/api/ai/transcribe", {
+        method:      "POST",
+        body:        formData,
+        credentials: "include",    // cookie-based auth
+      });
+
+      if (!transcribeRes.ok) {
+        const body = await transcribeRes.json().catch(() => ({}));
+        throw new Error((body as any).message ?? "Transcription failed");
+      }
+
+      const { transcript: text } = await transcribeRes.json() as { transcript: string };
+
+      if (!text?.trim()) {
+        throw new Error("No speech was detected in the recording. Please try again.");
+      }
+
+      setTranscript(text);
+
+      // ── Phase 2: Claude meeting summary ───────────────────────────────────
+      setState("processing");
+
       const result = await api.post<MeetingSummary>("/api/ai/meeting-summary", {
         transcript: text,
         clientId,
       });
+
       setSummary(result);
       setState("done");
     } catch (err: any) {
-      setError("Summary generation failed: " + (err.message ?? "unknown error"));
+      setError(err.message ?? "Processing failed. Please try again.");
       setState("error");
     }
   }, [clientId]);
@@ -132,7 +145,7 @@ export function useMeetingRecorder(clientId: number) {
     setSummary(null);
     setError(null);
     setDuration(0);
-    finalTranscript.current = "";
+    audioChunksRef.current = [];
   }, []);
 
   return { state, transcript, summary, error, duration, startRecording, stopRecording, reset };

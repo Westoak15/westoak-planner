@@ -234,18 +234,39 @@ function MeetingRecorderModal({ clientId, clientName, onClose }: ModalProps) {
                 </button>
               </div>
 
-              {/* Live transcript */}
-              <div className="bg-gray-50 rounded-xl border border-gray-100 p-4 min-h-[180px] max-h-[280px] overflow-y-auto">
-                {transcript ? (
-                  <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{transcript}</p>
-                ) : (
-                  <p className="text-sm text-gray-300 italic">Listening — speak to see transcript appear here…</p>
-                )}
+              {/* Audio capture indicator — Whisper transcribes after recording ends */}
+              <div className="bg-gray-50 rounded-xl border border-gray-100 p-6 flex flex-col items-center justify-center min-h-[160px] gap-3">
+                <div className="flex items-end gap-1 h-10">
+                  {[3,5,8,6,10,7,4,9,6,5,8,4,7,5,3].map((h, i) => (
+                    <div
+                      key={i}
+                      className="w-1.5 bg-red-400 rounded-full animate-pulse"
+                      style={{
+                        height: `${h * 4}px`,
+                        animationDelay: `${i * 80}ms`,
+                        animationDuration: `${600 + (i % 3) * 200}ms`,
+                      }}
+                    />
+                  ))}
+                </div>
+                <p className="text-xs text-gray-400 text-center">
+                  Audio is being captured — transcript will appear after you stop.<br />
+                  <span className="text-gray-300">Powered by OpenAI Whisper</span>
+                </p>
               </div>
             </>
           )}
 
-          {/* Processing */}
+          {/* Transcribing — Whisper processing */}
+          {state === "transcribing" && (
+            <div className="flex flex-col items-center justify-center py-10 text-center">
+              <Loader2 className="w-8 h-8 text-blue-500 animate-spin mb-3" />
+              <p className="text-sm font-semibold text-gray-700">Transcribing audio…</p>
+              <p className="text-xs text-gray-400 mt-1">OpenAI Whisper is processing the recording</p>
+            </div>
+          )}
+
+          {/* Processing — Claude summary */}
           {state === "processing" && (
             <div className="flex flex-col items-center justify-center py-10 text-center">
               <Loader2 className="w-8 h-8 text-[#0c1e3a] animate-spin mb-3" />

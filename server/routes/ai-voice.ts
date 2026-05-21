@@ -167,4 +167,50 @@ Never return prose — only the JSON object.`,
   }
 });
 
+
+// ─────────────────────────────────────────────────────────────────────────────
+// POST /api/ai/intake-transcript
+// Body: { transcript: string }
+// Returns structured client profile extracted from an intake conversation
+// ─────────────────────────────────────────────────────────────────────────────
+r.post("/intake-transcript", async (req: AuthRequest, res: Response) => {
+  const { transcript } = req.body as { transcript: string };
+  if (!transcript?.trim()) return res.status(400).json({ message: "transcript is required" });
+
+  try {
+    const message = await anthropic.messages.create({
+      model:      "claude-sonnet-4-6",
+      max_tokens: 1024,
+      system: `You are a financial advisor assistant. Extract client profile information from an intake conversation.
+
+Return ONLY valid JSON — no markdown, no prose:
+{
+  "firstName": "", "lastName": "", "email": "", "phone": "",
+  "dateOfBirth": "", "province": "", "occupation": "", "employmentStatus": "",
+  "annualIncome": "", "retirementAge": null, "desiredRetirementIncome": "",
+  "pensionType": "", "spouseFirstName": "", "spouseLastName": "",
+  "spouseDateOfBirth": "", "spouseOccupation": "", "spouseAnnualIncome": "", "notes": ""
+}
+Rules:
+- Empty string for any field not mentioned
+- dateOfBirth: ISO "YYYY-MM-DD" or ""
+- province: two-letter code (ON, BC, AB, QC) or US state abbreviation
+- annualIncome / spouseAnnualIncome / desiredRetirementIncome: numeric string only e.g. "95000"
+- retirementAge: integer or null
+- employmentStatus: "employed"|"self-employed"|"retired"|"unemployed"|""
+- pensionType: "defined-benefit"|"defined-contribution"|"none"|""
+- notes: anything relevant that doesn't fit other fields`,
+      messages: [{ role: "user", content: `Intake transcript:\n\n${transcript}` }],
+    });
+
+    const raw   = (message.content[0] as any).text ?? "";
+    const clean = raw.replace(/\`\`\`json|\`\`\`/g, "").trim();
+    res.json(JSON.parse(clean));
+  } catch (err) {
+    console.error("intake-transcript error:", err);
+    res.status(500).json({ message: "Failed to extract client profile" });
+  }
+});
+
 export default r;
+

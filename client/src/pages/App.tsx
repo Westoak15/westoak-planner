@@ -30,7 +30,7 @@ const InsightLedDashboard = lazy(() => import("../components/InsightLedDashboard
 import { fmt$, fmtPct, initials, avatarBg, cn } from "../lib/utils";
 import { VoiceProvider, useVoice, labelToKey } from "../contexts/VoiceContext";
 import { ClientOverview } from "./ClientOverview";
-import { MeetingRecorderTrigger } from "../components/MeetingRecorder";
+import { MeetingRecorderTrigger, IntakeRecorderTrigger, type IntakeProfile } from "../components/MeetingRecorder";
 import { useHotkeys } from "../hooks/useHotkeys";
 import { CommandPalette, type CommandAction } from "../components/ui/CommandPalette";
 import { InlineEdit } from "../components/ui/InlineEdit";
@@ -359,6 +359,18 @@ function ClientsTab({ onSelect }: { onSelect: (c: Client) => void }) {
     } finally { setBusy(false); }
   }
 
+  function handleIntakeComplete(profile: IntakeProfile) {
+    setForm(f => ({
+      ...f,
+      firstName: profile.firstName || f.firstName,
+      lastName:  profile.lastName  || f.lastName,
+      email:     profile.email     || f.email,
+      phone:     profile.phone     || f.phone,
+      province:  profile.province  || f.province,
+    }));
+    setShowNew(true);  // ensure form is open
+  }
+
   function deleteClient(id: number) {
     api.delete(`/api/clients/${id}`).then(() => setClients(p => p.filter(c => c.id !== id)));
   }
@@ -447,6 +459,9 @@ function ClientsTab({ onSelect }: { onSelect: (c: Client) => void }) {
                 Add Household
               </button>
               <button onClick={() => setShowNew(false)} className="text-xs text-slate-500 hover:text-slate-700 px-2 py-1">Cancel</button>
+              <div className="ml-auto">
+                <IntakeRecorderTrigger onComplete={handleIntakeComplete} />
+              </div>
             </div>
           </div>
         )}

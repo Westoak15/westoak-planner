@@ -214,3 +214,49 @@ Rules:
 
 export default r;
 
+
+// ─────────────────────────────────────────────────────────────────────────────
+// POST /api/ai/needs-analysis-transcript
+// Body: { transcript: string }
+// Returns structured insurance needs analysis fields
+// ─────────────────────────────────────────────────────────────────────────────
+r.post("/needs-analysis-transcript", async (req: AuthRequest, res: Response) => {
+  const { transcript } = req.body as { transcript: string };
+  if (!transcript?.trim()) return res.status(400).json({ message: "transcript is required" });
+
+  try {
+    const message = await anthropic.messages.create({
+      model:      "claude-sonnet-4-6",
+      max_tokens: 1024,
+      system: `You are a Canadian financial advisor assistant. Extract insurance needs analysis data from a conversation.
+
+Return ONLY valid JSON — no markdown, no prose:
+{
+  "primaryName": "", "primaryAge": "", "primaryAnnualIncome": "",
+  "spouseName": "", "spouseAge": "", "spouseAnnualIncome": "", "familyMembers": "",
+  "mortgageBalance": "", "carLoans": "", "linesOfCredit": "",
+  "creditCards": "", "finalExpenses": "", "emergencyFund": "",
+  "educationFund": "", "legacyFundForChildren": "", "charitableBequest": "",
+  "primaryReplacementPct": "", "primaryCppSurvivorBenefit": "", "primaryTargetAge": "",
+  "spouseReplacementPct": "", "spouseCppSurvivorBenefit": "", "spouseTargetAge": "",
+  "primaryLiquidSavings": "", "primaryRrsps": "",
+  "spouseLiquidSavings": "", "spouseRrsps": ""
+}
+Rules:
+- All monetary values: numeric string only e.g. "450000" — no $ or commas
+- Age and familyMembers: numeric string e.g. "42"
+- Replacement pct: numeric string e.g. "70" (percent, no % sign)
+- CPP survivor benefit: monthly dollar amount as numeric string e.g. "700"
+- Empty string "" for any field not mentioned — never omit a key
+- Infer reasonable defaults only if explicitly calculable from other stated values`,
+      messages: [{ role: "user", content: `Needs analysis conversation:\n\n${transcript}` }],
+    });
+
+    const raw   = (message.content[0] as any).text ?? "";
+    const clean = raw.replace(/```json|```/g, "").trim();
+    res.json(JSON.parse(clean));
+  } catch (err) {
+    console.error("needs-analysis-transcript error:", err);
+    res.status(500).json({ message: "Failed to extract needs analysis data" });
+  }
+});

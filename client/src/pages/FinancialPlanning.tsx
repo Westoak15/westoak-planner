@@ -1,4 +1,5 @@
 import { toast } from "@/hooks/use-toast";
+import { TranscriptRecorderTrigger } from "../components/MeetingRecorder";
 import { useQueryClient } from "@tanstack/react-query";
 import { api } from "../lib/api";
 import React, { useState, useMemo, useEffect, useRef, Component, type ReactNode, useContext } from "react";
@@ -727,6 +728,63 @@ function buildDefaultFromNW() {
                 <div>
                   <h2 className="text-2xl font-display font-bold" data-testid="text-worksheet-title">Family Needs Analysis</h2>
                   <p className="text-sm text-muted-foreground mt-1">Complete all sections to calculate total life insurance need</p>
+                </div>
+                <div className="flex items-center gap-4">
+                  <TranscriptRecorderTrigger
+                    endpoint="/api/ai/needs-analysis-transcript"
+                    label="Record Needs Analysis"
+                    processingLabel="Extracting needs analysis data…"
+                    onComplete={(data) => {
+                      setForm(f => ({
+                        ...f,
+                        primaryName:         data.primaryName         || f.primaryName,
+                        primaryAge:          data.primaryAge          || f.primaryAge,
+                        primaryAnnualIncome: data.primaryAnnualIncome || f.primaryAnnualIncome,
+                        spouseName:          data.spouseName          || f.spouseName,
+                        spouseAge:           data.spouseAge           || f.spouseAge,
+                        spouseAnnualIncome:  data.spouseAnnualIncome  || f.spouseAnnualIncome,
+                        familyMembers:       data.familyMembers       || f.familyMembers,
+                        liabilities: {
+                          ...f.liabilities,
+                          mortgageBalance: data.mortgageBalance || f.liabilities.mortgageBalance,
+                          carLoans:        data.carLoans        || f.liabilities.carLoans,
+                          linesOfCredit:   data.linesOfCredit   || f.liabilities.linesOfCredit,
+                          creditCards:     data.creditCards     || f.liabilities.creditCards,
+                          finalExpenses:   data.finalExpenses   || f.liabilities.finalExpenses,
+                          emergencyFund:   data.emergencyFund   || f.liabilities.emergencyFund,
+                        },
+                        legacy: {
+                          ...f.legacy,
+                          educationFund:        data.educationFund        || f.legacy.educationFund,
+                          legacyFundForChildren: data.legacyFundForChildren || f.legacy.legacyFundForChildren,
+                          charitableBequest:    data.charitableBequest    || f.legacy.charitableBequest,
+                        },
+                        primaryIncome: {
+                          ...f.primaryIncome,
+                          replacementPct:      data.primaryReplacementPct      || f.primaryIncome.replacementPct,
+                          cppSurvivorBenefit:  data.primaryCppSurvivorBenefit  || f.primaryIncome.cppSurvivorBenefit,
+                          targetAge:           data.primaryTargetAge           || f.primaryIncome.targetAge,
+                        },
+                        spouseIncome: {
+                          ...f.spouseIncome,
+                          replacementPct:      data.spouseReplacementPct      || f.spouseIncome.replacementPct,
+                          cppSurvivorBenefit:  data.spouseCppSurvivorBenefit  || f.spouseIncome.cppSurvivorBenefit,
+                          targetAge:           data.spouseTargetAge           || f.spouseIncome.targetAge,
+                        },
+                        primaryAssets: {
+                          ...f.primaryAssets,
+                          liquidSavings: data.primaryLiquidSavings || f.primaryAssets.liquidSavings,
+                          rrsps:         data.primaryRrsps         || f.primaryAssets.rrsps,
+                        },
+                        spouseAssets: {
+                          ...f.spouseAssets,
+                          liquidSavings: data.spouseLiquidSavings || f.spouseAssets.liquidSavings,
+                          rrsps:         data.spouseRrsps         || f.spouseAssets.rrsps,
+                        },
+                      }));
+                      toast({ title: "Fields pre-filled", description: "Review and adjust before saving." });
+                    }}
+                  />
                 </div>
                 <div className="flex items-center gap-6">
                   <div className="text-right">

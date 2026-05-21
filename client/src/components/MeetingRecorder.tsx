@@ -700,3 +700,187 @@ export function IntakeRecorderTrigger({ onComplete }: { onComplete: (p: IntakePr
     </>
   );
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// TranscriptRecorderTrigger — generic recorder that posts transcript to any
+// endpoint and returns the extracted data via onComplete. No preview UI —
+// the caller handles applying the data to its own form.
+// ─────────────────────────────────────────────────────────────────────────────
+interface TranscriptRecorderProps {
+  endpoint: string;           // e.g. "/api/ai/needs-analysis-transcript"
+  label?: string;             // button label, default "Record"
+  processingLabel?: string;   // shown during Claude extraction
+  onComplete: (data: any) => void;
+}
+
+export function TranscriptRecorderTrigger({ endpoint, label = "Record", processingLabel = "Extracting data…", onComplete }: TranscriptRecorderProps) {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <button
+        onClick={() => setOpen(true)}
+        className="flex items-center gap-1.5 text-xs font-semibold text-[#0c1e3a] border border-[#0c1e3a]/30 hover:border-[#0c1e3a] bg-[#0c1e3a]/5 hover:bg-[#0c1e3a]/10 px-2.5 py-1.5 rounded-lg transition-colors"
+      >
+        <Mic className="w-3.5 h-3.5" /> {label}
+      </button>
+      {open && (
+        <TranscriptRecorderModal
+          endpoint={endpoint}
+          processingLabel={processingLabel}
+          onComplete={(data) => { onComplete(data); setOpen(false); }}
+          onClose={() => setOpen(false)}
+        />
+      )}
+    </>
+  );
+}
+
+function TranscriptRecorderModal({ endpoint, processingLabel, onComplete, onClose }: {
+  endpoint: string; processingLabel: string;
+  onComplete: (data: any) => void; onClose: () => void;
+}) {
+  const [recState, setRecState] = useState<"idle" | "recording" | "transcribing" | "extracting" | "error">("idle");
+  const [error, setError]       = useState<string | null>(null);
+  const [duration, setDuration] = useState(0);
+
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef   = useRef<Blob[]>([]);
+  const timerRef         = useRef<number | null>(null);
+
+  async function startRecording() {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      audioChunksRef.current = [];
+      const mimeType =
+        MediaRecorder.isTypeSupported("audio/webm;codecs=opus") ? "audio/webm;codecs=opus" :
+        MediaRecorder.isTypeSupported("audio/webm")             ? "audio/webm" : "";
+      const mr = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
+      mr.ondataavailable = (e) => { if (e.data.size > 0) audioChunksRef.current.push(e.data); };
+      mr.start(1000);
+      mediaRecorderRef.current = mr;
+      setDuration(0);
+      timerRef.current = window.setInterval(() => setDuration(d => d + 1), 1000);
+      setRecState("recording");
+      setError(null);
+    } catch {
+      setError("Microphone access denied.");
+      setRecState("error");
+    }
+  }
+
+  async function stopAndProcess() {
+    if (timerRef.current) clearInterval(timerRef.current);
+
+    const audioBlob = await new Promise<Blob>((resolve) => {
+      const mr = mediaRecorderRef.current;
+      if (!mr) return resolve(new Blob([]));
+      mr.onstop = () => resolve(new Blob(audioChunksRef.current, { type: mr.mimeType || "audio/webm" }));
+      mr.stop();
+      mr.stream.getTracks().forEach(t => t.stop());
+    });
+    mediaRecorderRef.current = null;
+
+    if (audioBlob.size === 0) { setError("No audio captured."); setRecState("error"); return; }
+
+    setRecState("transcribing");
+    try {
+      const fd = new FormData();
+      fd.append("audio", audioBlob, "recording.webm");
+      const tr = await fetch("/api/ai/transcribe", { method: "POST", body: fd, credentials: "include" });
+      if (!tr.ok) throw new Error("Transcription failed");
+      const { transcript } = await tr.json() as { transcript: string };
+      if (!transcript?.trim()) throw new Error("No speech detected.");
+
+      setRecState("extracting");
+      const er = await fetch(endpoint, {
+        method: "POST", credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ transcript }),
+      });
+      if (!er.ok) throw new Error("Extraction failed");
+      const data = await er.json();
+      onComplete(data);
+    } catch (e: any) {
+      setError(e.message ?? "Processing failed");
+      setRecState("error");
+    }
+  }
+
+  return createPortal(
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/30 backdrop-blur-sm">
+      <div className="w-full max-w-md mx-4 bg-white rounded-2xl shadow-2xl border border-gray-100">
+
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+          <div className="flex items-center gap-3">
+            <div className={cn("w-8 h-8 rounded-full flex items-center justify-center",
+              recState === "recording" ? "bg-red-100" : "bg-[#0c1e3a]/10")}>
+              <Mic className={cn("w-4 h-4", recState === "recording" ? "text-red-500" : "text-[#0c1e3a]")} />
+            </div>
+            <div>
+              <h2 className="text-sm font-bold text-gray-900">Record Conversation</h2>
+              <p className="text-xs text-gray-400">Fields will be pre-filled from the recording</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="text-gray-300 hover:text-gray-600 p-1"><X className="w-4 h-4" /></button>
+        </div>
+
+        <div className="px-6 py-8">
+          {recState === "idle" && (
+            <div className="flex flex-col items-center text-center gap-4">
+              <div className="w-16 h-16 bg-[#0c1e3a]/5 rounded-full flex items-center justify-center">
+                <Mic className="w-7 h-7 text-[#0c1e3a]" />
+              </div>
+              <p className="text-sm text-gray-500 max-w-xs">Discuss the details with your client. Whisper transcribes, Claude fills the form.</p>
+              <button onClick={startRecording}
+                className="flex items-center gap-2 bg-[#0c1e3a] hover:bg-[#0e2a4a] text-white text-sm font-semibold px-6 py-2.5 rounded-xl transition-colors">
+                <Mic className="w-4 h-4" /> Start Recording
+              </button>
+            </div>
+          )}
+
+          {recState === "recording" && (
+            <div className="flex flex-col items-center gap-4">
+              <div className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse" />
+                <span className="text-sm font-semibold text-red-600">Recording</span>
+                <span className="text-sm text-gray-400 tabular-nums">{fmtDuration(duration)}</span>
+              </div>
+              <div className="flex items-end gap-1 h-8">
+                {[3,5,8,6,10,7,4,9,6,5,8,4,7,5,3].map((h, i) => (
+                  <div key={i} className="w-1.5 bg-red-400 rounded-full animate-pulse"
+                    style={{ height: `${h * 3}px`, animationDelay: `${i * 80}ms`, animationDuration: `${600 + (i % 3) * 200}ms` }} />
+                ))}
+              </div>
+              <button onClick={stopAndProcess}
+                className="flex items-center gap-1.5 bg-red-500 hover:bg-red-600 text-white text-sm font-semibold px-5 py-2 rounded-xl transition-colors">
+                <Square className="w-3.5 h-3.5 fill-white" /> Stop & Fill Fields
+              </button>
+            </div>
+          )}
+
+          {(recState === "transcribing" || recState === "extracting") && (
+            <div className="flex flex-col items-center gap-3 text-center">
+              <Loader2 className={cn("w-8 h-8 animate-spin", recState === "transcribing" ? "text-blue-500" : "text-[#0c1e3a]")} />
+              <p className="text-sm font-semibold text-gray-700">
+                {recState === "transcribing" ? "Transcribing audio…" : processingLabel}
+              </p>
+              <p className="text-xs text-gray-400">
+                {recState === "transcribing" ? "OpenAI Whisper is processing the recording" : "Claude is reading the conversation"}
+              </p>
+            </div>
+          )}
+
+          {recState === "error" && (
+            <div className="flex flex-col items-center gap-3 text-center">
+              <div className="w-12 h-12 bg-red-50 rounded-full flex items-center justify-center">
+                <MicOff className="w-5 h-5 text-red-400" />
+              </div>
+              <p className="text-sm font-semibold text-red-600">{error}</p>
+              <button onClick={() => setRecState("idle")} className="text-sm font-semibold text-[#0c1e3a] hover:underline">Try again</button>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  , document.body);
+}

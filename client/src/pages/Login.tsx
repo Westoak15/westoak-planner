@@ -206,7 +206,7 @@ export default function Login({ isGaPortal = false }: { isGaPortal?: boolean }) 
 
         {/* Top — logo & wordmark */}
         <div className="relative z-10">
-          <div className="mb-12">
+          <div className="mb-12 bg-slate-900 rounded-xl inline-block">
             <img
               src="/brokersedge-logo.jpeg"
               alt="Broker's Edge"
@@ -231,7 +231,7 @@ export default function Login({ isGaPortal = false }: { isGaPortal?: boolean }) 
             { label: "Dual jurisdiction", sub: "Canada & United States" },
             { label: "Monte Carlo engine", sub: "1,000+ simulation retirement planning" },
             { label: "AI meeting assistant", sub: "Automatic notes & action items" },
-            { label: "Multi-agent platform", sub: "GA & FA hierarchy management" },
+            { label: "Multi-agent platform", sub: "Hierarchy management system" },
           ].map(f => (
             <div key={f.label} className="flex items-start gap-3">
               <div className="w-5 h-5 rounded-full bg-gradient-to-br from-blue-500/30 to-cyan-400/30 border border-blue-400/20 flex items-center justify-center flex-shrink-0 mt-0.5">

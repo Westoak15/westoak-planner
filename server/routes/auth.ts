@@ -1,18 +1,25 @@
 import type { Request, Response } from "express";
 import { Router } from "express";
-import { db } from "../db/index.js";
+import { db, getDb }    from "../db/index.js";
 import { users, insertUserSchema } from "../../shared/schema.js";
-import { hashPassword, checkPassword, signToken, isAuthenticated, getUser, type AuthRequest } from "../auth/index.js";
+import {
+  hashPassword, checkPassword, signToken,
+  isAuthenticated, getUser, type AuthRequest,
+} from "../auth/index.js";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
 
 const r = Router();
 
-// ── Register (GA only — first user self-registers as GA) ──────────────────────
+// ── Register ──────────────────────────────────────────────────────────────────
+// Routes to the jurisdiction specified in the body (default CA).
 r.post("/register", async (req: Request, res: Response) => {
   try {
     const body = insertUserSchema.parse(req.body);
-    const exists = await db.select({ id: users.id }).from(users).where(eq(users.email, body.email)).limit(1);
+    const jur  = (body.jurisdiction ?? "CA") as "CA" | "US";
+    const target = getDb(jur);
+
+    const exists = await target.select({ id: users.id }).from(users).where(eq(users.email, body.email)).limit(1);
     if (exists.length) return res.status(409).json({ message: "Email already registered" });
 
     const { securityQuestion, securityAnswer } = z.object({
@@ -23,19 +30,20 @@ r.post("/register", async (req: Request, res: Response) => {
     const hash       = await hashPassword(body.password);
     const answerHash = await hashPassword(securityAnswer.toLowerCase().trim());
 
-    const [u] = await (db.insert(users) as any).values({
+    const [u] = await (target.insert(users) as any).values({
       email: body.email, passwordHash: hash,
       firstName: body.firstName, lastName: body.lastName,
-      firmName: body.firmName ?? null,
+      firmName:  body.firmName ?? null,
       securityQuestion, securityAnswerHash: answerHash,
       role: "ga", level: "enhanced",
+      jurisdiction: jur,
     }).returning({
       id: users.id, email: users.email, firstName: users.firstName,
       lastName: users.lastName, firmName: users.firmName,
-      role: users.role, level: users.level,
+      role: users.role, level: users.level, jurisdiction: users.jurisdiction,
     });
 
-    res.status(201).json({ token: signToken(u.id), user: u });
+    res.status(201).json({ token: signToken(u.id, jur), user: u });
   } catch (e: any) {
     if (e instanceof z.ZodError) return res.status(400).json({ message: e.errors[0]?.message ?? "Validation error", errors: e.errors });
     console.error("[register]", e.message);
@@ -44,19 +52,29 @@ r.post("/register", async (req: Request, res: Response) => {
 });
 
 // ── Login ─────────────────────────────────────────────────────────────────────
+// Tries CA first, then US — transparent to the user.
 r.post("/login", async (req: Request, res: Response) => {
   try {
     const { email, password } = z.object({ email: z.string().email(), password: z.string() }).parse(req.body);
-    const [u] = await db.select().from(users).where(eq(users.email, email)).limit(1);
+
+    // Try CA, fall back to US
+    let [u] = await getDb("CA").select().from(users).where(eq(users.email, email)).limit(1);
+    if (!u) {
+      [u] = await getDb("US").select().from(users).where(eq(users.email, email)).limit(1);
+    }
+
     if (!u || !await checkPassword(password, u.passwordHash))
       return res.status(401).json({ message: "Invalid email or password" });
+
+    const jur = (u.jurisdiction ?? "CA") as "CA" | "US";
+
     res.json({
-      token: signToken(u.id),
+      token: signToken(u.id, jur),
       user: {
         id: u.id, email: u.email, firstName: u.firstName, lastName: u.lastName,
         firmName: u.firmName, role: u.role, level: u.level,
-        mustResetPassword: u.mustResetPassword, 
-        jurisdiction: u.jurisdiction,
+        mustResetPassword: u.mustResetPassword,
+        jurisdiction: jur,
       },
     });
   } catch (e: any) {
@@ -68,12 +86,13 @@ r.post("/login", async (req: Request, res: Response) => {
 
 // ── Me ────────────────────────────────────────────────────────────────────────
 r.get("/me", isAuthenticated, async (req: AuthRequest, res: Response) => {
-  const u = await getUser(req.userId!);
+  const u = await getUser(req.userId!, req.userJurisdiction ?? "CA");
   if (!u) return res.status(404).json({ message: "Not found" });
   res.json(u);
 });
 
-// ── Change Password (logged in) ───────────────────────────────────────────────
+// ── Change Password ───────────────────────────────────────────────────────────
+// `db` proxy auto-routes to the correct jurisdiction DB via AsyncLocalStorage.
 r.post("/change-password", isAuthenticated, async (req: AuthRequest, res: Response) => {
   try {
     const { currentPassword, newPassword, securityQuestion, securityAnswer } = z.object({
@@ -89,12 +108,11 @@ r.post("/change-password", isAuthenticated, async (req: AuthRequest, res: Respon
     const hash = await hashPassword(newPassword);
     const updates: any = { passwordHash: hash, mustResetPassword: false };
     if (securityQuestion && securityAnswer) {
-      updates.securityQuestion  = securityQuestion;
+      updates.securityQuestion   = securityQuestion;
       updates.securityAnswerHash = await hashPassword(securityAnswer.toLowerCase().trim());
     }
     await db.update(users).set(updates).where(eq(users.id, req.userId!));
-    const newToken = signToken(u.id);
-    res.json({ message: "Password changed successfully", token: newToken });
+    res.json({ message: "Password changed successfully", token: signToken(u.id, req.userJurisdiction ?? "CA") });
   } catch (e: any) {
     if (e instanceof z.ZodError) return res.status(400).json({ message: "Validation error", errors: e.errors });
     console.error("[change-password]", e.message);
@@ -102,13 +120,13 @@ r.post("/change-password", isAuthenticated, async (req: AuthRequest, res: Respon
   }
 });
 
-// ── Force Reset Password (FA first login) ─────────────────────────────────────
+// ── Force Reset Password ──────────────────────────────────────────────────────
 r.post("/force-reset-password", isAuthenticated, async (req: AuthRequest, res: Response) => {
   try {
-   const { newPassword, securityQuestion, securityAnswer } = z.object({ 
-      newPassword: z.string().min(8),
+    const { newPassword, securityQuestion, securityAnswer } = z.object({
+      newPassword:      z.string().min(8),
       securityQuestion: z.string().optional(),
-      securityAnswer: z.string().optional(),
+      securityAnswer:   z.string().optional(),
     }).parse(req.body);
     const hash = await hashPassword(newPassword);
     const updates: any = { passwordHash: hash, mustResetPassword: false };
@@ -118,8 +136,7 @@ r.post("/force-reset-password", isAuthenticated, async (req: AuthRequest, res: R
     }
     await db.update(users).set(updates).where(eq(users.id, req.userId!));
     const [u] = await db.select().from(users).where(eq(users.id, req.userId!)).limit(1);
-    const newToken = signToken(u.id);
-    res.json({ message: "Password reset successfully", token: newToken });
+    res.json({ message: "Password reset successfully", token: signToken(u.id, req.userJurisdiction ?? "CA") });
   } catch (e: any) {
     res.status(500).json({ message: e.message ?? "Server error" });
   }
@@ -129,9 +146,9 @@ r.post("/force-reset-password", isAuthenticated, async (req: AuthRequest, res: R
 r.post("/forgot/question", async (req: Request, res: Response) => {
   try {
     const { email } = z.object({ email: z.string().email() }).parse(req.body);
-    const [u] = await db.select({ securityQuestion: users.securityQuestion }).from(users).where(eq(users.email, email)).limit(1);
-    if (!u || !u.securityQuestion) return res.json({ question: null });
-    res.json({ question: u.securityQuestion });
+    let [u] = await getDb("CA").select({ securityQuestion: users.securityQuestion }).from(users).where(eq(users.email, email)).limit(1);
+    if (!u) [u] = await getDb("US").select({ securityQuestion: users.securityQuestion }).from(users).where(eq(users.email, email)).limit(1);
+    res.json({ question: u?.securityQuestion ?? null });
   } catch (e: any) {
     res.status(500).json({ message: "Server error" });
   }
@@ -146,7 +163,14 @@ r.post("/forgot/reset", async (req: Request, res: Response) => {
       newPassword:    z.string().min(8),
     }).parse(req.body);
 
-    const [u] = await db.select().from(users).where(eq(users.email, email)).limit(1);
+    // Find in CA first, then US
+    let jur: "CA" | "US" = "CA";
+    let [u] = await getDb("CA").select().from(users).where(eq(users.email, email)).limit(1);
+    if (!u) {
+      [u] = await getDb("US").select().from(users).where(eq(users.email, email)).limit(1);
+      if (u) jur = "US";
+    }
+
     if (!u || !u.securityAnswerHash)
       return res.status(400).json({ message: "Account not found or no security question set." });
 
@@ -154,7 +178,7 @@ r.post("/forgot/reset", async (req: Request, res: Response) => {
     if (!correct) return res.status(401).json({ message: "Security answer is incorrect." });
 
     const hash = await hashPassword(newPassword);
-    await db.update(users).set({ passwordHash: hash }).where(eq(users.id, u.id));
+    await getDb(jur).update(users).set({ passwordHash: hash }).where(eq(users.id, u.id));
     res.json({ message: "Password reset successfully. You can now sign in." });
   } catch (e: any) {
     if (e instanceof z.ZodError) return res.status(400).json({ message: e.errors[0]?.message ?? "Validation error" });
@@ -191,25 +215,27 @@ r.post("/users", isAuthenticated, async (req: AuthRequest, res: Response) => {
       email:        z.string().email(),
       password:     z.string().min(8),
       level:        z.enum(["standard", "enhanced"]).default("standard"),
-      jurisdiction: z.enum(["CA", "US"]).default("CA"),
+      jurisdiction: z.enum(["CA", "US"]).default(req.userJurisdiction ?? "CA"),
     }).parse(req.body);
+
+    // FA must be created in the same jurisdiction DB as the GA
+    const targetJur = (body.jurisdiction ?? req.userJurisdiction ?? "CA") as "CA" | "US";
 
     const exists = await db.select({ id: users.id }).from(users).where(eq(users.email, body.email)).limit(1);
     if (exists.length) return res.status(409).json({ message: "Email already registered" });
 
     const hash = await hashPassword(body.password as string);
     const [u] = await (db.insert(users) as any).values({
-  email: body.email, passwordHash: hash,
-  firstName: body.firstName, lastName: body.lastName,
-  level: body.level, role: "fa", gaId: me.id,
-  jurisdiction: body.jurisdiction,
-  mustResetPassword: true,
-}).returning({
-  id: users.id, email: users.email, firstName: users.firstName,
-  lastName: users.lastName, level: users.level, role: users.role,
-  jurisdiction: users.jurisdiction,
-});
-
+      email: body.email, passwordHash: hash,
+      firstName: body.firstName, lastName: body.lastName,
+      level: body.level, role: "fa", gaId: me.id,
+      jurisdiction: targetJur,
+      mustResetPassword: true,
+    }).returning({
+      id: users.id, email: users.email, firstName: users.firstName,
+      lastName: users.lastName, level: users.level, role: users.role,
+      jurisdiction: users.jurisdiction,
+    });
     res.status(201).json(u);
   } catch (e: any) {
     if (e instanceof z.ZodError) return res.status(400).json({ message: e.errors[0]?.message ?? "Validation error" });
@@ -235,7 +261,7 @@ r.patch("/users/:id", isAuthenticated, async (req: AuthRequest, res: Response) =
 
     const update: any = { ...body };
     if (body.password) {
-      update.passwordHash = await hashPassword(body.password);
+      update.passwordHash      = await hashPassword(body.password);
       update.mustResetPassword = true;
       delete update.password;
     }
@@ -267,6 +293,7 @@ r.delete("/users/:id", isAuthenticated, async (req: AuthRequest, res: Response) 
   }
 });
 
+// ── Me: patch ─────────────────────────────────────────────────────────────────
 r.patch("/me", isAuthenticated, async (req: AuthRequest, res: Response) => {
   try {
     const body = z.object({
@@ -276,7 +303,6 @@ r.patch("/me", isAuthenticated, async (req: AuthRequest, res: Response) => {
     const [u] = await db.update(users).set(body).where(eq(users.id, req.userId!)).returning({
       id: users.id, email: users.email, firstName: users.firstName,
       lastName: users.lastName, firmName: users.firmName,
-      //role: users.role, level: users.level, jurisdiction: (users as any).jurisdiction,
     });
     res.json(u);
   } catch (e: any) {

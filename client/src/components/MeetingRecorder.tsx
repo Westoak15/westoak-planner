@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import { Mic, MicOff, Square, X, Download, Copy, Check, Loader2, FileText, Target, ListChecks, LayoutGrid, ShieldCheck, Mail, MessageSquare, PenLine } from "lucide-react";
 import { cn } from "../lib/utils";
 import { useMeetingRecorder, type MeetingSummary } from "../hooks/useMeetingRecorder";
@@ -117,8 +118,8 @@ function MeetingRecorderModal({ clientId, clientName, onClose }: ModalProps) {
     URL.revokeObjectURL(url);
   }
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm">
+  return createPortal(
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/30 backdrop-blur-sm">
       <div className="w-full max-w-2xl mx-4 bg-white rounded-2xl shadow-2xl border border-gray-100 flex flex-col max-h-[90vh]">
 
         {/* Header */}
@@ -301,7 +302,7 @@ function MeetingRecorderModal({ clientId, clientName, onClose }: ModalProps) {
         </div>
       </div>
     </div>
-  );
+  , document.body);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

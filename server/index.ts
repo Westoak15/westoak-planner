@@ -7,7 +7,7 @@ process.on("uncaughtException",  (err)    => { console.error("[uncaughtException
 import cors from "cors";
 import path from "path";
 import { fileURLToPath } from "url";
-import { pool } from "./db/index.js";
+import { pool, poolCA, poolUS, jurisdictionStore } from "./db/index.js";
 import { authRouter }       from "./routes/auth.js";
 import { clientsRouter }    from "./routes/clients.js";
 import { financialRouter } from "./routes/financial.js";
@@ -38,8 +38,10 @@ async function runMigrations() {
     `ALTER TABLE clients ADD COLUMN IF NOT EXISTS birth_year INTEGER`,                       // ← add
   ];
   for (const sql of migrations) {
-    try { await pool.query(sql); }
-    catch (e: any) { console.error("[migration]", sql, e.message); }
+    for (const p of [poolCA, ...(process.env.DATABASE_URL_US ? [poolUS] : [])]) {
+      try { await p.query(sql); }
+      catch (e: any) { console.error("[migration]", sql, e.message); }
+    }
   }
   console.log("[migrations] done");
 }
@@ -50,6 +52,24 @@ app.use(cors({
   credentials: true,
 }));
 app.use(express.json({ limit: "10mb" }));
+
+// ── Jurisdiction context middleware ────────────────────────────────────────────
+// Lightweight JWT peek (no sig verification) — sets AsyncLocalStorage so the
+// `db` proxy routes to the correct Postgres instance before any handler runs.
+app.use((req: any, _res: any, next: any) => {
+  let jur: "CA" | "US" = "CA";
+  try {
+    const h = req.headers.authorization;
+    if (h?.startsWith("Bearer ")) {
+      const raw = h.slice(7).split(".")[1];
+      if (raw) {
+        const payload = JSON.parse(Buffer.from(raw, "base64url").toString());
+        if (payload.jur === "US") jur = "US";
+      }
+    }
+  } catch { /* ignore — defaults to CA */ }
+  jurisdictionStore.run(jur, next);
+});
 app.get("/api/health",  (_req, res) => res.json({ ok: true }));
 app.use("/api/auth",    authRouter);
 app.use("/api",         goalsRouter);

@@ -1158,7 +1158,7 @@ export default function App() {
         <header className="flex-shrink-0 h-12 bg-white/60 backdrop-blur-md border-b border-slate-200/80 flex items-center px-5 justify-between relative z-10">
           <div className="flex items-center gap-3">
            <span className="text-[11px] font-bold tracking-[0.14em] uppercase text-brand-gradient border-r border-slate-200 pr-3 mr-1">
-             Knights of Columbus
+             BrokersEdge
           </span>
             {client && (
               <>

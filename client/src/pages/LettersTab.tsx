@@ -39,7 +39,7 @@ Hello ${n},
 
 Thank you for taking the time to meet with me to discuss your financial security and the well-being of your loved ones. I am pleased to confirm that you have taken a significant step toward securing your family's future by implementing the insurance coverage we discussed.
 
-When we met, I recommended that you purchase a <<TYPE OF POLICY>> insurance policy with a face amount of <<FACE AMOUNT>>, issued by the Knights of Columbus.
+When we met, I recommended that you purchase a <<TYPE OF POLICY>> insurance policy with a face amount of <<FACE AMOUNT>>, issued by the BrokersEdge.
 
 You shared with me that <<CLIENT CIRCUMSTANCES — e.g., you are focused on ensuring your family is financially protected, particularly given the recent birth of your second child and your new mortgage>>.
 
@@ -54,11 +54,11 @@ Please keep this letter with your personal papers as a reminder of why you have 
 Thank you,
 
 <<AGENT FULL NAME>>
-Field Agent — Knights of Columbus, Mullin Agency
+Field Agent — BrokersEdge
 
 <<AGENT PHONE>>  |  <<AGENT EMAIL>>
 
-Knights of Columbus — Mullin Agency  |  Confidential — For Member Use Only  |  RW-01`,
+BrokersEdge  |  Confidential — For Member Use Only  |  RW-01`,
 
   rw02: (n, d) => `${d}
 
@@ -66,7 +66,7 @@ Hello ${n},
 
 Thank you for meeting with me to discuss your financial future and for taking steps to ensure your loved ones are protected. I am pleased to confirm that you have taken a significant step toward securing your family's future by implementing some of the insurance coverage we discussed.
 
-We discussed two products: a <<POLICY A TYPE>> and a <<POLICY B TYPE>>. You have chosen to proceed with the <<POLICY A TYPE>> with a face amount of <<FACE AMOUNT>>, issued by the Knights of Columbus.
+We discussed two products: a <<POLICY A TYPE>> and a <<POLICY B TYPE>>. You have chosen to proceed with the <<POLICY A TYPE>> with a face amount of <<FACE AMOUNT>>, issued by the BrokersEdge.
 
 This decision aligns with your current circumstances, particularly since <<CLIENT CIRCUMSTANCES AND REASON — e.g., your primary concern is building an inheritance for your children in a tax-efficient manner, while also securing additional coverage for unforeseen circumstances>>.
 
@@ -81,11 +81,11 @@ Please keep this letter with your personal papers as a reminder of why you have 
 Thank you,
 
 <<AGENT FULL NAME>>
-Field Agent — Knights of Columbus, Mullin Agency
+Field Agent — BrokersEdge
 
 <<AGENT PHONE>>  |  <<AGENT EMAIL>>
 
-Knights of Columbus — Mullin Agency  |  Confidential — For Member Use Only  |  RW-02`,
+BrokersEdge  |  Confidential — For Member Use Only  |  RW-02`,
 
   rw03: (n, d) => `${d}
 
@@ -108,11 +108,11 @@ Please keep this letter with your personal papers as a record of our discussion.
 Thank you,
 
 <<AGENT FULL NAME>>
-Field Agent — Knights of Columbus, Mullin Agency
+Field Agent — BrokersEdge
 
 <<AGENT PHONE>>  |  <<AGENT EMAIL>>
 
-Knights of Columbus — Mullin Agency  |  Confidential — For Member Use Only  |  RW-03`,
+BrokersEdge  |  Confidential — For Member Use Only  |  RW-03`,
 
   rw04: (n, d) => `${d}
 
@@ -120,7 +120,7 @@ Hello ${n},
 
 Thank you for taking the steps to enhance your financial security by implementing the insurance strategy we discussed. I am pleased to confirm that you have chosen to include the Modified Additional Deposit Paid-Up Additions (MADPUA) rider in your policy.
 
-When we met, you decided to purchase a <<TYPE OF POLICY>> insurance policy with a face amount of <<FACE AMOUNT>>, issued by the Knights of Columbus.
+When we met, you decided to purchase a <<TYPE OF POLICY>> insurance policy with a face amount of <<FACE AMOUNT>>, issued by the BrokersEdge.
 
 You shared with me that <<CLIENT CIRCUMSTANCES — e.g., you are focused on ensuring your family is financially protected, particularly given the recent birth of your second child and your new mortgage>>.
 
@@ -130,7 +130,7 @@ By utilizing the MADPUA rider, you are accelerating your policy's cash value gro
 
 Important Information
 
-Dividends: While dividends play a crucial role in the performance of your policy, they are not guaranteed. The Knights of Columbus is a direct recognition company, which means that any outstanding policy loans will affect how dividends are credited to your policy.
+Dividends: While dividends play a crucial role in the performance of your policy, they are not guaranteed. The BrokersEdge is a direct recognition company, which means that any outstanding policy loans will affect how dividends are credited to your policy.
 
 Policy Loans: Loans taken against your policy up to the adjusted cost basis (ACB) are generally received on a tax-free basis under current tax rules. However, exceeding the ACB or allowing the policy to lapse while a loan is outstanding may trigger a taxable event. Repaying policy loans in a timely manner helps maintain your coverage, avoids potential tax consequences, and ensures funds remain available in the future.
 
@@ -143,11 +143,11 @@ Please keep this letter with your personal papers as a reminder of why you have 
 Thank you,
 
 <<AGENT FULL NAME>>
-Field Agent — Knights of Columbus, Mullin Agency
+Field Agent — BrokersEdge
 
 <<AGENT PHONE>>  |  <<AGENT EMAIL>>
 
-Knights of Columbus — Mullin Agency  |  Confidential — For Member Use Only  |  RW-04`,
+BrokersEdge  |  Confidential — For Member Use Only  |  RW-04`,
 
   rw05: (n, d) => `${d}
 
@@ -155,7 +155,7 @@ Hello ${n},
 
 Thank you for working together to implement a strategy that aligns with your financial goals. I am pleased to confirm that you have chosen to incorporate the High Cash Value Custom Term Blend Rider (CTBR), which is designed to maximize early cash value growth while maintaining long-term flexibility.
 
-When we met, you decided to purchase a <<TYPE OF POLICY>> insurance policy with a face amount of <<FACE AMOUNT>>, issued by the Knights of Columbus.
+When we met, you decided to purchase a <<TYPE OF POLICY>> insurance policy with a face amount of <<FACE AMOUNT>>, issued by the BrokersEdge.
 
 You shared with me that <<CLIENT CIRCUMSTANCES — e.g., you are looking to build accessible cash value quickly while maintaining long-term insurance protection for your family>>.
 
@@ -163,7 +163,7 @@ This policy meets your needs by <<HOW PRODUCT MEETS NEEDS — e.g., allowing you
 
 Important Information
 
-Dividends: Dividends are not guaranteed. The Knights of Columbus is a direct recognition company, which means that any outstanding policy loans will affect how dividends are credited to your policy. Repaying loans in a timely manner will help optimize your policy's performance.
+Dividends: Dividends are not guaranteed. The BrokersEdge is a direct recognition company, which means that any outstanding policy loans will affect how dividends are credited to your policy. Repaying loans in a timely manner will help optimize your policy's performance.
 
 Policy Loans: Loans taken against your policy up to the adjusted cost basis (ACB) are generally received on a tax-free basis under current tax rules. However, exceeding the ACB or allowing the policy to lapse while a loan is outstanding may trigger a taxable event. Repaying policy loans helps maintain your death benefit and avoids potential tax consequences.
 
@@ -178,11 +178,11 @@ Please keep this letter with your personal papers as a reminder of why you have 
 Thank you,
 
 <<AGENT FULL NAME>>
-Financial Advisor — Knights of Columbus, Mullin Agency
+Financial Advisor — BrokersEdge
 
 <<AGENT PHONE>>  |  <<AGENT EMAIL>>
 
-Knights of Columbus — Mullin Agency  |  Confidential — For Member Use Only  |  RW-05`,
+BrokersEdge  |  Confidential — For Member Use Only  |  RW-05`,
 
   rw06: (n, d) => `${d}
 
@@ -190,7 +190,7 @@ Hello ${n},
 
 Congratulations on taking the important step of converting your term insurance into permanent coverage. This decision ensures that your coverage will remain in place for the long term without the concern of term expiration.
 
-When we met, you decided to convert to a <<TYPE OF POLICY>> insurance policy with a face amount of <<FACE AMOUNT>>, issued by the Knights of Columbus.
+When we met, you decided to convert to a <<TYPE OF POLICY>> insurance policy with a face amount of <<FACE AMOUNT>>, issued by the BrokersEdge.
 
 You shared with me that <<CLIENT CIRCUMSTANCES — e.g., your term policy is approaching its renewal period and the premium increase would be significant, so permanent coverage provides stability and long-term value>>.
 
@@ -200,7 +200,7 @@ By incorporating the MADPUA rider, you have taken an additional step to strength
 
 Important Information
 
-Dividends: Dividends are not guaranteed. The Knights of Columbus is a direct recognition company, which means that any outstanding policy loans will affect how dividends are credited to your policy.
+Dividends: Dividends are not guaranteed. The BrokersEdge is a direct recognition company, which means that any outstanding policy loans will affect how dividends are credited to your policy.
 
 Policy Loans: Loans taken against your policy up to the adjusted cost basis (ACB) are generally received on a tax-free basis under current tax rules. However, exceeding the ACB or allowing the policy to lapse while a loan is outstanding may trigger a taxable event. Repaying policy loans helps maintain your coverage and avoids potential tax consequences.
 
@@ -213,11 +213,11 @@ Please keep this letter with your personal papers as a reminder of why you have 
 Thank you,
 
 <<AGENT FULL NAME>>
-Field Agent — Knights of Columbus, Mullin Agency
+Field Agent — BrokersEdge
 
 <<AGENT PHONE>>  |  <<AGENT EMAIL>>
 
-Knights of Columbus — Mullin Agency  |  Confidential — For Member Use Only  |  RW-06`,
+BrokersEdge  |  Confidential — For Member Use Only  |  RW-06`,
 
   rw07: (n, d) => `${d}
 
@@ -225,7 +225,7 @@ Hello ${n},
 
 Thank you for taking the time to meet with me to discuss your financial security. I am pleased to confirm that you have taken a significant step toward protecting your family by implementing the term life insurance coverage we discussed.
 
-I recommended a <<TERM LENGTH — e.g., 20-year>> renewable term life insurance policy with a face amount of <<FACE AMOUNT>>, issued by the Knights of Columbus.
+I recommended a <<TERM LENGTH — e.g., 20-year>> renewable term life insurance policy with a face amount of <<FACE AMOUNT>>, issued by the BrokersEdge.
 
 When we met, you shared that <<CLIENT CIRCUMSTANCES — e.g., you and your spouse are both young and healthy, you recently purchased a home with a 25-year mortgage, and you wanted an affordable option to ensure the mortgage is covered if something happens to you>>.
 
@@ -244,11 +244,11 @@ Please keep this letter with your personal papers as a reminder of why you have 
 Thank you,
 
 <<AGENT FULL NAME>>
-Field Agent — Knights of Columbus, Mullin Agency
+Field Agent — BrokersEdge
 
 <<AGENT PHONE>>  |  <<AGENT EMAIL>>
 
-Knights of Columbus — Mullin Agency  |  Confidential — For Member Use Only  |  RW-07`,
+BrokersEdge  |  Confidential — For Member Use Only  |  RW-07`,
 
   rw08: (n, d) => `${d}
 
@@ -256,7 +256,7 @@ Hello ${n},
 
 Thank you for meeting with me to discuss your long-term care planning. I am pleased to confirm that you have taken an important step to protect yourself and your family by implementing the long-term care insurance coverage we discussed.
 
-I recommended a Long-Term Care insurance policy issued by the Knights of Columbus with a <<DAILY/MONTHLY BENEFIT AMOUNT>> benefit, a <<BENEFIT PERIOD — e.g., 3-year, 5-year, lifetime>> benefit period, and a <<ELIMINATION PERIOD — e.g., 90-day>> elimination period.
+I recommended a Long-Term Care insurance policy issued by the BrokersEdge with a <<DAILY/MONTHLY BENEFIT AMOUNT>> benefit, a <<BENEFIT PERIOD — e.g., 3-year, 5-year, lifetime>> benefit period, and a <<ELIMINATION PERIOD — e.g., 90-day>> elimination period.
 
 When we met, you shared that <<CLIENT CIRCUMSTANCES — e.g., you are approaching retirement and want to ensure that if you require extended care, the cost does not deplete your retirement savings or become a burden on your children>>.
 
@@ -275,11 +275,11 @@ Please keep this letter with your personal papers as a reminder of why you have 
 Thank you,
 
 <<AGENT FULL NAME>>
-Field Agent — Knights of Columbus, Mullin Agency
+Field Agent — BrokersEdge
 
 <<AGENT PHONE>>  |  <<AGENT EMAIL>>
 
-Knights of Columbus — Mullin Agency  |  Confidential — For Member Use Only  |  RW-08`,
+BrokersEdge  |  Confidential — For Member Use Only  |  RW-08`,
 
   rw10: (n, d) => `${d}
 
@@ -287,7 +287,7 @@ Hello ${n},
 
 Thank you for meeting with me to discuss the protection of your most important financial asset — your ability to earn an income. I am pleased to confirm that you have taken an important step by implementing the disability income insurance we discussed.
 
-I recommended a Disability Income insurance policy issued by the Knights of Columbus with a monthly benefit of <<MONTHLY BENEFIT AMOUNT>>, a <<WAITING PERIOD — e.g., 90-day>> waiting period, and a <<BENEFIT PERIOD — e.g., to age 65, 5-year>> benefit period.
+I recommended a Disability Income insurance policy issued by the BrokersEdge with a monthly benefit of <<MONTHLY BENEFIT AMOUNT>>, a <<WAITING PERIOD — e.g., 90-day>> waiting period, and a <<BENEFIT PERIOD — e.g., to age 65, 5-year>> benefit period.
 
 When we met, you shared that <<CLIENT CIRCUMSTANCES — e.g., you are the primary income earner for your family with a gross annual income of approximately $85,000. You are concerned that a prolonged illness or injury could prevent you from working and meeting your family's financial obligations>>.
 
@@ -306,11 +306,11 @@ Please keep this letter with your personal papers as a reminder of why you have 
 Thank you,
 
 <<AGENT FULL NAME>>
-Field Agent — Knights of Columbus, Mullin Agency
+Field Agent — BrokersEdge
 
 <<AGENT PHONE>>  |  <<AGENT EMAIL>>
 
-Knights of Columbus — Mullin Agency  |  Confidential — For Member Use Only  |  RW-10`,
+BrokersEdge  |  Confidential — For Member Use Only  |  RW-10`,
 
   rw11: (n, d) => `${d}
 
@@ -318,7 +318,7 @@ Hello ${n},
 
 Thank you for meeting with me to discuss your retirement income planning. I am pleased to confirm that you have taken an important step toward securing your financial future by implementing the annuity we discussed.
 
-You decided to purchase a <<TYPE OF ANNUITY — e.g., Single Premium Deferred Annuity, Flexible Premium Annuity>> with the Knights of Columbus, with a <<PREMIUM/DEPOSIT AMOUNT>>.
+You decided to purchase a <<TYPE OF ANNUITY — e.g., Single Premium Deferred Annuity, Flexible Premium Annuity>> with the BrokersEdge, with a <<PREMIUM/DEPOSIT AMOUNT>>.
 
 When we met, you shared that <<CLIENT CIRCUMSTANCES — e.g., you are nearing retirement and want to ensure you have a guaranteed income stream that you cannot outlive, supplementing your pension and government benefits>>.
 
@@ -341,11 +341,11 @@ Please keep this letter with your personal papers as a reminder of why you have 
 Thank you,
 
 <<AGENT FULL NAME>>
-Financial Advisor — Knights of Columbus, Mullin Agency
+Financial Advisor — BrokersEdge
 
 <<AGENT PHONE>>  |  <<AGENT EMAIL>>
 
-Knights of Columbus — Mullin Agency  |  Confidential — For Member Use Only  |  RW-11`,
+BrokersEdge  |  Confidential — For Member Use Only  |  RW-11`,
 
   rw12: (n, d) => `${d}
 
@@ -359,7 +359,7 @@ Settlement Options Discussed
 
 <<OPTION 1 — e.g., Lump Sum Payment: Receive the full benefit amount as a single payment. This provides immediate access to the funds but places the responsibility of investment and management with you.>>
 
-<<OPTION 2 — e.g., Interest Only: The benefit amount remains on deposit with the Knights of Columbus and earns interest. You receive periodic interest payments while preserving the principal for future use or distribution.>>
+<<OPTION 2 — e.g., Interest Only: The benefit amount remains on deposit with the BrokersEdge and earns interest. You receive periodic interest payments while preserving the principal for future use or distribution.>>
 
 <<OPTION 3 — e.g., Fixed Period Income: The benefit is paid out in equal installments over a fixed number of years, providing a regular income stream for a defined period.>>
 
@@ -378,11 +378,11 @@ Please keep this letter with your personal papers as a record of our discussion 
 Thank you,
 
 <<AGENT FULL NAME>>
-Field Agent — Knights of Columbus, Mullin Agency
+Field Agent — BrokersEdge
 
 <<AGENT PHONE>>  |  <<AGENT EMAIL>>
 
-Knights of Columbus — Mullin Agency  |  Confidential — For Member Use Only  |  RW-12`,
+BrokersEdge  |  Confidential — For Member Use Only  |  RW-12`,
 };
 
 export function LettersTab({ clientId, client }: { clientId: number; client?: Client }) {

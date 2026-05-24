@@ -1,4 +1,4 @@
-import type { T } from "../i18n/translations";
+import { translations, type T } from "../i18n/translations";
 import { toast } from "@/hooks/use-toast";
 import { useState, useEffect, useMemo } from "react";
 import { api } from "../lib/api";
@@ -34,41 +34,41 @@ interface Goal {
   fundingSource: string | null;
 }
 
-// ── Goal type config ─────────────────────────────────────────────────────────
+// ── Goal type config (functions so t is available) ───────────────────────────
 
-const GOAL_TYPES = [
-  { key: "major_purchase",    label: t.goals.majorPurchase,     icon: Home,        cashflowType: "outflow",           desc: t.goals.majorPurchaseDesc },
-  { key: "windfall",          label: t.goals.windfall,  icon: TrendingUp,  cashflowType: "inflow",            desc: t.goals.windfallDesc },
-  { key: "education",         label: t.goals.education,   icon: GraduationCap, cashflowType: "savings_target",  desc: t.goals.educationDesc },
-  { key: "emergency_fund",    label: t.goals.emergencyFund,     icon: Shield,      cashflowType: "savings_target",    desc: t.goals.emergencyFundDesc },
+function makeGoalTypes(t: T) { return [
+  { key: "major_purchase",    label: t.goals.majorPurchase,   icon: Home,        cashflowType: "outflow",           desc: t.goals.majorPurchaseDesc },
+  { key: "windfall",          label: t.goals.windfall,        icon: TrendingUp,  cashflowType: "inflow",            desc: t.goals.windfallDesc },
+  { key: "education",         label: t.goals.education,       icon: GraduationCap, cashflowType: "savings_target",  desc: t.goals.educationDesc },
+  { key: "emergency_fund",    label: t.goals.emergencyFund,   icon: Shield,      cashflowType: "savings_target",    desc: t.goals.emergencyFundDesc },
   { key: "travel_lifestyle",  label: t.goals.travelLifestyle, icon: Plane,       cashflowType: "recurring_expense", desc: t.goals.travelDesc },
-  { key: "debt_free",         label: t.goals.debtFree,          icon: TrendingDown, cashflowType: "outflow",          desc: t.goals.debtFreeDesc },
-  { key: "retirement",        label: t.goals.retirement,         icon: Star,        cashflowType: "savings_target",    desc: t.goals.retirementDesc },
-  { key: "custom",            label: t.goals.customGoal,        icon: Target,      cashflowType: "savings_target",    desc: t.goals.customGoalDesc },
-];
+  { key: "debt_free",         label: t.goals.debtFree,        icon: TrendingDown, cashflowType: "outflow",          desc: t.goals.debtFreeDesc },
+  { key: "retirement",        label: t.goals.retirement,      icon: Star,        cashflowType: "savings_target",    desc: t.goals.retirementDesc },
+  { key: "custom",            label: t.goals.customGoal,      icon: Target,      cashflowType: "savings_target",    desc: t.goals.customGoalDesc },
+]; }
 
-const FUNDING_SOURCES = [
-  { key: "non_reg", label: t.goals.nonRegistered },
-  { key: "tfsa",    label: "TFSA" },
-  { key: "rrsp",    label: "RRSP" },
-  { key: "cash",    label: t.goals.cashSavings },
+function makeFundingSources(t: T) { return [
+  { key: "non_reg",   label: t.goals.nonRegistered },
+  { key: "tfsa",      label: "TFSA" },
+  { key: "rrsp",      label: "RRSP" },
+  { key: "cash",      label: t.goals.cashSavings },
   { key: "automatic", label: t.goals.autoEngine },
-];
+]; }
 
-const PRIORITY_LABELS: Record<number, { label: string; color: string }> = {
-  1: { label: t.common.critical,      color: "text-rose-600   bg-rose-50   border-rose-200"   },
-  2: { label: t.common.high,          color: "text-amber-600  bg-amber-50  border-amber-200"  },
-  3: { label: t.common.medium,        color: "text-blue-600   bg-blue-50   border-blue-200"   },
-  4: { label: t.common.low,           color: "text-slate-600  bg-slate-100 border-slate-200"  },
-  5: { label: t.common.niceToHave,  color: "text-slate-500  bg-slate-50  border-slate-200"  },
-};
+function makePriorityLabels(t: T): Record<number, { label: string; color: string }> { return {
+  1: { label: t.common.critical,   color: "text-rose-600   bg-rose-50   border-rose-200"   },
+  2: { label: t.common.high,       color: "text-amber-600  bg-amber-50  border-amber-200"  },
+  3: { label: t.common.medium,     color: "text-blue-600   bg-blue-50   border-blue-200"   },
+  4: { label: t.common.low,        color: "text-slate-600  bg-slate-100 border-slate-200"  },
+  5: { label: t.common.niceToHave, color: "text-slate-500  bg-slate-50  border-slate-200"  },
+}; }
 
-const STATUS_CONFIG: Record<string, { label: string; dot: string }> = {
+function makeStatusConfig(t: T): Record<string, { label: string; dot: string }> { return {
   in_progress: { label: t.common.inProgress, dot: "bg-blue-500" },
   on_track:    { label: t.common.onTrack,    dot: "bg-green-500" },
   at_risk:     { label: t.common.atRisk,     dot: "bg-amber-500" },
   completed:   { label: t.goals.completed,   dot: "bg-gray-400" },
-};
+}; }
 
 const CURRENT_YEAR = new Date().getFullYear();
 
@@ -689,6 +689,10 @@ function GoalsSummary({ goals }: { goals: Goal[] }) {
 // ── Main Component ───────────────────────────────────────────────────────────
 
 export function GoalsTab({ clientId, client, t = translations.en }: { clientId: number; client?: any; t?: T }) {
+  const GOAL_TYPES      = makeGoalTypes(t);
+  const FUNDING_SOURCES = makeFundingSources(t);
+  const PRIORITY_LABELS = makePriorityLabels(t);
+  const STATUS_CONFIG   = makeStatusConfig(t);
   const [goals, setGoals]       = useState<Goal[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [editingGoal, setEditingGoal] = useState<Goal | null>(null);

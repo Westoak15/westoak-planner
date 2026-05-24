@@ -104,7 +104,6 @@ function Field({
 export default function Login({ isGaPortal = false }: { isGaPortal?: boolean }) {
   const { login, register } = useAuth();
   const { t } = useTranslation();
-  const { t } = useTranslation();
   const [mode, setMode]         = useState<Mode>("login");
   const [mfaToken, setMfaToken]  = useState<string | null>(null);
   const [mfaCode, setMfaCode]    = useState("");

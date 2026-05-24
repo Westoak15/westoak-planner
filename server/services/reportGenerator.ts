@@ -1764,7 +1764,7 @@ export function generateFinancialPlanReport(data: {
     <div class="metric-card navy">
       <div class="metric-label">${locale === "fr" ? "Score global" : "Overall Score"}</div>
       <div class="metric-value" style="font-size:32px">${es.score ?? "—"}/5</div>
-      <div class="metric-sub">${locale === "fr" ? "Cote de santé du plan" : ${locale === "fr" ? "Cote de santé du plan" : "Plan health rating"}}</div>
+      <div class="metric-sub">${locale === "fr" ? "Cote de santé du plan" : "Plan health rating"}</div>
     </div>
     <div class="metric-card">
       <div class="metric-label">${L.netWorth}</div>
@@ -1796,7 +1796,7 @@ export function generateFinancialPlanReport(data: {
   <div class="section-header">
     <div class="section-eyebrow">${locale === "fr" ? "Focus immédiat" : "Immediate Focus"}</div>
     <div class="section-title-lg">${locale === "fr" ? "Actions prioritaires" : "Top Priority Actions"}</div>
-    <div class="section-subtitle">${locale === "fr" ? "Classées par impact — mettre en œuvre dans l'ordre" : "Ranked by impact — implement in order"}</div>
+    <div class="section-subtitle">${locale === "fr" ? "Classées par impact — implémenter dans l’ordre" : "Ranked by impact — implement in order"}</div>
   </div>
   ${actions.map((a: any) => `
   <div style="display:flex;gap:16px;padding:12px 16px;border-radius:8px;border:1px solid #e5e7eb;margin-bottom:10px;page-break-inside:avoid;">

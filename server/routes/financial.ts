@@ -23,6 +23,7 @@ import {
 } from "../../shared/schema.js";
 import { isAuthenticated, type AuthRequest } from "../auth/index.js";
 import { safe, ownsClient, ownsPlan } from "../fpUtils.js";
+import { auditAnthropicCall, auditWrite, AuditAction, DataCategory } from "../services/pipedaAuditService.js";
 import { eq, and } from "drizzle-orm";
 import { runDrawdownStrategies, type DrawdownInput } from "../engine/drawdown.js";
 
@@ -1107,6 +1108,23 @@ r.post("/clients/:clientId/financial-plan-report", async (req: AuthRequest, res:
     if (!plan) return res.status(400).json({ message: "plan is required" });
     const [clientRow] = await db.select().from(clients).where(eq(clients.id, cid));
     if (!clientRow) return res.status(404).json({ message: "Client not found" });
+
+    // PIPEDA: log report generation (client data rendered and sent to browser)
+    await auditWrite({
+      userId:       req.userId,
+      action:       AuditAction.REPORT_PRINTED,
+      resourceType: "financial_plan_report",
+      clientId:     cid,
+      dataCategories: [
+        DataCategory.PERSONAL_INFO, DataCategory.INCOME, DataCategory.NET_WORTH,
+        DataCategory.RETIREMENT,    DataCategory.INSURANCE,
+      ].join(",") as any,
+      purposeCode:    "financial_plan_report",
+      ipAddress:      req.ip,
+      correlationId:  (req as any).id,
+      jurisdiction:   req.userJurisdiction ?? "CA",
+    });
+
     const { generateFinancialPlanReport } = await import("../services/reportGenerator.js") as any;
     const html = generateFinancialPlanReport({ plan, client: clientRow });
     res.setHeader("Content-Type", "text/html; charset=utf-8");
@@ -1118,6 +1136,19 @@ r.post("/clients/:clientId/generate-plan", async (req: AuthRequest, res: Respons
   const cid = +req.params.clientId;
   if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
   try {
+    // PIPEDA: log before sending data to Anthropic
+    await auditAnthropicCall({
+      req, action: AuditAction.AI_FINANCIAL_PLAN,
+      clientId:       cid,
+      dataCategories: [
+        DataCategory.PERSONAL_INFO, DataCategory.INCOME, DataCategory.NET_WORTH,
+        DataCategory.RETIREMENT,    DataCategory.INSURANCE, DataCategory.DEBT,
+        DataCategory.TAX,           DataCategory.ESTATE,    DataCategory.EDUCATION,
+        DataCategory.GOALS,         DataCategory.PENSION,
+      ],
+      purposeCode: "financial_plan",
+    });
+
     const [clientRows, nw, ret, ins, edu, debt, tax, estate, goals, pensions] = await Promise.all([
       db.select().from(clients).where(eq(clients.id, cid)),
       db.select().from(netWorthEntries).where(eq(netWorthEntries.clientId, cid)),

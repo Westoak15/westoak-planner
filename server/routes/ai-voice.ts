@@ -17,6 +17,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import OpenAI, { toFile } from "openai";
 import multer from "multer";
 import { isAuthenticated, type AuthRequest } from "../auth/index.js";
+import { auditAnthropicCall, auditOpenAiCall, AuditAction, DataCategory } from "../services/pipedaAuditService.js";
 
 const r = Router();
 
@@ -62,11 +63,19 @@ r.post("/transcribe", upload.single("audio"), async (req: AuthRequest, res: Resp
     const result = await openai.audio.transcriptions.create({
       model:    "whisper-1",
       file:     audioFile,
-      language: "en",           // Canadian English — keep forced; omit to auto-detect
+      language: "en",
+    });
+
+    await auditOpenAiCall({
+      req, action: AuditAction.AI_TRANSCRIPTION,
+      clientId:       undefined,
+      dataCategories: [DataCategory.MEETING_AUDIO],
+      purposeCode:    "transcription",
     });
 
     res.json({ transcript: result.text });
   } catch (err) {
+    await auditOpenAiCall({ req, action: AuditAction.AI_TRANSCRIPTION, dataCategories: [DataCategory.MEETING_AUDIO], purposeCode: "transcription", outcome: "error", errorMessage: String(err) }).catch(() => {});
     console.error("transcribe error:", err);
     res.status(500).json({ message: "Transcription failed" });
   }
@@ -78,13 +87,20 @@ r.post("/transcribe", upload.single("audio"), async (req: AuthRequest, res: Resp
 // Returns structured planning summary (JSON)
 // ─────────────────────────────────────────────────────────────────────────────
 r.post("/meeting-summary", async (req: AuthRequest, res: Response) => {
-  const { transcript } = req.body as { transcript: string; clientId: number };
+  const { transcript, clientId } = req.body as { transcript: string; clientId?: number };
 
   if (!transcript?.trim()) {
     return res.status(400).json({ message: "transcript is required" });
   }
 
   try {
+    await auditAnthropicCall({
+      req, action: AuditAction.AI_MEETING_SUMMARY,
+      clientId:       clientId ? +clientId : undefined,
+      dataCategories: [DataCategory.TRANSCRIPT, DataCategory.PERSONAL_INFO],
+      purposeCode:    "meeting_summary",
+    });
+
     const message = await anthropic.messages.create({
       model:      "claude-sonnet-4-6",
       max_tokens: 1024,
@@ -178,6 +194,12 @@ r.post("/intake-transcript", async (req: AuthRequest, res: Response) => {
   if (!transcript?.trim()) return res.status(400).json({ message: "transcript is required" });
 
   try {
+    await auditAnthropicCall({
+      req, action: AuditAction.AI_INTAKE_EXTRACT,
+      dataCategories: [DataCategory.TRANSCRIPT, DataCategory.PERSONAL_INFO, DataCategory.INCOME],
+      purposeCode:    "intake_extract",
+    });
+
     const message = await anthropic.messages.create({
       model:      "claude-sonnet-4-6",
       max_tokens: 1024,
@@ -225,6 +247,12 @@ r.post("/needs-analysis-transcript", async (req: AuthRequest, res: Response) => 
   if (!transcript?.trim()) return res.status(400).json({ message: "transcript is required" });
 
   try {
+    await auditAnthropicCall({
+      req, action: AuditAction.AI_NEEDS_ANALYSIS,
+      dataCategories: [DataCategory.TRANSCRIPT, DataCategory.INCOME, DataCategory.INSURANCE, DataCategory.PERSONAL_INFO],
+      purposeCode:    "needs_analysis",
+    });
+
     const message = await anthropic.messages.create({
       model:      "claude-sonnet-4-6",
       max_tokens: 1024,

@@ -3,6 +3,11 @@ import { Router } from "express";
 import { db, getDb }    from "../db/index.js";
 import { signMfaToken } from "./mfa.js";
 import { auditAuth, AuditAction } from "../services/pipedaAuditService.js";
+
+// Derive locale from province — QC forces French
+function localeFromProvince(province?: string | null): "en" | "fr" {
+  return province?.toUpperCase() === "QC" ? "fr" : "en";
+}
 import { users, insertUserSchema } from "../../shared/schema.js";
 import {
   hashPassword, checkPassword, signToken, validatePassword,

@@ -632,7 +632,7 @@ function ClientsTab({ onSelect }: { onSelect: (c: Client) => void }) {
 // ─────────────────────────────────────────────────────────────────────────────
 // Client Detail — shown when a client is selected (name, family, plans)
 // ─────────────────────────────────────────────────────────────────────────────
-function ClientDetail({ client, onBack, onPlanSelect, onUpdate, onLocaleChange, level }: { client: Client; onBack: () => void; onPlanSelect: (p: Plan) => void; onUpdate: (c: Client) => void; onLocaleChange: (l: ClientLocale) => void; level?: string }) {
+function ClientDetail({ client, onBack, onPlanSelect, onUpdate, onLocaleChange, t = translations.en, level }: { client: Client; onBack: () => void; onPlanSelect: (p: Plan) => void; onUpdate: (c: Client) => void; onLocaleChange: (l: ClientLocale) => void; t?: T; level?: string }) {
   const [plans, setPlans]       = useState<Plan[]>([]);
   const [editing, setEditing]   = useState(false);
   const [form, setForm]         = useState<Partial<Client>>({ ...client });
@@ -834,25 +834,25 @@ function ClientDetail({ client, onBack, onPlanSelect, onUpdate, onLocaleChange, 
                 <Input label="Last Name"   value={form.lastName ?? ""}  onChange={v => u("lastName", v)} />
                 <Input label="Email" type="email" value={form.email ?? ""} onChange={v => u("email", v)} />
                 <Input label="Phone"       value={form.phone ?? ""}     onChange={v => u("phone", v)} />
-                <DobInput label="Date of Birth" value={form.dateOfBirth ?? ""} onChange={v => u("dateOfBirth", v)} />
+                <DobInput label={t.client.dateOfBirth} value={form.dateOfBirth ?? ""} onChange={v => u("dateOfBirth", v)} />
                 <Select label={regionLabel} value={form.province ?? defaultRegion} onChange={v => u("province", v)} options={regions} />
-                <Input label="Occupation"  value={form.occupation ?? ""} onChange={v => u("occupation", v)} />
-                <Input label="Annual Income" type="number" value={form.annualIncome ?? ""} onChange={v => u("annualIncome", v)} />
-                <Select label="Pension Type" value={(form as any).pensionType ?? ""} onChange={v => u("pensionType", v)} options={["", "DBPP", "DCPP", "Group RRSP", "DPSP", "No Pension"]} />
-                <Input label="Retirement Age" type="number" value={String(form.retirementAge ?? "")} onChange={v => u("retirementAge", +v)} />
-                <Input label="Desired Retirement Income" type="number" value={form.desiredRetirementIncome ?? ""} onChange={v => u("desiredRetirementIncome", v)} />
+                <Input label={t.client.occupation}  value={form.occupation ?? ""} onChange={v => u("occupation", v)} />
+                <Input label={t.client.annualIncome} type="number" value={form.annualIncome ?? ""} onChange={v => u("annualIncome", v)} />
+                <Select label={t.client.pensionType} value={(form as any).pensionType ?? ""} onChange={v => u("pensionType", v)} options={["", "DBPP", "DCPP", "Group RRSP", "DPSP", "No Pension"]} />
+                <Input label={t.client.retirementAge} type="number" value={String(form.retirementAge ?? "")} onChange={v => u("retirementAge", +v)} />
+                <Input label={t.client.desiredIncome} type="number" value={form.desiredRetirementIncome ?? ""} onChange={v => u("desiredRetirementIncome", v)} />
               </div>
             }
             view={
               <dl className="grid grid-cols-2 gap-y-3 gap-x-6">
                 <ExecField label="Email"          value={client.email}                     onSave={v => inlinePatch({ email: v })} />
                 <ExecField label="Phone"          value={client.phone}                     onSave={v => inlinePatch({ phone: v })} />
-                <ExecField label="Date of Birth"  value={client.dateOfBirth}               onSave={v => inlinePatch({ dateOfBirth: v })} />
-                <ExecField label="Province"       value={client.province}                  onSave={v => inlinePatch({ province: v })} />
-                <ExecField label="Occupation"     value={client.occupation}                onSave={v => inlinePatch({ occupation: v })} />
-                <ExecField label="Annual Income"  value={fmt$(client.annualIncome)} mono   onSave={v => inlinePatch({ annualIncome: v })} type="number" />
+                <ExecField label={t.client.dateOfBirth}  value={client.dateOfBirth}               onSave={v => inlinePatch({ dateOfBirth: v })} />
+                <ExecField label={t.client.province}       value={client.province}                  onSave={v => inlinePatch({ province: v })} />
+                <ExecField label={t.client.occupation}     value={client.occupation}                onSave={v => inlinePatch({ occupation: v })} />
+                <ExecField label={t.client.annualIncome}  value={fmt$(client.annualIncome)} mono   onSave={v => inlinePatch({ annualIncome: v })} type="number" />
                 <ExecField label="Pension"        value={(client as any).pensionType}      onSave={v => inlinePatch({ pensionType: v } as any)} />
-                <ExecField label="Retirement Age" value={client.retirementAge} mono        onSave={v => inlinePatch({ retirementAge: +v })} type="number" />
+                <ExecField label={t.client.retirementAge} value={client.retirementAge} mono        onSave={v => inlinePatch({ retirementAge: +v })} type="number" />
                 <ExecField label="Desired Income" value={fmt$(client.desiredRetirementIncome)} mono onSave={v => inlinePatch({ desiredRetirementIncome: v })} type="number" />
               </dl>
             }
@@ -869,23 +869,23 @@ function ClientDetail({ client, onBack, onPlanSelect, onUpdate, onLocaleChange, 
               editing={editing}
               edit={
                 <div className="grid grid-cols-2 gap-3">
-                  <Input label="Spouse First Name" value={form.spouseFirstName ?? ""} onChange={v => u("spouseFirstName", v)} />
-                  <Input label="Spouse Last Name"  value={form.spouseLastName ?? ""}  onChange={v => u("spouseLastName", v)} />
-                  <DobInput label="Spouse DOB" value={form.spouseDateOfBirth ?? ""} onChange={v => u("spouseDateOfBirth", v)} />
-                  <Input label="Spouse Occupation" value={form.spouseOccupation ?? ""} onChange={v => u("spouseOccupation", v)} />
-                  <Input label="Spouse Income" type="number" value={form.spouseAnnualIncome ?? ""} onChange={v => u("spouseAnnualIncome", v)} />
-                  <Input label="Spouse Retirement Age" type="number" value={String(form.spouseRetirementAge ?? "")} onChange={v => u("spouseRetirementAge", +v)} />
+                  <Input label={t.client.spouseFirstName} value={form.spouseFirstName ?? ""} onChange={v => u("spouseFirstName", v)} />
+                  <Input label={t.client.spouseLastName}  value={form.spouseLastName ?? ""}  onChange={v => u("spouseLastName", v)} />
+                  <DobInput label={t.client.spouseDOB} value={form.spouseDateOfBirth ?? ""} onChange={v => u("spouseDateOfBirth", v)} />
+                  <Input label={t.client.spouseOccupation} value={form.spouseOccupation ?? ""} onChange={v => u("spouseOccupation", v)} />
+                  <Input label={t.client.spouseIncome} type="number" value={form.spouseAnnualIncome ?? ""} onChange={v => u("spouseAnnualIncome", v)} />
+                  <Input label={t.client.spouseRetirementAge} type="number" value={String(form.spouseRetirementAge ?? "")} onChange={v => u("spouseRetirementAge", +v)} />
                   <Select label="Spouse Pension Type" value={(form as any).spousePensionType ?? ""} onChange={v => u("spousePensionType", v)} options={["", "DBPP", "DCPP", "Group RRSP", "DPSP", "No Pension"]} />
                   <Input label="Spouse Desired Income" type="number" value={form.spouseDesiredRetirementIncome ?? ""} onChange={v => u("spouseDesiredRetirementIncome", v)} />
                 </div>
               }
               view={
                 <dl className="grid grid-cols-2 gap-y-3 gap-x-6">
-                  <ExecField label="Date of Birth"  value={client.spouseDateOfBirth}             onSave={v => inlinePatch({ spouseDateOfBirth: v })} />
-                  <ExecField label="Occupation"     value={client.spouseOccupation}               onSave={v => inlinePatch({ spouseOccupation: v })} />
-                  <ExecField label="Annual Income"  value={fmt$(client.spouseAnnualIncome)} mono   onSave={v => inlinePatch({ spouseAnnualIncome: v })} type="number" />
+                  <ExecField label={t.client.dateOfBirth}  value={client.spouseDateOfBirth}             onSave={v => inlinePatch({ spouseDateOfBirth: v })} />
+                  <ExecField label={t.client.occupation}     value={client.spouseOccupation}               onSave={v => inlinePatch({ spouseOccupation: v })} />
+                  <ExecField label={t.client.annualIncome}  value={fmt$(client.spouseAnnualIncome)} mono   onSave={v => inlinePatch({ spouseAnnualIncome: v })} type="number" />
                   <ExecField label="Pension"        value={(client as any).spousePensionType}      onSave={v => inlinePatch({ spousePensionType: v } as any)} />
-                  <ExecField label="Retirement Age" value={client.spouseRetirementAge} mono        onSave={v => inlinePatch({ spouseRetirementAge: +v })} type="number" />
+                  <ExecField label={t.client.retirementAge} value={client.spouseRetirementAge} mono        onSave={v => inlinePatch({ spouseRetirementAge: +v })} type="number" />
                   <ExecField label="Desired Income" value={fmt$(client.spouseDesiredRetirementIncome)} mono />
                 </dl>
               }
@@ -1284,7 +1284,7 @@ export default function App() {
             <ClientsTab onSelect={selectClient} />
           )}
           {tab === "clients" && showClientDetail && client && (
-            <ClientDetail client={client} onBack={backToClients} onPlanSelect={selectPlan} onUpdate={setClient} onLocaleChange={setClientLocale} level={level} />
+            <ClientDetail client={client} onBack={backToClients} onPlanSelect={selectPlan} onUpdate={setClient} onLocaleChange={setClientLocale} t={t} level={level} />
           )}
           {tab !== "agents" && tab !== "clients" && !client && (
             <div className="flex flex-col items-center justify-center h-full text-center p-8">
@@ -1300,26 +1300,26 @@ export default function App() {
           )}
           {tab === "agents"  && <AgentsTab />}
           {tab === "overview" && client && <ClientOverview client={client} onNavigate={(t) => setTab(t as Tab)} />}
-          {tab === "profile"  && client && <ClientDetail client={client} onBack={() => setTab("overview" as Tab)} onPlanSelect={selectPlan} onUpdate={setClient} level={level} />}
+          {tab === "profile"  && client && <ClientDetail client={client} onBack={() => setTab("overview" as Tab)} onPlanSelect={selectPlan} onUpdate={setClient} onLocaleChange={setClientLocale} t={t} level={level} />}
           {tab === "dashboard" && client && <InsightLedDashboard clientId={client.id} client={client} onNavigate={(t) => { const [tabKey, subtab] = t.split(":"); setTab(tabKey as Tab); setNwSubtabHint(subtab); }} />}
 
           {/* ── Merged Insight-Led hubs ─────────────────────────────────────────
               Each hub provides its own dark Insight-Led shell with sub-tabs.
               They render outside PlanningDocFlow because the hub is the shell. */}
           {tab === "protection" && client && (
-            <ProtectionHub clientId={client.id} client={client} person={person} onPersonChange={setPerson} />
+            <ProtectionHub clientId={client.id} client={client} person={person} onPersonChange={setPerson} t={t} />
           )}
           {tab === "retirementhub" && client && (
-            <RetirementHub clientId={client.id} client={client} person={person} onPersonChange={setPerson} />
+            <RetirementHub clientId={client.id} client={client} person={person} onPersonChange={setPerson} t={t} />
           )}
           {tab === "taxestate" && client && (
-            <TaxEstateHub clientId={client.id} client={client} person={person} onPersonChange={setPerson} />
+            <TaxEstateHub clientId={client.id} client={client} person={person} onPersonChange={setPerson} t={t} />
           )}
           {tab === "documents" && client && (
             <DocumentsHub clientId={client.id} client={client} />
           )}
           {tab === "fp" && client && (
-            <FinancialPlanHub clientId={client.id} client={client} />
+            <FinancialPlanHub clientId={client.id} client={client} t={t} />
           )}
 
           {/* ── Simple themed tabs — kept in PlanningDocFlow for voice/recording ── */}
@@ -1358,7 +1358,7 @@ export default function App() {
                 )}
                 {tab === "expenses" && (
                   <QueryClientProvider client={queryClient}>
-                    <ExpensesTab clientId={client.id} addTrigger={tab === "expenses" ? globalAddTrigger : 0} />
+                    <ExpensesTab clientId={client.id} addTrigger={tab === "expenses" ? globalAddTrigger : 0} t={t} />
                   </QueryClientProvider>
                 )}
                 {tab === "ai" && (

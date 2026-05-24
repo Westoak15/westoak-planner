@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { translations, type T } from "../../i18n/translations";
 import { Sparkles, ClipboardList, FileSpreadsheet } from "lucide-react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { HubShell } from "./insightled";
@@ -12,7 +13,7 @@ interface Props {
   client?: any;
 }
 
-export function FinancialPlanHub({ clientId, client }: Props) {
+export function FinancialPlanHub({ clientId, client, t = translations.en }: Props) {
   const [subtab, setSubtab] = useState<"summary" | "workflow">("summary");
 
   return (
@@ -36,7 +37,7 @@ export function FinancialPlanHub({ clientId, client }: Props) {
       >
         <div className={subtab === "summary" ? "p-6" : ""}>
           {subtab === "summary" && (
-            <FinancialPlanTab clientId={clientId} clientName={client?.firstName} />
+            <FinancialPlanTab t={t} clientId={clientId} clientName={client?.firstName} />
           )}
           {subtab === "workflow" && (
             <FinancialPlanningContent initialClientId={clientId} />

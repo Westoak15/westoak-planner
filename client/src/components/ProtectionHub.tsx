@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { translations, type T } from "../../i18n/translations";
 import { Shield, FileHeart, Calendar, } from "lucide-react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { HubShell } from "./insightled";
@@ -33,7 +34,7 @@ function annualPremium(p: Policy): number {
   return v * (mult[p.premiumFrequency] ?? 12);
 }
 
-export function ProtectionHub({ clientId, client, person, onPersonChange }: Props) {
+export function ProtectionHub({ clientId, client, person, onPersonChange, t = translations.en }: Props) {
   const [subtab, setSubtab] = useState<"coverage" | "gap">("coverage");
   const [policies, setPolicies] = useState<Policy[]>([]);
 
@@ -53,28 +54,28 @@ export function ProtectionHub({ clientId, client, person, onPersonChange }: Prop
     <QueryClientProvider client={queryClient}>
       <HubShell
         icon={Shield}
-        title="Protection"
+        title={t.insurance.title}
         subtitle={
           <>
             <span className="flex items-center gap-1.5">
               <Calendar className="w-3.5 h-3.5" /> {policies.length} active {policies.length === 1 ? "policy" : "policies"}
             </span>
             <span>•</span>
-            <span>Annual premium {fmt$(totalPremium)}</span>
+            <span>t.insurance.subtitle {fmt$(totalPremium)}</span>
           </>
         }
         
         subtabs={[
           {
             key: "coverage",
-            label: "Coverage",
+            label: {t.insurance.coverage},
             icon: Shield,
             badge: String(policies.length),
             badgeTone: "cyan",
           },
           {
             key: "gap",
-            label: "Gap Analysis",
+            label: {t.insurance.gapAnalysis},
             icon: FileHeart,
             badgeTone: "amber",
           },

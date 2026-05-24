@@ -1764,29 +1764,29 @@ export function generateFinancialPlanReport(data: {
     <div class="metric-card navy">
       <div class="metric-label">${locale === "fr" ? "Score global" : "Overall Score"}</div>
       <div class="metric-value" style="font-size:32px">${es.score ?? "—"}/5</div>
-      <div class="metric-sub">${locale === "fr" ? "Cote de santé du plan" : "Plan health rating"}</div>
+      <div class="metric-sub">${locale === "fr" ? "Cote de santé du plan" : ${locale === "fr" ? "Cote de santé du plan" : "Plan health rating"}}</div>
     </div>
     <div class="metric-card">
-      <div class="metric-label">Net Worth</div>
+      <div class="metric-label">${L.netWorth}</div>
       <div class="metric-value">${fmtCad(Number(plan.dataSnapshot?.netWorth ?? 0))}</div>
-      <div class="metric-sub">Current position</div>
+      <div class="metric-sub">${locale === "fr" ? "Position actuelle" : "Current position"}</div>
     </div>
     <div class="metric-card">
-      <div class="metric-label">Total Debt</div>
+      <div class="metric-label">${L.totalDebt ?? (locale === "fr" ? "Total des dettes" : "Total Debt")}</div>
       <div class="metric-value">${fmtCad(Number(plan.dataSnapshot?.totalDebt ?? 0))}</div>
-      <div class="metric-sub">Outstanding obligations</div>
+      <div class="metric-sub">${locale === "fr" ? "Obligations en cours" : "Outstanding obligations"}</div>
     </div>
     <div class="metric-card ${(plan.dataSnapshot?.successRate ?? 0) >= 85 ? "green" : (plan.dataSnapshot?.successRate ?? 0) >= 70 ? "amber" : "red"}">
-      <div class="metric-label">Retirement Success</div>
+      <div class="metric-label">${locale === "fr" ? "Succès retraite" : "Retirement Success"}</div>
       <div class="metric-value">${plan.dataSnapshot?.successRate != null ? plan.dataSnapshot.successRate.toFixed(0) + "%" : "—"}</div>
-      <div class="metric-sub">Monte Carlo probability</div>
+      <div class="metric-sub">${locale === "fr" ? "Probabilité Monte-Carlo" : "Monte Carlo probability"}</div>
     </div>
   </div>
   <div class="callout info">
     <strong>${esc(es.headline ?? "")}</strong>
   </div>
   <div class="doc-footer">
-    <span>${esc(firm)} — Confidential</span><span>${esc(name)} — Financial Plan — ${esc(dateStr)}</span>
+    <span>${esc(firm)} — ${locale === "fr" ? "Confidentiel" : "Confidential"}</span><span>${esc(name)} — Financial Plan — ${esc(dateStr)}</span>
   </div>
 </div>`;
 
@@ -1794,9 +1794,9 @@ export function generateFinancialPlanReport(data: {
   const priorityActionsHtml = actions.length > 0 ? `
 <div class="section">
   <div class="section-header">
-    <div class="section-eyebrow">Immediate Focus</div>
-    <div class="section-title-lg">Top Priority Actions</div>
-    <div class="section-subtitle">Ranked by impact — implement in order</div>
+    <div class="section-eyebrow">${locale === "fr" ? "Focus immédiat" : "Immediate Focus"}</div>
+    <div class="section-title-lg">${locale === "fr" ? "Actions prioritaires" : "Top Priority Actions"}</div>
+    <div class="section-subtitle">${locale === "fr" ? "Classées par impact — mettre en œuvre dans l'ordre" : "Ranked by impact — implement in order"}</div>
   </div>
   ${actions.map((a: any) => `
   <div style="display:flex;gap:16px;padding:12px 16px;border-radius:8px;border:1px solid #e5e7eb;margin-bottom:10px;page-break-inside:avoid;">
@@ -1808,7 +1808,7 @@ export function generateFinancialPlanReport(data: {
     <div style="font-size:10px;color:#9ca3af;white-space:nowrap;margin-top:2px;">${esc(a.timeline ?? "")}</div>
   </div>`).join("")}
   <div class="doc-footer">
-    <span>${esc(firm)} — Confidential</span><span>${esc(name)} — Financial Plan — ${esc(dateStr)}</span>
+    <span>${esc(firm)} — ${locale === "fr" ? "Confidentiel" : "Confidential"}</span><span>${esc(name)} — Financial Plan — ${esc(dateStr)}</span>
   </div>
 </div>` : "";
 
@@ -1816,20 +1816,20 @@ export function generateFinancialPlanReport(data: {
   const execSummary = `
 <div class="section">
   <div class="section-header">
-    <div class="section-eyebrow">Plan Overview</div>
-    <div class="section-title-lg">Executive Summary</div>
+    <div class="section-eyebrow">${locale === "fr" ? "Vue d'ensemble" : "Plan Overview"}</div>
+    <div class="section-title-lg">${locale === "fr" ? "Résumé exécutif" : "Executive Summary"}</div>
   </div>
   ${(es.narrative ?? "").split("\n\n").filter((p: string) => p.trim()).map((p: string) => `<p>${esc(p.trim())}</p>`).join("")}
   <div class="two-col" style="margin-top:20px;">
     <div>
-      <h3 style="color:#16a34a;font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;margin-bottom:10px;">Key Strengths</h3>
+      <h3 style="color:#16a34a;font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;margin-bottom:10px;">${locale === "fr" ? "Points forts" : "Key Strengths"}</h3>
       ${(es.keyStrengths ?? []).map((s: string) => `
       <div style="display:flex;gap:8px;margin-bottom:6px;font-size:12px;color:#374151;">
         <span style="color:#16a34a;font-weight:700;">✓</span>${esc(s)}
       </div>`).join("")}
     </div>
     <div>
-      <h3 style="color:#dc2626;font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;margin-bottom:10px;">Key Gaps</h3>
+      <h3 style="color:#dc2626;font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;margin-bottom:10px;">${locale === "fr" ? "Lacunes clés" : "Key Gaps"}</h3>
       ${(es.keyGaps ?? []).map((g: string) => `
       <div style="display:flex;gap:8px;margin-bottom:6px;font-size:12px;color:#374151;">
         <span style="color:#dc2626;font-weight:700;">→</span>${esc(g)}
@@ -1837,7 +1837,7 @@ export function generateFinancialPlanReport(data: {
     </div>
   </div>
   <div class="doc-footer">
-    <span>${esc(firm)} — Confidential</span><span>${esc(name)} — Financial Plan — ${esc(dateStr)}</span>
+    <span>${esc(firm)} — ${locale === "fr" ? "Confidentiel" : "Confidential"}</span><span>${esc(name)} — Financial Plan — ${esc(dateStr)}</span>
   </div>
 </div>`;
 
@@ -1859,7 +1859,7 @@ export function generateFinancialPlanReport(data: {
   ${(sec.narrative ?? "").split("\n\n").filter((p: string) => p.trim()).map((p: string) => `<p>${esc(p.trim())}</p>`).join("")}
   ${recs.length > 0 ? `
   <div style="margin-top:16px;">
-    <h3 style="font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:#0F2B4C;margin-bottom:10px;">Recommendations</h3>
+    <h3 style="font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:#0F2B4C;margin-bottom:10px;">${locale === "fr" ? "Recommandations" : "Recommendations"}</h3>
     ${recs.map((r: any) => `
     <div style="padding:10px 14px;border-radius:8px;border-left:3px solid ${priorityColor[r.priority] ?? "#9ca3af"};background:#f9fafb;margin-bottom:8px;page-break-inside:avoid;">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
@@ -1871,7 +1871,7 @@ export function generateFinancialPlanReport(data: {
     </div>`).join("")}
   </div>` : ""}
   <div class="doc-footer">
-    <span>${esc(firm)} — Confidential</span><span>${esc(name)} — ${esc(sec.title ?? "")} — ${esc(dateStr)}</span>
+    <span>${esc(firm)} — ${locale === "fr" ? "Confidentiel" : "Confidential"}</span><span>${esc(name)} — ${esc(sec.title ?? "")} — ${esc(dateStr)}</span>
   </div>
 </div>`;
   }).join("\n");

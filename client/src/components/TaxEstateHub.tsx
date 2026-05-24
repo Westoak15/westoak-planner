@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { translations, type T } from "../../i18n/translations";
 import { Receipt, ScrollText, Scale } from "lucide-react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { HubShell } from "./insightled";
@@ -14,7 +15,7 @@ interface Props {
   onPersonChange: (p: "primary" | "spouse" | "combined") => void;
 }
 
-export function TaxEstateHub({ clientId, client, person, onPersonChange }: Props) {
+export function TaxEstateHub({ clientId, client, person, onPersonChange, t = translations.en }: Props) {
   const [subtab, setSubtab] = useState<"tax" | "estate">("tax");
   const hasSpouse = !!client?.spouseFirstName;
 
@@ -22,7 +23,7 @@ export function TaxEstateHub({ clientId, client, person, onPersonChange }: Props
     <QueryClientProvider client={queryClient}>
       <HubShell
         icon={Scale}
-        title="Tax & Estate"
+        title={t.taxEstate.title}
         subtitle={
           <>
             <span>Tax planning notes</span>

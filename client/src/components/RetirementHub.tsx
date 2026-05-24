@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { translations, type T } from "../../i18n/translations";
 import { PiggyBank, Building2, TrendingUp, TrendingDown, Calendar, Sparkles } from "lucide-react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { HubShell } from "./insightled";
@@ -19,7 +20,7 @@ interface Props {
   onPersonChange: (p: "primary" | "spouse" | "combined") => void;
 }
 
-export function RetirementHub({ clientId, client, person, onPersonChange }: Props) {
+export function RetirementHub({ clientId, client, person, onPersonChange, t = translations.en }: Props) {
   const [subtab, setSubtab] = useState<Subtab>("pension");
   const hasSpouse = !!client?.spouseFirstName;
 
@@ -27,7 +28,7 @@ export function RetirementHub({ clientId, client, person, onPersonChange }: Prop
     <QueryClientProvider client={queryClient}>
       <HubShell
         icon={PiggyBank}
-        title="Retirement"
+        title={t.retirement.title}
         subtitle={
           <>
             <span className="flex items-center gap-1.5">
@@ -38,10 +39,10 @@ export function RetirementHub({ clientId, client, person, onPersonChange }: Prop
           </>
         }
         subtabs={[
-          { key: "pension",    label: "Pension",     icon: Building2,    badgeTone: "purple" },
+          { key: "pension",    label: t.retirement.pension,     icon: Building2,    badgeTone: "purple" },
           { key: "meltdown",   label: "RRSP Meltdown", icon: TrendingDown, badge: "NEW", badgeTone: "cyan" },
-          { key: "strategist", label: "Strategist", icon: Sparkles, badge: "AI", badgeTone: "purple" },
-          { key: "projection", label: "Projection",  icon: TrendingUp,   badgeTone: "cyan" },
+          { key: "strategist", label: t.retirement.strategist, icon: Sparkles, badge: "AI", badgeTone: "purple" },
+          { key: "projection", label: t.retirement.projection,  icon: TrendingUp,   badgeTone: "cyan" },
         ]}
         activeSubtab={subtab}
         onSubtabChange={(k) => setSubtab(k as Subtab)}

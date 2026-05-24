@@ -61,7 +61,7 @@ export function ProtectionHub({ clientId, client, person, onPersonChange, t = tr
               <Calendar className="w-3.5 h-3.5" /> {policies.length} active {policies.length === 1 ? "policy" : "policies"}
             </span>
             <span>•</span>
-            <span>t.insurance.subtitle {fmt$(totalPremium)}</span>
+            <span>{t.insurance.subtitle} {fmt$(totalPremium)}</span>
           </>
         }
         

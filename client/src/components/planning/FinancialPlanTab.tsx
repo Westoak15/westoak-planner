@@ -91,10 +91,10 @@ const SECTION_ICONS: Record<string, any> = {
 };
 
 const STATUS_CONFIG = {
-  on_track:        { label: t.plan.onTrack,        color: "text-green-700",  bg: "bg-green-50  border-green-200",  icon: CheckCircle,    dot: "bg-green-500" },
-  needs_attention: { label: t.plan.needsAttention, color: "text-amber-700",  bg: "bg-amber-50  border-amber-200",  icon: AlertTriangle,  dot: "bg-amber-500" },
-  at_risk:         { label: t.plan.atRisk,         color: "text-red-700",    bg: "bg-red-50    border-red-200",    icon: XCircle,        dot: "bg-red-500" },
-  not_started:     { label: t.plan.notStarted,     color: "text-gray-500",   bg: "bg-gray-50   border-gray-200",   icon: Clock,          dot: "bg-gray-300" },
+  on_track:        { label: "On Track",        color: "text-green-700",  bg: "bg-green-50  border-green-200",  icon: CheckCircle,    dot: "bg-green-500" },
+  needs_attention: { label: "Needs Attention", color: "text-amber-700",  bg: "bg-amber-50  border-amber-200",  icon: AlertTriangle,  dot: "bg-amber-500" },
+  at_risk:         { label: "At Risk",         color: "text-red-700",    bg: "bg-red-50    border-red-200",    icon: XCircle,        dot: "bg-red-500" },
+  not_started:     { label: "Not Started",     color: "text-gray-500",   bg: "bg-gray-50   border-gray-200",   icon: Clock,          dot: "bg-gray-300" },
 };
 
 const PRIORITY_CONFIG = {
@@ -375,7 +375,7 @@ export function FinancialPlanTab({ clientId, clientName }: { clientId: number; c
         headers: { Authorization: `Bearer ${token()}`, "Content-Type": "application/json" },
         body: JSON.stringify({ plan }),
       });
-      if (!res.ok) throw new Error(t.plan.error);
+      if (!res.ok) throw new Error("Report generation failed");
       const html = await res.text();
       const blob = new Blob([html], { type: "text/html" });
       const win  = window.open(URL.createObjectURL(blob), "_blank");
@@ -457,12 +457,12 @@ export function FinancialPlanTab({ clientId, clientName }: { clientId: number; c
             <>
               <button onClick={() => setExpandAll(v => !v)}
                 className="text-xs text-gray-500 hover:text-gray-700 border border-gray-200 px-3 py-1.5 rounded-lg">
-                {expandAll ? "Collapse all" : t.plan.expandAll}
+                {expandAll ? "Collapse all" : "Expand all"}
               </button>
               <button onClick={printPlan} disabled={printing}
                 className="flex items-center gap-1.5 text-xs text-gray-600 hover:text-gray-900 border border-gray-200 px-3 py-1.5 rounded-lg disabled:opacity-50">
                 {printing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Printer className="w-3.5 h-3.5" />}
-                {printing ? "Generating…" : t.plan.print}
+                {printing ? "Generating…" : "Print / PDF"}
               </button>
             </>
           )}
@@ -473,7 +473,7 @@ export function FinancialPlanTab({ clientId, clientName }: { clientId: number; c
           >
             {loading
               ? <><Loader2 className="w-4 h-4 animate-spin" /> Generating plan…</>
-              : <><Sparkles className="w-4 h-4" /> {plan ? t.plan.regenerate : "Generate Plan"}</>
+              : <><Sparkles className="w-4 h-4" /> {plan ? "Regenerate" : "Generate Plan"}</>
             }
           </button>
         </div>

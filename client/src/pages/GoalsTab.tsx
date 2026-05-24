@@ -34,41 +34,41 @@ interface Goal {
   fundingSource: string | null;
 }
 
-// ── Goal type config (functions so t is available) ───────────────────────────
+// ── Goal type config ─────────────────────────────────────────────────────────
 
-function makeGoalTypes(t: T) { return [
-  { key: "major_purchase",    label: t.goals.majorPurchase,   icon: Home,        cashflowType: "outflow",           desc: t.goals.majorPurchaseDesc },
-  { key: "windfall",          label: t.goals.windfall,        icon: TrendingUp,  cashflowType: "inflow",            desc: t.goals.windfallDesc },
-  { key: "education",         label: t.goals.education,       icon: GraduationCap, cashflowType: "savings_target",  desc: t.goals.educationDesc },
-  { key: "emergency_fund",    label: t.goals.emergencyFund,   icon: Shield,      cashflowType: "savings_target",    desc: t.goals.emergencyFundDesc },
-  { key: "travel_lifestyle",  label: t.goals.travelLifestyle, icon: Plane,       cashflowType: "recurring_expense", desc: t.goals.travelDesc },
-  { key: "debt_free",         label: t.goals.debtFree,        icon: TrendingDown, cashflowType: "outflow",          desc: t.goals.debtFreeDesc },
-  { key: "retirement",        label: t.goals.retirement,      icon: Star,        cashflowType: "savings_target",    desc: t.goals.retirementDesc },
-  { key: "custom",            label: t.goals.customGoal,      icon: Target,      cashflowType: "savings_target",    desc: t.goals.customGoalDesc },
-]; }
+const GOAL_TYPES = [
+  { key: "major_purchase",    label: "Major Purchase",     icon: Home,         cashflowType: "outflow",           desc: "House, cottage, renovation, vehicle" },
+  { key: "windfall",          label: "Windfall / Inflow",  icon: TrendingUp,   cashflowType: "inflow",            desc: "Inheritance, bonus, property sale" },
+  { key: "education",         label: "Education / RESP",   icon: GraduationCap,cashflowType: "savings_target",    desc: "University fund, RESP target" },
+  { key: "emergency_fund",    label: "Emergency Fund",     icon: Shield,       cashflowType: "savings_target",    desc: "3-6 months of expenses" },
+  { key: "travel_lifestyle",  label: "Travel / Lifestyle", icon: Plane,        cashflowType: "recurring_expense", desc: "Travel years, sabbatical, early retirement gap" },
+  { key: "debt_free",         label: "Debt Free",          icon: TrendingDown, cashflowType: "outflow",           desc: "Lump sum debt payoff event" },
+  { key: "retirement",        label: "Retirement",         icon: Star,         cashflowType: "savings_target",    desc: "Retirement savings milestone" },
+  { key: "custom",            label: "Custom Goal",        icon: Target,       cashflowType: "savings_target",    desc: "Any other financial goal" },
+];
 
-function makeFundingSources(t: T) { return [
-  { key: "non_reg",   label: t.goals.nonRegistered },
+const FUNDING_SOURCES = [
+  { key: "non_reg",   label: "Non-Registered" },
   { key: "tfsa",      label: "TFSA" },
   { key: "rrsp",      label: "RRSP" },
-  { key: "cash",      label: t.goals.cashSavings },
-  { key: "automatic", label: t.goals.autoEngine },
-]; }
+  { key: "cash",      label: "Cash / Savings" },
+  { key: "automatic", label: "Auto (engine decides)" },
+];
 
-function makePriorityLabels(t: T): Record<number, { label: string; color: string }> { return {
-  1: { label: t.common.critical,   color: "text-rose-600   bg-rose-50   border-rose-200"   },
-  2: { label: t.common.high,       color: "text-amber-600  bg-amber-50  border-amber-200"  },
-  3: { label: t.common.medium,     color: "text-blue-600   bg-blue-50   border-blue-200"   },
-  4: { label: t.common.low,        color: "text-slate-600  bg-slate-100 border-slate-200"  },
-  5: { label: t.common.niceToHave, color: "text-slate-500  bg-slate-50  border-slate-200"  },
-}; }
+const PRIORITY_LABELS: Record<number, { label: string; color: string }> = {
+  1: { label: "Critical",     color: "text-rose-600   bg-rose-50   border-rose-200"   },
+  2: { label: "High",         color: "text-amber-600  bg-amber-50  border-amber-200"  },
+  3: { label: "Medium",       color: "text-blue-600   bg-blue-50   border-blue-200"   },
+  4: { label: "Low",          color: "text-slate-600  bg-slate-100 border-slate-200"  },
+  5: { label: "Nice to have", color: "text-slate-500  bg-slate-50  border-slate-200"  },
+};
 
-function makeStatusConfig(t: T): Record<string, { label: string; dot: string }> { return {
-  in_progress: { label: t.common.inProgress, dot: "bg-blue-500" },
-  on_track:    { label: t.common.onTrack,    dot: "bg-green-500" },
-  at_risk:     { label: t.common.atRisk,     dot: "bg-amber-500" },
-  completed:   { label: t.goals.completed,   dot: "bg-gray-400" },
-}; }
+const STATUS_CONFIG: Record<string, { label: string; dot: string }> = {
+  in_progress: { label: "In Progress", dot: "bg-blue-500" },
+  on_track:    { label: "On Track",    dot: "bg-green-500" },
+  at_risk:     { label: "At Risk",     dot: "bg-amber-500" },
+  completed:   { label: "Completed",   dot: "bg-gray-400" },
+};
 
 const CURRENT_YEAR = new Date().getFullYear();
 
@@ -180,7 +180,7 @@ function GoalCard({ goal, onEdit, onDelete, onInlineUpdate }: { goal: Goal; onEd
                 value={goal.title}
                 onSave={v => onInlineUpdate(goal.id, { title: v } as any)}
                 className="font-semibold text-slate-900 text-sm"
-                placeholder={t.goals.goalTitle}
+                placeholder="Goal title"
               />
             </div>
             <p className="text-xs text-slate-500">{typeInfo.label}</p>
@@ -223,7 +223,7 @@ function GoalCard({ goal, onEdit, onDelete, onInlineUpdate }: { goal: Goal; onEd
           <>
             <div className="bg-slate-50 rounded-xl px-3 py-2">
               <p className="text-[10px] text-slate-500 mb-0.5">
-                {goal.cashflowType === "inflow" ? t.goals.expectedAmount : t.goals.targetAmount}
+                {goal.cashflowType === "inflow" ? "Expected Inflow" : "Target Amount"}
               </p>
               <div className={`text-sm font-bold font-mono ${isOutflow ? "text-rose-500" : goal.cashflowType === "inflow" ? "text-emerald-600" : "text-slate-900"}`} onClick={e => e.stopPropagation()}>
                 <InlineEdit
@@ -244,7 +244,7 @@ function GoalCard({ goal, onEdit, onDelete, onInlineUpdate }: { goal: Goal; onEd
                   format={v => String(v) || "—"}
                   onSave={v => onInlineUpdate(goal.id, { targetYear: Number(v) } as any)}
                   inputClassName="w-20"
-                  placeholder={t.common.year}
+                  placeholder="Year"
                 />
               </div>
             </div>
@@ -287,7 +287,7 @@ function GoalCard({ goal, onEdit, onDelete, onInlineUpdate }: { goal: Goal; onEd
             onClick={() => setNotesOpen(o => !o)}
             className="text-xs text-blue-600 hover:underline"
           >
-            {notesOpen ? t.common.hideNotes : (goal.notes ? "Notes ↓" : t.common.addNotes)}
+            {notesOpen ? "Hide notes" : (goal.notes ? "Notes ↓" : "+ Notes")}
           </button>
         </div>
       </div>
@@ -305,7 +305,7 @@ function GoalCard({ goal, onEdit, onDelete, onInlineUpdate }: { goal: Goal; onEd
           <div className="flex justify-end gap-2">
             <button onClick={() => { setNotes(goal.notes ?? ""); setNotesOpen(false); }} className="text-xs text-slate-500 hover:text-slate-700">Cancel</button>
             <button onClick={saveNotes} disabled={notesSaving} className="text-xs text-blue-600 font-semibold hover:underline disabled:opacity-50">
-              {notesSaving ? t.common.saving : "Save notes"}
+              {notesSaving ? "Saving…" : "Save notes"}
             </button>
           </div>
         </div>
@@ -495,7 +495,7 @@ function GoalForm({
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="text-xs font-semibold text-[var(--text-tertiary)] block mb-1">
-                  {form.cashflowType === "inflow" ? t.goals.expectedAmount : t.goals.targetAmount}
+                  {form.cashflowType === "inflow" ? "Expected Inflow" : "Target Amount"}
                 </label>
                 <input type="number" value={form.targetAmount} onChange={e => upd("targetAmount", e.target.value)}
                   className="w-full px-3 py-2 rounded-xl border border-[var(--border-light)] bg-[var(--bg-panel)] text-[var(--text-primary)] text-sm focus:outline-none focus:border-[var(--accent-cyan)] focus:ring-0" placeholder="0" />
@@ -629,7 +629,7 @@ function GoalForm({
             <label className="text-xs font-semibold text-[var(--text-tertiary)] block mb-1">Notes (optional)</label>
             <textarea value={form.notes} onChange={e => upd("notes", e.target.value)} rows={2}
               className="w-full px-3 py-2 rounded-xl border border-[var(--border-light)] bg-[var(--bg-panel)] text-[var(--text-primary)] text-sm resize-none focus:outline-none focus:border-[var(--accent-cyan)] focus:ring-0 placeholder:text-[var(--text-tertiary)]"
-              placeholder={t.goals.additionalContext} />
+              placeholder="Any additional context..." />
           </div>
         </div>
 
@@ -638,7 +638,7 @@ function GoalForm({
           <button onClick={() => onSave(form)} disabled={busy || !form.title}
             className="flex items-center gap-1.5 bg-gradient-to-r from-[var(--accent-cyan)] to-[var(--accent-blue)] hover:opacity-90 disabled:opacity-50 text-[var(--bg-base)] text-sm font-semibold px-5 py-2.5 rounded-xl">
             <Save className="w-3.5 h-3.5" />
-            {busy ? t.common.saving : t.goals.saveGoal}
+            {busy ? "Saving…" : "Save Goal"}
           </button>
         </div>
       </div>
@@ -678,10 +678,10 @@ function GoalsSummary({ goals }: { goals: Goal[] }) {
 
   return (
     <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-5">
-      <Stat label={t.goals.totalGoals}        value={goals.length}        color="text-slate-900" />
-      <Stat label={t.goals.projectedOutflows} value={fmt$(totalOutflows)} color="text-red-500" />
-      <Stat label={t.goals.expectedInflows}   value={fmt$(totalInflows)}  color="text-emerald-600" />
-      <Stat label={t.goals.inMonteCarlo}     value={inPlan}              color="text-blue-600" />
+      <Stat label="Total Goals"        value={goals.length}        color="text-slate-900" />
+      <Stat label="Projected Outflows" value={fmt$(totalOutflows)} color="text-red-500" />
+      <Stat label="Expected Inflows"   value={fmt$(totalInflows)}  color="text-emerald-600" />
+      <Stat label="In Monte Carlo"     value={inPlan}              color="text-blue-600" />
     </div>
   );
 }
@@ -689,10 +689,6 @@ function GoalsSummary({ goals }: { goals: Goal[] }) {
 // ── Main Component ───────────────────────────────────────────────────────────
 
 export function GoalsTab({ clientId, client, t = translations.en }: { clientId: number; client?: any; t?: T }) {
-  const GOAL_TYPES      = makeGoalTypes(t);
-  const FUNDING_SOURCES = makeFundingSources(t);
-  const PRIORITY_LABELS = makePriorityLabels(t);
-  const STATUS_CONFIG   = makeStatusConfig(t);
   const [goals, setGoals]       = useState<Goal[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [editingGoal, setEditingGoal] = useState<Goal | null>(null);
@@ -816,7 +812,7 @@ export function GoalsTab({ clientId, client, t = translations.en }: { clientId: 
           </button>
           <button onClick={openNew}
             className="flex items-center gap-1.5 text-sm font-semibold bg-gradient-to-r from-blue-600 to-cyan-500 hover:shadow-md text-white px-4 py-2 rounded-lg shadow-sm transition">
-            <Plus className="w-4 h-4" /> {t.goals.addGoal}
+            <Plus className="w-4 h-4" /> "Add Goal"
           </button>
         </div>
       </div>

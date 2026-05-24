@@ -18,6 +18,7 @@ interface Props {
   client?: any;
   person: "primary" | "spouse" | "combined";
   onPersonChange: (p: "primary" | "spouse" | "combined") => void;
+  t?: T;
 }
 
 export function RetirementHub({ clientId, client, person, onPersonChange, t = translations.en }: Props) {

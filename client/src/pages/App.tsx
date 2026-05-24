@@ -622,7 +622,6 @@ function ClientsTab({ onSelect }: { onSelect: (c: Client) => void }) {
           </div>
         )}
       </div>
-      </ClientLocaleContext.Provider>
     </div>
   );
 }
@@ -1253,6 +1252,7 @@ export default function App() {
 
         {/* Content — wrap in fp-insightled so EVERY tab gets the
             light-grey page + dark-card treatment (sidebar/header are outside) */}
+        <ClientLocaleContext.Provider value={{ clientLocale, setClientLocale }}>
         <div key={tab} className={`flex-1 fp-insightled animate-in fade-in duration-300 ${
             tab === "networth" ? "overflow-hidden" : "overflow-y-auto"
         }`}>
@@ -1363,6 +1363,7 @@ export default function App() {
           )}
           </Suspense>
         </div>
+        </ClientLocaleContext.Provider>
       </div>
      </div>
     </VoiceProvider>

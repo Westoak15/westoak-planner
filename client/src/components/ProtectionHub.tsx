@@ -68,14 +68,14 @@ export function ProtectionHub({ clientId, client, person, onPersonChange, t = tr
         subtabs={[
           {
             key: "coverage",
-            label: {t.insurance.coverage},
+            label: t.insurance.coverage,
             icon: Shield,
             badge: String(policies.length),
             badgeTone: "cyan",
           },
           {
             key: "gap",
-            label: {t.insurance.gapAnalysis},
+            label: t.insurance.gapAnalysis,
             icon: FileHeart,
             badgeTone: "amber",
           },

@@ -1,16 +1,16 @@
-import { Globe, useState, useEffect, useCallback } from "react";
-import { Globe, lazy, Suspense } from "react";
-import { Globe, useAuth } from "../lib/auth";
-import { Globe, token } from "../lib/api";
-import { Globe, api } from "../lib/api";
-import { Globe, useToast, toast } from "@/hooks/use-toast";
-import { Globe, Toaster } from "@/components/ui/toaster";
-import { Globe, Sidebar, type Tab } from "../components/Sidebar";
-import { Globe, PlanningDocFlow, PLANNING_TABS, type PlanningTab } from "../components/layout/PlanningDocFlow";
-import { Globe, QueryClientProvider } from "@tanstack/react-query";
-import { Globe, queryClient } from "../lib/queryClient";
-import { Globe, TabLoader, Field, SectionHeader, Card, Input, Select, DobInput, Textarea } from "../components/ui/AppHelpers";
-import { Globe, ChangePasswordModal } from "../components/ChangePasswordModal";
+import { useState, useEffect, useCallback } from "react";
+import { lazy, Suspense } from "react";
+import { useAuth } from "../lib/auth";
+import { token } from "../lib/api";
+import { api } from "../lib/api";
+import { useToast, toast } from "@/hooks/use-toast";
+import { Toaster } from "@/components/ui/toaster";
+import { Sidebar, type Tab } from "../components/Sidebar";
+import { PlanningDocFlow, PLANNING_TABS, type PlanningTab } from "../components/layout/PlanningDocFlow";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { queryClient } from "../lib/queryClient";
+import { TabLoader, Field, SectionHeader, Card, Input, Select, DobInput, Textarea } from "../components/ui/AppHelpers";
+import { ChangePasswordModal } from "../components/ChangePasswordModal";
 //import { Globe, AITab } from "./FinancialPlanning";
 const AITab = lazy(() => import("./FinancialPlanning").then(m => ({ default: m.AITab })));
 const NetWorthTabNew   = lazy(() => import("./MultiEntryTabs").then(m => ({ default: m.NetWorthTab })));
@@ -27,13 +27,13 @@ const LettersTab       = lazy(() => import("./LettersTab").then(m => ({ default:
 const AgentsTab          = lazy(() => import("./AgentsTab").then(m => ({ default: m.AgentsTab })));
 const InsightLedDashboard = lazy(() => import("../components/InsightLedDashboard").then(m => ({ default: m.InsightLedDashboard })));
 
-import { Globe, fmt$, fmtPct, initials, avatarBg, cn } from "../lib/utils";
-import { Globe, VoiceProvider, useVoice, labelToKey } from "../contexts/VoiceContext";
-import { Globe, ClientOverview } from "./ClientOverview";
-import { Globe, MeetingRecorderTrigger, IntakeRecorderTrigger, type IntakeProfile } from "../components/MeetingRecorder";
-import { Globe, useHotkeys } from "../hooks/useHotkeys";
-import { Globe, CommandPalette, type CommandAction } from "../components/ui/CommandPalette";
-import { Globe, InlineEdit } from "../components/ui/InlineEdit";
+import { fmt$, fmtPct, initials, avatarBg, cn } from "../lib/utils";
+import { VoiceProvider, useVoice, labelToKey } from "../contexts/VoiceContext";
+import { ClientOverview } from "./ClientOverview";
+import { MeetingRecorderTrigger, IntakeRecorderTrigger, type IntakeProfile } from "../components/MeetingRecorder";
+import { useHotkeys } from "../hooks/useHotkeys";
+import { CommandPalette, type CommandAction } from "../components/ui/CommandPalette";
+import { InlineEdit } from "../components/ui/InlineEdit";
 import { Globe,
   Plus, Pencil, Trash2, X, Check, Search,
   User, Users, UserPlus, Baby, FileText, Home, Calendar, Briefcase, LogOut, Save, KeyRound, Eye, EyeOff, Mic, MicOff, Loader2,

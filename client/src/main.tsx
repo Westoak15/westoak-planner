@@ -5,6 +5,7 @@ import Login from "./pages/Login";
 import FPApp from "./pages/App";
 import { Toaster } from "./components/ui/toaster";
 import "./index.css";
+import "./i18n";   // initialise i18next — must be before any component that uses t()
 import { useInactivityTimeout } from "./hooks/useInactivityTimeout";
 import { registerToast } from "./lib/toast";
 import { useToast } from "./hooks/use-toast";

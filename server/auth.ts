@@ -35,9 +35,6 @@ r.post("/register", async (req: Request, res: Response) => {
     const hash       = await hashPassword(body.password);
     const answerHash = await hashPassword(securityAnswer.toLowerCase().trim());
 
-    const province = (body as any).province ?? null;
-    const locale   = localeFromProvince(province);
-
     const [u] = await (target.insert(users) as any).values({
       email: body.email, passwordHash: hash,
       firstName: body.firstName, lastName: body.lastName,
@@ -45,12 +42,10 @@ r.post("/register", async (req: Request, res: Response) => {
       securityQuestion, securityAnswerHash: answerHash,
       role: "ga", level: "enhanced",
       jurisdiction: jur,
-      province, locale,
     }).returning({
       id: users.id, email: users.email, firstName: users.firstName,
       lastName: users.lastName, firmName: users.firmName,
       role: users.role, level: users.level, jurisdiction: users.jurisdiction,
-      province: users.province, locale: users.locale,
     });
 
     res.status(201).json({ token: signToken(u.id, jur), user: u });
@@ -94,8 +89,6 @@ r.post("/login", async (req: Request, res: Response) => {
         firmName: u.firmName, role: u.role, level: u.level,
         mustResetPassword: u.mustResetPassword,
         jurisdiction: jur,
-        province: u.province ?? null,
-        locale:   u.locale   ?? localeFromProvince(u.province),
       },
     });
   } catch (e: any) {

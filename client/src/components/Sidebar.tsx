@@ -1,9 +1,10 @@
 import {
   Users, LayoutDashboard, Scale, PiggyBank,
   Shield, Receipt, Brain,
-  UserCheck, FileText, Target, Sparkles, UserCog, CreditCard
+  UserCheck, FileText, Target, Sparkles, UserCog, CreditCard, Globe
 } from "lucide-react";
 import { cn } from "../lib/utils";
+import { useLocale } from "../hooks/useLocale";
 
 export type Tab =
   | "agents"
@@ -22,23 +23,25 @@ interface Props {
   level?: string;
 }
 
-const ALL_TABS: { key: Tab; label: string; icon: any; dividerBefore?: boolean; gaOnly?: boolean }[] = [
-  { key: "agents",        label: "Agents",         icon: UserCheck, dividerBefore: true, gaOnly: true },
-  { key: "clients",       label: "Clients",        icon: Users },
-  { key: "profile",       label: "Client Profile", icon: UserCog },
-  { key: "overview",      label: "Overview",       icon: LayoutDashboard, dividerBefore: true },
-  { key: "dashboard",     label: "Dashboard",      icon: LayoutDashboard },
-  { key: "networth",      label: "Net Worth",      icon: Scale },
-  { key: "goals",         label: "Goals",          icon: Target },
-  { key: "debt",          label: "Debt",           icon: CreditCard },
-  { key: "retirementhub", label: "Retirement",     icon: PiggyBank },
-  { key: "protection",    label: "Protection",     icon: Shield },
-  { key: "expenses",      label: "Cash Flow",      icon: Receipt },
-  { key: "taxestate",     label: "Tax & Estate",   icon: Scale },
-  { key: "ai",            label: "AI Insights",    icon: Brain },
-  { key: "documents",     label: "Documents",      icon: FileText, dividerBefore: true },
-  { key: "fp",            label: "Financial Plan", icon: Sparkles },
-];
+function useTabs(t: any) {
+  return [
+    { key: "agents",        label: t("nav.agents"),         icon: UserCheck, dividerBefore: true, gaOnly: true },
+    { key: "clients",       label: t("nav.clients"),        icon: Users },
+    { key: "profile",       label: t("nav.clientProfile"),  icon: UserCog },
+    { key: "overview",      label: t("nav.overview"),       icon: LayoutDashboard, dividerBefore: true },
+    { key: "dashboard",     label: t("nav.dashboard"),      icon: LayoutDashboard },
+    { key: "networth",      label: t("nav.netWorth"),       icon: Scale },
+    { key: "goals",         label: t("nav.goals"),          icon: Target },
+    { key: "debt",          label: t("nav.debt"),           icon: CreditCard },
+    { key: "retirementhub", label: t("nav.retirement"),     icon: PiggyBank },
+    { key: "protection",    label: t("nav.insurance"),      icon: Shield },
+    { key: "expenses",      label: t("nav.cashFlow"),       icon: Receipt },
+    { key: "taxestate",     label: "Tax & Estate",          icon: Scale },
+    { key: "ai",            label: "AI Insights",           icon: Brain },
+    { key: "documents",     label: "Documents",             icon: FileText, dividerBefore: true },
+    { key: "fp",            label: t("planning.financialPlan"), icon: Sparkles },
+  ] as const;
+}
 
 const STANDARD_TABS: Tab[] = ["clients", "networth", "protection", "documents"];
 const PLAN_TABS: Tab[] = [
@@ -48,6 +51,8 @@ const PLAN_TABS: Tab[] = [
 const NO_CLIENT_TABS: Tab[] = ["clients", "agents"];
 
 export function Sidebar({ activeTab, onTab, clientName, role, level }: Props) {
+  const { t, locale, setLocale, isForced } = useLocale();
+  const ALL_TABS = useTabs(t);
   const isGA = role === "ga";
   const isStandard = !isGA && level === "standard";
 

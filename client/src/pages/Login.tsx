@@ -1,6 +1,9 @@
 import { useState, useCallback } from "react";
 import { useAuth } from "../lib/auth";
 import { Eye, EyeOff, Check, X, ArrowLeft, Loader2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import { useTranslation } from "react-i18next";
+import { localeFromProvince } from "../i18n";
 import { api } from "../lib/api";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -19,7 +22,7 @@ const SECURITY_QUESTIONS = [
 type Mode = "login" | "register" | "forgot-email" | "forgot-question" | "forgot-reset" | "forgot-done" | "mfa-challenge";
 
 const EMPTY_FORM = {
-  firstName: "", lastName: "", firmName: "",
+  firstName: "", lastName: "", firmName: "", province: "",
   email: "", password: "",
   securityQuestion: SECURITY_QUESTIONS[0],
   securityAnswer: "",
@@ -100,6 +103,8 @@ function Field({
 
 export default function Login({ isGaPortal = false }: { isGaPortal?: boolean }) {
   const { login, register } = useAuth();
+  const { t } = useTranslation();
+  const { t } = useTranslation();
   const [mode, setMode]         = useState<Mode>("login");
   const [mfaToken, setMfaToken]  = useState<string | null>(null);
   const [mfaCode, setMfaCode]    = useState("");
@@ -157,6 +162,7 @@ export default function Login({ isGaPortal = false }: { isGaPortal?: boolean }) 
         email: form.email, password: form.password,
         firstName: form.firstName, lastName: form.lastName,
         firmName: form.firmName || undefined,
+        province: form.province || undefined,
         securityQuestion: form.securityQuestion,
         securityAnswer: form.securityAnswer,
       });
@@ -324,6 +330,27 @@ export default function Login({ isGaPortal = false }: { isGaPortal?: boolean }) 
                       <Field placeholder="Last name"  value={form.lastName}  onChange={u("lastName")} />
                     </div>
                     <Field placeholder="Firm name (optional)" value={form.firmName} onChange={u("firmName")} />
+                    <select
+                      value={form.province}
+                      onChange={e => setForm(f => ({ ...f, province: e.target.value }))}
+                      className="w-full bg-white/60 backdrop-blur border border-slate-200 rounded-xl px-4 py-3 text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all"
+                    >
+                      <option value="">{t("auth.province")}</option>
+                      <optgroup label="Canada">
+                        {[["AB","Alberta"],["BC","Colombie-Britannique / British Columbia"],["MB","Manitoba"],
+                          ["NB","Nouveau-Brunswick / New Brunswick"],["NL","Terre-Neuve / Newfoundland"],
+                          ["NS","Nouvelle-Écosse / Nova Scotia"],["NT","Territoires du Nord-Ouest"],
+                          ["NU","Nunavut"],["ON","Ontario"],["PE","Île-du-Prince-Édouard / PEI"],
+                          ["QC","Québec"],["SK","Saskatchewan"],["YT","Yukon"]
+                        ].map(([code, name]) => <option key={code} value={code}>{code} — {name}</option>)}
+                      </optgroup>
+                      <optgroup label="United States">
+                        {["AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA","HI","ID","IL","IN","IA",
+                          "KS","KY","LA","ME","MD","MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ",
+                          "NM","NY","NC","ND","OH","OK","OR","PA","RI","SC","SD","TN","TX","UT","VT",
+                          "VA","WA","WV","WI","WY"].map(s => <option key={s} value={s}>{s}</option>)}
+                      </optgroup>
+                    </select>
                   </>
                 )}
 

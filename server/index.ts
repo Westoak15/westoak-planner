@@ -23,6 +23,7 @@ import { goalsRouter }      from "./routes/goals.js";
 import { pensionRouter }    from "./routes/pension.js";
 import aiVoiceRouter        from "./routes/ai-voice.js";
 import { mfaRouter }        from "./routes/mfa.js";
+import { auditRouter }      from "./routes/audit.js";
 import { httpLogger, logger } from "./logger.js";
 import { planningRouter }   from "./planning/routes.js";
 
@@ -40,8 +41,33 @@ async function runMigrations() {
     `ALTER TABLE clients ADD COLUMN IF NOT EXISTS us_state TEXT`,
     `ALTER TABLE clients ADD COLUMN IF NOT EXISTS filing_status TEXT`,
     `ALTER TABLE clients ADD COLUMN IF NOT EXISTS birth_year INTEGER`,
+    `ALTER TABLE users ADD COLUMN IF NOT EXISTS province TEXT`,
+    `ALTER TABLE users ADD COLUMN IF NOT EXISTS locale TEXT NOT NULL DEFAULT 'en'`,
     `ALTER TABLE users ADD COLUMN IF NOT EXISTS totp_secret TEXT`,
     `ALTER TABLE users ADD COLUMN IF NOT EXISTS totp_enabled BOOLEAN NOT NULL DEFAULT false`,
+    `CREATE TABLE IF NOT EXISTS audit_log (
+      id                 SERIAL PRIMARY KEY,
+      user_id            INTEGER,
+      user_email         TEXT,
+      action             TEXT NOT NULL,
+      resource_type      TEXT,
+      resource_id        INTEGER,
+      client_id          INTEGER,
+      external_processor TEXT,
+      data_categories    TEXT,
+      purpose_code       TEXT,
+      record_count       INTEGER,
+      ip_address         TEXT,
+      user_agent         TEXT,
+      correlation_id     TEXT,
+      outcome            TEXT NOT NULL DEFAULT 'success',
+      error_message      TEXT,
+      created_at         TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )`,
+    `CREATE INDEX IF NOT EXISTS audit_log_client_id_idx ON audit_log(client_id)`,
+    `CREATE INDEX IF NOT EXISTS audit_log_action_idx ON audit_log(action)`,
+    `CREATE INDEX IF NOT EXISTS audit_log_created_at_idx ON audit_log(created_at)`,
+    `CREATE INDEX IF NOT EXISTS audit_log_external_processor_idx ON audit_log(external_processor)`,
   ];
   for (const sql of migrations) {
     for (const p of [poolCA, ...(process.env.DATABASE_URL_US ? [poolUS] : [])]) {
@@ -59,11 +85,11 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc:  ["'self'"],
-      scriptSrc:   ["'self'", "'unsafe-inline'", "'unsafe-eval'"],  // Vite needs these in dev
-      styleSrc:    ["'self'", "'unsafe-inline'"],
+      scriptSrc:   ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
+      styleSrc:    ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
       imgSrc:      ["'self'", "data:", "blob:"],
-      connectSrc:  ["'self'"],
-      fontSrc:     ["'self'", "data:"],
+      connectSrc:  ["'self'", "blob:"],
+      fontSrc:     ["'self'", "data:", "https://fonts.gstatic.com"],
       objectSrc:   ["'none'"],
       frameSrc:    ["'none'"],
       upgradeInsecureRequests: process.env.NODE_ENV === "production" ? [] : null,
@@ -148,6 +174,7 @@ app.use((req: any, _res: any, next: any) => {
 app.get("/api/health",    (_req, res) => res.json({ ok: true }));
 app.use("/api/auth",      authRouter);
 app.use("/api/auth/mfa",   mfaRouter);
+app.use("/api/audit",       auditRouter);
 app.use("/api",           goalsRouter);
 app.use("/api",           pensionRouter);
 app.use("/api/tax",       taxRouter);

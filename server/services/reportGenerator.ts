@@ -1709,6 +1709,9 @@ export function generateFinancialPlanReport(data: {
   firmName?: string;
 }): string {
   const { plan, client } = data;
+  const locale     = (data.locale ?? (client.preferredLanguage as ReportLocale) ?? "en") as ReportLocale;
+  const L          = getLabels(locale);
+  const dateLocale = locale === "fr" ? "fr-CA" : "en-CA";
   const name     = `${client.firstName} ${client.lastName}`;
   const dateStr  = plan.generatedAt
     ? new Date(plan.generatedAt).toLocaleDateString(dateLocale, { year: "numeric", month: "long", day: "numeric" })
@@ -1737,10 +1740,6 @@ export function generateFinancialPlanReport(data: {
   const priorityColor: Record<string, string> = {
     high: "#dc2626", medium: "#d97706", low: "#2563eb",
   };
-
-  const locale  = data.locale ?? (client.preferredLanguage as ReportLocale) ?? "en";
-  const L       = getLabels(locale);
-  const dateLocale = locale === "fr" ? "fr-CA" : "en-CA";
 
   const cover = reportOpener({
     reportTitle:     locale === "fr" ? "Plan financier complet" : "Comprehensive Financial Plan",

@@ -230,7 +230,7 @@ const labels = {
   },
 } as const;
 
-export type ReportLabels = typeof labels.en;
+export type ReportLabels = Record<string, string>;
 
 export function getLabels(locale: ReportLocale = "en"): ReportLabels {
   return labels[locale] ?? labels.en;

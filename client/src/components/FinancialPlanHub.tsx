@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { translations, type T } from "../../i18n/translations";
+import { translations, type T } from "../i18n/translations";
 import { Sparkles, ClipboardList, FileSpreadsheet } from "lucide-react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { HubShell } from "./insightled";

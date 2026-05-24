@@ -66,6 +66,7 @@ r.patch("/:id", async (req: AuthRequest, res: Response) => {
   const ok = await canAccessClient(req.userId!, +req.params.id);
   if (!ok) return res.status(404).json({ message: "Not found" });
   try {
+    const body = clientPatchSchema.parse(req.body);
     const [u] = await db.update(clients).set(safe(body)).where(eq(clients.id, +req.params.id)).returning();
     res.json(u);
   } catch (e: any) {

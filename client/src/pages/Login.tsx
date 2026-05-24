@@ -2,8 +2,6 @@ import { useState, useCallback } from "react";
 import { useAuth } from "../lib/auth";
 import { Eye, EyeOff, Check, X, ArrowLeft, Loader2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { useTranslation } from "react-i18next";
-import { localeFromProvince } from "../i18n";
 import { api } from "../lib/api";
 
 // ── Constants ─────────────────────────────────────────────────────────────────

@@ -43,7 +43,7 @@ import { Globe,
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
 // ─────────────────────────────────────────────────────────────────────────────
-interface Client { id: number; firstName: string; lastName: string; email: string | null; phone: string | null; dateOfBirth: string | null; province: string | null; occupation: string | null; employmentStatus: string | null; annualIncome: string | null; spouseFirstName: string | null; spouseLastName: string | null; spouseDateOfBirth: string | null; spouseOccupation: string | null; spouseAnnualIncome: string | null; spouseRetirementAge: number | null; spouseDesiredRetirementIncome: string | null; spousePensionType: string | null; dependants: any; retirementAge: number | null; desiredRetirementIncome: string | null; notes: string | null; pensionType: string | null; updatedAt: string; }
+interface Client { id: number; firstName: string; lastName: string; email: string | null; phone: string | null; dateOfBirth: string | null; province: string | null; occupation: string | null; employmentStatus: string | null; annualIncome: string | null; spouseFirstName: string | null; spouseLastName: string | null; spouseDateOfBirth: string | null; spouseOccupation: string | null; spouseAnnualIncome: string | null; spouseRetirementAge: number | null; spouseDesiredRetirementIncome: string | null; spousePensionType: string | null; dependants: any; retirementAge: number | null; desiredRetirementIncome: string | null; notes: string | null; pensionType: string | null; preferredLanguage: string | null; updatedAt: string; }
 interface Plan { id: number; name: string; status: string; createdAt: string; }
 interface NWEntry { id: number; type: string; category: string; name: string; value: string; notes: string | null; }
 interface Overview { netWorth: number; totalAssets: number; totalLiabilities: number; totalDebt: number; retirementProjections: number; insuranceAnalyses: number; educationPlans: number; taxNotes: number; estateNotes: number; aiRecommendations: number; pendingAi: number; plans: number; }
@@ -622,6 +622,7 @@ function ClientsTab({ onSelect }: { onSelect: (c: Client) => void }) {
           </div>
         )}
       </div>
+      </ClientLocaleContext.Provider>
     </div>
   );
 }
@@ -631,6 +632,7 @@ function ClientsTab({ onSelect }: { onSelect: (c: Client) => void }) {
 // Client Detail — shown when a client is selected (name, family, plans)
 // ─────────────────────────────────────────────────────────────────────────────
 function ClientDetail({ client, onBack, onPlanSelect, onUpdate, level }: { client: Client; onBack: () => void; onPlanSelect: (p: Plan) => void; onUpdate: (c: Client) => void; level?: string }) {
+  const { setClientLocale } = useContext(ClientLocaleContext);
   const [plans, setPlans]       = useState<Plan[]>([]);
   const [editing, setEditing]   = useState(false);
   const [form, setForm]         = useState<Partial<Client>>({ ...client });
@@ -727,22 +729,31 @@ function ClientDetail({ client, onBack, onPlanSelect, onUpdate, level }: { clien
         </div>
         <div className="ml-auto flex items-center gap-3">
           {/* Client language toggle — controls report/letter language */}
-          <div className="flex items-center gap-1 border border-gray-200 rounded-lg p-0.5">
-            <Globe className="w-3.5 h-3.5 text-gray-400 ml-1.5" />
-            {["en", "fr"].map(lang => (
-              <button
-                key={lang}
-                onClick={async () => {
-                  const updated = await api.patch<Client>(`/api/clients/${client.id}`, { preferredLanguage: lang });
-                  onUpdate(updated);
-                }}
-                className={`text-xs font-semibold px-2 py-1 rounded transition-colors ${
-                  (client.preferredLanguage ?? (client.province === "QC" ? "fr" : "en")) === lang
-                    ? "bg-[#0c1e3a] text-white"
-                    : "text-gray-400 hover:text-gray-700"
-                }`}
-              >{lang.toUpperCase()}</button>
-            ))}
+          <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1 border border-gray-200 rounded-lg p-0.5" title="Report language">
+              <Globe className="w-3.5 h-3.5 text-gray-400 ml-1.5" />
+              {(["en", "fr"] as const).map(lang => {
+                const activeLang = client.preferredLanguage ?? (client.province === "QC" ? "fr" : "en");
+                return (
+                  <button
+                    key={lang}
+                    onClick={async () => {
+                      try {
+                        const updated = await api.patch<Client>(`/api/clients/${client.id}`, { preferredLanguage: lang });
+                        onUpdate(updated);
+                        setClientLocale(lang as ClientLocale);
+                      } catch {}
+                    }}
+                    className={`text-xs font-semibold px-2 py-1 rounded transition-colors ${
+                      activeLang === lang
+                        ? "bg-[#0c1e3a] text-white"
+                        : "text-gray-400 hover:text-gray-700"
+                    }`}
+                  >{lang.toUpperCase()}</button>
+                );
+              })}
+            </div>
+            <span className="text-[10px] text-gray-400">Report lang</span>
           </div>
           <div className="flex gap-2">
           {editing ? (
@@ -1060,6 +1071,7 @@ export default function App() {
   const [nwSubtabHint, setNwSubtabHint] = useState<string | undefined>(undefined);
   const [person, setPerson] = useState<"primary"|"spouse"|"combined">("primary");
   const [client, setClient]       = useState<Client | null>(null);
+  const [clientLocale, setClientLocale] = useState<ClientLocale>("en");
   const [plan, setPlan]           = useState<Plan | null>(null);
   const [showClientDetail, setShowClientDetail] = useState(false);
   const [clientOv, setClientOv]   = useState<Overview | null>(null);

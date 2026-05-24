@@ -184,7 +184,7 @@ function ExtraFields({ draft, onChange, spouseName, dependants }: { draft: NWDra
           <InlineInput value={draft.mortgageMonthlyPayment} onChange={v => onChange("mortgageMonthlyPayment", v)} type="number" placeholder="0" className="w-28" />
         </div>
         {Number(draft.mortgageBalance) > 0 && (
-          <span className="text-[10px] text-[var(--accent-cyan)] italic">Adds a linked Mortgage to the Liabilities tab</span>
+          <span className="text-[10px] text-[var(--accent-cyan)] italic">{ct("netWorth.linkedMortgage")}</span>
         )}
       </div>
     );
@@ -224,7 +224,7 @@ function ExtraFields({ draft, onChange, spouseName, dependants }: { draft: NWDra
           </>
         )}
         {Number(draft.mortgageBalance) > 0 && (
-          <span className="text-[10px] text-[var(--accent-cyan)] italic">Adds a linked Mortgage to the Liabilities tab</span>
+          <span className="text-[10px] text-[var(--accent-cyan)] italic">{ct("netWorth.linkedMortgage")}</span>
         )}
       </div>
     );
@@ -556,9 +556,9 @@ export function NetWorthTab({ clientId, client }: { clientId: number; client?: {
 
       {/* ── Summary cards ──────────────────────────────────────────────────── */}
       <div className="grid grid-cols-3 gap-4 mb-6">
-        <SummaryCard label="Net Worth" value={fmt$(netWorth)} tone={netWorth >= 0 ? "text-slate-900" : "text-red-500"} />
-        <SummaryCard label="Total Assets" value={fmt$(totalA)} tone="text-emerald-600" />
-        <SummaryCard label="Total Liabilities" value={fmt$(totalL)} tone="text-red-500" />
+        <SummaryCard label={ct("netWorth.netWorth")} value={fmt$(netWorth)} tone={netWorth >= 0 ? "text-slate-900" : "text-red-500"} />
+        <SummaryCard label={ct("netWorth.totalAssets")} value={fmt$(totalA)} tone="text-emerald-600" />
+        <SummaryCard label={ct("netWorth.totalLiabilities")} value={fmt$(totalL)} tone="text-red-500" />
       </div>
 
       {/* ── Main grid ──────────────────────────────────────────────────────── */}
@@ -574,13 +574,13 @@ export function NetWorthTab({ clientId, client }: { clientId: number; client?: {
                 onClick={() => addDraft("asset")}
                 className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-gradient-to-r from-cyan-500 to-blue-600 text-white text-sm font-semibold hover:opacity-90 transition-opacity shadow-sm"
               >
-                <Plus className="w-4 h-4" /> Add Asset
+                <Plus className="w-4 h-4" />{ct("netWorth.addAsset")}
               </button>
               <button
                 onClick={() => addDraft("liability")}
                 className="flex items-center gap-1.5 px-4 py-2 rounded-full border border-slate-200 text-slate-600 text-sm font-semibold hover:bg-slate-50 transition-colors"
               >
-                <Plus className="w-4 h-4" /> Add Liability
+                <Plus className="w-4 h-4" />{ct("netWorth.addLiability")}
               </button>
             </div>
             <button
@@ -595,7 +595,7 @@ export function NetWorthTab({ clientId, client }: { clientId: number; client?: {
           {activeDrafts.length > 0 && (
             <div className="bg-white border border-cyan-200 rounded-2xl overflow-hidden shadow-sm">
               <div className="px-5 py-3 bg-cyan-50 border-b border-cyan-100 flex items-center justify-between">
-                <span className="text-sm font-semibold text-cyan-700">New {isAssets ? "Assets" : "Liabilities"}</span>
+                <span className="text-sm font-semibold text-cyan-700">{ct(isAssets ? "netWorth.newAssets" : "netWorth.newLiabilities")}</span>
                 <div className="flex gap-2">
                   <button onClick={() => setDrafts([])} className="text-xs text-slate-400 px-3 py-1 border border-slate-200 rounded-lg hover:bg-white transition-colors">
                     Discard All
@@ -631,7 +631,7 @@ export function NetWorthTab({ clientId, client }: { clientId: number; client?: {
                         <InlineInput value={d.name} onChange={v => updateDraft(draftIdx, "name", v)} placeholder={d.category} />
                       </div>
                       <div>
-                        <label className={LABEL_CLS}>{isAssets ? "Market Value ($)" : "Balance Owing ($)"}</label>
+                        <label className={LABEL_CLS}>{isAssets ? ct("netWorth.marketValue") : ct("netWorth.balanceOwing")}</label>
                         <div className="flex gap-1">
                           <InlineInput type="number" value={d.value} onChange={v => updateDraft(draftIdx, "value", v)} placeholder="0" />
                           <button onClick={() => removeDraft(draftIdx)} className="text-slate-300 hover:text-red-400 transition-colors flex-shrink-0">
@@ -694,7 +694,7 @@ export function NetWorthTab({ clientId, client }: { clientId: number; client?: {
                           <InlineInput value={editForm.name ?? ""} onChange={v => setEditForm(f => ({ ...f, name: v }))} placeholder={editForm.category} />
                         </div>
                         <div>
-                          <label className={LABEL_CLS}>{isAssets ? "Market Value ($)" : "Balance Owing ($)"}</label>
+                          <label className={LABEL_CLS}>{isAssets ? ct("netWorth.marketValue") : ct("netWorth.balanceOwing")}</label>
                           <InlineInput type="number" value={editForm.value ?? ""} onChange={v => setEditForm(f => ({ ...f, value: v }))} placeholder="0" />
                         </div>
                       </div>
@@ -789,7 +789,7 @@ export function NetWorthTab({ clientId, client }: { clientId: number; client?: {
             <div className="bg-white border border-slate-200 rounded-2xl p-10 text-center shadow-sm">
               <p className="text-slate-400 text-sm">No {isAssets ? "assets" : "liabilities"} added yet</p>
               <button onClick={() => addDraft(isAssets ? "asset" : "liability")} className="mt-3 text-cyan-500 text-sm hover:underline">
-                Add your first {isAssets ? "asset" : "liability"}
+                {ct("netWorth.addFirst")} {isAssets ? ct("netWorth.asset") : ct("netWorth.liability")}
               </button>
             </div>
           )}
@@ -831,15 +831,15 @@ export function NetWorthTab({ clientId, client }: { clientId: number; client?: {
             <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-3">Summary</p>
             <div className="space-y-2.5">
               <div className="flex justify-between items-center text-sm">
-                <span className="text-slate-500">Total Assets</span>
+                <span className="text-slate-500">{ct("netWorth.totalAssets")}</span>
                 <span className="font-semibold text-emerald-600">{fmt$(totalA)}</span>
               </div>
               <div className="flex justify-between items-center text-sm">
-                <span className="text-slate-500">Total Liabilities</span>
+                <span className="text-slate-500">{ct("netWorth.totalLiabilities")}</span>
                 <span className="font-semibold text-red-500">{fmt$(totalL)}</span>
               </div>
               <div className="border-t border-slate-100 pt-2.5 flex justify-between items-center">
-                <span className="font-semibold text-slate-900">Net Worth</span>
+                <span className="font-semibold text-slate-900">{ct("netWorth.netWorth")}</span>
                 <span className={`font-bold text-lg ${netWorth >= 0 ? "text-slate-900" : "text-red-500"}`}>
                   {fmt$(netWorth)}
                 </span>

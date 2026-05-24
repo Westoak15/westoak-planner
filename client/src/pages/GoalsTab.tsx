@@ -819,7 +819,7 @@ export function GoalsTab({ clientId, client, t = translations.en }: { clientId: 
 
       {voiceOpen && (
         <VoiceAddDialog
-          title="Voice-{t.goals.addGoal}"
+          title="Voice-Add Goal"
           moduleId="goal"
           prompt={`Try: "Retire at 60 with 1.5 million, target 2045"`}
           fieldSchema={[

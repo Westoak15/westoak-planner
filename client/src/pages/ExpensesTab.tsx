@@ -5,18 +5,18 @@ import { Plus, Trash2, Pencil } from "lucide-react";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid } from "recharts";
 
 const EXPENSE_CATEGORIES = [
-  {t.cashFlow.housing}, {t.cashFlow.utilities}, "Food & Groceries", {t.cashFlow.transportation},
-  {t.cashFlow.healthcare}, "Insurance Premiums", "Childcare & Education",
+  "Housing", "Utilities", "Food & Groceries", "Transportation",
+  "Healthcare", "Insurance Premiums", "Childcare & Education",
   "Entertainment & Leisure", "Clothing & Personal Care",
-  "Savings & Investments", "Debt Payments", "Travel", {t.cashFlow.other},
+  "Savings & Investments", "Debt Payments", "Travel", "Other",
 ];
 
 const CAT_COLORS: Record<string, string> = {
-  {t.cashFlow.housing}:                 "#3b82f6",
-  {t.cashFlow.utilities}:               "#06b6d4",
+  "Housing":                 "#3b82f6",
+  "Utilities":               "#06b6d4",
   "Food & Groceries":        "#10b981",
-  {t.cashFlow.transportation}:          "#8b5cf6",
-  {t.cashFlow.healthcare}:              "#ef4444",
+  "Transportation":          "#8b5cf6",
+  "Healthcare":              "#ef4444",
   "Insurance Premiums":      "#f59e0b",
   "Childcare & Education":   "#ec4899",
   "Entertainment & Leisure": "#14b8a6",
@@ -24,7 +24,7 @@ const CAT_COLORS: Record<string, string> = {
   "Savings & Investments":   "#22c55e",
   "Debt Payments":           "#f97316",
   "Travel":                  "#0ea5e9",
-  {t.cashFlow.other}:                   "#94a3b8",
+  "Other":                   "#94a3b8",
 };
 
 interface Expense {
@@ -88,7 +88,7 @@ export function ExpensesTab({ clientId, addTrigger = 0 }: { clientId: number; ad
   const [selected, setSelected] = useState<string | null>(null);
   const [hovered, setHovered] = useState<string | null>(null);
   const [kbIndex, setKbIndex] = useState(0);
-  const [form, setForm] = useState({ category: {t.cashFlow.housing}, description: "", monthlyAmount: "", isEssential: true, includeInRetirement: true, retirementAdjustmentPct: "100", notes: "" });
+  const [form, setForm] = useState({ category: "Housing", description: "", monthlyAmount: "", isEssential: true, includeInRetirement: true, retirementAdjustmentPct: "100", notes: "" });
 
   // Global A key trigger
   useEffect(() => {
@@ -144,7 +144,7 @@ export function ExpensesTab({ clientId, addTrigger = 0 }: { clientId: number; ad
   const biggestSaving = biggestCat ? biggestCat.total * 0.10 * 12 / 0.04 : 0;
 
   function resetForm() {
-    setForm({ category: {t.cashFlow.housing}, description: "", monthlyAmount: "", isEssential: true, includeInRetirement: true, retirementAdjustmentPct: "100", notes: "" });
+    setForm({ category: "Housing", description: "", monthlyAmount: "", isEssential: true, includeInRetirement: true, retirementAdjustmentPct: "100", notes: "" });
     setEditing(null); setShowForm(false);
   }
 
@@ -386,7 +386,7 @@ function ExpenseForm({ form, setForm, editing, onSubmit, onClose, creating, upda
       <div className="flex-1 bg-black/40 backdrop-blur-sm" onClick={onClose} />
       <div className="w-full max-w-lg bg-white shadow-2xl flex flex-col h-full border-l border-slate-200">
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200">
-          <h2 className="text-lg font-bold text-slate-900">{editing !== null ? "Edit Expense" : {t.cashFlow.addExpense}}</h2>
+          <h2 className="text-lg font-bold text-slate-900">{editing !== null ? "Edit Expense" : t.cashFlow.addExpense}</h2>
           <button onClick={onClose} className="p-2 rounded-lg hover:bg-slate-100 text-slate-400"><Plus className="w-4 h-4 rotate-45" /></button>
         </div>
         <div className="flex-1 overflow-y-auto px-6 py-6 space-y-5">
@@ -429,7 +429,7 @@ function ExpenseForm({ form, setForm, editing, onSubmit, onClose, creating, upda
           <button onClick={onClose} className="px-5 py-2.5 rounded-xl font-semibold text-slate-600 hover:bg-slate-100">Cancel</button>
           <button onClick={onSubmit} disabled={creating || updating || !form.monthlyAmount}
             className="px-6 py-2.5 rounded-xl font-semibold bg-gradient-to-r from-blue-600 to-cyan-500 text-white hover:shadow-md disabled:opacity-50 transition">
-            {editing !== null ? "Save Changes" : {t.cashFlow.addExpense}}
+            {editing !== null ? "Save Changes" : t.cashFlow.addExpense}
           </button>
         </div>
       </div>

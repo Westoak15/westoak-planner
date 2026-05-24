@@ -184,7 +184,7 @@ function ExtraFields({ draft, onChange, spouseName, dependants }: { draft: NWDra
           <InlineInput value={draft.mortgageMonthlyPayment} onChange={v => onChange("mortgageMonthlyPayment", v)} type="number" placeholder="0" className="w-28" />
         </div>
         {Number(draft.mortgageBalance) > 0 && (
-          <span className="text-[10px] text-[var(--accent-cyan)] italic">{ct("netWorth.linkedMortgage")}</span>
+          <span className="text-[10px] text-[var(--accent-cyan)] italic">"Adds a linked Mortgage to the Liabilities tab"</span>
         )}
       </div>
     );
@@ -224,7 +224,7 @@ function ExtraFields({ draft, onChange, spouseName, dependants }: { draft: NWDra
           </>
         )}
         {Number(draft.mortgageBalance) > 0 && (
-          <span className="text-[10px] text-[var(--accent-cyan)] italic">{ct("netWorth.linkedMortgage")}</span>
+          <span className="text-[10px] text-[var(--accent-cyan)] italic">"Adds a linked Mortgage to the Liabilities tab"</span>
         )}
       </div>
     );

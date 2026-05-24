@@ -157,7 +157,7 @@ export default function Login({ isGaPortal = false }: { isGaPortal?: boolean }) 
   }
 
   async function submitForgotAnswer() {
-    if (!newPassword || newPassword.length < 8) return setError("New password must be at least 8 characters.");
+    if (!newPassword || newPassword.length < 8) return setError("New password must be at least 12 characters.");
     setBusy(true); setError("");
     try {
       await api.post("/api/auth/forgot/reset", { email: forgotEmail, securityAnswer: forgotAnswer, newPassword });

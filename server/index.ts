@@ -4,59 +4,124 @@ import express from "express";
 process.on("unhandledRejection", (reason) => { console.error("[unhandledRejection]", reason); });
 process.on("uncaughtException",  (err)    => { console.error("[uncaughtException]", err); });
 
-import cors from "cors";
-import path from "path";
+import cors            from "cors";
+import helmet          from "helmet";
+import rateLimit       from "express-rate-limit";
+import path            from "path";
 import { fileURLToPath } from "url";
 import { pool, poolCA, poolUS, jurisdictionStore } from "./db/index.js";
 import { authRouter }       from "./routes/auth.js";
 import { clientsRouter }    from "./routes/clients.js";
-import { financialRouter } from "./routes/financial.js";
+import { financialRouter }  from "./routes/financial.js";
 import { simulateRouter }   from "./routes/simulate.js";
-import { simulationRouter } from "./routes/simulation.js";   // ← FIX 1: was missing
+import { simulationRouter } from "./routes/simulation.js";
 import { reportsRouter }    from "./routes/reports.js";
 import { taxRouter }        from "./routes/tax.js";
 import { usTaxRouter }      from "./routes/us-tax.js";
-import { lettersRouter } from "./routes/letters.js";
-import { goalsRouter } from "./routes/goals.js";
-import { pensionRouter } from "./routes/pension.js";
-import aiVoiceRouter from "./routes/ai-voice.js";
-import { aiReportRouter } from "./routes/ai-report.js";
-import { planningRouter } from "./planning/routes.js";
+import { lettersRouter }    from "./routes/letters.js";
+import { goalsRouter }      from "./routes/goals.js";
+import { pensionRouter }    from "./routes/pension.js";
+import aiVoiceRouter        from "./routes/ai-voice.js";
+import { planningRouter }   from "./planning/routes.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const PORT = parseInt(process.env.PORT ?? "8080", 10);
+const PORT      = parseInt(process.env.PORT ?? "8080", 10);
 
-// ── Startup migrations (idempotent)  ───────────────────────────────────────────
+// ── Startup migrations (idempotent) ───────────────────────────────────────────
 async function runMigrations() {
   const migrations = [
     `ALTER TABLE retirement_projections ADD COLUMN IF NOT EXISTS tfsa_contributions_made decimal(15,2)`,
     `ALTER TABLE retirement_projections ADD COLUMN IF NOT EXISTS person TEXT DEFAULT 'primary'`,
     `ALTER TABLE ai_recommendations ADD COLUMN IF NOT EXISTS run_id TEXT`,
     `ALTER TABLE clients ADD COLUMN IF NOT EXISTS spouse_pension_type TEXT`,
-    `ALTER TABLE clients ADD COLUMN IF NOT EXISTS jurisdiction TEXT NOT NULL DEFAULT 'CA'`,  // ← add
-    `ALTER TABLE clients ADD COLUMN IF NOT EXISTS us_state TEXT`,                            // ← add
-    `ALTER TABLE clients ADD COLUMN IF NOT EXISTS filing_status TEXT`,                       // ← add
-    `ALTER TABLE clients ADD COLUMN IF NOT EXISTS birth_year INTEGER`,                       // ← add
+    `ALTER TABLE clients ADD COLUMN IF NOT EXISTS jurisdiction TEXT NOT NULL DEFAULT 'CA'`,
+    `ALTER TABLE clients ADD COLUMN IF NOT EXISTS us_state TEXT`,
+    `ALTER TABLE clients ADD COLUMN IF NOT EXISTS filing_status TEXT`,
+    `ALTER TABLE clients ADD COLUMN IF NOT EXISTS birth_year INTEGER`,
   ];
   for (const sql of migrations) {
     for (const p of [poolCA, ...(process.env.DATABASE_URL_US ? [poolUS] : [])]) {
       try { await p.query(sql); }
-      catch (e: any) { console.error("[migration]", sql, e.message); }
+      catch (e: any) { console.error("[migration]", e.message); }  // ← Item 1: no sql in log (may contain PII via params)
     }
   }
   console.log("[migrations] done");
 }
 
 const app = express();
+
+// ── Item 2a: Helmet — security headers ────────────────────────────────────────
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc:  ["'self'"],
+      scriptSrc:   ["'self'", "'unsafe-inline'", "'unsafe-eval'"],  // Vite needs these in dev
+      styleSrc:    ["'self'", "'unsafe-inline'"],
+      imgSrc:      ["'self'", "data:", "blob:"],
+      connectSrc:  ["'self'"],
+      fontSrc:     ["'self'", "data:"],
+      objectSrc:   ["'none'"],
+      frameSrc:    ["'none'"],
+      upgradeInsecureRequests: process.env.NODE_ENV === "production" ? [] : null,
+    },
+  },
+  crossOriginEmbedderPolicy: false,   // needed for blob: report windows
+}));
+
+// ── Item 2b: CORS — locked to configured origin ────────────────────────────────
+const allowedOrigins = [
+  process.env.CLIENT_URL ?? "http://localhost:5173",
+  process.env.CUSTOM_DOMAIN,          // Item 5: CUSTOM_DOMAIN replaces any REPLIT_DOMAINS
+].filter(Boolean) as string[];
+
 app.use(cors({
-  origin: process.env.CLIENT_URL ?? "http://localhost:5173",
+  origin: (origin, cb) => {
+    // Allow requests with no origin (mobile apps, curl, server-to-server)
+    if (!origin || allowedOrigins.includes(origin)) return cb(null, true);
+    cb(new Error(`CORS: origin ${origin} not allowed`));
+  },
   credentials: true,
 }));
-app.use(express.json({ limit: "10mb" }));
+
+// ── Item 4: Body limit — 1 MB (was 10 MB) ─────────────────────────────────────
+// Audio uploads use multipart/form-data via multer and are unaffected.
+app.use(express.json({ limit: "1mb" }));
+app.use(express.urlencoded({ extended: true, limit: "1mb" }));
+
+// ── Item 2c: Rate limiting ─────────────────────────────────────────────────────
+// Global limiter — generous ceiling, stops runaway clients
+const globalLimiter = rateLimit({
+  windowMs:          15 * 60 * 1000,  // 15 minutes
+  max:               500,
+  standardHeaders:   true,
+  legacyHeaders:     false,
+  message:           { message: "Too many requests, please try again later." },
+});
+
+// Auth limiter — tight, stops brute force on login/register/forgot
+const authLimiter = rateLimit({
+  windowMs:          15 * 60 * 1000,  // 15 minutes
+  max:               20,              // 20 attempts per IP per 15 min
+  standardHeaders:   true,
+  legacyHeaders:     false,
+  message:           { message: "Too many authentication attempts. Please wait 15 minutes." },
+  skipSuccessfulRequests: true,       // only count failures
+});
+
+// AI limiter — Whisper + Claude calls are expensive
+const aiLimiter = rateLimit({
+  windowMs:          60 * 1000,       // 1 minute
+  max:               10,
+  standardHeaders:   true,
+  legacyHeaders:     false,
+  message:           { message: "AI rate limit reached. Please wait a moment." },
+});
+
+app.use(globalLimiter);
+app.use("/api/auth", authLimiter);
+app.use("/api/ai",   aiLimiter);
 
 // ── Jurisdiction context middleware ────────────────────────────────────────────
-// Lightweight JWT peek (no sig verification) — sets AsyncLocalStorage so the
-// `db` proxy routes to the correct Postgres instance before any handler runs.
 app.use((req: any, _res: any, next: any) => {
   let jur: "CA" | "US" = "CA";
   try {
@@ -71,22 +136,24 @@ app.use((req: any, _res: any, next: any) => {
   } catch { /* ignore — defaults to CA */ }
   jurisdictionStore.run(jur, next);
 });
-app.get("/api/health",  (_req, res) => res.json({ ok: true }));
-app.use("/api/auth",    authRouter);
-app.use("/api",         goalsRouter);
-app.use("/api", pensionRouter);
-app.use("/api/tax",     taxRouter);
-app.use("/api/us-tax",  usTaxRouter);
-app.use("/api", financialRouter);
-app.use("/api/clients", clientsRouter);
-app.use("/api",         simulateRouter);
-app.use("/api",         simulationRouter);   // ← FIX 1: mounts /api/simulation/:clientId/*
-app.use("/api/reports", reportsRouter);
-app.use("/api",         lettersRouter);
-app.use("/api/ai",      aiVoiceRouter);
-app.use("/api", aiReportRouter);
-app.use("/api/planning", planningRouter);
 
+// ── Routes ─────────────────────────────────────────────────────────────────────
+app.get("/api/health",    (_req, res) => res.json({ ok: true }));
+app.use("/api/auth",      authRouter);
+app.use("/api",           goalsRouter);
+app.use("/api",           pensionRouter);
+app.use("/api/tax",       taxRouter);
+app.use("/api/us-tax",    usTaxRouter);
+app.use("/api",           financialRouter);
+app.use("/api/clients",   clientsRouter);
+app.use("/api",           simulateRouter);
+app.use("/api",           simulationRouter);
+app.use("/api/reports",   reportsRouter);
+app.use("/api",           lettersRouter);
+app.use("/api/ai",        aiVoiceRouter);
+app.use("/api/planning",  planningRouter);
+
+// ── Static (production) ────────────────────────────────────────────────────────
 if (process.env.NODE_ENV === "production") {
   const dist = path.join(__dirname, "../client");
   app.use(express.static(dist, {
@@ -96,13 +163,14 @@ if (process.env.NODE_ENV === "production") {
     },
   }));
   app.get("*", (req, res) => {
-  if (req.path.startsWith("/api/")) { res.status(404).json({ message: "Not found" }); return; }
-  if (req.path.includes(".")) { res.status(404).send("Not found"); return; }
-  res.sendFile(path.join(dist, "index.html"));
-});
+    if (req.path.startsWith("/api/")) { res.status(404).json({ message: "Not found" }); return; }
+    if (req.path.includes("."))       { res.status(404).send("Not found"); return; }
+    res.sendFile(path.join(dist, "index.html"));
+  });
 }
 
 runMigrations().then(() => {
   app.listen(PORT, "0.0.0.0", () => console.log(`✅ FP running on :${PORT}`));
 });
+
 export default app;

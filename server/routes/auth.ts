@@ -9,6 +9,19 @@ import {
 import { eq } from "drizzle-orm";
 import { z } from "zod";
 
+// ── Password policy (PIPEDA-aligned) ──────────────────────────────────────────
+// Min 12 chars, at least one uppercase, one lowercase, one digit, one special char
+const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]).{12,}$/;
+function validatePassword(p: string): string | null {
+  if (p.length < 12)                          return "Password must be at least 12 characters.";
+  if (!/[A-Z]/.test(p))                       return "Password must contain at least one uppercase letter.";
+  if (!/[a-z]/.test(p))                       return "Password must contain at least one lowercase letter.";
+  if (!/\d/.test(p))                          return "Password must contain at least one number.";
+  if (!/[!@#$%^&*()_+\-=\[\]{};\':"\\|,.<>\/?]/.test(p)) return "Password must contain at least one special character.";
+  return null;
+}
+
+
 const r = Router();
 
 // ── Register ──────────────────────────────────────────────────────────────────
@@ -16,6 +29,8 @@ const r = Router();
 r.post("/register", async (req: Request, res: Response) => {
   try {
     const body = insertUserSchema.parse(req.body);
+    const pwErr = validatePassword(body.password);
+    if (pwErr) return res.status(400).json({ message: pwErr });
     const jur  = (body.jurisdiction ?? "CA") as "CA" | "US";
     const target = getDb(jur);
 
@@ -97,7 +112,7 @@ r.post("/change-password", isAuthenticated, async (req: AuthRequest, res: Respon
   try {
     const { currentPassword, newPassword, securityQuestion, securityAnswer } = z.object({
       currentPassword:  z.string().min(1),
-      newPassword:      z.string().min(8),
+      newPassword:      z.string().min(12),
       securityQuestion: z.string().optional(),
       securityAnswer:   z.string().optional(),
     }).parse(req.body);
@@ -124,7 +139,7 @@ r.post("/change-password", isAuthenticated, async (req: AuthRequest, res: Respon
 r.post("/force-reset-password", isAuthenticated, async (req: AuthRequest, res: Response) => {
   try {
     const { newPassword, securityQuestion, securityAnswer } = z.object({
-      newPassword:      z.string().min(8),
+      newPassword:      z.string().min(12),
       securityQuestion: z.string().optional(),
       securityAnswer:   z.string().optional(),
     }).parse(req.body);
@@ -160,7 +175,7 @@ r.post("/forgot/reset", async (req: Request, res: Response) => {
     const { email, securityAnswer, newPassword } = z.object({
       email:          z.string().email(),
       securityAnswer: z.string().min(1),
-      newPassword:    z.string().min(8),
+      newPassword:    z.string().min(12),
     }).parse(req.body);
 
     // Find in CA first, then US
@@ -213,13 +228,16 @@ r.post("/users", isAuthenticated, async (req: AuthRequest, res: Response) => {
       firstName:    z.string().min(1),
       lastName:     z.string().min(1),
       email:        z.string().email(),
-      password:     z.string().min(8),
+      password:     z.string().min(12),
       level:        z.enum(["standard", "enhanced"]).default("standard"),
       jurisdiction: z.enum(["CA", "US"]).default(req.userJurisdiction ?? "CA"),
     }).parse(req.body);
 
     // FA must be created in the same jurisdiction DB as the GA
     const targetJur = (body.jurisdiction ?? req.userJurisdiction ?? "CA") as "CA" | "US";
+
+    const faErr = validatePassword(body.password as string);
+    if (faErr) return res.status(400).json({ message: faErr });
 
     const exists = await db.select({ id: users.id }).from(users).where(eq(users.email, body.email)).limit(1);
     if (exists.length) return res.status(409).json({ message: "Email already registered" });
@@ -256,7 +274,7 @@ r.patch("/users/:id", isAuthenticated, async (req: AuthRequest, res: Response) =
       firstName: z.string().min(1).optional(),
       lastName:  z.string().min(1).optional(),
       level:     z.enum(["standard", "enhanced"]).optional(),
-      password:  z.string().min(8).optional(),
+      password:  z.string().min(12).optional(),
     }).parse(req.body);
 
     const update: any = { ...body };

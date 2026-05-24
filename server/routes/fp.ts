@@ -73,7 +73,7 @@ r.post("/clients/:id/net-worth", async (req: AuthRequest, res: Response) => {
       .returning();
     res.status(201).json(row);
   } catch (e: any) {
-    console.error("[net-worth/post]", e.message, JSON.stringify(req.body));
+    console.error("[net-worth/post]", e.message);  // body omitted — may contain PII
     res.status(500).json({ message: e.message });
   }
 });

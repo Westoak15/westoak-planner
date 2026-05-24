@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useContext } from "react";
 import { lazy, Suspense } from "react";
 import { useAuth } from "../lib/auth";
 import { token } from "../lib/api";
@@ -34,6 +34,7 @@ import { MeetingRecorderTrigger, IntakeRecorderTrigger, type IntakeProfile } fro
 import { useHotkeys } from "../hooks/useHotkeys";
 import { CommandPalette, type CommandAction } from "../components/ui/CommandPalette";
 import { InlineEdit } from "../components/ui/InlineEdit";
+import { ClientLocaleContext, type ClientLocale } from "../hooks/useClientLocale";
 import { Globe,
   Plus, Pencil, Trash2, X, Check, Search,
   User, Users, UserPlus, Baby, FileText, Home, Calendar, Briefcase, LogOut, Save, KeyRound, Eye, EyeOff, Mic, MicOff, Loader2,

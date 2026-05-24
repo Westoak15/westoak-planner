@@ -1,3 +1,4 @@
+import { getLabels, type ReportLocale } from "./reportLabels.js";
 ﻿/**
  * server/services/reportGenerator.ts
  * westoak-planner - -  HTML reports with inline SVG charts
@@ -205,8 +206,10 @@ function buildCoverSheet(opts: {
   firmName?:     string;
   province?:     string;
   dateStr:       string;
+  locale?:       ReportLocale;
 }): string {
   const firm = opts.firmName ?? DEFAULT_FIRM;
+  const L    = getLabels(opts.locale ?? "en");
   return `
 <div style="min-height:100vh;display:flex;flex-direction:column;justify-content:space-between;background:white;page-break-after:always;">
 
@@ -223,7 +226,7 @@ function buildCoverSheet(opts: {
 
     <!-- Prepared for -->
     <div>
-      <div style="font-size:9pt;letter-spacing:0.1em;text-transform:uppercase;color:var(--gray);margin-bottom:8px;">Prepared for</div>
+      <div style="font-size:9pt;letter-spacing:0.1em;text-transform:uppercase;color:var(--gray);margin-bottom:8px;">${L.preparedFor}</div>
       <div style="font-size:22pt;font-weight:700;color:var(--navy);">${esc(opts.clientName)}</div>
       ${opts.spouseName?`<div style="font-size:15pt;color:var(--gray);margin-top:4px;">& ${esc(opts.spouseName)}</div>`:""}
     </div>
@@ -234,16 +237,16 @@ function buildCoverSheet(opts: {
     <!-- Two-column: advisor + report details -->
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:40px;">
       <div>
-        <div style="font-size:9pt;letter-spacing:0.1em;text-transform:uppercase;color:var(--gray);margin-bottom:10px;">Your Advisor</div>
+        <div style="font-size:9pt;letter-spacing:0.1em;text-transform:uppercase;color:var(--gray);margin-bottom:10px;">${opts.locale === "fr" ? "Votre conseiller" : "Your Advisor"}</div>
         <div style="font-size:14pt;font-weight:700;color:var(--navy);margin-bottom:4px;">${esc(opts.advisorName)}</div>
         ${opts.advisorEmail?`<div style="font-size:10pt;color:var(--gray);margin-bottom:2px;">✉ ${esc(opts.advisorEmail)}</div>`:""}
         ${opts.advisorPhone?`<div style="font-size:10pt;color:var(--gray);">✆ ${esc(opts.advisorPhone)}</div>`:""}
       </div>
       <div>
-        <div style="font-size:9pt;letter-spacing:0.1em;text-transform:uppercase;color:var(--gray);margin-bottom:10px;">Report Details</div>
-        <div style="font-size:10pt;color:var(--navy);margin-bottom:4px;"><span style="color:var(--gray);">Date prepared:</span> <strong>${esc(opts.dateStr)}</strong></div>
+        <div style="font-size:9pt;letter-spacing:0.1em;text-transform:uppercase;color:var(--gray);margin-bottom:10px;">${opts.locale === "fr" ? "Détails du rapport" : "Report Details"}</div>
+        <div style="font-size:10pt;color:var(--navy);margin-bottom:4px;"><span style="color:var(--gray);">${opts.locale === "fr" ? "Date de préparation :" : "Date prepared:"}</span> <strong>${esc(opts.dateStr)}</strong></div>
         ${opts.province?`<div style="font-size:10pt;color:var(--navy);margin-bottom:4px;"><span style="color:var(--gray);">Province:</span> <strong>${esc(opts.province)}</strong></div>`:""}
-        <div style="font-size:10pt;color:var(--navy);"><span style="color:var(--gray);">Prepared by:</span> <strong>${esc(firm)}</strong></div>
+        <div style="font-size:10pt;color:var(--navy);"><span style="color:var(--gray);">${L.preparedBy} :</span> <strong>${esc(firm)}</strong></div>
       </div>
     </div>
   </div>
@@ -251,10 +254,10 @@ function buildCoverSheet(opts: {
   <!-- Footer disclaimer -->
   <div style="background:var(--lgray);padding:16px 56px;border-top:1px solid var(--mgray);">
     <p style="font-size:8pt;color:var(--gray);line-height:1.5;margin:0;">
-      <strong>Confidential:</strong> This report has been prepared solely for ${esc(opts.clientName)} and is intended for personal use only.
-      The information contained herein is based on data provided and is subject to change.
-      This document does not constitute financial, legal, or tax advice.
-      Please consult qualified professionals before making financial decisions.
+${opts.locale === "fr"
+        ? `<strong>Confidentiel :</strong> Ce rapport a été préparé exclusivement pour ${esc(opts.clientName)} et est destiné à un usage personnel uniquement. Les informations contenues dans ce document sont basées sur les données fournies et sont sujettes à modification. Ce document ne constitue pas un conseil financier, juridique ou fiscal. Veuillez consulter des professionnels qualifiés avant de prendre des décisions financières.`
+        : `<strong>Confidential:</strong> This report has been prepared solely for ${esc(opts.clientName)} and is intended for personal use only. The information contained herein is based on data provided and is subject to change. This document does not constitute financial, legal, or tax advice. Please consult qualified professionals before making financial decisions.`
+      }
     </p>
   </div>
 
@@ -263,6 +266,7 @@ function buildCoverSheet(opts: {
 
 function buildCoverLetter(opts: {
   clientFirstName:  string;
+  locale?:          ReportLocale;
   spouseFirstName?: string;
   clientName:       string;
   advisorName:      string;
@@ -341,9 +345,10 @@ function reportOpener(opts: {
   firmName?:        string;
   province?:        string;
   dateStr:          string;
+  locale?:          ReportLocale;
 }): string {
   const firstName = opts.clientFirstName ?? opts.clientName.split(" ")[0];
-  return buildCoverSheet(opts) + buildCoverLetter({
+  return buildCoverSheet({ ...opts, locale: opts.locale }) + buildCoverLetter({
     clientFirstName:  firstName,
     spouseFirstName:  opts.spouseFirstName,
     clientName:       opts.clientName,
@@ -353,6 +358,7 @@ function reportOpener(opts: {
     reportTitle:      opts.reportTitle,
     reportSubtitle:   opts.reportSubtitle,
     dateStr:          opts.dateStr,
+    locale:           opts.locale,
   });
 }
 
@@ -1696,6 +1702,7 @@ export function generateCoverSheet(data: {
 // ── Financial Plan Report ─────────────────────────────────────────────────────
 
 export function generateFinancialPlanReport(data: {
+  locale?: ReportLocale;
   plan: any;
   client: any;
   advisor?: any;
@@ -1704,8 +1711,8 @@ export function generateFinancialPlanReport(data: {
   const { plan, client } = data;
   const name     = `${client.firstName} ${client.lastName}`;
   const dateStr  = plan.generatedAt
-    ? new Date(plan.generatedAt).toLocaleDateString("en-CA", { year: "numeric", month: "long", day: "numeric" })
-    : new Date().toLocaleDateString("en-CA", { year: "numeric", month: "long", day: "numeric" });
+    ? new Date(plan.generatedAt).toLocaleDateString(dateLocale, { year: "numeric", month: "long", day: "numeric" })
+    : new Date().toLocaleDateString(dateLocale, { year: "numeric", month: "long", day: "numeric" });
   const advisorName = data.advisor ? `${data.advisor.firstName} ${data.advisor.lastName}` : "Your Advisor";
   const firm = data.firmName ?? DEFAULT_FIRM;
 
@@ -1716,7 +1723,10 @@ export function generateFinancialPlanReport(data: {
   const scoreColor = (s: number) =>
     s >= 4 ? "#16a34a" : s >= 3 ? "#d97706" : "#dc2626";
 
-  const statusLabel: Record<string, string> = {
+  const statusLabel: Record<string, string> = locale === "fr" ? {
+    on_track: "Sur la bonne voie", needs_attention: "Nécessite attention",
+    at_risk: "À risque", not_started: "Non commencé",
+  } : {
     on_track: "On Track", needs_attention: "Needs Attention",
     at_risk: "At Risk", not_started: "Not Started",
   };
@@ -1728,29 +1738,34 @@ export function generateFinancialPlanReport(data: {
     high: "#dc2626", medium: "#d97706", low: "#2563eb",
   };
 
+  const locale  = data.locale ?? (client.preferredLanguage as ReportLocale) ?? "en";
+  const L       = getLabels(locale);
+  const dateLocale = locale === "fr" ? "fr-CA" : "en-CA";
+
   const cover = reportOpener({
-    reportTitle:     "Comprehensive Financial Plan",
-    reportSubtitle:  "AI-Powered Analysis",
+    reportTitle:     locale === "fr" ? "Plan financier complet" : "Comprehensive Financial Plan",
+    reportSubtitle:  locale === "fr" ? "Analyse propulsée par l'IA" : "AI-Powered Analysis",
     clientName:      name,
     clientFirstName: client.firstName,
-    advisorName,
+    advisorName:     data.advisor ? advisorName : (locale === "fr" ? "Votre conseiller" : "Your Advisor"),
     firmName:        firm,
     province:        client.province ?? undefined,
     dateStr,
+    locale,
   });
 
   // ── Overall Score ──────────────────────────────────────────────────────────
   const overallScore = `
 <div class="section">
   <div class="section-header">
-    <div class="section-eyebrow">Plan Health</div>
-    <div class="section-title-lg">Overall Assessment</div>
+    <div class="section-eyebrow">${locale === "fr" ? "Santé du plan" : "Plan Health"}</div>
+    <div class="section-title-lg">${locale === "fr" ? "Évaluation globale" : "Overall Assessment"}</div>
   </div>
   <div class="summary-grid summary-grid-4">
     <div class="metric-card navy">
-      <div class="metric-label">Overall Score</div>
+      <div class="metric-label">${locale === "fr" ? "Score global" : "Overall Score"}</div>
       <div class="metric-value" style="font-size:32px">${es.score ?? "—"}/5</div>
-      <div class="metric-sub">Plan health rating</div>
+      <div class="metric-sub">${locale === "fr" ? "Cote de santé du plan" : "Plan health rating"}</div>
     </div>
     <div class="metric-card">
       <div class="metric-label">Net Worth</div>

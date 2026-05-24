@@ -1,17 +1,17 @@
-import { useState, useEffect, useCallback } from "react";
-import { lazy, Suspense } from "react";
-import { useAuth } from "../lib/auth";
-import { token } from "../lib/api";
-import { api } from "../lib/api";
-import { useToast, toast } from "@/hooks/use-toast";
-import { Toaster } from "@/components/ui/toaster";
-import { Sidebar, type Tab } from "../components/Sidebar";
-import { PlanningDocFlow, PLANNING_TABS, type PlanningTab } from "../components/layout/PlanningDocFlow";
-import { QueryClientProvider } from "@tanstack/react-query";
-import { queryClient } from "../lib/queryClient";
-import { TabLoader, Field, SectionHeader, Card, Input, Select, DobInput, Textarea } from "../components/ui/AppHelpers";
-import { ChangePasswordModal } from "../components/ChangePasswordModal";
-//import { AITab } from "./FinancialPlanning";
+import { Globe, useState, useEffect, useCallback } from "react";
+import { Globe, lazy, Suspense } from "react";
+import { Globe, useAuth } from "../lib/auth";
+import { Globe, token } from "../lib/api";
+import { Globe, api } from "../lib/api";
+import { Globe, useToast, toast } from "@/hooks/use-toast";
+import { Globe, Toaster } from "@/components/ui/toaster";
+import { Globe, Sidebar, type Tab } from "../components/Sidebar";
+import { Globe, PlanningDocFlow, PLANNING_TABS, type PlanningTab } from "../components/layout/PlanningDocFlow";
+import { Globe, QueryClientProvider } from "@tanstack/react-query";
+import { Globe, queryClient } from "../lib/queryClient";
+import { Globe, TabLoader, Field, SectionHeader, Card, Input, Select, DobInput, Textarea } from "../components/ui/AppHelpers";
+import { Globe, ChangePasswordModal } from "../components/ChangePasswordModal";
+//import { Globe, AITab } from "./FinancialPlanning";
 const AITab = lazy(() => import("./FinancialPlanning").then(m => ({ default: m.AITab })));
 const NetWorthTabNew   = lazy(() => import("./MultiEntryTabs").then(m => ({ default: m.NetWorthTab })));
 const RetirementHub    = lazy(() => import("../components/RetirementHub").then(m => ({ default: m.RetirementHub })));
@@ -27,14 +27,14 @@ const LettersTab       = lazy(() => import("./LettersTab").then(m => ({ default:
 const AgentsTab          = lazy(() => import("./AgentsTab").then(m => ({ default: m.AgentsTab })));
 const InsightLedDashboard = lazy(() => import("../components/InsightLedDashboard").then(m => ({ default: m.InsightLedDashboard })));
 
-import { fmt$, fmtPct, initials, avatarBg, cn } from "../lib/utils";
-import { VoiceProvider, useVoice, labelToKey } from "../contexts/VoiceContext";
-import { ClientOverview } from "./ClientOverview";
-import { MeetingRecorderTrigger, IntakeRecorderTrigger, type IntakeProfile } from "../components/MeetingRecorder";
-import { useHotkeys } from "../hooks/useHotkeys";
-import { CommandPalette, type CommandAction } from "../components/ui/CommandPalette";
-import { InlineEdit } from "../components/ui/InlineEdit";
-import {
+import { Globe, fmt$, fmtPct, initials, avatarBg, cn } from "../lib/utils";
+import { Globe, VoiceProvider, useVoice, labelToKey } from "../contexts/VoiceContext";
+import { Globe, ClientOverview } from "./ClientOverview";
+import { Globe, MeetingRecorderTrigger, IntakeRecorderTrigger, type IntakeProfile } from "../components/MeetingRecorder";
+import { Globe, useHotkeys } from "../hooks/useHotkeys";
+import { Globe, CommandPalette, type CommandAction } from "../components/ui/CommandPalette";
+import { Globe, InlineEdit } from "../components/ui/InlineEdit";
+import { Globe,
   Plus, Pencil, Trash2, X, Check, Search,
   User, Users, UserPlus, Baby, FileText, Home, Calendar, Briefcase, LogOut, Save, KeyRound, Eye, EyeOff, Mic, MicOff, Loader2,
   LayoutDashboard, PiggyBank, Shield, Receipt, Target, Brain, Scale, ChevronRight, ChevronUp, ChevronDown,
@@ -725,7 +725,26 @@ function ClientDetail({ client, onBack, onPlanSelect, onUpdate, level }: { clien
             <p className="text-sm text-gray-400">{client.province ?? "—"} · {hasSpouse ? "2 adults" : "1 adult"}{dependants.length ? ` · ${dependants.length} ${dependants.length === 1 ? "dependant" : "dependants"}` : ""}</p>
           </div>
         </div>
-        <div className="ml-auto flex gap-2">
+        <div className="ml-auto flex items-center gap-3">
+          {/* Client language toggle — controls report/letter language */}
+          <div className="flex items-center gap-1 border border-gray-200 rounded-lg p-0.5">
+            <Globe className="w-3.5 h-3.5 text-gray-400 ml-1.5" />
+            {["en", "fr"].map(lang => (
+              <button
+                key={lang}
+                onClick={async () => {
+                  const updated = await api.patch<Client>(`/api/clients/${client.id}`, { preferredLanguage: lang });
+                  onUpdate(updated);
+                }}
+                className={`text-xs font-semibold px-2 py-1 rounded transition-colors ${
+                  (client.preferredLanguage ?? (client.province === "QC" ? "fr" : "en")) === lang
+                    ? "bg-[#0c1e3a] text-white"
+                    : "text-gray-400 hover:text-gray-700"
+                }`}
+              >{lang.toUpperCase()}</button>
+            ))}
+          </div>
+          <div className="flex gap-2">
           {editing ? (
             <>
               <button onClick={() => { setEditing(false); setForm({...client}); }} className="text-sm text-gray-500 px-3 py-1.5 border border-gray-200 rounded-lg">Cancel</button>
@@ -738,6 +757,7 @@ function ClientDetail({ client, onBack, onPlanSelect, onUpdate, level }: { clien
               <Pencil className="w-3.5 h-3.5" /> Edit
             </button>
           )}
+          </div>
         </div>
       </div>
 

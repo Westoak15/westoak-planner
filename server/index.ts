@@ -41,6 +41,7 @@ async function runMigrations() {
     `ALTER TABLE clients ADD COLUMN IF NOT EXISTS us_state TEXT`,
     `ALTER TABLE clients ADD COLUMN IF NOT EXISTS filing_status TEXT`,
     `ALTER TABLE clients ADD COLUMN IF NOT EXISTS birth_year INTEGER`,
+    `ALTER TABLE clients ADD COLUMN IF NOT EXISTS preferred_language TEXT NOT NULL DEFAULT 'en'`,
     `ALTER TABLE users ADD COLUMN IF NOT EXISTS province TEXT`,
     `ALTER TABLE users ADD COLUMN IF NOT EXISTS locale TEXT NOT NULL DEFAULT 'en'`,
     `ALTER TABLE users ADD COLUMN IF NOT EXISTS totp_secret TEXT`,

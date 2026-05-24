@@ -32,6 +32,7 @@ export const clientCreateSchema = z.object({
   desiredRetirementIncome: z.coerce.number().nonnegative().optional().or(z.null()).transform(v => v ?? undefined),
   notes:                   z.string().max(5000).optional().or(z.null()).transform(v => v ?? ""),
   jurisdiction:            z.enum(["CA", "US"]).optional(),
+  preferredLanguage:       z.enum(["en", "fr"]).optional(),
 });
 
 export const clientPatchSchema = clientCreateSchema.partial();

@@ -75,6 +75,7 @@ export const clients = pgTable("clients", {
   phone:                       text("phone"),
   dateOfBirth:                 text("date_of_birth"),
   province:                    text("province").default("ON"),
+  preferredLanguage:           text("preferred_language").notNull().default("en"),
   occupation:                  text("occupation"),
   employmentStatus:            text("employment_status"),
   annualIncome:                decimal("annual_income", { precision: 15, scale: 2 }),

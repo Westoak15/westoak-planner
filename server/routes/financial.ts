@@ -1126,7 +1126,7 @@ r.post("/clients/:clientId/financial-plan-report", async (req: AuthRequest, res:
     });
 
     const { generateFinancialPlanReport } = await import("../services/reportGenerator.js") as any;
-    const html = generateFinancialPlanReport({ plan, client: clientRow });
+    const html = generateFinancialPlanReport({ plan, client: clientRow, locale: (clientRow.preferredLanguage ?? "en") as any });
     res.setHeader("Content-Type", "text/html; charset=utf-8");
     res.send(html);
   } catch (e: any) { console.error("[financial-plan-report] FULL ERROR:", e?.stack ?? e); res.status(500).json({ message: e?.message ?? "Unknown error", detail: e?.stack?.split("\n")[1] ?? "" }); }

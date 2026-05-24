@@ -22,6 +22,8 @@ import { lettersRouter }    from "./routes/letters.js";
 import { goalsRouter }      from "./routes/goals.js";
 import { pensionRouter }    from "./routes/pension.js";
 import aiVoiceRouter        from "./routes/ai-voice.js";
+import { mfaRouter }        from "./routes/mfa.js";
+import { httpLogger, logger } from "./logger.js";
 import { planningRouter }   from "./planning/routes.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -38,6 +40,8 @@ async function runMigrations() {
     `ALTER TABLE clients ADD COLUMN IF NOT EXISTS us_state TEXT`,
     `ALTER TABLE clients ADD COLUMN IF NOT EXISTS filing_status TEXT`,
     `ALTER TABLE clients ADD COLUMN IF NOT EXISTS birth_year INTEGER`,
+    `ALTER TABLE users ADD COLUMN IF NOT EXISTS totp_secret TEXT`,
+    `ALTER TABLE users ADD COLUMN IF NOT EXISTS totp_enabled BOOLEAN NOT NULL DEFAULT false`,
   ];
   for (const sql of migrations) {
     for (const p of [poolCA, ...(process.env.DATABASE_URL_US ? [poolUS] : [])]) {
@@ -67,6 +71,9 @@ app.use(helmet({
   },
   crossOriginEmbedderPolicy: false,   // needed for blob: report windows
 }));
+
+// ── Request logging (pino) ───────────────────────────────────────────────────────
+app.use(httpLogger);
 
 // ── Item 2b: CORS — locked to configured origin ────────────────────────────────
 const allowedOrigins = [
@@ -140,6 +147,7 @@ app.use((req: any, _res: any, next: any) => {
 // ── Routes ─────────────────────────────────────────────────────────────────────
 app.get("/api/health",    (_req, res) => res.json({ ok: true }));
 app.use("/api/auth",      authRouter);
+app.use("/api/auth/mfa",   mfaRouter);
 app.use("/api",           goalsRouter);
 app.use("/api",           pensionRouter);
 app.use("/api/tax",       taxRouter);
@@ -170,7 +178,7 @@ if (process.env.NODE_ENV === "production") {
 }
 
 runMigrations().then(() => {
-  app.listen(PORT, "0.0.0.0", () => console.log(`✅ FP running on :${PORT}`));
+  app.listen(PORT, "0.0.0.0", () => logger.info({ port: PORT }, "FP server started"));
 });
 
 export default app;

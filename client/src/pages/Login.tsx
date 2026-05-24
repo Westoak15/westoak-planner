@@ -16,7 +16,7 @@ const SECURITY_QUESTIONS = [
   "What was your childhood nickname?",
 ];
 
-type Mode = "login" | "register" | "forgot-email" | "forgot-question" | "forgot-reset" | "forgot-done";
+type Mode = "login" | "register" | "forgot-email" | "forgot-question" | "forgot-reset" | "forgot-done" | "mfa-challenge";
 
 const EMPTY_FORM = {
   firstName: "", lastName: "", firmName: "",
@@ -101,6 +101,8 @@ function Field({
 export default function Login({ isGaPortal = false }: { isGaPortal?: boolean }) {
   const { login, register } = useAuth();
   const [mode, setMode]         = useState<Mode>("login");
+  const [mfaToken, setMfaToken]  = useState<string | null>(null);
+  const [mfaCode, setMfaCode]    = useState("");
   const [form, setForm]         = useState({ ...EMPTY_FORM });
   const [showPw, setShowPw]     = useState(false);
   const [busy, setBusy]         = useState(false);
@@ -123,6 +125,23 @@ export default function Login({ isGaPortal = false }: { isGaPortal?: boolean }) 
   ].filter(Boolean).length >= 4;
 
   // ── Handlers ────────────────────────────────────────────────────────────────
+
+  async function submitMfaChallenge() {
+    if (mfaCode.length !== 6) return setError("Please enter your 6-digit code.");
+    setBusy(true); setError("");
+    try {
+      const r = await fetch("/api/auth/mfa/challenge", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mfaToken, code: mfaCode }),
+      });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.message ?? "Invalid code");
+      token.set(data.token);
+      window.location.reload();
+    } catch (e: any) { setError(e.message); }
+    finally { setBusy(false); }
+  }
 
   async function submitLogin() {
     setBusy(true); setError("");

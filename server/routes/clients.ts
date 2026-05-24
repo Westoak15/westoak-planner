@@ -1,3 +1,4 @@
+import { clientCreateSchema, clientPatchSchema } from "../../shared/validators.js";
 import type { Response } from "express";
 import { Router } from "express";
 import { db } from "../db/index.js";
@@ -52,7 +53,8 @@ r.get("/:id", async (req: AuthRequest, res: Response) => {
 
 r.post("/", async (req: AuthRequest, res: Response) => {
   try {
-    const [c] = await db.insert(clients).values({ ...safe(req.body), userId: req.userId }).returning();
+    const body = clientCreateSchema.parse(req.body);
+    const [c] = await db.insert(clients).values({ ...safe(body), userId: req.userId }).returning();
     res.status(201).json(c);
   } catch (e: any) {
     console.error("[clients/post]", e.message);
@@ -64,7 +66,7 @@ r.patch("/:id", async (req: AuthRequest, res: Response) => {
   const ok = await canAccessClient(req.userId!, +req.params.id);
   if (!ok) return res.status(404).json({ message: "Not found" });
   try {
-    const [u] = await db.update(clients).set(safe(req.body)).where(eq(clients.id, +req.params.id)).returning();
+    const [u] = await db.update(clients).set(safe(body)).where(eq(clients.id, +req.params.id)).returning();
     res.json(u);
   } catch (e: any) {
     console.error("[clients/patch]", e.message);

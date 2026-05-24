@@ -1,25 +1,14 @@
 import type { Request, Response } from "express";
 import { Router } from "express";
 import { db, getDb }    from "../db/index.js";
+import { signMfaToken } from "./mfa.js";
 import { users, insertUserSchema } from "../../shared/schema.js";
 import {
-  hashPassword, checkPassword, signToken,
+  hashPassword, checkPassword, signToken, validatePassword,
   isAuthenticated, getUser, type AuthRequest,
 } from "../auth/index.js";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
-
-// ── Password policy (PIPEDA-aligned) ──────────────────────────────────────────
-// Min 12 chars, at least one uppercase, one lowercase, one digit, one special char
-const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]).{12,}$/;
-function validatePassword(p: string): string | null {
-  if (p.length < 12)                          return "Password must be at least 12 characters.";
-  if (!/[A-Z]/.test(p))                       return "Password must contain at least one uppercase letter.";
-  if (!/[a-z]/.test(p))                       return "Password must contain at least one lowercase letter.";
-  if (!/\d/.test(p))                          return "Password must contain at least one number.";
-  if (!/[!@#$%^&*()_+\-=\[\]{};\':"\\|,.<>\/?]/.test(p)) return "Password must contain at least one special character.";
-  return null;
-}
 
 
 const r = Router();
@@ -83,6 +72,11 @@ r.post("/login", async (req: Request, res: Response) => {
 
     const jur = (u.jurisdiction ?? "CA") as "CA" | "US";
 
+    // If MFA is enabled, return a short-lived pending token instead of full session
+    if (u.totpEnabled) {
+      return res.json({ mfaRequired: true, mfaToken: signMfaToken(u.id, jur) });
+    }
+
     res.json({
       token: signToken(u.id, jur),
       user: {
@@ -127,6 +121,7 @@ r.post("/change-password", isAuthenticated, async (req: AuthRequest, res: Respon
       updates.securityAnswerHash = await hashPassword(securityAnswer.toLowerCase().trim());
     }
     await db.update(users).set(updates).where(eq(users.id, req.userId!));
+    // Force fresh session on password change — absolute cap resets
     res.json({ message: "Password changed successfully", token: signToken(u.id, req.userJurisdiction ?? "CA") });
   } catch (e: any) {
     if (e instanceof z.ZodError) return res.status(400).json({ message: "Validation error", errors: e.errors });
@@ -151,6 +146,7 @@ r.post("/force-reset-password", isAuthenticated, async (req: AuthRequest, res: R
     }
     await db.update(users).set(updates).where(eq(users.id, req.userId!));
     const [u] = await db.select().from(users).where(eq(users.id, req.userId!)).limit(1);
+    // Force fresh session on force-reset — absolute cap resets
     res.json({ message: "Password reset successfully", token: signToken(u.id, req.userJurisdiction ?? "CA") });
   } catch (e: any) {
     res.status(500).json({ message: e.message ?? "Server error" });

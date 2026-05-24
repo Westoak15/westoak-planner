@@ -52,6 +52,8 @@ export const users = pgTable("users", {
   phone:              text("phone"),
   securityQuestion:   text("security_question"),
   securityAnswerHash: text("security_answer_hash"),
+  totpSecret:         text("totp_secret"),
+  totpEnabled:        boolean("totp_enabled").default(false),
   createdAt:    timestamp("created_at").defaultNow().notNull(),
   updatedAt:    timestamp("updated_at").defaultNow().notNull(),
 });

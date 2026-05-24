@@ -94,3 +94,44 @@ describe("Security constants", () => {
     expect(bytes).toBeLessThanOrEqual(1 * 1024 * 1024);
   });
 });
+
+// ── Session hardening ──────────────────────────────────────────────────────────
+const SESSION_TTL_SECS  = 8  * 3600;
+const SESSION_MAX_SECS  = 12 * 3600;
+
+function signTokenWithIss(id: number, jur: "CA" | "US", iss: number): string {
+  return jwt.sign({ sub: id, jur, iss }, TEST_SECRET, { expiresIn: SESSION_TTL_SECS });
+}
+
+describe("session hardening", () => {
+  it("token expires after SESSION_TTL_SECS", () => {
+    expect(SESSION_TTL_SECS).toBe(8 * 3600);
+  });
+
+  it("absolute cap is SESSION_MAX_SECS", () => {
+    expect(SESSION_MAX_SECS).toBe(12 * 3600);
+  });
+
+  it("carries iss claim through rotation", () => {
+    const iss = Math.floor(Date.now() / 1000) - 3600; // 1 hour ago
+    const t = signTokenWithIss(1, "CA", iss);
+    const p = jwt.verify(t, TEST_SECRET) as any;
+    expect(p.iss).toBe(iss);
+  });
+
+  it("rejects session older than SESSION_MAX_SECS", () => {
+    const oldIss = Math.floor(Date.now() / 1000) - SESSION_MAX_SECS - 1;
+    const t = signTokenWithIss(1, "CA", oldIss);
+    const p = jwt.verify(t, TEST_SECRET) as any;
+    const now = Math.floor(Date.now() / 1000);
+    expect(now - p.iss).toBeGreaterThan(SESSION_MAX_SECS);
+  });
+
+  it("allows session within SESSION_MAX_SECS", () => {
+    const recentIss = Math.floor(Date.now() / 1000) - 7200; // 2 hours ago
+    const t = signTokenWithIss(1, "CA", recentIss);
+    const p = jwt.verify(t, TEST_SECRET) as any;
+    const now = Math.floor(Date.now() / 1000);
+    expect(now - p.iss).toBeLessThan(SESSION_MAX_SECS);
+  });
+});

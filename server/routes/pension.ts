@@ -1,3 +1,4 @@
+import { pensionCreateSchema, pensionPatchSchema } from "../../shared/validators.js";
 import type { Response } from "express";
 import { Router } from "express";
 import { db } from "../db/index.js";

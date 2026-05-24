@@ -20,6 +20,10 @@ async function req<T>(path: string, opts: RequestInit = {}): Promise<T> {
       ...(opts.headers ?? {}),
     },
   });
+  // Silent token rotation — server sends refreshed token on every authenticated request
+  const refreshed = res.headers.get("X-Refreshed-Token");
+  if (refreshed) token.set(refreshed);
+
   if (res.status === 401) { token.clear(); window.location.href = "/"; throw new Error("Unauthorized"); }
   if (!res.ok) {
     const b = await res.json().catch(() => ({}));

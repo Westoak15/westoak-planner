@@ -35,7 +35,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = async (email: string, pw: string) => {
-    const r = await api.post<{ token: string; user: User }>("/api/auth/login", { email, password: pw });
+    const r = await api.post<{ token: string; user: User; mfaRequired?: boolean; mfaToken?: string }>(
+      "/api/auth/login", { email, password: pw }
+    );
+    if (r.mfaRequired && r.mfaToken) {
+      // Signal to Login.tsx that MFA challenge is needed
+      throw Object.assign(new Error("MFA_REQUIRED"), { mfaToken: r.mfaToken });
+    }
     token.set(r.token); setUser(r.user);
   };
 

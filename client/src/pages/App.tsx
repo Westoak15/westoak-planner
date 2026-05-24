@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useContext } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { lazy, Suspense } from "react";
 import { useAuth } from "../lib/auth";
 import { token } from "../lib/api";
@@ -631,8 +631,7 @@ function ClientsTab({ onSelect }: { onSelect: (c: Client) => void }) {
 // ─────────────────────────────────────────────────────────────────────────────
 // Client Detail — shown when a client is selected (name, family, plans)
 // ─────────────────────────────────────────────────────────────────────────────
-function ClientDetail({ client, onBack, onPlanSelect, onUpdate, level }: { client: Client; onBack: () => void; onPlanSelect: (p: Plan) => void; onUpdate: (c: Client) => void; level?: string }) {
-  const { setClientLocale } = useContext(ClientLocaleContext);
+function ClientDetail({ client, onBack, onPlanSelect, onUpdate, onLocaleChange, level }: { client: Client; onBack: () => void; onPlanSelect: (p: Plan) => void; onUpdate: (c: Client) => void; onLocaleChange: (l: ClientLocale) => void; level?: string }) {
   const [plans, setPlans]       = useState<Plan[]>([]);
   const [editing, setEditing]   = useState(false);
   const [form, setForm]         = useState<Partial<Client>>({ ...client });
@@ -741,7 +740,7 @@ function ClientDetail({ client, onBack, onPlanSelect, onUpdate, level }: { clien
                       try {
                         const updated = await api.patch<Client>(`/api/clients/${client.id}`, { preferredLanguage: lang });
                         onUpdate(updated);
-                        setClientLocale(lang as ClientLocale);
+                        onLocaleChange(lang as ClientLocale);
                       } catch {}
                     }}
                     className={`text-xs font-semibold px-2 py-1 rounded transition-colors ${
@@ -1072,6 +1071,13 @@ export default function App() {
   const [person, setPerson] = useState<"primary"|"spouse"|"combined">("primary");
   const [client, setClient]       = useState<Client | null>(null);
   const [clientLocale, setClientLocale] = useState<ClientLocale>("en");
+
+  // Auto-sync client locale when active client changes
+  useEffect(() => {
+    if (!client) { setClientLocale("en"); return; }
+    const lang = (client.preferredLanguage ?? (client.province === "QC" ? "fr" : "en")) as ClientLocale;
+    setClientLocale(lang);
+  }, [client?.id, client?.preferredLanguage]);
   const [plan, setPlan]           = useState<Plan | null>(null);
   const [showClientDetail, setShowClientDetail] = useState(false);
   const [clientOv, setClientOv]   = useState<Overview | null>(null);
@@ -1277,7 +1283,7 @@ export default function App() {
             <ClientsTab onSelect={selectClient} />
           )}
           {tab === "clients" && showClientDetail && client && (
-            <ClientDetail client={client} onBack={backToClients} onPlanSelect={selectPlan} onUpdate={setClient} level={level} />
+            <ClientDetail client={client} onBack={backToClients} onPlanSelect={selectPlan} onUpdate={setClient} onLocaleChange={setClientLocale} level={level} />
           )}
           {tab !== "agents" && tab !== "clients" && !client && (
             <div className="flex flex-col items-center justify-center h-full text-center p-8">

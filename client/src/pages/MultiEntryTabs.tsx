@@ -353,6 +353,7 @@ function CustomTooltip({ active, payload, totalA }: { active?: boolean; payload?
 
 // ── NetWorthTab ───────────────────────────────────────────────────────────────
 export function NetWorthTab({ clientId, client }: { clientId: number; client?: { firstName: string; lastName: string; spouseFirstName?: string | null; spouseLastName?: string | null } }) {
+  const { ct } = useClientLocale();
   const [entries, setEntries] = useState<NWEntry[]>([]);
   const [drafts, setDrafts]   = useState<NWDraft[]>([]);
   const [saving, setSaving]   = useState(false);

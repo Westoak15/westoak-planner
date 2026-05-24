@@ -1,3 +1,4 @@
+import type { T } from "../i18n/translations";
 import { toast } from "@/hooks/use-toast";
 import { useState, useEffect, useMemo } from "react";
 import { api } from "../lib/api";
@@ -687,7 +688,7 @@ function GoalsSummary({ goals }: { goals: Goal[] }) {
 
 // ── Main Component ───────────────────────────────────────────────────────────
 
-export function GoalsTab({ clientId, client }: { clientId: number; client?: any }) {
+export function GoalsTab({ clientId, client, t }: { clientId: number; client?: any; t?: T }) {
   const [goals, setGoals]       = useState<Goal[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [editingGoal, setEditingGoal] = useState<Goal | null>(null);

@@ -11,7 +11,8 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "../lib/queryClient";
 import { TabLoader, Field, SectionHeader, Card, Input, Select, DobInput, Textarea } from "../components/ui/AppHelpers";
 import { ChangePasswordModal } from "../components/ChangePasswordModal";
-//import { Globe, AITab } from "./FinancialPlanning";
+//import { translations, type T, type ClientLocale } from "../i18n/translations";
+import { Globe, AITab } from "./FinancialPlanning";
 const AITab = lazy(() => import("./FinancialPlanning").then(m => ({ default: m.AITab })));
 const NetWorthTabNew   = lazy(() => import("./MultiEntryTabs").then(m => ({ default: m.NetWorthTab })));
 const RetirementHub    = lazy(() => import("../components/RetirementHub").then(m => ({ default: m.RetirementHub })));
@@ -34,7 +35,7 @@ import { MeetingRecorderTrigger, IntakeRecorderTrigger, type IntakeProfile } fro
 import { useHotkeys } from "../hooks/useHotkeys";
 import { CommandPalette, type CommandAction } from "../components/ui/CommandPalette";
 import { InlineEdit } from "../components/ui/InlineEdit";
-import { ClientLocaleContext, type ClientLocale } from "../hooks/useClientLocale";
+import { translations, type T, type ClientLocale } from "../i18n/translations";
 import { Globe,
   Plus, Pencil, Trash2, X, Check, Search,
   User, Users, UserPlus, Baby, FileText, Home, Calendar, Briefcase, LogOut, Save, KeyRound, Eye, EyeOff, Mic, MicOff, Loader2,
@@ -1185,6 +1186,7 @@ export default function App() {
     setTab("clients");
   }
 
+  const t: T = translations[clientLocale];
   const clientName = client ? `${client.firstName} ${client.lastName}` : undefined;
   const hasSpouse = !!client?.spouseFirstName;
   // Person toggle is rendered by HubShell inside each hub / PlanningDocFlow.
@@ -1259,7 +1261,6 @@ export default function App() {
 
         {/* Content — wrap in fp-insightled so EVERY tab gets the
             light-grey page + dark-card treatment (sidebar/header are outside) */}
-        <ClientLocaleContext.Provider value={{ clientLocale, setClientLocale }}>
         <div key={tab} className={`flex-1 fp-insightled animate-in fade-in duration-300 ${
             tab === "networth" ? "overflow-hidden" : "overflow-y-auto"
         }`}>
@@ -1342,17 +1343,17 @@ export default function App() {
               >
                 {tab === "networth" && (
                   <QueryClientProvider client={queryClient}>
-                      <NetWorthTabNew clientId={client.id} client={client} />
+                      <NetWorthTabNew clientId={client.id} client={client} t={t} />
                    </QueryClientProvider>
                 )}
                 {tab === "goals"    && (
                   <QueryClientProvider client={queryClient}>
-                    <GoalsTab clientId={client.id} client={client} />
+                    <GoalsTab clientId={client.id} client={client} t={t} />
                  </QueryClientProvider>
                 )}
                 {tab === "debt"     && (
                   <QueryClientProvider client={queryClient}>
-                    <DebtTab clientId={client.id} />
+                    <DebtTab clientId={client.id} t={t} />
                   </QueryClientProvider>
                 )}
                 {tab === "expenses" && (
@@ -1370,7 +1371,6 @@ export default function App() {
           )}
           </Suspense>
         </div>
-        </ClientLocaleContext.Provider>
       </div>
      </div>
     </VoiceProvider>

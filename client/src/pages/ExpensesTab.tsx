@@ -60,7 +60,7 @@ function Metric({ label, value, color = "text-slate-900" }: { label: string; val
   );
 }
 
-export function ExpensesTab({ clientId, addTrigger = 0 }: { clientId: number; addTrigger?: number; t?: T }) {
+export function ExpensesTab({ clientId, addTrigger = 0, t = translations.en }: { clientId: number; addTrigger?: number; t?: T }) {
   const qc = useQueryClient();
   const key = ["expenses", clientId];
 
@@ -85,6 +85,16 @@ export function ExpensesTab({ clientId, addTrigger = 0 }: { clientId: number; ad
 
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<number | null>(null);
+
+  const catLabel = (cat: string): string => ({
+    "Housing": t.cashFlow.housing, "Utilities": t.cashFlow.utilities,
+    "Food & Groceries": t.cashFlow.food, "Transportation": t.cashFlow.transportation,
+    "Healthcare": t.cashFlow.healthcare, "Insurance Premiums": t.cashFlow.insurance,
+    "Entertainment & Leisure": t.cashFlow.entertainment,
+    "Clothing & Personal Care": t.cashFlow.personal,
+    "Savings & Investments": t.cashFlow.savings, "Other": t.cashFlow.other,
+  } as Record<string,string>)[cat] ?? cat;
+
   const [selected, setSelected] = useState<string | null>(null);
   const [hovered, setHovered] = useState<string | null>(null);
   const [kbIndex, setKbIndex] = useState(0);

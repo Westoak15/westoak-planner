@@ -36,39 +36,79 @@ interface Goal {
 
 // ── Goal type config ─────────────────────────────────────────────────────────
 
-const GOAL_TYPES = [
-  { key: "major_purchase",    label: "Major Purchase",     icon: Home,         cashflowType: "outflow",           desc: "House, cottage, renovation, vehicle" },
-  { key: "windfall",          label: "Windfall / Inflow",  icon: TrendingUp,   cashflowType: "inflow",            desc: "Inheritance, bonus, property sale" },
-  { key: "education",         label: "Education / RESP",   icon: GraduationCap,cashflowType: "savings_target",    desc: "University fund, RESP target" },
-  { key: "emergency_fund",    label: "Emergency Fund",     icon: Shield,       cashflowType: "savings_target",    desc: "3-6 months of expenses" },
-  { key: "travel_lifestyle",  label: "Travel / Lifestyle", icon: Plane,        cashflowType: "recurring_expense", desc: "Travel years, sabbatical, early retirement gap" },
-  { key: "debt_free",         label: "Debt Free",          icon: TrendingDown, cashflowType: "outflow",           desc: "Lump sum debt payoff event" },
-  { key: "retirement",        label: "Retirement",         icon: Star,         cashflowType: "savings_target",    desc: "Retirement savings milestone" },
-  { key: "custom",            label: "Custom Goal",        icon: Target,       cashflowType: "savings_target",    desc: "Any other financial goal" },
+// ── Static data (no translated strings — safe at module level) ───────────────
+const GOAL_TYPE_STATIC = [
+  { key: "major_purchase",   icon: Home,         cashflowType: "outflow"           },
+  { key: "windfall",         icon: TrendingUp,   cashflowType: "inflow"            },
+  { key: "education",        icon: GraduationCap,cashflowType: "savings_target"    },
+  { key: "emergency_fund",   icon: Shield,       cashflowType: "savings_target"    },
+  { key: "travel_lifestyle", icon: Plane,        cashflowType: "recurring_expense" },
+  { key: "debt_free",        icon: TrendingDown, cashflowType: "outflow"           },
+  { key: "retirement",       icon: Star,         cashflowType: "savings_target"    },
+  { key: "custom",           icon: Target,       cashflowType: "savings_target"    },
 ];
 
-const FUNDING_SOURCES = [
-  { key: "non_reg",   label: "Non-Registered" },
-  { key: "tfsa",      label: "TFSA" },
-  { key: "rrsp",      label: "RRSP" },
-  { key: "cash",      label: "Cash / Savings" },
-  { key: "automatic", label: "Auto (engine decides)" },
-];
-
-const PRIORITY_LABELS: Record<number, { label: string; color: string }> = {
-  1: { label: "Critical",     color: "text-rose-600   bg-rose-50   border-rose-200"   },
-  2: { label: "High",         color: "text-amber-600  bg-amber-50  border-amber-200"  },
-  3: { label: "Medium",       color: "text-blue-600   bg-blue-50   border-blue-200"   },
-  4: { label: "Low",          color: "text-slate-600  bg-slate-100 border-slate-200"  },
-  5: { label: "Nice to have", color: "text-slate-500  bg-slate-50  border-slate-200"  },
+// Static key→colour only; labels come from t
+const PRIORITY_COLORS: Record<number, string> = {
+  1: "text-rose-600   bg-rose-50   border-rose-200",
+  2: "text-amber-600  bg-amber-50  border-amber-200",
+  3: "text-blue-600   bg-blue-50   border-blue-200",
+  4: "text-slate-600  bg-slate-100 border-slate-200",
+  5: "text-slate-500  bg-slate-50  border-slate-200",
 };
 
-const STATUS_CONFIG: Record<string, { label: string; dot: string }> = {
-  in_progress: { label: "In Progress", dot: "bg-blue-500" },
-  on_track:    { label: "On Track",    dot: "bg-green-500" },
-  at_risk:     { label: "At Risk",     dot: "bg-amber-500" },
-  completed:   { label: "Completed",   dot: "bg-gray-400" },
+const STATUS_DOTS: Record<string, string> = {
+  in_progress: "bg-blue-500",
+  on_track:    "bg-green-500",
+  at_risk:     "bg-amber-500",
+  completed:   "bg-gray-400",
 };
+
+// ── Factory functions — call these inside components where t is available ─────
+function goalTypes(t: T) {
+  return [
+    { key: "major_purchase",   label: t.goals.majorPurchase,   icon: Home,         cashflowType: "outflow",           desc: t.goals.majorPurchaseDesc },
+    { key: "windfall",         label: t.goals.windfall,        icon: TrendingUp,   cashflowType: "inflow",            desc: t.goals.windfallDesc      },
+    { key: "education",        label: t.goals.education,       icon: GraduationCap,cashflowType: "savings_target",    desc: t.goals.educationDesc     },
+    { key: "emergency_fund",   label: t.goals.emergencyFund,   icon: Shield,       cashflowType: "savings_target",    desc: t.goals.emergencyFundDesc },
+    { key: "travel_lifestyle", label: t.goals.travelLifestyle, icon: Plane,        cashflowType: "recurring_expense", desc: t.goals.travelDesc        },
+    { key: "debt_free",        label: t.goals.debtFree,        icon: TrendingDown, cashflowType: "outflow",           desc: t.goals.debtFreeDesc      },
+    { key: "retirement",       label: t.goals.retirement,      icon: Star,         cashflowType: "savings_target",    desc: t.goals.retirementDesc    },
+    { key: "custom",           label: t.goals.customGoal,      icon: Target,       cashflowType: "savings_target",    desc: t.goals.customGoalDesc    },
+  ];
+}
+
+function fundingSources(t: T) {
+  return [
+    { key: "non_reg",   label: t.goals.nonRegistered },
+    { key: "tfsa",      label: "TFSA"                },
+    { key: "rrsp",      label: "RRSP"                },
+    { key: "cash",      label: t.goals.cashSavings   },
+    { key: "automatic", label: t.goals.autoEngine    },
+  ];
+}
+
+function priorityLabels(t: T): Record<number, { label: string; color: string }> {
+  return {
+    1: { label: t.common.critical,   color: PRIORITY_COLORS[1] },
+    2: { label: t.common.high,       color: PRIORITY_COLORS[2] },
+    3: { label: t.common.medium,     color: PRIORITY_COLORS[3] },
+    4: { label: t.common.low,        color: PRIORITY_COLORS[4] },
+    5: { label: t.common.niceToHave, color: PRIORITY_COLORS[5] },
+  };
+}
+
+function statusConfig(t: T): Record<string, { label: string; dot: string }> {
+  return {
+    in_progress: { label: t.common.inProgress, dot: STATUS_DOTS.in_progress },
+    on_track:    { label: t.common.onTrack,    dot: STATUS_DOTS.on_track    },
+    at_risk:     { label: t.common.atRisk,     dot: STATUS_DOTS.at_risk     },
+    completed:   { label: t.goals.completed,   dot: STATUS_DOTS.completed   },
+  };
+}
+
+// Keep GOAL_TYPES at module level for emptyForm (uses only cashflowType, not labels)
+const GOAL_TYPES = GOAL_TYPE_STATIC;
 
 const CURRENT_YEAR = new Date().getFullYear();
 
@@ -149,7 +189,10 @@ function GoalTimeline({ goals, clientAge }: { goals: Goal[]; clientAge?: number 
 
 // ── Goal Card ────────────────────────────────────────────────────────────────
 
-function GoalCard({ goal, onEdit, onDelete, onInlineUpdate }: { goal: Goal; onEdit: () => void; onDelete: () => void; onInlineUpdate: (id: number, data: Partial<Goal>) => void }) {
+function GoalCard({ goal, t, onEdit, onDelete, onInlineUpdate }: { goal: Goal; t: T; onEdit: () => void; onDelete: () => void; onInlineUpdate: (id: number, data: Partial<Goal>) => void }) {
+  const GOAL_TYPES      = goalTypes(t);
+  const PRIORITY_LABELS = priorityLabels(t);
+  const STATUS_CONFIG   = statusConfig(t);
   const typeInfo  = GOAL_TYPES.find(t => t.key === goal.goalType) ?? GOAL_TYPES[7];
   const Icon      = typeInfo.icon;
   const priority  = PRIORITY_LABELS[goal.priority ?? 3];
@@ -180,7 +223,7 @@ function GoalCard({ goal, onEdit, onDelete, onInlineUpdate }: { goal: Goal; onEd
                 value={goal.title}
                 onSave={v => onInlineUpdate(goal.id, { title: v } as any)}
                 className="font-semibold text-slate-900 text-sm"
-                placeholder="Goal title"
+                placeholder={t.goals.goalTitle}
               />
             </div>
             <p className="text-xs text-slate-500">{typeInfo.label}</p>
@@ -223,7 +266,7 @@ function GoalCard({ goal, onEdit, onDelete, onInlineUpdate }: { goal: Goal; onEd
           <>
             <div className="bg-slate-50 rounded-xl px-3 py-2">
               <p className="text-[10px] text-slate-500 mb-0.5">
-                {goal.cashflowType === "inflow" ? "Expected Inflow" : "Target Amount"}
+                {goal.cashflowType === "inflow" ? t.goals.expectedAmount : t.goals.targetAmount}
               </p>
               <div className={`text-sm font-bold font-mono ${isOutflow ? "text-rose-500" : goal.cashflowType === "inflow" ? "text-emerald-600" : "text-slate-900"}`} onClick={e => e.stopPropagation()}>
                 <InlineEdit
@@ -244,7 +287,7 @@ function GoalCard({ goal, onEdit, onDelete, onInlineUpdate }: { goal: Goal; onEd
                   format={v => String(v) || "—"}
                   onSave={v => onInlineUpdate(goal.id, { targetYear: Number(v) } as any)}
                   inputClassName="w-20"
-                  placeholder="Year"
+                  placeholder={t.common.year}
                 />
               </div>
             </div>
@@ -287,7 +330,7 @@ function GoalCard({ goal, onEdit, onDelete, onInlineUpdate }: { goal: Goal; onEd
             onClick={() => setNotesOpen(o => !o)}
             className="text-xs text-blue-600 hover:underline"
           >
-            {notesOpen ? "Hide notes" : (goal.notes ? "Notes ↓" : "+ Notes")}
+            {notesOpen ? t.common.hideNotes : (goal.notes ? "Notes ↓" : t.common.addNotes)}
           </button>
         </div>
       </div>
@@ -305,7 +348,7 @@ function GoalCard({ goal, onEdit, onDelete, onInlineUpdate }: { goal: Goal; onEd
           <div className="flex justify-end gap-2">
             <button onClick={() => { setNotes(goal.notes ?? ""); setNotesOpen(false); }} className="text-xs text-slate-500 hover:text-slate-700">Cancel</button>
             <button onClick={saveNotes} disabled={notesSaving} className="text-xs text-blue-600 font-semibold hover:underline disabled:opacity-50">
-              {notesSaving ? "Saving…" : "Save notes"}
+              {notesSaving ? t.common.saving : "Save notes"}
             </button>
           </div>
         </div>
@@ -317,14 +360,17 @@ function GoalCard({ goal, onEdit, onDelete, onInlineUpdate }: { goal: Goal; onEd
 // ── Goal Form ────────────────────────────────────────────────────────────────
 
 function GoalForm({
-  initial, onSave, onCancel, busy, clientId,
+  initial, onSave, onCancel, busy, clientId, t,
 }: {
   initial: ReturnType<typeof emptyForm>;
   onSave: (f: ReturnType<typeof emptyForm>) => void;
   onCancel: () => void;
   busy: boolean;
   clientId: number;
+  t: T;
 }) {
+  const GOAL_TYPES      = goalTypes(t);
+  const FUNDING_SOURCES = fundingSources(t);
   const [form, setForm] = useState(initial);
   const [liabilities, setLiabilities] = useState<Array<{
     id: number; name: string | null; category: string | null;
@@ -495,7 +541,7 @@ function GoalForm({
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="text-xs font-semibold text-[var(--text-tertiary)] block mb-1">
-                  {form.cashflowType === "inflow" ? "Expected Inflow" : "Target Amount"}
+                  {form.cashflowType === "inflow" ? t.goals.expectedAmount : t.goals.targetAmount}
                 </label>
                 <input type="number" value={form.targetAmount} onChange={e => upd("targetAmount", e.target.value)}
                   className="w-full px-3 py-2 rounded-xl border border-[var(--border-light)] bg-[var(--bg-panel)] text-[var(--text-primary)] text-sm focus:outline-none focus:border-[var(--accent-cyan)] focus:ring-0" placeholder="0" />
@@ -629,7 +675,7 @@ function GoalForm({
             <label className="text-xs font-semibold text-[var(--text-tertiary)] block mb-1">Notes (optional)</label>
             <textarea value={form.notes} onChange={e => upd("notes", e.target.value)} rows={2}
               className="w-full px-3 py-2 rounded-xl border border-[var(--border-light)] bg-[var(--bg-panel)] text-[var(--text-primary)] text-sm resize-none focus:outline-none focus:border-[var(--accent-cyan)] focus:ring-0 placeholder:text-[var(--text-tertiary)]"
-              placeholder="Any additional context..." />
+              placeholder={t.goals.additionalContext} />
           </div>
         </div>
 
@@ -638,7 +684,7 @@ function GoalForm({
           <button onClick={() => onSave(form)} disabled={busy || !form.title}
             className="flex items-center gap-1.5 bg-gradient-to-r from-[var(--accent-cyan)] to-[var(--accent-blue)] hover:opacity-90 disabled:opacity-50 text-[var(--bg-base)] text-sm font-semibold px-5 py-2.5 rounded-xl">
             <Save className="w-3.5 h-3.5" />
-            {busy ? "Saving…" : "Save Goal"}
+            {busy ? t.common.saving : t.goals.saveGoal}
           </button>
         </div>
       </div>
@@ -659,7 +705,7 @@ function Stat({ label, value, color = "text-slate-900" }: any) {
   );
 }
 
-function GoalsSummary({ goals }: { goals: Goal[] }) {
+function GoalsSummary({ goals, t }: { goals: Goal[]; t: T }) {
   const totalOutflows = goals
     .filter(g => g.cashflowType === "outflow" || g.cashflowType === "recurring_expense")
     .reduce((s, g) => {
@@ -678,10 +724,10 @@ function GoalsSummary({ goals }: { goals: Goal[] }) {
 
   return (
     <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-5">
-      <Stat label="Total Goals"        value={goals.length}        color="text-slate-900" />
-      <Stat label="Projected Outflows" value={fmt$(totalOutflows)} color="text-red-500" />
-      <Stat label="Expected Inflows"   value={fmt$(totalInflows)}  color="text-emerald-600" />
-      <Stat label="In Monte Carlo"     value={inPlan}              color="text-blue-600" />
+      <Stat label={t.goals.totalGoals}        value={goals.length}        color="text-slate-900" />
+      <Stat label={t.goals.projectedOutflows} value={fmt$(totalOutflows)} color="text-red-500" />
+      <Stat label={t.goals.expectedInflows}   value={fmt$(totalInflows)}  color="text-emerald-600" />
+      <Stat label={t.goals.inMonteCarlo}     value={inPlan}              color="text-blue-600" />
     </div>
   );
 }
@@ -812,7 +858,7 @@ export function GoalsTab({ clientId, client, t = translations.en }: { clientId: 
           </button>
           <button onClick={openNew}
             className="flex items-center gap-1.5 text-sm font-semibold bg-gradient-to-r from-blue-600 to-cyan-500 hover:shadow-md text-white px-4 py-2 rounded-lg shadow-sm transition">
-            <Plus className="w-4 h-4" /> "Add Goal"
+            <Plus className="w-4 h-4" /> {t.goals.addGoal}
           </button>
         </div>
       </div>
@@ -836,7 +882,7 @@ export function GoalsTab({ clientId, client, t = translations.en }: { clientId: 
       )}
 
       {/* Summary stats */}
-      {goals.length > 0 && <GoalsSummary goals={goals} />}
+      {goals.length > 0 && <GoalsSummary goals={goals} t={t} />}
 
       {/* Timeline card */}
       {goals.length > 0 && (
@@ -885,7 +931,7 @@ export function GoalsTab({ clientId, client, t = translations.en }: { clientId: 
           {filtered
             .sort((a, b) => (a.priority ?? 3) - (b.priority ?? 3))
             .map(g => (
-              <GoalCard key={g.id} goal={g} onEdit={() => openEdit(g)} onDelete={() => del(g.id)} onInlineUpdate={inlineUpdate} />
+              <GoalCard key={g.id} goal={g} t={t} onEdit={() => openEdit(g)} onDelete={() => del(g.id)} onInlineUpdate={inlineUpdate} />
             ))}
         </div>
       )}
@@ -899,7 +945,7 @@ export function GoalsTab({ clientId, client, t = translations.en }: { clientId: 
           </summary>
           <div className="bg-white border border-slate-200 rounded-2xl p-5 space-y-4 mt-3 opacity-60">
             {completed.map(g => (
-              <GoalCard key={g.id} goal={g} onEdit={() => openEdit(g)} onDelete={() => del(g.id)} onInlineUpdate={inlineUpdate} />
+              <GoalCard key={g.id} goal={g} t={t} onEdit={() => openEdit(g)} onDelete={() => del(g.id)} onInlineUpdate={inlineUpdate} />
             ))}
           </div>
         </details>
@@ -913,6 +959,7 @@ export function GoalsTab({ clientId, client, t = translations.en }: { clientId: 
           onCancel={() => { setShowForm(false); setEditingGoal(null); }}
           busy={busy}
           clientId={clientId}
+          t={t}
         />
       )}
     </div>

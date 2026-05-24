@@ -344,7 +344,7 @@ function ExecutiveSummary({ es }: { es: FinancialPlan["executiveSummary"] }) {
 
 // ── Main Component ────────────────────────────────────────────────────────────
 
-export function FinancialPlanTab({ clientId, clientName }: { clientId: number; clientName?: string }) {
+export function FinancialPlanTab({ clientId, clientName, t = translations.en }: { clientId: number; clientName?: string; t?: T }) {
   const [plan, setPlan]         = useState<FinancialPlan | null>(null);
   const [saved, setSaved]       = useState<SavedPlan[]>([]);
   const [loading, setLoading]   = useState(false);
@@ -375,7 +375,7 @@ export function FinancialPlanTab({ clientId, clientName }: { clientId: number; c
         headers: { Authorization: `Bearer ${token()}`, "Content-Type": "application/json" },
         body: JSON.stringify({ plan }),
       });
-      if (!res.ok) throw new Error("Report generation failed");
+      if (!res.ok) throw new Error(t.plan.error);
       const html = await res.text();
       const blob = new Blob([html], { type: "text/html" });
       const win  = window.open(URL.createObjectURL(blob), "_blank");
@@ -457,12 +457,12 @@ export function FinancialPlanTab({ clientId, clientName }: { clientId: number; c
             <>
               <button onClick={() => setExpandAll(v => !v)}
                 className="text-xs text-gray-500 hover:text-gray-700 border border-gray-200 px-3 py-1.5 rounded-lg">
-                {expandAll ? "Collapse all" : "Expand all"}
+                {expandAll ? "Collapse all" : t.plan.expandAll}
               </button>
               <button onClick={printPlan} disabled={printing}
                 className="flex items-center gap-1.5 text-xs text-gray-600 hover:text-gray-900 border border-gray-200 px-3 py-1.5 rounded-lg disabled:opacity-50">
                 {printing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Printer className="w-3.5 h-3.5" />}
-                {printing ? "Generating…" : "Print / PDF"}
+                {printing ? t.common.saving : t.plan.print}
               </button>
             </>
           )}
@@ -473,7 +473,7 @@ export function FinancialPlanTab({ clientId, clientName }: { clientId: number; c
           >
             {loading
               ? <><Loader2 className="w-4 h-4 animate-spin" /> Generating plan…</>
-              : <><Sparkles className="w-4 h-4" /> {plan ? "Regenerate" : "Generate Plan"}</>
+              : <><Sparkles className="w-4 h-4" /> {plan ? t.plan.regenerate : t.plan.generate}</>
             }
           </button>
         </div>

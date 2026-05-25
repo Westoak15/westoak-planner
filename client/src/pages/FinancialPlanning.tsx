@@ -1712,7 +1712,7 @@ function Metric({ label, value, tone = "text-slate-900" }: { label: string; valu
   );
 }
 
-function AdjustPanel({ open, onClose, form, setForm }: { open: boolean; onClose: () => void; form: any; setForm: (f: any) => void }) {
+function AdjustPanel({ open, onClose, form, setForm, t = translations.en }: { open: boolean; onClose: () => void; form: any; setForm: (f: any) => void; t?: T }) {
   if (!open) return null;
   const field = (label: string, key: string, placeholder?: string) => (
     <div>
@@ -1756,9 +1756,9 @@ function AdjustPanel({ open, onClose, form, setForm }: { open: boolean; onClose:
   );
 }
 
-function TaxProjectionPanel({ clientId, prefillPrimary, prefillSpouse, person = "primary", primaryLabel = "Primary", spouseLabel = "Spouse" }: {
+function TaxProjectionPanel({ clientId, prefillPrimary, prefillSpouse, person = "primary", primaryLabel = "Primary", spouseLabel = "Spouse", t = translations.en }: {
   clientId: number; prefillPrimary?: any; prefillSpouse?: any;
-  person?: string; primaryLabel?: string; spouseLabel?: string;
+  person?: string; primaryLabel?: string; spouseLabel?: string; t?: T;
 }) {
   const owner = person === "spouse" ? "spouse" : person === "both" ? "joint" : "primary";
   const personLabel = person === "spouse" ? spouseLabel : person === "both" ? "Combined" : primaryLabel;
@@ -2650,7 +2650,7 @@ export function TaxTab({ clientId, client, person: personProp = "primary", t = t
         {activeSubTab === "notes"      && <TaxNotesPanel        clientId={clientId} />}
         {activeSubTab === "rrsp"       && <RrspRoomPanel        clientId={clientId} prefill={activePrefill} person={person} primaryLabel={primaryLabel} spouseLabel={spouseLabel} />}
         {activeSubTab === "tfsa"       && <TfsaRoomPanel        clientId={clientId} prefill={activePrefill} person={person} primaryLabel={primaryLabel} spouseLabel={spouseLabel} />}
-        {activeSubTab === "projection" && <TaxProjectionPanel   clientId={clientId} prefillPrimary={prefillPrimary} prefillSpouse={hasSpouse ? prefillSpouse : undefined} person={person} primaryLabel={primaryLabel} spouseLabel={spouseLabel} />}
+        {activeSubTab === "projection" && <TaxProjectionPanel   clientId={clientId} prefillPrimary={prefillPrimary} prefillSpouse={hasSpouse ? prefillSpouse : undefined} person={person} primaryLabel={primaryLabel} spouseLabel={spouseLabel} t={t} />}
         {activeSubTab === "capgains"   && <CapitalGainsPanel    clientId={clientId} client={client} person={person} />}
         {activeSubTab === "splitting"  && <IncomeSplittingPanel clientId={clientId} prefill={activePrefill} person={person} primaryLabel={primaryLabel} spouseLabel={spouseLabel} />}
       </div>

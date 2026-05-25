@@ -149,15 +149,18 @@ function FundingBar({ pct, size = "md" }: { pct: number; size?: "sm" | "md" }) {
 }
 
 // ── Comparison rows config ────────────────────────────────────────────────────
+// Uses STORED computed values from the projection record (projectedBalance,
+// shortfallSurplus, successRate) — these are saved by RetirementProjectionForm
+// and reflect the full engine including pension plans, TFSA contribs, etc.
 
 type RowConfig = {
-  key:   string;
-  label: string;
-  getValue:  (p: Projection, c: CalcResult) => number;
-  format:    (n: number) => string;
-  higher?:   boolean;  // true = higher is better
+  key:        string;
+  label:      string;
+  getValue:   (p: Projection) => number;
+  format:     (n: number) => string;
+  higher?:    boolean;
   isPercent?: boolean;
-  extra?: (p: Projection, c: CalcResult) => string;
+  note?:      (p: Projection) => string;
 };
 
 const ROWS: RowConfig[] = [
@@ -165,23 +168,30 @@ const ROWS: RowConfig[] = [
     key: "retirementAge",
     label: "Retirement Age",
     getValue: (p) => p.retirementAge || 65,
-    format: (n) => String(n),
+    format: (n) => String(n) + " yrs",
     higher: false,
   },
   {
     key: "projTotal",
-    label: "Projected Portfolio",
-    getValue: (_, c) => c.projTotal,
+    label: "Projected Portfolio at Retirement",
+    getValue: (p) => Number(p.projectedBalance || 0),
     format: fmtK,
     higher: true,
   },
   {
     key: "funded",
     label: "Funding Rate",
-    getValue: (_, c) => c.funded,
-    format: (n) => `${n}%`,
+    getValue: (p) => Number(p.successRate || 0),
+    format: (n) => `${Math.round(n)}%`,
     higher: true,
     isPercent: true,
+  },
+  {
+    key: "surplus",
+    label: "Annual Surplus / (Deficit)",
+    getValue: (p) => Number(p.shortfallSurplus || 0),
+    format: fmt$,
+    higher: true,
   },
   {
     key: "desiredIncome",
@@ -191,16 +201,9 @@ const ROWS: RowConfig[] = [
     higher: true,
   },
   {
-    key: "govIncome",
-    label: "Gov't Income (CPP+OAS+Pension)",
-    getValue: (_, c) => c.govIncome,
-    format: fmt$,
-    higher: true,
-  },
-  {
-    key: "surplus",
-    label: "Annual Surplus / (Deficit)",
-    getValue: (_, c) => c.surplus,
+    key: "pensionIncome",
+    label: "Pension / Gov't Income",
+    getValue: (p) => Number(p.pensionIncome || 0) + (Number(p.cppMonthly || 0) * 12) + (Number(p.oasMonthly || 0) * 12),
     format: fmt$,
     higher: true,
   },
@@ -210,7 +213,7 @@ const ROWS: RowConfig[] = [
     getValue: (p) => p.cppStartAge || 65,
     format: (n) => String(n),
     higher: false,
-    extra: (p, c) => `+${fmt$(c.cppAdjusted)}/yr`,
+    note: (p) => `$${Math.round(Number(p.cppMonthly || 0))}/mo`,
   },
   {
     key: "oasAge",
@@ -218,11 +221,11 @@ const ROWS: RowConfig[] = [
     getValue: (p) => p.oasStartAge || 65,
     format: (n) => String(n),
     higher: false,
-    extra: (p, c) => `+${fmt$(c.oasAdjusted)}/yr`,
+    note: (p) => `$${Math.round(Number(p.oasMonthly || 0))}/mo`,
   },
   {
     key: "contrib",
-    label: "Annual Contribution",
+    label: "Annual RRSP Contribution",
     getValue: (p) => Number(p.annualContribution || 0),
     format: fmt$,
     higher: true,
@@ -266,15 +269,11 @@ export function ScenarioComparisonPanel({ clientId, onClose, t = translations.en
     [projections, selected]
   );
 
-  const calcs = useMemo(() =>
-    compared.map(p => calcFromProjection(p)),
-    [compared]
-  );
-
   const bestIdx = useMemo(() => {
-    if (calcs.length === 0) return 0;
-    return calcs.reduce((best, c, i) => c.funded > calcs[best].funded ? i : best, 0);
-  }, [calcs]);
+    if (compared.length === 0) return 0;
+    return compared.reduce((best, p, i) =>
+      Number(p.successRate || 0) > Number(compared[best].successRate || 0) ? i : best, 0);
+  }, [compared]);
 
   function toggleSelect(id: number) {
     setSelected(prev =>
@@ -329,7 +328,8 @@ export function ScenarioComparisonPanel({ clientId, onClose, t = translations.en
             )}
             {projections.map((p) => {
               const isSelected = selected.includes(p.id!);
-              const calc = calcFromProjection(p);
+              const funded    = Number(p.successRate || 0);
+              const portfolio = Number(p.projectedBalance || 0);
               const order = selected.indexOf(p.id!);
               return (
                 <button
@@ -341,7 +341,6 @@ export function ScenarioComparisonPanel({ clientId, onClose, t = translations.en
                       : "border-gray-200 hover:border-gray-300 bg-white"
                   }`}
                 >
-                  {/* Selection indicator */}
                   <div className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 text-sm font-bold transition-all ${
                     isSelected ? "bg-[#0c1e3a] text-white" : "bg-gray-100 text-gray-400"
                   }`}>
@@ -350,15 +349,14 @@ export function ScenarioComparisonPanel({ clientId, onClose, t = translations.en
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-gray-900 text-sm">{p.label || `Projection ${p.id}`}</p>
                     <p className="text-xs text-gray-400 mt-0.5">
-                      Retire at {p.retirementAge || 65} · Target {fmt$(Number(p.desiredRetirementIncome || 0))}/yr
+                      Retire at {p.retirementAge || 65} · {fmtK(portfolio)} projected · {fmt$(Number(p.desiredRetirementIncome || 0))}/yr target
                     </p>
                   </div>
-                  {/* Funding bar preview */}
                   <div className="text-right flex-shrink-0 w-24">
-                    <p className={`text-sm font-bold ${calc.funded >= 90 ? "text-emerald-600" : calc.funded >= 70 ? "text-amber-600" : "text-red-500"}`}>
-                      {calc.funded}%
+                    <p className={`text-sm font-bold ${funded >= 90 ? "text-emerald-600" : funded >= 70 ? "text-amber-600" : "text-red-500"}`}>
+                      {Math.round(funded)}%
                     </p>
-                    <FundingBar pct={calc.funded} size="sm" />
+                    <FundingBar pct={funded} size="sm" />
                     <p className="text-[10px] text-gray-400 mt-0.5">funded</p>
                   </div>
                 </button>
@@ -454,7 +452,7 @@ export function ScenarioComparisonPanel({ clientId, onClose, t = translations.en
 
             <tbody>
               {ROWS.map((row, ri) => {
-                const values = compared.map((p, i) => row.getValue(p, calcs[i]));
+                const values = compared.map(p => row.getValue(p));
                 const baseVal = values[0];
                 const isHighlight = row.key === "funded" || row.key === "surplus" || row.key === "projTotal";
 
@@ -465,7 +463,6 @@ export function ScenarioComparisonPanel({ clientId, onClose, t = translations.en
                     </td>
                     {compared.map((p, i) => {
                       const val = values[i];
-                      const dir = i > 0 ? deltaDir(baseVal, val, row.higher !== false) : "neutral";
                       let color = "text-gray-900";
                       if (isHighlight) {
                         if (row.key === "funded") {
@@ -480,13 +477,12 @@ export function ScenarioComparisonPanel({ clientId, onClose, t = translations.en
                             {row.format(val)}
                           </p>
                           {row.key === "funded" && <FundingBar pct={val} />}
-                          {row.extra && (
-                            <p className="text-[10px] text-gray-400 mt-0.5">{row.extra(p, calcs[i])}</p>
+                          {row.note && (
+                            <p className="text-[10px] text-gray-400 mt-0.5">{row.note(p)}</p>
                           )}
                         </td>
                       );
                     })}
-                    {/* Delta column — compares last selected scenario vs first */}
                     {compared.length > 1 && (
                       <td className="px-4 py-3 text-center bg-slate-50/50">
                         {compared.length === 2 ? (

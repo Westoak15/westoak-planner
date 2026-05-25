@@ -252,7 +252,7 @@ function buildNarrative(
 
 // ── Summary row config ────────────────────────────────────────────────────────
 
-function buildRows(years: YearData[][]) {
+function buildRows(years: YearData[][], projections: Projection[], engineData: Record<number, any>) {
   return [
     {
       key: "retAge",     label: "Retirement Age",
@@ -280,23 +280,36 @@ function buildRows(years: YearData[][]) {
       fmt: fmt$, higher: true,
     },
     {
-      key: "gov",        label: "Gov't Income at Retirement ($/yr)",
+      key: "gov",        label: "Guaranteed Income at Retirement (CPP+OAS+Pension, $/yr)",
       get: (p: Projection, i: number) => {
-        const retYear = years[i]?.find(y => y.isRetired);
-        return retYear?.govIncome ?? 0;
+        const eng = engineData[p.id!]?.summary;
+        return eng?.guaranteedIncomeAtRet ?? years[i]?.find(y => y.isRetired)?.govIncome ?? 0;
       },
       fmt: fmt$, higher: true,
     },
     {
       key: "estate",     label: "Estate Value at Life Expectancy",
-      get: (_p: Projection, i: number) => years[i]?.[years[i].length - 1]?.totalNW ?? 0,
+      get: (p: Projection, i: number) => {
+        const eng = engineData[p.id!]?.summary;
+        return eng?.estateValueAtDeath ?? years[i]?.[years[i].length - 1]?.totalNW ?? 0;
+      },
       fmt: fmtK, higher: true,
     },
     {
       key: "lifetaxes",  label: "Est. Lifetime Taxes (Retirement)",
-      get: (_p: Projection, i: number) =>
-        years[i]?.filter(y => y.isRetired).reduce((s, y) => s + y.taxes, 0) ?? 0,
+      get: (p: Projection, i: number) => {
+        const eng = engineData[p.id!]?.summary;
+        return eng?.lifetimeTaxPaid ?? years[i]?.filter(y => y.isRetired).reduce((s, y) => s + y.taxes, 0) ?? 0;
+      },
       fmt: fmtK, higher: false,
+    },
+    {
+      key: "rrif",       label: "RRIF Min Withdrawal at 71",
+      get: (p: Projection) => {
+        const eng = engineData[p.id!]?.summary;
+        return eng?.rrifMinYear1 ?? 0;
+      },
+      fmt: fmt$, higher: false,
     },
     {
       key: "cpp",        label: "CPP Start Age",
@@ -345,6 +358,7 @@ function ChartTooltip({ active, payload, label }: any) {
 
 export function ScenarioComparisonPanel({ clientId, onClose, t = translations.en }: Props) {
   const [projections,  setProjections]  = useState<Projection[]>([]);
+  const [engineData,   setEngineData]   = useState<Record<number, any>>({});
   const [loading,      setLoading]      = useState(true);
   const [selected,     setSelected]     = useState<number[]>([]);
   const [labels,       setLabels]       = useState<Record<number, string>>({});
@@ -355,15 +369,35 @@ export function ScenarioComparisonPanel({ clientId, onClose, t = translations.en
   const [showYearBy,   setShowYearBy]   = useState(false);
   const [yearByPage,   setYearByPage]   = useState(0);
 
-  // ── Fetch projections ────────────────────────────────────────────────────────
+  // ── Fetch projections + engine data ─────────────────────────────────────────
   useEffect(() => {
     const token = localStorage.getItem("authToken") || localStorage.getItem("fp_token") || "";
-    fetch(`/api/clients/${clientId}/retirement`, {
-      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-      credentials: "include",
-    })
+    const headers: HeadersInit = {
+      Authorization: `Bearer ${token}`, "Content-Type": "application/json"
+    };
+    const opts = { headers, credentials: "include" as RequestCredentials };
+
+    fetch(`/api/clients/${clientId}/retirement`, opts)
       .then(r => r.ok ? r.json() : [])
-      .then(d => setProjections(Array.isArray(d) ? d : []))
+      .then(async (projs: Projection[]) => {
+        if (!Array.isArray(projs) || projs.length === 0) {
+          setProjections([]); setLoading(false); return;
+        }
+        setProjections(projs);
+        // Run the engine for each projection that doesn't yet have data
+        const engineCalls = projs.map(p =>
+          fetch(`/api/clients/${clientId}/retirement/${p.id}/project`, {
+            method: "POST", ...opts
+          })
+            .then(r => r.ok ? r.json() : null)
+            .then(data => data ? { projId: p.id, data } : null)
+            .catch(() => null)
+        );
+        const results = await Promise.all(engineCalls);
+        const engineMap: Record<number, any> = {};
+        results.forEach(r => { if (r) engineMap[r.projId] = r.data; });
+        setEngineData(engineMap);
+      })
       .catch(() => {})
       .finally(() => setLoading(false));
   }, [clientId]);
@@ -371,8 +405,35 @@ export function ScenarioComparisonPanel({ clientId, onClose, t = translations.en
   const compared = useMemo(() =>
     projections.filter(p => selected.includes(p.id!)), [projections, selected]);
 
-  // Year-by-year projections for each scenario
-  const yearlyData = useMemo(() => compared.map(projectYearByYear), [compared]);
+  // Year-by-year: prefer server engine data; fall back to client calc with disclaimer
+  const yearlyData = useMemo(() =>
+    compared.map(p => {
+      const eng = engineData[p.id!];
+      if (eng?.yearByYear) {
+        // Map server engine YearResult → our local YearData shape
+        return eng.yearByYear.map((y: any) => ({
+          age:       y.age,
+          year:      y.year,
+          rrsp:      y.rrspBalance,
+          tfsa:      y.tfsaBalance,
+          nonReg:    y.nonRegBalance,
+          totalNW:   y.totalPortfolio,
+          income:    y.desiredSpendingNominal,
+          taxes:     y.totalTax,
+          govIncome: y.cppIncome + y.oasIncome + y.pensionIncome,
+          isRetired: y.phase !== "accumulation",
+          rrifWithdrawal: y.rrifWithdrawal,
+          surplus:   y.surplus,
+          fundingPct: y.fundingPct,
+        }));
+      }
+      return projectYearByYear(p);
+    }),
+    [compared, engineData]
+  );
+
+  // Summary from engine if available, else from stored projection values
+  const getEngSummary = (p: Projection) => engineData[p.id!]?.summary;
 
   const bestIdx = useMemo(() => {
     if (compared.length === 0) return 0;
@@ -385,7 +446,7 @@ export function ScenarioComparisonPanel({ clientId, onClose, t = translations.en
     [compared, yearlyData, bestIdx]
   );
 
-  const rows = useMemo(() => buildRows(yearlyData), [yearlyData]);
+  const rows = useMemo(() => buildRows(yearlyData, compared, engineData), [yearlyData, compared, engineData]);
 
   // Chart data — net worth by age across all scenarios
   const chartData = useMemo(() => {

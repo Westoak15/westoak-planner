@@ -1270,3 +1270,75 @@ r.delete("/scenario-comparisons/:id", isAuthenticated, async (req: AuthRequest, 
   await db.delete(scenarioComparisons).where(eq(scenarioComparisons.id, id));
   res.json({ deleted: true });
 });
+
+// ── New projection engine — year-by-year data ──────────────────────────────────
+
+r.post("/clients/:id/retirement/:projId/project", isAuthenticated, async (req: AuthRequest, res: Response) => {
+  const cid    = +req.params.id;
+  const projId = +req.params.projId;
+  if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
+
+  const [proj] = await db.select().from(retirementProjections)
+    .where(eq(retirementProjections.id, projId));
+  if (!proj) return res.status(404).json({ message: "Projection not found" });
+
+  // Get client province
+  const [client] = await db.select().from(clients).where(eq(clients.id, cid));
+  const province = (proj as any).province || client?.province || "ON";
+
+  try {
+    const { runCanadianProjection } = await import("../engine/canadianRetirementEngine.js");
+    const result = runCanadianProjection({
+      currentAge:              Number((proj as any).currentAge   || 40),
+      retirementAge:           Number((proj as any).retirementAge || 65),
+      lifeExpectancy:          Number((proj as any).lifeExpectancy || 90),
+      province:                province as any,
+      rrspBalance:             Number((proj as any).rrspBalance   || 0),
+      tfsaBalance:             Number((proj as any).tfsaBalance   || 0),
+      nonRegBalance:           Number((proj as any).nonRegBalance  || 0),
+      nonRegTaxType:           ((proj as any).nonRegTaxType || "mixed") as any,
+      nonRegAcb:               Number((proj as any).nonRegAcb      || 0),
+      annualRrspContrib:       Number((proj as any).annualContribution || 0),
+      annualTfsaContrib:       Number((proj as any).annualTfsaContribution || 0),
+      desiredRetirementIncome: Number((proj as any).desiredRetirementIncome || 0),
+      pensionAnnual:           Number((proj as any).pensionIncome  || 0),
+      pensionStartAge:         Number((proj as any).pensionStartAge || 65),
+      pensionIndexed:          Boolean((proj as any).pensionIndexed),
+      bridgeBenefitAnnual:     Number((proj as any).bridgeBenefit  || 0),
+      bridgeBenefitEndAge:     Number((proj as any).bridgeEndAge   || 65),
+      cppMonthly:              Number((proj as any).cppMonthly     || 0),
+      cppStartAge:             Number((proj as any).cppStartAge    || 65),
+      oasMonthly:              Number((proj as any).oasMonthly     || 0),
+      oasStartAge:             Number((proj as any).oasStartAge    || 65),
+      expectedReturnPct:       Number((proj as any).expectedReturn  || 6.5),
+      inflationPct:            Number((proj as any).inflationRate   || 2.0),
+    });
+
+    // Store year-by-year data on the projection record
+    await db.execute(
+      `UPDATE retirement_projections SET projection_data = $1, updated_at = NOW()
+       WHERE id = $2`,
+      [JSON.stringify(result), projId]
+    );
+
+    res.json(result);
+  } catch (err: any) {
+    console.error("Engine error:", err);
+    res.status(500).json({ message: "Engine error", detail: err.message });
+  }
+});
+
+// Fetch stored year-by-year data for a projection
+r.get("/clients/:id/retirement/:projId/projection-data", isAuthenticated, async (req: AuthRequest, res: Response) => {
+  const cid    = +req.params.id;
+  const projId = +req.params.projId;
+  if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
+
+  const [proj] = await db.select().from(retirementProjections)
+    .where(eq(retirementProjections.id, projId));
+  if (!proj) return res.status(404).json({ message: "Not found" });
+
+  const data = (proj as any).projectionData;
+  if (!data) return res.status(404).json({ message: "No projection data — run the engine first" });
+  res.json(data);
+});

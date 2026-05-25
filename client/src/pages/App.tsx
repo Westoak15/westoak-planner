@@ -31,6 +31,7 @@ import { VoiceProvider, useVoice, labelToKey } from "../contexts/VoiceContext";
 import { ClientOverview } from "./ClientOverview";
 import { MeetingRecorderTrigger, IntakeRecorderTrigger, type IntakeProfile } from "../components/MeetingRecorder";
 import { useHotkeys } from "../hooks/useHotkeys";
+import { useLocale } from "../hooks/useLocale";
 import { CommandPalette, type CommandAction } from "../components/ui/CommandPalette";
 import { InlineEdit } from "../components/ui/InlineEdit";
 import { translations, type T, type ClientLocale } from "../i18n/translations";
@@ -1061,6 +1062,7 @@ function ExecField({ label, value, mono = false, onSave, type = "text" }: {
 export default function App() {
   const { toast } = useToast();
   const { user, logout } = useAuth();
+  const { locale: advisorLocaleStr } = useLocale();
   const role = user?.role ?? "fa";
   const level = user?.level ?? "standard";
   const [showForceReset, setShowForceReset] = useState(!!user?.mustResetPassword);
@@ -1184,7 +1186,14 @@ export default function App() {
     setTab("clients");
   }
 
-  const t: T = translations[clientLocale];
+  // Two locales, not one:
+  //   tAdvisor — drives advisor-facing UI (form labels, profile fields).
+  //              Follows the i18next locale which already hard-forces QC advisors to FR.
+  //   tClient  — drives everything the *client* sees (plan views, reports, AI narratives,
+  //              letter templates). Follows the per-client preferredLanguage setting.
+  const advisorLocale: ClientLocale = advisorLocaleStr === "fr" ? "fr" : "en";
+  const tAdvisor: T = translations[advisorLocale];
+  const tClient: T  = translations[clientLocale];
   const clientName = client ? `${client.firstName} ${client.lastName}` : undefined;
   const hasSpouse = !!client?.spouseFirstName;
   // Person toggle is rendered by HubShell inside each hub / PlanningDocFlow.
@@ -1282,7 +1291,7 @@ export default function App() {
             <ClientsTab onSelect={selectClient} />
           )}
           {tab === "clients" && showClientDetail && client && (
-            <ClientDetail client={client} onBack={backToClients} onPlanSelect={selectPlan} onUpdate={setClient} onLocaleChange={setClientLocale} t={t} level={level} />
+            <ClientDetail client={client} onBack={backToClients} onPlanSelect={selectPlan} onUpdate={setClient} onLocaleChange={setClientLocale} t={tAdvisor} level={level} />
           )}
           {tab !== "agents" && tab !== "clients" && !client && (
             <div className="flex flex-col items-center justify-center h-full text-center p-8">
@@ -1298,26 +1307,26 @@ export default function App() {
           )}
           {tab === "agents"  && <AgentsTab />}
           {tab === "overview" && client && <ClientOverview client={client} onNavigate={(t) => setTab(t as Tab)} />}
-          {tab === "profile"  && client && <ClientDetail client={client} onBack={() => setTab("overview" as Tab)} onPlanSelect={selectPlan} onUpdate={setClient} onLocaleChange={setClientLocale} t={t} level={level} />}
+          {tab === "profile"  && client && <ClientDetail client={client} onBack={() => setTab("overview" as Tab)} onPlanSelect={selectPlan} onUpdate={setClient} onLocaleChange={setClientLocale} t={tAdvisor} level={level} />}
           {tab === "dashboard" && client && <InsightLedDashboard clientId={client.id} client={client} onNavigate={(t) => { const [tabKey, subtab] = t.split(":"); setTab(tabKey as Tab); setNwSubtabHint(subtab); }} />}
 
           {/* ── Merged Insight-Led hubs ─────────────────────────────────────────
               Each hub provides its own dark Insight-Led shell with sub-tabs.
               They render outside PlanningDocFlow because the hub is the shell. */}
           {tab === "protection" && client && (
-            <ProtectionHub clientId={client.id} client={client} person={person} onPersonChange={setPerson} t={t} />
+            <ProtectionHub clientId={client.id} client={client} person={person} onPersonChange={setPerson} t={tClient} />
           )}
           {tab === "retirementhub" && client && (
-            <RetirementHub clientId={client.id} client={client} person={person} onPersonChange={setPerson} t={t} />
+            <RetirementHub clientId={client.id} client={client} person={person} onPersonChange={setPerson} t={tClient} />
           )}
           {tab === "taxestate" && client && (
-            <TaxEstateHub clientId={client.id} client={client} person={person} onPersonChange={setPerson} t={t} />
+            <TaxEstateHub clientId={client.id} client={client} person={person} onPersonChange={setPerson} t={tClient} />
           )}
           {tab === "documents" && client && (
             <DocumentsHub clientId={client.id} client={client} />
           )}
           {tab === "fp" && client && (
-            <FinancialPlanHub clientId={client.id} client={client} t={t} />
+            <FinancialPlanHub clientId={client.id} client={client} t={tClient} />
           )}
 
           {/* ── Simple themed tabs — kept in PlanningDocFlow for voice/recording ── */}
@@ -1341,22 +1350,22 @@ export default function App() {
               >
                 {tab === "networth" && (
                   <QueryClientProvider client={queryClient}>
-                      <NetWorthTabNew clientId={client.id} client={client} t={t} />
+                      <NetWorthTabNew clientId={client.id} client={client} t={tClient} />
                    </QueryClientProvider>
                 )}
                 {tab === "goals"    && (
                   <QueryClientProvider client={queryClient}>
-                    <GoalsTab clientId={client.id} client={client} t={t} />
+                    <GoalsTab clientId={client.id} client={client} t={tClient} />
                  </QueryClientProvider>
                 )}
                 {tab === "debt"     && (
                   <QueryClientProvider client={queryClient}>
-                    <DebtTab clientId={client.id} t={t} />
+                    <DebtTab clientId={client.id} t={tClient} />
                   </QueryClientProvider>
                 )}
                 {tab === "expenses" && (
                   <QueryClientProvider client={queryClient}>
-                    <ExpensesTab clientId={client.id} addTrigger={tab === "expenses" ? globalAddTrigger : 0} t={t} />
+                    <ExpensesTab clientId={client.id} addTrigger={tab === "expenses" ? globalAddTrigger : 0} t={tClient} />
                   </QueryClientProvider>
                 )}
                 {tab === "ai" && (

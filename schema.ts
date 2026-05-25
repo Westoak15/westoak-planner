@@ -516,3 +516,16 @@ export const auditLog = pgTable("audit_log", {
   // Immutable timestamp — never updated
   createdAt:    timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });
+
+// ── Scenario Comparisons ──────────────────────────────────────────────────────
+export const scenarioComparisons = pgTable("scenario_comparisons", {
+  id:          serial("id").primaryKey(),
+  clientId:    integer("client_id").notNull().references(() => clients.id, { onDelete: "cascade" }),
+  label:       text("label").notNull().default("Scenario Comparison"),
+  scenarioIds: integer("scenario_ids").array().notNull(),
+  notes:       text("notes"),
+  createdAt:   timestamp("created_at").defaultNow().notNull(),
+  updatedAt:   timestamp("updated_at").defaultNow().notNull(),
+});
+export type ScenarioComparison     = typeof scenarioComparisons.$inferSelect;
+export type InsertScenarioComparison = typeof scenarioComparisons.$inferInsert;

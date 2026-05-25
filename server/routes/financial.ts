@@ -19,7 +19,8 @@ import {
   debtEntries, clientPolicies, householdExpenses,
   taxPlanningNotes, estatePlanningNotes, aiRecommendations,
   planAssumptions, simulationResults, planSnapshots,
-  planStaleFlags, planActionItems, pensionPlans
+  planStaleFlags, planActionItems, pensionPlans,
+  scenarioComparisons
 } from "../../shared/schema.js";
 import { isAuthenticated, type AuthRequest } from "../auth/index.js";
 import { safe, ownsClient, ownsPlan } from "../fpUtils.js";
@@ -1234,3 +1235,38 @@ r.delete("/saved-plans/:id", async (req: AuthRequest, res: Response) => {
 });
 
 export { r as financialRouter };
+
+// ── Scenario Comparisons ──────────────────────────────────────────────────────
+
+r.get("/clients/:id/scenario-comparisons", isAuthenticated, async (req: AuthRequest, res: Response) => {
+  const cid = +req.params.id;
+  if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
+  const rows = await db.select().from(scenarioComparisons)
+    .where(eq(scenarioComparisons.clientId, cid));
+  res.json(rows);
+});
+
+r.post("/clients/:id/scenario-comparisons", isAuthenticated, async (req: AuthRequest, res: Response) => {
+  const cid = +req.params.id;
+  if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
+  const { label, scenarioIds, notes } = req.body;
+  if (!Array.isArray(scenarioIds) || scenarioIds.length < 2) {
+    return res.status(400).json({ message: "scenarioIds must be an array of 2–3 projection IDs" });
+  }
+  const [row] = await (db.insert(scenarioComparisons) as any).values({
+    clientId: cid, label: label || "Scenario Comparison",
+    scenarioIds, notes: notes || null,
+  }).returning();
+  res.status(201).json(row);
+});
+
+r.delete("/scenario-comparisons/:id", isAuthenticated, async (req: AuthRequest, res: Response) => {
+  const id = +req.params.id;
+  const [row] = await db.select().from(scenarioComparisons)
+    .where(eq(scenarioComparisons.id, id));
+  if (!row) return res.status(404).json({ message: "Not found" });
+  if (!await ownsClient(row.clientId, req.userId!))
+    return res.status(403).json({ message: "Forbidden" });
+  await db.delete(scenarioComparisons).where(eq(scenarioComparisons.id, id));
+  res.json({ deleted: true });
+});

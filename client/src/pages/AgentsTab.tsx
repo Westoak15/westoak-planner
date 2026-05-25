@@ -3,14 +3,14 @@
  * Merged Agent Management + Agents list.
  * - GA can create/edit/delete agents directly from this tab
  * - Jurisdiction (CA/US) set at creation, locked forever
- * - Admin tab removed — this replaces it
+ * - Province (CA) / State (US) mandatory on create and edit
  */
 
 import { useState, useEffect } from "react";
 import { api } from "../lib/api";
 import {
   ChevronRight, Users, User, FileText,
-  Plus, Pencil, Trash2, X, Eye, EyeOff,
+  Plus, Pencil, Trash2, X, Eye, EyeOff, MapPin,
 } from "lucide-react";
 import { initials, avatarBg } from "../lib/utils";
 
@@ -27,6 +27,11 @@ interface FaUser {
   level: "standard" | "enhanced";
   role: string;
   jurisdiction: "CA" | "US";
+  address: string | null;
+  city: string | null;
+  province: string | null;
+  usState: string | null;
+  postalCode: string | null;
   createdAt?: string;
 }
 
@@ -51,12 +56,22 @@ interface Plan {
 type View = "agents" | "clients" | "plans";
 
 const INPUT = "w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-blue-400/30 focus:border-blue-400 outline-none transition";
+const INPUT_ERR = "w-full px-3 py-2.5 rounded-xl border border-red-300 text-sm focus:ring-2 focus:ring-red-400/30 focus:border-red-400 outline-none transition";
+
+const CA_PROVINCES = ["AB","BC","MB","NB","NL","NS","NT","NU","ON","PE","QC","SK","YT"];
+const US_STATES = [
+  "AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA","HI","ID","IL","IN","IA",
+  "KS","KY","LA","ME","MD","MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ",
+  "NM","NY","NC","ND","OH","OK","OR","PA","RI","SC","SD","TN","TX","UT","VT",
+  "VA","WA","WV","WI","WY",
+];
 
 const EMPTY_FORM = {
   firstName: "", lastName: "", email: "", password: "",
   agentId: "", agency: "", phone: "",
   level: "standard" as "standard" | "enhanced",
   jurisdiction: "CA" as "CA" | "US",
+  address: "", city: "", province: "", usState: "", postalCode: "",
 };
 
 // ── Jurisdiction badge ────────────────────────────────────────────────────────
@@ -93,6 +108,14 @@ export function AgentsTab({ onSelectClient }: { onSelectClient?: (clientId: numb
   const [error, setError]       = useState("");
   const [showPw, setShowPw]     = useState(false);
 
+  // Derived: which region list + labels to show
+  const isUS = form.jurisdiction === "US";
+  const regionLabel  = isUS ? "State" : "Province";
+  const regionList   = isUS ? US_STATES : CA_PROVINCES;
+  const regionValue  = isUS ? form.usState : form.province;
+  const postalLabel  = isUS ? "ZIP Code" : "Postal Code";
+  const postalPlaceholder = isUS ? "e.g. 06510" : "e.g. K1A 0A6";
+
   const loadAgents = () => {
     setLoading(true);
     api.get<FaUser[]>("/api/auth/users").then(setAgents).finally(() => setLoading(false));
@@ -101,6 +124,11 @@ export function AgentsTab({ onSelectClient }: { onSelectClient?: (clientId: numb
   useEffect(() => { loadAgents(); }, []);
 
   const u = (k: string, v: string) => setForm(f => ({ ...f, [k]: v }));
+
+  // Validation
+  const regionMissing = isUS ? !form.usState : !form.province;
+  const canSubmit = !busy && form.firstName && form.lastName && !regionMissing &&
+    (editId ? true : (form.email && form.password));
 
   // ── Navigation ──────────────────────────────────────────────────────────────
 
@@ -139,11 +167,20 @@ export function AgentsTab({ onSelectClient }: { onSelectClient?: (clientId: numb
 
   function openEdit(fa: FaUser) {
     setForm({
-      firstName: fa.firstName, lastName: fa.lastName,
-      email: fa.email, password: "",
-      agentId: fa.agentId ?? "", agency: fa.agency ?? "",
-      phone: fa.phone ?? "", level: fa.level,
+      firstName:    fa.firstName,
+      lastName:     fa.lastName,
+      email:        fa.email,
+      password:     "",
+      agentId:      fa.agentId ?? "",
+      agency:       fa.agency ?? "",
+      phone:        fa.phone ?? "",
+      level:        fa.level,
       jurisdiction: fa.jurisdiction ?? "CA",
+      address:      fa.address ?? "",
+      city:         fa.city ?? "",
+      province:     fa.province ?? "",
+      usState:      fa.usState ?? "",
+      postalCode:   fa.postalCode ?? "",
     });
     setEditId(fa.id); setError(""); setShowForm(true);
   }
@@ -156,11 +193,19 @@ export function AgentsTab({ onSelectClient }: { onSelectClient?: (clientId: numb
           firstName: form.firstName, lastName: form.lastName,
           agentId: form.agentId, agency: form.agency,
           phone: form.phone, level: form.level,
+          address: form.address, city: form.city,
+          province: form.jurisdiction === "CA" ? form.province : null,
+          usState:  form.jurisdiction === "US" ? form.usState  : null,
+          postalCode: form.postalCode,
         };
         if (form.password) body.password = form.password;
         await api.patch(`/api/auth/users/${editId}`, body);
       } else {
-        await api.post("/api/auth/users", form);
+        await api.post("/api/auth/users", {
+          ...form,
+          province: form.jurisdiction === "CA" ? form.province : undefined,
+          usState:  form.jurisdiction === "US" ? form.usState  : undefined,
+        });
       }
       setShowForm(false);
       loadAgents();
@@ -175,6 +220,16 @@ export function AgentsTab({ onSelectClient }: { onSelectClient?: (clientId: numb
     if (!confirm(`Delete ${name}? Their clients will remain but become unassigned.`)) return;
     await api.delete(`/api/auth/users/${id}`);
     loadAgents();
+  }
+
+  // ── Helpers ──────────────────────────────────────────────────────────────────
+
+  function agentLocation(fa: FaUser): string {
+    const parts: string[] = [];
+    if (fa.city) parts.push(fa.city);
+    if (fa.jurisdiction === "CA" && fa.province) parts.push(fa.province);
+    if (fa.jurisdiction === "US" && fa.usState) parts.push(fa.usState);
+    return parts.join(", ") || "—";
   }
 
   // ── Render ──────────────────────────────────────────────────────────────────
@@ -237,6 +292,7 @@ export function AgentsTab({ onSelectClient }: { onSelectClient?: (clientId: numb
                     <th className="text-left px-4 py-3 font-semibold text-gray-600">Agent</th>
                     <th className="text-left px-4 py-3 font-semibold text-gray-600">Agent ID</th>
                     <th className="text-left px-4 py-3 font-semibold text-gray-600">Agency</th>
+                    <th className="text-left px-4 py-3 font-semibold text-gray-600">Location</th>
                     <th className="text-left px-4 py-3 font-semibold text-gray-600">Level</th>
                     <th className="text-left px-4 py-3 font-semibold text-gray-600">Jurisdiction</th>
                     <th className="text-right px-4 py-3 font-semibold text-gray-600">Actions</th>
@@ -259,6 +315,12 @@ export function AgentsTab({ onSelectClient }: { onSelectClient?: (clientId: numb
                       </td>
                       <td className="px-4 py-3 text-gray-600">{fa.agentId || "—"}</td>
                       <td className="px-4 py-3 text-gray-600">{fa.agency || "—"}</td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-1 text-gray-500 text-xs">
+                          <MapPin className="w-3 h-3 text-gray-300 flex-shrink-0" />
+                          {agentLocation(fa)}
+                        </div>
+                      </td>
                       <td className="px-4 py-3">
                         <span className={`text-xs px-2 py-1 rounded-full font-semibold ${
                           fa.level === "enhanced" ? "bg-cyan-100 text-cyan-700" : "bg-gray-100 text-gray-600"
@@ -455,6 +517,54 @@ export function AgentsTab({ onSelectClient }: { onSelectClient?: (clientId: numb
                   className={INPUT} placeholder="Optional" />
               </div>
 
+              {/* ── Address section ─────────────────────────────────────────── */}
+              <div className="border-t border-gray-100 pt-4">
+                <div className="flex items-center gap-1.5 mb-3">
+                  <MapPin className="w-3.5 h-3.5 text-gray-400" />
+                  <span className="text-xs font-bold uppercase tracking-wider text-gray-500">Address</span>
+                </div>
+
+                {/* Street address */}
+                <div className="mb-3">
+                  <label className="text-xs font-semibold text-gray-500 mb-1 block">Street Address</label>
+                  <input value={form.address} onChange={e => u("address", e.target.value)}
+                    className={INPUT} placeholder="e.g. 123 Main St" />
+                </div>
+
+                {/* City + Province/State */}
+                <div className="grid grid-cols-2 gap-3 mb-3">
+                  <div>
+                    <label className="text-xs font-semibold text-gray-500 mb-1 block">City</label>
+                    <input value={form.city} onChange={e => u("city", e.target.value)}
+                      className={INPUT} placeholder="City" />
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-gray-500 mb-1 block">
+                      {regionLabel}
+                      <span className="text-red-500 ml-0.5">*</span>
+                    </label>
+                    <select
+                      value={regionValue}
+                      onChange={e => u(isUS ? "usState" : "province", e.target.value)}
+                      className={regionMissing ? INPUT_ERR : INPUT}
+                    >
+                      <option value="">— Select {regionLabel} —</option>
+                      {regionList.map(r => <option key={r} value={r}>{r}</option>)}
+                    </select>
+                    {regionMissing && (
+                      <p className="text-xs text-red-500 mt-0.5">{regionLabel} is required</p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Postal / ZIP */}
+                <div className="w-1/2">
+                  <label className="text-xs font-semibold text-gray-500 mb-1 block">{postalLabel}</label>
+                  <input value={form.postalCode} onChange={e => u("postalCode", e.target.value)}
+                    className={INPUT} placeholder={postalPlaceholder} />
+                </div>
+              </div>
+
               {/* Access Level */}
               <div>
                 <label className="text-xs font-semibold text-gray-500 mb-1 block">Access Level</label>
@@ -471,7 +581,6 @@ export function AgentsTab({ onSelectClient }: { onSelectClient?: (clientId: numb
                   {editId && <span className="ml-2 text-gray-400 font-normal">(locked after creation)</span>}
                 </label>
                 {editId ? (
-                  // Read-only on edit
                   <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm">
                     <JurisdictionBadge jurisdiction={form.jurisdiction} />
                     <span className="text-gray-500">
@@ -479,14 +588,17 @@ export function AgentsTab({ onSelectClient }: { onSelectClient?: (clientId: numb
                     </span>
                   </div>
                 ) : (
-                  // Editable on create
                   <div className="grid grid-cols-2 gap-3">
                     {[
                       { value: "CA", flag: "🇨🇦", label: "Canada", sub: "RRSP · TFSA · CPP/OAS" },
                       { value: "US", flag: "🇺🇸", label: "United States", sub: "401(k) · IRA · Social Security" },
                     ].map(opt => (
                       <button key={opt.value} type="button"
-                        onClick={() => u("jurisdiction", opt.value)}
+                        onClick={() => {
+                          u("jurisdiction", opt.value);
+                          // Clear region when switching jurisdiction
+                          setForm(f => ({ ...f, jurisdiction: opt.value as "CA" | "US", province: "", usState: "" }));
+                        }}
                         className={`flex items-start gap-3 p-3 rounded-xl border-2 text-left transition-all ${
                           form.jurisdiction === opt.value
                             ? "border-[#0c1e3a] bg-[#0c1e3a]/5"
@@ -512,7 +624,7 @@ export function AgentsTab({ onSelectClient }: { onSelectClient?: (clientId: numb
                 Cancel
               </button>
               <button onClick={handleSubmit}
-                disabled={busy || (!editId && (!form.firstName || !form.lastName || !form.email || !form.password))}
+                disabled={!canSubmit}
                 className="px-6 py-2.5 bg-[#0c1e3a] hover:bg-[#0e2a4a] disabled:opacity-50 text-white text-sm font-semibold rounded-xl transition-colors">
                 {busy ? "Saving…" : editId ? "Save Changes" : "Create Agent"}
               </button>

@@ -54,6 +54,12 @@ export const users = pgTable("users", {
   securityAnswerHash: text("security_answer_hash"),
   totpSecret:         text("totp_secret"),
   totpEnabled:        boolean("totp_enabled").default(false),
+  // ── Address ──────────────────────────────────────────────────────────────
+  address:            text("address"),
+  city:               text("city"),
+  province:           text("province"),
+  usState:            text("us_state"),
+  postalCode:         text("postal_code"),
   createdAt:    timestamp("created_at").defaultNow().notNull(),
   updatedAt:    timestamp("updated_at").defaultNow().notNull(),
 });

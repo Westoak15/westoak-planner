@@ -223,8 +223,11 @@ r.get("/users", isAuthenticated, async (req: AuthRequest, res: Response) => {
     if (!me || me.role !== "ga") return res.status(403).json({ message: "Forbidden" });
     const fas = await db.select({
       id: users.id, email: users.email, firstName: users.firstName, lastName: users.lastName,
+      agentId: users.agentId, agency: users.agency, phone: users.phone,
       level: users.level, role: users.role, gaId: users.gaId, createdAt: users.createdAt,
       jurisdiction: users.jurisdiction,
+      address: users.address, city: users.city, province: users.province,
+      usState: users.usState, postalCode: users.postalCode,
     }).from(users).where(eq(users.gaId, me.id));
     res.json(fas);
   } catch (e: any) {
@@ -243,8 +246,16 @@ r.post("/users", isAuthenticated, async (req: AuthRequest, res: Response) => {
       lastName:     z.string().min(1),
       email:        z.string().email(),
       password:     z.string().min(12),
+      agentId:      z.string().optional(),
+      agency:       z.string().optional(),
+      phone:        z.string().optional(),
       level:        z.enum(["standard", "enhanced"]).default("standard"),
       jurisdiction: z.enum(["CA", "US"]).default(req.userJurisdiction ?? "CA"),
+      address:      z.string().optional(),
+      city:         z.string().optional(),
+      province:     z.string().optional(),   // mandatory CA — validated in client
+      usState:      z.string().optional(),   // mandatory US — validated in client
+      postalCode:   z.string().optional(),
     }).parse(req.body);
 
     // FA must be created in the same jurisdiction DB as the GA
@@ -260,13 +271,21 @@ r.post("/users", isAuthenticated, async (req: AuthRequest, res: Response) => {
     const [u] = await (db.insert(users) as any).values({
       email: body.email, passwordHash: hash,
       firstName: body.firstName, lastName: body.lastName,
+      agentId: body.agentId ?? null, agency: body.agency ?? null,
+      phone: body.phone ?? null,
       level: body.level, role: "fa", gaId: me.id,
       jurisdiction: targetJur,
       mustResetPassword: true,
+      address: body.address ?? null, city: body.city ?? null,
+      province: body.province ?? null, usState: body.usState ?? null,
+      postalCode: body.postalCode ?? null,
     }).returning({
       id: users.id, email: users.email, firstName: users.firstName,
-      lastName: users.lastName, level: users.level, role: users.role,
+      lastName: users.lastName, agentId: users.agentId, agency: users.agency,
+      phone: users.phone, level: users.level, role: users.role,
       jurisdiction: users.jurisdiction,
+      address: users.address, city: users.city, province: users.province,
+      usState: users.usState, postalCode: users.postalCode,
     });
     res.status(201).json(u);
   } catch (e: any) {
@@ -285,10 +304,18 @@ r.patch("/users/:id", isAuthenticated, async (req: AuthRequest, res: Response) =
     if (!target || target.gaId !== me.id) return res.status(404).json({ message: "User not found" });
 
     const body = z.object({
-      firstName: z.string().min(1).optional(),
-      lastName:  z.string().min(1).optional(),
-      level:     z.enum(["standard", "enhanced"]).optional(),
-      password:  z.string().min(12).optional(),
+      firstName:  z.string().min(1).optional(),
+      lastName:   z.string().min(1).optional(),
+      agentId:    z.string().optional(),
+      agency:     z.string().optional(),
+      phone:      z.string().optional(),
+      level:      z.enum(["standard", "enhanced"]).optional(),
+      password:   z.string().min(12).optional(),
+      address:    z.string().optional(),
+      city:       z.string().optional(),
+      province:   z.string().optional(),
+      usState:    z.string().optional(),
+      postalCode: z.string().optional(),
     }).parse(req.body);
 
     const update: any = { ...body };
@@ -300,7 +327,10 @@ r.patch("/users/:id", isAuthenticated, async (req: AuthRequest, res: Response) =
 
     const [u] = await db.update(users).set(update).where(eq(users.id, target.id)).returning({
       id: users.id, email: users.email, firstName: users.firstName,
-      lastName: users.lastName, level: users.level, role: users.role,
+      lastName: users.lastName, agentId: users.agentId, agency: users.agency,
+      phone: users.phone, level: users.level, role: users.role,
+      address: users.address, city: users.city, province: users.province,
+      usState: users.usState, postalCode: users.postalCode,
     });
     res.json(u);
   } catch (e: any) {

@@ -25,7 +25,7 @@ import {
 import { isAuthenticated, type AuthRequest } from "../auth/index.js";
 import { safe, ownsClient, ownsPlan } from "../fpUtils.js";
 import { auditAnthropicCall, auditWrite, AuditAction, DataCategory } from "../services/pipedaAuditService.js";
-import { eq, and } from "drizzle-orm";
+import { eq, and, sql } from "drizzle-orm";
 import { runDrawdownStrategies, type DrawdownInput } from "../engine/drawdown.js";
 
 const r = Router();
@@ -1316,9 +1316,7 @@ r.post("/clients/:id/retirement/:projId/project", isAuthenticated, async (req: A
 
     // Store year-by-year data on the projection record
     await db.execute(
-      `UPDATE retirement_projections SET projection_data = $1, updated_at = NOW()
-       WHERE id = $2`,
-      [JSON.stringify(result), projId]
+      sql`UPDATE retirement_projections SET projection_data = ${JSON.stringify(result)}::jsonb, updated_at = NOW() WHERE id = ${projId}`
     );
 
     res.json(result);

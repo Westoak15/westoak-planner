@@ -1326,7 +1326,7 @@ export default function App() {
             <TaxEstateHub clientId={client.id} client={client} person={person} onPersonChange={setPerson} t={tClient} />
           )}
           {tab === "documents" && client && (
-            <DocumentsHub clientId={client.id} client={client} />
+            <DocumentsHub clientId={client.id} client={client} t={tClient} />
           )}
           {tab === "fp" && client && (
             <FinancialPlanHub clientId={client.id} client={client} t={tClient} />
@@ -1373,7 +1373,7 @@ export default function App() {
                 )}
                 {tab === "ai" && (
                   <QueryClientProvider client={queryClient}>
-                    <AITab clientId={client.id} />
+                    <AITab clientId={client.id} t={tClient} />
                   </QueryClientProvider>
                 )}
               </PlanningDocFlow>

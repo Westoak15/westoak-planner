@@ -11,6 +11,7 @@ const queryClient = new QueryClient();
 interface Props {
   clientId: number;
   client?: any;
+  t?: T;
 }
 
 export function FinancialPlanHub({ clientId, client, t = translations.en }: Props) {
@@ -20,17 +21,17 @@ export function FinancialPlanHub({ clientId, client, t = translations.en }: Prop
     <QueryClientProvider client={queryClient}>
       <HubShell
         icon={Sparkles}
-        title="Financial Plan"
+        title={t.plan.title}
         subtitle={
           <>
-            <span>Plan summary</span>
+            <span>{t.plan.planSummaryDesc}</span>
             <span>•</span>
-            <span>End-to-end planning workflow</span>
+            <span>{t.plan.endToEndWorkflow}</span>
           </>
         }
         subtabs={[
-          { key: "summary",  label: "Plan Summary",     icon: FileSpreadsheet, badgeTone: "cyan"   },
-          { key: "workflow", label: "Detailed Workflow", icon: ClipboardList,   badgeTone: "purple" },
+          { key: "summary",  label: t.plan.planSummary,     icon: FileSpreadsheet, badgeTone: "cyan"   },
+          { key: "workflow", label: t.plan.detailedWorkflow, icon: ClipboardList,   badgeTone: "purple" },
         ]}
         activeSubtab={subtab}
         onSubtabChange={(k) => setSubtab(k as "summary" | "workflow")}

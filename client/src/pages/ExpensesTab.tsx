@@ -174,20 +174,20 @@ export function ExpensesTab({ clientId, addTrigger = 0, t = translations.en }: {
       <div className="h-full flex flex-col bg-slate-50">
         <div className="px-6 py-4 border-b border-slate-200 bg-white flex items-center justify-between">
           <div>
-            <p className="text-xs text-slate-400">Cash Flow</p>
-            <p className="text-lg font-semibold text-slate-900">No expenses yet</p>
+            <p className="text-xs text-slate-400">{t.cashFlow.title}</p>
+            <p className="text-lg font-semibold text-slate-900">{t.cashFlow.noExpensesYet}</p>
           </div>
           <button onClick={() => { resetForm(); setShowForm(true); }}
             className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-cyan-500 text-white text-sm font-semibold px-4 py-2 rounded-xl shadow-sm hover:shadow-md transition">
-            <Plus className="w-4 h-4" /> Add Expense
+            <Plus className="w-4 h-4" /> {t.cashFlow.addExpense}
           </button>
         </div>
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
-            <p className="text-slate-500 font-semibold mb-2">Add household expenses to build your cash flow plan</p>
+            <p className="text-slate-500 font-semibold mb-2">{t.cashFlow.addHouseholdExpenses}</p>
             <button onClick={() => { resetForm(); setShowForm(true); }}
               className="inline-flex items-center gap-1.5 bg-gradient-to-r from-blue-600 to-cyan-500 text-white text-sm font-semibold px-4 py-2 rounded-xl shadow-sm hover:shadow-md transition">
-              <Plus className="w-4 h-4" /> Add First Expense
+              <Plus className="w-4 h-4" /> {t.cashFlow.addFirstExpense}
             </button>
           </div>
         </div>
@@ -202,7 +202,7 @@ export function ExpensesTab({ clientId, addTrigger = 0, t = translations.en }: {
       {/* HEADER — command center */}
       <div className="px-6 py-3 border-b border-slate-200 bg-white flex items-center justify-between flex-shrink-0">
         <div>
-          <p className="text-xs text-slate-400 uppercase tracking-wide">Cash Flow</p>
+          <p className="text-xs text-slate-400 uppercase tracking-wide">{t.cashFlow.title}</p>
           <p className="text-base font-semibold text-slate-900">Monthly Expenses</p>
         </div>
         <div className="flex items-center gap-8">

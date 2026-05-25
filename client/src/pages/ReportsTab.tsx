@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { FileText, Download, Loader2, BookOpen } from "lucide-react";
+import { translations, type T } from "../i18n/translations";
 
 interface ReportSection {
   id: string;
@@ -9,28 +10,21 @@ interface ReportSection {
   sections: string[];  // planning engine sections to request
 }
 
-const REPORT_SECTIONS: ReportSection[] = [
-  // Summary
-  { id: "comprehensive",        label: "Comprehensive Plan",    description: "Full plan — all sections",          category: "Summary",      sections: ["all"] },
-  { id: "one-page",             label: "One Page Summary",      description: "Executive summary",                 category: "Summary",      sections: ["retirement","tax","insurance"] },
-  // Net Worth
-  { id: "net-worth",            label: "Net Worth Statement",   description: "Balance sheet",                     category: "Net Worth",    sections: ["networth"] },
-  { id: "asset-allocation",     label: "Asset Allocation",      description: "Asset breakdown by type",           category: "Net Worth",    sections: ["networth"] },
-  // Retirement
-  { id: "retirement",           label: "Retirement Projection", description: "Income projection & Monte Carlo",   category: "Retirement",   sections: ["retirement","rrsp","tfsa"] },
-  { id: "retirement-readiness", label: "Retirement Readiness",  description: "Success probability & gaps",        category: "Retirement",   sections: ["retirement"] },
-  // Insurance
-  { id: "insurance",            label: "Insurance Analysis",    description: "DIME, disability & CI gaps",        category: "Insurance",    sections: ["insurance"] },
-  // Cash Flow
-  { id: "cash-flow",            label: "Cash Flow",             description: "Income vs expenses",                category: "Cash Flow",    sections: ["cashflow","debt"] },
-  // Goals
-  { id: "goal-status",          label: "Goal Status",           description: "Progress to financial goals",       category: "Goals",        sections: ["goals"] },
-  // Tax & Estate
-  { id: "tax-strategy",         label: "Tax Strategy",          description: "Tax projection & optimization",     category: "Tax & Estate", sections: ["tax","rrsp","tfsa","capitalGains","incomeSplitting"] },
-  { id: "estate-summary",       label: "Estate Summary",        description: "Estate value, tax & documents",     category: "Tax & Estate", sections: ["estate"] },
-];
-
-const CATEGORIES = ["Summary","Net Worth","Retirement","Insurance","Cash Flow","Goals","Tax & Estate"];
+function makeReportSections(t: T): ReportSection[] {
+  return [
+    { id: "comprehensive",        label: t.report.comprehensivePlan,   description: t.report.comprehensiveDesc,          category: t.report.catSummary,    sections: ["all"] },
+    { id: "one-page",             label: t.report.onePageSummary,      description: t.report.onePageDesc,                category: t.report.catSummary,    sections: ["retirement","tax","insurance"] },
+    { id: "net-worth",            label: t.report.netWorthStatement,   description: t.report.netWorthStatementDesc,      category: t.report.catNetWorth,   sections: ["networth"] },
+    { id: "asset-allocation",     label: t.report.assetAllocation,     description: t.report.assetAllocationDesc,        category: t.report.catNetWorth,   sections: ["networth"] },
+    { id: "retirement",           label: t.report.retirementProjection,description: t.report.retirementProjectionDesc,   category: t.report.catRetirement, sections: ["retirement","rrsp","tfsa"] },
+    { id: "retirement-readiness", label: t.report.retirementReadiness, description: t.report.retirementReadinessDesc,    category: t.report.catRetirement, sections: ["retirement"] },
+    { id: "insurance",            label: t.report.insuranceAnalysis,   description: t.report.insuranceAnalysisDesc,      category: t.report.catInsurance,  sections: ["insurance"] },
+    { id: "cash-flow",            label: t.report.cashFlowReport,      description: t.report.cashFlowReportDesc,         category: t.report.catCashFlow,   sections: ["cashflow","debt"] },
+    { id: "goal-status",          label: t.report.goalStatus,          description: t.report.goalStatusDesc,             category: t.report.catGoals,      sections: ["goals"] },
+    { id: "tax-strategy",         label: t.report.taxStrategy,         description: t.report.taxStrategyDesc,            category: t.report.catTaxEstate,  sections: ["tax","rrsp","tfsa","capitalGains","incomeSplitting"] },
+    { id: "estate-summary",       label: t.report.estateSummary,       description: t.report.estateSummaryDesc,          category: t.report.catTaxEstate,  sections: ["estate"] },
+  ];
+}
 
 const CATEGORY_COLORS: Record<string, string> = {
   "Summary":      "bg-[#0c1e3a]",
@@ -42,9 +36,11 @@ const CATEGORY_COLORS: Record<string, string> = {
   "Tax & Estate": "bg-indigo-600",
 };
 
-export function ReportsTab({ clientId }: { clientId: number }) {
+export function ReportsTab({ clientId, t = translations.en }: { clientId: number; t?: T }) {
   const [selected, setSelected]   = useState<Set<string>>(new Set());
   const [generating, setGenerating] = useState(false);
+  const REPORT_SECTIONS = makeReportSections(t);
+  const CATEGORIES = [t.report.catSummary, t.report.catNetWorth, t.report.catRetirement, t.report.catInsurance, t.report.catCashFlow, t.report.catGoals, t.report.catTaxEstate];
   const token = () => localStorage.getItem("fp_token") ?? "";
 
   // ── Fetch a report from the planning engine ─────────────────────────────────
@@ -144,13 +140,13 @@ ${bodies.join('\n<div class="report-divider"></div>\n')}
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-xl font-bold text-slate-900 flex items-center gap-2">
-            <BookOpen className="w-5 h-5 text-[#0c1e3a]" /> Report Builder
+            <BookOpen className="w-5 h-5 text-[#0c1e3a]" /> {t.report.reportBuilder}
           </h1>
-          <p className="text-sm text-slate-500 mt-0.5">Select reports and generate — all use the same professional format</p>
+          <p className="text-sm text-slate-500 mt-0.5">{t.report.selectAndGenerate}</p>
         </div>
         <div className="flex items-center gap-3">
-          <button onClick={selectAll}  className="text-xs text-slate-500 hover:text-slate-800 transition-colors">All</button>
-          <button onClick={selectNone} className="text-xs text-slate-500 hover:text-slate-800 transition-colors">None</button>
+          <button onClick={selectAll}  className="text-xs text-slate-500 hover:text-slate-800 transition-colors">{t.report.all}</button>
+          <button onClick={selectNone} className="text-xs text-slate-500 hover:text-slate-800 transition-colors">{t.report.none}</button>
           {selected.size > 0 && (
             <button
               onClick={generateCombined}
@@ -158,7 +154,7 @@ ${bodies.join('\n<div class="report-divider"></div>\n')}
               className="flex items-center gap-2 bg-[#0c1e3a] hover:bg-[#0e2a4a] disabled:opacity-50 text-white text-sm font-semibold px-4 py-2 rounded-xl shadow-sm transition-all"
             >
               {generating
-                ? <><Loader2 className="w-4 h-4 animate-spin" /> Generating…</>
+                ? <><Loader2 className="w-4 h-4 animate-spin" /> {t.report.generating}</>
                 : <><FileText className="w-4 h-4" /> Generate ({selected.size})</>
               }
             </button>
@@ -191,7 +187,7 @@ ${bodies.join('\n<div class="report-divider"></div>\n')}
                   }}
                   className="text-[11px] text-slate-400 hover:text-slate-600 transition-colors"
                 >
-                  {catSections.every(s => selected.has(s.id)) ? "Deselect all" : "Select all"}
+                  {catSections.every(s => selected.has(s.id)) ? t.report.deselectAll : t.report.selectAll}
                 </button>
               </div>
 

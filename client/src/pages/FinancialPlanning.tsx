@@ -1,4 +1,5 @@
 import { toast } from "@/hooks/use-toast";
+import { translations, type T } from "../i18n/translations";
 import { TranscriptRecorderTrigger } from "../components/MeetingRecorder";
 import { useQueryClient } from "@tanstack/react-query";
 import { api } from "../lib/api";
@@ -1152,14 +1153,16 @@ import type {
 
 type TaxSubTab = "notes" | "rrsp" | "tfsa" | "projection" | "capgains" | "splitting";
 
-const taxSubTabs: Array<{ key: TaxSubTab; label: string }> = [
-  { key: "notes",      label: "Planning Notes" },
-  { key: "rrsp",       label: "RRSP Room" },
-  { key: "tfsa",       label: "TFSA Room" },
-  { key: "projection", label: "Tax Projection" },
-  { key: "capgains",   label: "Capital Gains" },
-  { key: "splitting",  label: "Income Splitting" },
-];
+function makeTaxSubTabs(t: T): Array<{ key: TaxSubTab; label: string }> {
+  return [
+    { key: "notes",      label: t.taxEstate.planningNotesSub },
+    { key: "rrsp",       label: t.taxEstate.rrspRoom },
+    { key: "tfsa",       label: t.taxEstate.tfsaRoom },
+    { key: "projection", label: t.taxEstate.taxProjection },
+    { key: "capgains",   label: t.taxEstate.capitalGains },
+    { key: "splitting",  label: t.taxEstate.incomeSplitting },
+  ];
+}
 
 // PANEL: Tax Planning Notes
 // ============================================================================
@@ -1725,7 +1728,7 @@ function AdjustPanel({ open, onClose, form, setForm }: { open: boolean; onClose:
   return (
     <div className="fixed inset-y-0 right-0 w-80 bg-white border-l border-slate-200 shadow-2xl z-50 flex flex-col">
       <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
-        <h2 className="font-semibold text-slate-900">Adjust Strategy</h2>
+        <h2 className="font-semibold text-slate-900">{t.taxEstate.adjustStrategy}</h2>
         <button onClick={onClose} className="text-slate-400 hover:text-slate-600"><X className="w-5 h-5" /></button>
       </div>
       <div className="flex-1 overflow-y-auto p-5 space-y-4">
@@ -1851,17 +1854,17 @@ function TaxProjectionPanel({ clientId, prefillPrimary, prefillSpouse, person = 
     <div className="space-y-5">
       {/* Header — Step 1: no purple banner */}
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-slate-900">Tax Scenarios</h2>
+        <h2 className="text-lg font-semibold text-slate-900">{t.taxEstate.taxScenarios}</h2>
         <div className="flex gap-2">
           <button
             onClick={() => setShowAdjust(true)}
             className="flex items-center gap-1.5 text-sm font-medium text-slate-600 border border-slate-200 hover:bg-slate-50 px-3 py-2 rounded-xl transition-colors"
           >
-            <SlidersHorizontal className="w-4 h-4" /> Adjust Strategy
+            <SlidersHorizontal className="w-4 h-4" /> {t.taxEstate.adjustStrategy}
           </button>
           <button onClick={openNew}
             className="flex items-center gap-1.5 text-sm font-semibold text-white bg-[#0c1e3a] hover:bg-[#0e2a4a] px-4 py-2 rounded-xl whitespace-nowrap">
-            <Plus className="w-4 h-4" /> New Scenario
+            <Plus className="w-4 h-4" /> {t.taxEstate.newScenario}
           </button>
         </div>
       </div>
@@ -1919,10 +1922,10 @@ function TaxProjectionPanel({ clientId, prefillPrimary, prefillSpouse, person = 
 
       {!loading && analyses.length === 0 && (
         <div className="text-center py-16 bg-white border border-dashed border-slate-200 rounded-2xl">
-          <p className="text-slate-500 font-medium">No scenarios yet</p>
-          <p className="text-sm text-slate-400 mt-1">Create a Base Plan to model lifetime tax and wealth</p>
+          <p className="text-slate-500 font-medium">{t.taxEstate.noScenariosYet}</p>
+          <p className="text-sm text-slate-400 mt-1">{t.taxEstate.createBasePlan}</p>
           <button onClick={openNew} className="mt-4 px-4 py-2 text-sm bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700">
-            + New Scenario
+            {t.taxEstate.newScenario}
           </button>
         </div>
       )}
@@ -2570,9 +2573,10 @@ function IncomeSplittingPanel({ clientId, prefill, person = "primary", primaryLa
 // MAIN TAX TAB COMPONENT
 // ============================================================================
 
-export function TaxTab({ clientId, client, person: personProp = "primary" }: { clientId: number; client?: any; person?: string }) {
+export function TaxTab({ clientId, client, person: personProp = "primary", t = translations.en }: { clientId: number; client?: any; person?: string; t?: T }) {
   const [activeSubTab, setActiveSubTab] = useState<TaxSubTab>("projection");
   const person = (personProp === "spouse" ? "spouse" : personProp === "combined" ? "both" : "primary") as "primary" | "spouse" | "both";
+  const taxSubTabs = makeTaxSubTabs(t);
   const { data: projections = [] } = useRetirementProjections(clientId);
   const ret = (projections as any[])[0] ?? null;
 
@@ -2625,7 +2629,7 @@ export function TaxTab({ clientId, client, person: personProp = "primary" }: { c
   return (
     <div className="space-y-6 animate-in fade-in duration-300 px-1">
       <div className="flex items-center justify-between flex-wrap gap-2 mb-1">
-        <h2 className="text-xl font-display font-bold">Tax Planning</h2>
+        <h2 className="text-xl font-display font-bold">{t.taxEstate.taxPlanning}</h2>
       </div>
 
       <div className="flex gap-1 p-1 bg-muted/50 rounded-xl overflow-x-auto flex-wrap">
@@ -2721,7 +2725,7 @@ export function EstateNotesTab({ clientId, planId, client }: { clientId: number;
 
 // ── AI Tab ────────────────────────────────────────────────────────────────────
 
-export function AITab({ clientId }: { clientId: number }) {
+export function AITab({ clientId, t = translations.en }: { clientId: number; t?: T }) {
   const qc = useQueryClient();
   const { data: recommendations = [] } = useAiRecommendations(clientId);
   const generateRecs  = useGenerateAiRecommendations();
@@ -2805,7 +2809,7 @@ const deleteSession = async (runId: string) => {
     <div className="space-y-4 animate-in fade-in duration-300">
       {/* Header */}
       <div className="flex justify-between items-center">
-        <h2 className="text-xl font-display font-bold">AI Recommendations</h2>
+        <h2 className="text-xl font-display font-bold">{t.ai.recommendations}</h2>
         <button
           onClick={() => generateRecs.mutate(clientId)}
           disabled={generateRecs.isPending}
@@ -2813,7 +2817,7 @@ const deleteSession = async (runId: string) => {
           className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold rounded-xl hover:opacity-90 transition-opacity shadow-sm disabled:opacity-50"
         >
           <Sparkles className="w-4 h-4" />
-          <span>{generateRecs.isPending ? "Analyzing..." : "Generate Insights"}</span>
+          <span>{generateRecs.isPending ? t.ai.analyzing : t.ai.generateInsights}</span>
         </button>
       </div>
 
@@ -2829,7 +2833,7 @@ const deleteSession = async (runId: string) => {
       {sessions.length === 0 && !generateRecs.isPending && (
         <div className="text-center py-12 border border-dashed border-border rounded-2xl">
           <Brain className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
-          <p className="text-muted-foreground text-sm">No recommendations yet. Click "Generate Insights" to analyse this client's financial data.</p>
+          <p className="text-muted-foreground text-sm">{t.ai.noRecommendations}</p>
         </div>
       )}
 

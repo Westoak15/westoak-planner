@@ -13,6 +13,7 @@ interface Props {
   client?: any;
   person: "primary" | "spouse" | "combined";
   onPersonChange: (p: "primary" | "spouse" | "combined") => void;
+  t?: T;
 }
 
 export function TaxEstateHub({ clientId, client, person, onPersonChange, t = translations.en }: Props) {
@@ -26,14 +27,14 @@ export function TaxEstateHub({ clientId, client, person, onPersonChange, t = tra
         title={t.taxEstate.title}
         subtitle={
           <>
-            <span>Tax planning notes</span>
+            <span>{t.taxEstate.taxPlanning}</span>
             <span>•</span>
-            <span>Will, POA & beneficiary status</span>
+            <span>{t.taxEstate.estatePlanning}</span>
           </>
         }
         subtabs={[
-          { key: "tax",    label: "Tax",    icon: Receipt,    badgeTone: "amber"  },
-          { key: "estate", label: "Estate", icon: ScrollText, badgeTone: "purple" },
+          { key: "tax",    label: t.taxEstate.tax,    icon: Receipt,    badgeTone: "amber"  },
+          { key: "estate", label: t.taxEstate.estate, icon: ScrollText, badgeTone: "purple" },
         ]}
         activeSubtab={subtab}
         onSubtabChange={(k) => setSubtab(k as "tax" | "estate")}
@@ -54,7 +55,7 @@ export function TaxEstateHub({ clientId, client, person, onPersonChange, t = tra
     <UsTaxTab clientId={clientId} client={client} />
   )}
   {subtab === "tax" && client?.jurisdiction !== "US" && (
-    <TaxTab clientId={clientId} client={client} person={person === "combined" ? "primary" : person} />
+    <TaxTab clientId={clientId} client={client} person={person === "combined" ? "primary" : person} t={t} />
   )}
   {subtab === "estate" && (
     <EstateNotesTab clientId={clientId} planId={null} client={client} />

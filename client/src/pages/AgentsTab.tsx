@@ -443,17 +443,26 @@ export function AgentsTab({ onSelectClient }: { onSelectClient?: (clientId: numb
       {/* ── Create / Edit modal ── */}
       {showForm && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center px-6 pt-6 pb-4 border-b border-gray-100 sticky top-0 bg-white z-10">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col">
+            <div className="flex-shrink-0 flex justify-between items-center px-6 pt-6 pb-4 border-b border-gray-100">
               <h2 className="text-lg font-bold text-gray-900">
                 {editId ? "Edit Agent" : "New Field Agent"}
               </h2>
-              <button onClick={() => setShowForm(false)} className="text-gray-400 hover:text-gray-600">
-                <X className="w-5 h-5" />
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleSubmit}
+                  disabled={!canSubmit}
+                  className="px-4 py-1.5 bg-[#0c1e3a] hover:bg-[#0e2a4a] disabled:opacity-40 text-white text-xs font-semibold rounded-lg transition-colors"
+                >
+                  {busy ? "Saving…" : editId ? "Save Changes" : "Create Agent"}
+                </button>
+                <button onClick={() => setShowForm(false)} className="text-gray-400 hover:text-gray-600 ml-1">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
             </div>
 
-            <div className="px-6 py-5 space-y-4">
+            <div className="flex-1 overflow-y-auto px-6 py-5 space-y-4">
 
               {/* Name */}
               <div className="grid grid-cols-2 gap-3">
@@ -618,7 +627,7 @@ export function AgentsTab({ onSelectClient }: { onSelectClient?: (clientId: numb
               {error && <p className="text-red-500 text-sm bg-red-50 rounded-lg px-3 py-2">{error}</p>}
             </div>
 
-            <div className="flex justify-end gap-3 px-6 pb-6 sticky bottom-0 bg-white border-t border-gray-100 pt-4">
+            <div className="flex-shrink-0 flex justify-end gap-3 px-6 pb-6 border-t border-gray-100 pt-4">
               <button onClick={() => setShowForm(false)}
                 className="px-4 py-2.5 text-sm font-semibold text-gray-500 hover:text-gray-700">
                 Cancel

@@ -1,4 +1,21 @@
 import { translations, type T } from "../i18n/translations";
+import { Component, type ReactNode } from "react";
+
+class GoalErrorBoundary extends Component<{ children: ReactNode }, { error: string | null }> {
+  state = { error: null };
+  static getDerivedStateFromError(e: Error) { return { error: e.message }; }
+  render() {
+    if (this.state.error) {
+      return (
+        <div className="p-6 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm">
+          <p className="font-bold mb-1">Goal form error (share with dev):</p>
+          <pre className="text-xs overflow-auto">{this.state.error}</pre>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 import { toast } from "@/hooks/use-toast";
 import { useState, useEffect, useMemo } from "react";
 import { api } from "../lib/api";
@@ -953,14 +970,16 @@ export function GoalsTab({ clientId, client, t = translations.en }: { clientId: 
 
       {/* Form */}
       {showForm && (
-        <GoalForm
-          initial={formInitial}
-          onSave={save}
-          onCancel={() => { setShowForm(false); setEditingGoal(null); }}
-          busy={busy}
-          clientId={clientId}
-          t={t}
-        />
+        <GoalErrorBoundary>
+          <GoalForm
+            initial={formInitial}
+            onSave={save}
+            onCancel={() => { setShowForm(false); setEditingGoal(null); }}
+            busy={busy}
+            clientId={clientId}
+            t={t}
+          />
+        </GoalErrorBoundary>
       )}
     </div>
   );

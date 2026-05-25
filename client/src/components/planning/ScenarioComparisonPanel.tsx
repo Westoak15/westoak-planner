@@ -4,7 +4,7 @@
  * see deltas highlighted, save the comparison set.
  */
 
-import { useState, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   X, Save, Star, TrendingUp, TrendingDown, Minus,
   ChevronRight, Trophy, AlertTriangle,
@@ -50,7 +50,6 @@ interface CalcResult {
 
 interface Props {
   clientId:    number;
-  projections: Projection[];
   onClose:     () => void;
   t?:          T;
 }
@@ -239,13 +238,28 @@ const ROWS: RowConfig[] = [
 
 // ── Main component ────────────────────────────────────────────────────────────
 
-export function ScenarioComparisonPanel({ clientId, projections, onClose, t = translations.en }: Props) {
-  const [selected, setSelected]   = useState<number[]>([]);
-  const [labels, setLabels]       = useState<Record<number, string>>({});
-  const [savedLabel, setSavedLabel] = useState("");
-  const [saving, setSaving]       = useState(false);
-  const [saved, setSaved]         = useState(false);
-  const [step, setStep]           = useState<"select" | "compare">("select");
+export function ScenarioComparisonPanel({ clientId, onClose, t = translations.en }: Props) {
+  const [projections, setProjections] = useState<Projection[]>([]);
+  const [loading, setLoading]         = useState(true);
+  const [selected, setSelected]       = useState<number[]>([]);
+  const [labels, setLabels]           = useState<Record<number, string>>({});
+  const [savedLabel, setSavedLabel]   = useState("");
+  const [saving, setSaving]           = useState(false);
+  const [saved, setSaved]             = useState(false);
+  const [step, setStep]               = useState<"select" | "compare">("select");
+
+  // Self-fetch projections on mount
+  useEffect(() => {
+    const token = localStorage.getItem("authToken") || localStorage.getItem("fp_token") || "";
+    fetch(`/api/clients/${clientId}/retirement`, {
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      credentials: "include",
+    })
+      .then(r => r.ok ? r.json() : [])
+      .then((data: any[]) => setProjections(Array.isArray(data) ? data : []))
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, [clientId]);
 
   const compared = useMemo(() =>
     projections.filter(p => p.id !== undefined && selected.includes(p.id!)),
@@ -304,8 +318,14 @@ export function ScenarioComparisonPanel({ clientId, projections, onClose, t = tr
 
           {/* Projection list */}
           <div className="flex-1 overflow-y-auto px-6 py-4 space-y-2">
-            {projections.length === 0 && (
+            {loading && (
+              <p className="text-sm text-gray-400 text-center py-8">Loading projections…</p>
+            )}
+            {!loading && projections.length === 0 && (
               <p className="text-sm text-gray-400 text-center py-8">No projections on file. Create at least 2 projections first.</p>
+            )}
+            {!loading && projections.length === 1 && (
+              <p className="text-sm text-amber-500 text-center py-2">Only 1 projection found — create a second projection to compare.</p>
             )}
             {projections.map((p) => {
               const isSelected = selected.includes(p.id!);

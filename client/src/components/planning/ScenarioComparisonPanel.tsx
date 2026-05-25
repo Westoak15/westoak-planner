@@ -120,11 +120,11 @@ function projectYearByYear(p: Projection): YearData[] {
       const yIntoRet = age - retAge;
       const desiredNow = desired > 0 ? desired * Math.pow(1 + infl, yIntoRet) : 0;
 
-      const cppNow = age >= cppAge
-        ? cppAnn * Math.pow(1 + infl, Math.max(0, yIntoRet - (cppAge - retAge))) : 0;
-      const oasNow = age >= oasAge
-        ? oasAnn * Math.pow(1 + infl, Math.max(0, yIntoRet - (oasAge - retAge))) : 0;
-      const pensNow = pension > 0 ? pension * Math.pow(1 + infl, yIntoRet) : 0;
+      // Cap inflation adjustment at 1.5x to prevent runaway numbers in long projections
+      const inflCap = (base: number, yrs: number) => base * Math.min(1.5, Math.pow(1 + infl, Math.max(0, yrs)));
+      const cppNow  = age >= cppAge  ? inflCap(cppAnn,  yIntoRet - (cppAge  - retAge)) : 0;
+      const oasNow  = age >= oasAge  ? inflCap(oasAnn,  yIntoRet - (oasAge  - retAge)) : 0;
+      const pensNow = pension > 0    ? inflCap(pension,  yIntoRet) : 0;
       const govIncome = Math.round(cppNow + oasNow + pensNow);
 
       const needed  = Math.max(0, desiredNow - govIncome);
@@ -234,10 +234,12 @@ function buildNarrative(
   }
 
   if (new Set(projections.map(p => p.cppStartAge ?? 65)).size > 1) {
-    const govDiff = years[bestIdx]
-      .filter(r => r.isRetired)
-      .reduce((s, r) => s + r.govIncome, 0);
-    lines.push(`CPP timing strategy in ${bestLabel} generates ${fmtK(govDiff)} in total government income over retirement.`);
+    const firstRetYear = years[bestIdx]?.find(r => r.isRetired);
+    const govAnnual = firstRetYear?.govIncome ?? 0;
+    if (govAnnual > 0) {
+      const cppAge = projections[bestIdx].cppStartAge ?? 65;
+      lines.push(`${bestLabel} starts CPP at ${cppAge}, generating ${fmt$(govAnnual)}/yr in government income at the start of retirement.`);
+    }
   }
 
   if (mostTaxEffIdx !== bestIdx) {
@@ -278,7 +280,7 @@ function buildRows(years: YearData[][]) {
       fmt: fmt$, higher: true,
     },
     {
-      key: "gov",        label: "Gov't Income (CPP+OAS+Pension)",
+      key: "gov",        label: "Gov't Income at Retirement ($/yr)",
       get: (p: Projection, i: number) => {
         const retYear = years[i]?.find(y => y.isRetired);
         return retYear?.govIncome ?? 0;
@@ -526,7 +528,7 @@ export function ScenarioComparisonPanel({ clientId, onClose, t = translations.en
             </div>
             <div>
               <h2 className="text-lg font-bold text-white">Scenario Comparison</h2>
-              <p className="text-xs text-white/50">{compared.length} scenarios · Click names to rename</p>
+              <p className="text-xs text-white/50">{compared.length} scenarios · Summary uses saved projection results</p>
             </div>
           </div>
           <button onClick={onClose} className="text-white/60 hover:text-white"><X className="w-5 h-5" /></button>
@@ -653,9 +655,8 @@ export function ScenarioComparisonPanel({ clientId, onClose, t = translations.en
               className="flex items-center gap-2 text-sm font-semibold text-gray-500 hover:text-gray-700 mb-3 w-full">
               {showYearBy ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
               Year-by-Year Breakdown
-              <span className="text-xs font-normal text-gray-400">(RRSP · TFSA · Non-Reg · Net Worth · Income · Taxes)</span>
+              <span className="text-xs font-normal text-gray-400">(RRSP · TFSA · Non-Reg · Net Worth · Taxes)</span>
             </button>
-
             {showYearBy && (
               <div>
                 <div className="rounded-xl overflow-hidden border border-gray-200 overflow-x-auto">
@@ -677,7 +678,8 @@ export function ScenarioComparisonPanel({ clientId, onClose, t = translations.en
                             <th key={`${i}-nw`} className="px-3 py-1.5 text-center text-[10px] font-medium text-gray-400 border-l border-gray-200">Net Worth</th>
                             <th key={`${i}-rrsp`} className="px-2 py-1.5 text-center text-[10px] font-medium text-gray-400">RRSP</th>
                             <th key={`${i}-tfsa`} className="px-2 py-1.5 text-center text-[10px] font-medium text-gray-400">TFSA</th>
-                            <th key={`${i}-tax`} className="px-2 py-1.5 text-center text-[10px] font-medium text-gray-400">Taxes</th>
+                            <th key={`${i}-nonreg`} className="px-2 py-1.5 text-center text-[10px] font-medium text-gray-400">Non-Reg</th>
+                            <th key={`${i}-tax`} className="px-2 py-1.5 text-center text-[10px] font-medium text-gray-400">Est. Taxes</th>
                           </>
                         ))}
                       </tr>
@@ -699,6 +701,7 @@ export function ScenarioComparisonPanel({ clientId, onClose, t = translations.en
                                 </td>
                                 <td key={`${si}-rrsp`} className="px-2 py-1.5 text-center text-gray-500">{fmtK(yr.rrsp)}</td>
                                 <td key={`${si}-tfsa`} className="px-2 py-1.5 text-center text-gray-500">{fmtK(yr.tfsa)}</td>
+                                <td key={`${si}-nonreg`} className="px-2 py-1.5 text-center text-gray-500">{fmtK(yr.nonReg)}</td>
                                 <td key={`${si}-tax`} className="px-2 py-1.5 text-center text-red-400">
                                   {yr.isRetired ? fmtK(yr.taxes) : "—"}
                                 </td>

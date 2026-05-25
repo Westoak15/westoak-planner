@@ -57,6 +57,7 @@ interface Props {
   projection?: RetirementProjection;
   onSaved?: (proj: RetirementProjection) => void;
   onCancel?: () => void;
+  t?: T;
 }
 
 // ── Form state defaults ───────────────────────────────────────────────────────
@@ -275,7 +276,7 @@ function Section({ title, children, defaultOpen = false }: { title: string; chil
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
-export function RetirementProjectionForm({ clientId, clientName, projection, onSaved, onCancel }: Props) {
+export function RetirementProjectionForm({ clientId, clientName, projection, onSaved, onCancel, t = translations.en }: Props) {
   const qc = useQueryClient();
 
   // Initialise form from an existing projection or defaults
@@ -716,6 +717,7 @@ export function RetirementTab({ clientId, clientName, person: personProp, t = tr
     const person = editing ? (editing.person as "primary" | "spouse" ?? "primary") : (view === "combined" ? "primary" : view);
     return (
       <RetirementProjectionForm
+        t={t}
         clientId={clientId}
         clientName={person === "spouse" ? (clientData?.spouseFirstName ?? "Spouse") : clientName}
         projection={editing ?? buildSeeds(person) as any}

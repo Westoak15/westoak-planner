@@ -706,8 +706,8 @@ function ClientDetail({ client, onBack, onPlanSelect, onUpdate, onLocaleChange, 
   const insights: { msg: string; color: string }[] = [];
   if (ov) {
     if (ov.pendingAi > 0) insights.push({ msg: `${ov.pendingAi} AI recommendation${ov.pendingAi > 1 ? "s" : ""} awaiting review`, color: "amber" });
-    if (ov.retirementProjections === 0) insights.push({ msg: "No retirement projection on file — consider adding one", color: "blue" });
-    if (ov.insuranceAnalyses === 0) insights.push({ msg: "No insurance analysis on file — protection gap unknown", color: "red" });
+    if (ov.retirementProjections === 0) insights.push({ msg: t.client.overview.noRetirementProjection, color: "blue" });
+    if (ov.insuranceAnalyses === 0) insights.push({ msg: t.client.overview.noInsuranceAnalysis, color: "red" });
   }
 
   return (
@@ -777,10 +777,10 @@ function ClientDetail({ client, onBack, onPlanSelect, onUpdate, onLocaleChange, 
       {ov && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[
-            { label: "Net Worth",          value: nwFmt(ov.netWorth),            color: ov.netWorth >= 0 ? "text-emerald-600" : "text-red-500" },
-            { label: "Retirement Plans",   value: String(ov.retirementProjections), color: ov.retirementProjections > 0 ? "text-blue-600" : "text-slate-400" },
-            { label: "Insurance Analyses", value: String(ov.insuranceAnalyses),   color: ov.insuranceAnalyses > 0 ? "text-blue-600" : "text-red-500" },
-            { label: "Pending AI Actions", value: String(ov.pendingAi),           color: ov.pendingAi > 0 ? "text-amber-600" : "text-slate-400" },
+            { label: t.client.overview.netWorth,         value: nwFmt(ov.netWorth),            color: ov.netWorth >= 0 ? "text-emerald-600" : "text-red-500" },
+            { label: t.client.overview.retirementPlans,  value: String(ov.retirementProjections), color: ov.retirementProjections > 0 ? "text-blue-600" : "text-slate-400" },
+            { label: t.client.overview.insuranceAnalyses, value: String(ov.insuranceAnalyses),   color: ov.insuranceAnalyses > 0 ? "text-blue-600" : "text-red-500" },
+            { label: t.client.overview.pendingAiActions,  value: String(ov.pendingAi),           color: ov.pendingAi > 0 ? "text-amber-600" : "text-slate-400" },
           ].map(s => (
             <div key={s.label} className="bg-white border border-slate-200 rounded-xl p-4 hover:shadow-sm transition-all duration-200">
               <p className="text-xs text-slate-500">{s.label}</p>
@@ -809,10 +809,10 @@ function ClientDetail({ client, onBack, onPlanSelect, onUpdate, onLocaleChange, 
             <div className="w-7 h-7 bg-[#0c1e3a]/5 rounded-lg flex items-center justify-center">
               <Users className="w-3.5 h-3.5 text-[#0c1e3a]" />
             </div>
-            <h2 className="text-sm font-bold uppercase tracking-wider text-gray-700">Household Profile</h2>
+            <h2 className="text-sm font-bold uppercase tracking-wider text-gray-700">{t.client.householdProfile}</h2>
           </div>
           <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">
-            {hasSpouse ? "Joint File" : "Single File"}
+            {hasSpouse ? t.client.jointFile : t.client.singleFile}
           </span>
         </div>
 
@@ -823,18 +823,18 @@ function ClientDetail({ client, onBack, onPlanSelect, onUpdate, onLocaleChange, 
         )}>
           {/* ── Primary ── */}
           <PersonPanel
-            roleLabel="Primary Client"
+            roleLabel={t.client.primaryClient}
             avatarBg={avatarBg(client.firstName + client.lastName)}
             avatarInitials={initials(client.firstName, client.lastName)}
             displayName={`${client.firstName} ${client.lastName}`}
-            displaySubtitle={[client.occupation, ageFromDob(client.dateOfBirth) ? `age ${ageFromDob(client.dateOfBirth)}` : null].filter(Boolean).join(" · ") || "Occupation not set"}
+            displaySubtitle={[client.occupation, ageFromDob(client.dateOfBirth) ? `${t.client.ageLabel} ${ageFromDob(client.dateOfBirth)}` : null].filter(Boolean).join(" · ") || t.client.occupationNotSet}
             editing={editing}
             edit={
               <div className="grid grid-cols-2 gap-3">
-                <Input label="First Name"  value={form.firstName ?? ""} onChange={v => u("firstName", v)} />
-                <Input label="Last Name"   value={form.lastName ?? ""}  onChange={v => u("lastName", v)} />
-                <Input label="Email" type="email" value={form.email ?? ""} onChange={v => u("email", v)} />
-                <Input label="Phone"       value={form.phone ?? ""}     onChange={v => u("phone", v)} />
+                <Input label={t.client.firstName}  value={form.firstName ?? ""} onChange={v => u("firstName", v)} />
+                <Input label={t.client.lastName}   value={form.lastName ?? ""}  onChange={v => u("lastName", v)} />
+                <Input label={t.client.email} type="email" value={form.email ?? ""} onChange={v => u("email", v)} />
+                <Input label={t.client.phone}       value={form.phone ?? ""}     onChange={v => u("phone", v)} />
                 <DobInput label={t.client.dateOfBirth} value={form.dateOfBirth ?? ""} onChange={v => u("dateOfBirth", v)} />
                 <Select label={regionLabel} value={form.province ?? defaultRegion} onChange={v => u("province", v)} options={regions} />
                 <Input label={t.client.occupation}  value={form.occupation ?? ""} onChange={v => u("occupation", v)} />
@@ -846,15 +846,15 @@ function ClientDetail({ client, onBack, onPlanSelect, onUpdate, onLocaleChange, 
             }
             view={
               <dl className="grid grid-cols-2 gap-y-3 gap-x-6">
-                <ExecField label="Email"          value={client.email}                     onSave={v => inlinePatch({ email: v })} />
-                <ExecField label="Phone"          value={client.phone}                     onSave={v => inlinePatch({ phone: v })} />
+                <ExecField label={t.client.email}          value={client.email}                     onSave={v => inlinePatch({ email: v })} />
+                <ExecField label={t.client.phone}          value={client.phone}                     onSave={v => inlinePatch({ phone: v })} />
                 <ExecField label={t.client.dateOfBirth}  value={client.dateOfBirth}               onSave={v => inlinePatch({ dateOfBirth: v })} />
                 <ExecField label={t.client.province}       value={client.province}                  onSave={v => inlinePatch({ province: v })} />
                 <ExecField label={t.client.occupation}     value={client.occupation}                onSave={v => inlinePatch({ occupation: v })} />
                 <ExecField label={t.client.annualIncome}  value={fmt$(client.annualIncome)} mono   onSave={v => inlinePatch({ annualIncome: v })} type="number" />
-                <ExecField label="Pension"        value={(client as any).pensionType}      onSave={v => inlinePatch({ pensionType: v } as any)} />
+                <ExecField label={t.client.pension}        value={(client as any).pensionType}      onSave={v => inlinePatch({ pensionType: v } as any)} />
                 <ExecField label={t.client.retirementAge} value={client.retirementAge} mono        onSave={v => inlinePatch({ retirementAge: +v })} type="number" />
-                <ExecField label="Desired Income" value={fmt$(client.desiredRetirementIncome)} mono onSave={v => inlinePatch({ desiredRetirementIncome: v })} type="number" />
+                <ExecField label={t.client.desiredIncome} value={fmt$(client.desiredRetirementIncome)} mono onSave={v => inlinePatch({ desiredRetirementIncome: v })} type="number" />
               </dl>
             }
           />
@@ -862,11 +862,11 @@ function ClientDetail({ client, onBack, onPlanSelect, onUpdate, onLocaleChange, 
           {/* ── Spouse ── */}
           {(hasSpouse || editing) ? (
             <PersonPanel
-              roleLabel="Spouse / Partner"
+              roleLabel={t.client.spousePartner}
               avatarBg={avatarBg((client.spouseFirstName ?? "") + (client.spouseLastName ?? ""))}
               avatarInitials={initials(client.spouseFirstName ?? "", client.spouseLastName ?? "")}
               displayName={`${client.spouseFirstName ?? ""} ${client.spouseLastName ?? ""}`.trim()}
-              displaySubtitle={[client.spouseOccupation, ageFromDob(client.spouseDateOfBirth) ? `age ${ageFromDob(client.spouseDateOfBirth)}` : null].filter(Boolean).join(" · ") || "Occupation not set"}
+              displaySubtitle={[client.spouseOccupation, ageFromDob(client.spouseDateOfBirth) ? `${t.client.ageLabel} ${ageFromDob(client.spouseDateOfBirth)}` : null].filter(Boolean).join(" · ") || t.client.occupationNotSet}
               editing={editing}
               edit={
                 <div className="grid grid-cols-2 gap-3">
@@ -885,9 +885,9 @@ function ClientDetail({ client, onBack, onPlanSelect, onUpdate, onLocaleChange, 
                   <ExecField label={t.client.dateOfBirth}  value={client.spouseDateOfBirth}             onSave={v => inlinePatch({ spouseDateOfBirth: v })} />
                   <ExecField label={t.client.occupation}     value={client.spouseOccupation}               onSave={v => inlinePatch({ spouseOccupation: v })} />
                   <ExecField label={t.client.annualIncome}  value={fmt$(client.spouseAnnualIncome)} mono   onSave={v => inlinePatch({ spouseAnnualIncome: v })} type="number" />
-                  <ExecField label="Pension"        value={(client as any).spousePensionType}      onSave={v => inlinePatch({ spousePensionType: v } as any)} />
+                  <ExecField label={t.client.pension}        value={(client as any).spousePensionType}      onSave={v => inlinePatch({ spousePensionType: v } as any)} />
                   <ExecField label={t.client.retirementAge} value={client.spouseRetirementAge} mono        onSave={v => inlinePatch({ spouseRetirementAge: +v })} type="number" />
-                  <ExecField label="Desired Income" value={fmt$(client.spouseDesiredRetirementIncome)} mono />
+                  <ExecField label={t.client.desiredIncome} value={fmt$(client.spouseDesiredRetirementIncome)} mono />
                 </dl>
               }
             />
@@ -897,7 +897,7 @@ function ClientDetail({ client, onBack, onPlanSelect, onUpdate, onLocaleChange, 
                 <div className="w-10 h-10 rounded-full border-2 border-dashed border-gray-200 flex items-center justify-center text-gray-300 mb-2">
                   <UserPlus className="w-4 h-4" />
                 </div>
-                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-0.5">No Spouse on File</p>
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-0.5">{t.client.noSpouseOnFile}</p>
                 <button onClick={() => setEditing(true)} className="text-xs text-[#0c1e3a] font-semibold hover:underline">Add spouse details</button>
               </div>
             )

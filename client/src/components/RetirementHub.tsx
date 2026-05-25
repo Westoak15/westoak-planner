@@ -60,7 +60,7 @@ export function RetirementHub({ clientId, client, person, onPersonChange, t = tr
             <RetirementTab clientId={clientId} clientName={client?.firstName} person={person} />
           )}
           {subtab === "pension" && (
-            <PensionTab clientId={clientId} client={client} person={person === "combined" ? "primary" : person} />
+            <PensionTab clientId={clientId} client={client} person={person === "combined" ? "primary" : person} t={t} />
           )}
           {subtab === "meltdown" && (
             <MeltdownTab clientId={clientId} client={client} person={person} />

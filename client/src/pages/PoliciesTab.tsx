@@ -16,6 +16,7 @@ import {
   ArrowRight, Zap, Eye, EyeOff,
 } from "lucide-react";
 import { api } from "../lib/api";
+import { type T } from "../i18n/translations";
 import { toast } from "@/hooks/use-toast";
 import { PolicyImporter } from "../components/PolicyImporter";
 
@@ -41,6 +42,7 @@ interface Policy {
 interface Props {
   clientId: number;
   client?: any;
+  t: T;
 }
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -478,7 +480,7 @@ function GroupedPolicies({ policies, onSave, onDelete }: {
 }
 
 
-export function PoliciesTab({ clientId, client }: Props) {
+export function PoliciesTab({ clientId, client, t }: Props) {
   const [policies,      setPolicies]     = useState<Policy[]>([]);
   const [loading,       setLoading]      = useState(true);
   const [showAdd,       setShowAdd]      = useState(false);
@@ -531,14 +533,14 @@ export function PoliciesTab({ clientId, client }: Props) {
 
   // Advisor alerts
   const alerts: { level: "crit" | "warn" | "ok"; msg: string }[] = [];
-  if (!disabilityOk) alerts.push({ level: "crit", msg: "No disability coverage — income unprotected" });
-  if (!criticalOk)   alerts.push({ level: "warn", msg: "No critical illness coverage on file" });
+  if (!disabilityOk) alerts.push({ level: "crit", msg: t.insurance.noDisabilityCoverage });
+  if (!criticalOk)   alerts.push({ level: "warn", msg: t.insurance.noCriticalIllnessCoverage });
   if (income > 0 && totalLife < income * 5)
     alerts.push({ level: "crit", msg: `Life coverage below 5× income — gap ~${fmt$(income * 10 - totalLife)}` });
   if (expiringPolicies.length > 0)
     alerts.push({ level: "warn", msg: `${expiringPolicies.length} polic${expiringPolicies.length > 1 ? "ies" : "y"} expiring within 12 months` });
   if (policies.length === 0)
-    alerts.push({ level: "crit", msg: "No policies on file — household unprotected" });
+    alerts.push({ level: "crit", msg: t.insurance.noHouseholdCoverage });
   if (totalLife > 0 && income > 0 && totalLife >= income * 10)
     alerts.push({ level: "ok", msg: `Life coverage adequate — ${Math.round(totalLife / income)}× income` });
   if (disabilityOk)
@@ -580,12 +582,12 @@ export function PoliciesTab({ clientId, client }: Props) {
         <div className="flex-shrink-0 border-b border-slate-200 bg-white">
           <div className="grid grid-cols-3 md:grid-cols-6 divide-x divide-slate-100">
             {[
-              { label: "Life Coverage",    value: totalLife > 0 ? fmt$(totalLife) : "—",          sub: "total",           hi: totalLife > 0 },
-              { label: "Disability",        value: totalDisability > 0 ? fmt$(totalDisability) : "Missing", sub: "coverage",     hi: totalDisability > 0 },
-              { label: "Critical Illness",  value: totalCritical > 0 ? fmt$(totalCritical) : "—", sub: "coverage",        hi: totalCritical > 0 },
-              { label: "Annual Premium",    value: fmt$(totalAnnualPremium),                       sub: "combined",        hi: true },
-              { label: "Policies",          value: String(policies.length),                        sub: "on file",         hi: policies.length > 0 },
-              { label: "Expiring Soon",     value: String(expiringPolicies.length),               sub: "within 12 mo.",   hi: expiringPolicies.length === 0 },
+              { label: t.insurance.lifeInsurance,  value: totalLife > 0 ? fmt$(totalLife) : "—",          sub: t.insurance.total,           hi: totalLife > 0 },
+              { label: t.insurance.disability,     value: totalDisability > 0 ? fmt$(totalDisability) : t.insurance.missing, sub: t.insurance.coverage,     hi: totalDisability > 0 },
+              { label: t.insurance.criticalIllness, value: totalCritical > 0 ? fmt$(totalCritical) : "—", sub: t.insurance.coverage,        hi: totalCritical > 0 },
+              { label: t.insurance.annualPremium,  value: fmt$(totalAnnualPremium),                       sub: t.insurance.combined,        hi: true },
+              { label: t.insurance.policies,       value: String(policies.length),                        sub: t.insurance.onFile,         hi: policies.length > 0 },
+              { label: t.insurance.expiringSoon,   value: String(expiringPolicies.length),               sub: t.insurance.within12Mo,   hi: expiringPolicies.length === 0 },
             ].map(s => (
               <div key={s.label} className="px-4 py-3">
                 <div className="text-[9px] font-semibold uppercase tracking-widest text-slate-400 mb-1">{s.label}</div>
@@ -608,11 +610,11 @@ export function PoliciesTab({ clientId, client }: Props) {
               style={{ gridTemplateColumns: "1fr 100px 90px 70px 60px 80px" }}
             >
               <span>Policy / Insured</span>
-              <span className="text-right">Coverage</span>
-              <span className="text-right">Premium</span>
-              <span className="text-center">Status</span>
-              <span className="text-center">Risk</span>
-              <span className="text-right">Actions</span>
+              <span className="text-right">{t.insurance.coverage}</span>
+              <span className="text-right">{t.common.amount}</span>
+              <span className="text-center">{t.common.status}</span>
+              <span className="text-center">{t.common.priority}</span>
+              <span className="text-right">{t.common.edit}</span>
             </div>
           </div>
         </div>
@@ -634,11 +636,11 @@ export function PoliciesTab({ clientId, client }: Props) {
                   <div className="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center mb-3">
                     <Shield className="w-5 h-5 text-slate-400" />
                   </div>
-                  <p className="text-sm font-semibold text-slate-700 mb-1">No policies on file</p>
-                  <p className="text-xs text-slate-400 mb-4">Add a policy to begin building this household's protection profile</p>
+                  <p className="text-sm font-semibold text-slate-700 mb-1">{t.insurance.noPolicies}</p>
+                  <p className="text-xs text-slate-400 mb-4">{t.insurance.addToProtectionProfile}</p>
                   <button onClick={() => setShowAdd(true)}
                     className="flex items-center gap-1.5 text-xs font-semibold bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
-                    <Plus className="w-3.5 h-3.5" /> Add First Policy
+                    <Plus className="w-3.5 h-3.5" /> {t.insurance.addFirstPolicy}
                   </button>
                 </div>
                ) : (
@@ -653,11 +655,11 @@ export function PoliciesTab({ clientId, client }: Props) {
           <button onClick={() => setShowAdd(a => !a)}
             className="flex items-center gap-1.5 text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white px-3.5 py-1.5 rounded-lg transition-colors">
             <Plus className="w-3.5 h-3.5" />
-            {showAdd ? "Cancel" : "Add Policy"}
+            {showAdd ? t.common.cancel : t.insurance.addPolicy}
           </button>
           <button onClick={() => setShowImporter(true)}
             className="flex items-center gap-1.5 text-xs font-medium text-slate-600 border border-slate-200 hover:bg-slate-50 px-3.5 py-1.5 rounded-lg transition-colors">
-            <Table className="w-3.5 h-3.5" /> Import Excel
+            <Table className="w-3.5 h-3.5" /> {t.insurance.importExcel}
           </button>
           <div className="ml-auto text-[10px] text-slate-400">
             {policies.length} polic{policies.length !== 1 ? "ies" : "y"} · {fmt$(totalAnnualPremium)}/yr
@@ -670,7 +672,7 @@ export function PoliciesTab({ clientId, client }: Props) {
 
         {/* Protection Score */}
         <div className="px-4 py-4 border-b border-slate-100">
-          <div className="text-[9px] font-semibold uppercase tracking-widest text-slate-400 mb-3">Protection Score</div>
+          <div className="text-[9px] font-semibold uppercase tracking-widest text-slate-400 mb-3">{t.insurance.protectionScore}</div>
           <div className="flex items-center gap-4">
             {/* Circular score gauge */}
             <div className="relative w-16 h-16 flex-shrink-0">
@@ -688,12 +690,12 @@ export function PoliciesTab({ clientId, client }: Props) {
             </div>
             <div>
               <div className={`text-sm font-bold ${scoreColor}`}>
-                {protectionScore >= 75 ? "Well Protected" : protectionScore >= 50 ? "Needs Attention" : "At Risk"}
+                {protectionScore >= 75 ? t.insurance.wellProtected : protectionScore >= 50 ? t.insurance.needsAttention : t.common.atRisk}
               </div>
               <div className="text-[10px] text-slate-400 mt-0.5 leading-relaxed">
                 {protectionScore >= 75 ? "Household coverage meets baseline thresholds" :
                  protectionScore >= 50 ? "Some gaps detected — review recommended" :
-                 "Critical protection gaps require immediate action"}
+                 t.insurance.critProtectionGaps}
               </div>
             </div>
           </div>
@@ -701,19 +703,19 @@ export function PoliciesTab({ clientId, client }: Props) {
 
         {/* Coverage Adequacy */}
         <div className="px-4 py-4 border-b border-slate-100 space-y-3">
-          <div className="text-[9px] font-semibold uppercase tracking-widest text-slate-400">Coverage Adequacy</div>
+          <div className="text-[9px] font-semibold uppercase tracking-widest text-slate-400">{t.insurance.coverageAdequacy}</div>
           <CoverageBar
-            label="Income Replacement"
+            label={t.insurance.incomeReplacement}
             pct={incomeReplPct}
             tone={incomeReplPct >= 80 ? "green" : incomeReplPct >= 50 ? "amber" : "red"}
           />
           <CoverageBar
-            label="Disability Protection"
+            label={t.insurance.disabilityProtection}
             pct={totalDisability > 0 ? 100 : 0}
             tone={totalDisability > 0 ? "green" : "red"}
           />
           <CoverageBar
-            label="Critical Illness"
+            label={t.insurance.criticalIllness}
             pct={totalCritical > 0 ? 100 : 0}
             tone={totalCritical > 0 ? "green" : "amber"}
           />
@@ -721,7 +723,7 @@ export function PoliciesTab({ clientId, client }: Props) {
 
         {/* Advisor Alerts */}
         <div className="px-4 py-4 flex-1">
-          <div className="text-[9px] font-semibold uppercase tracking-widest text-slate-400 mb-3">Advisor Intelligence</div>
+          <div className="text-[9px] font-semibold uppercase tracking-widest text-slate-400 mb-3">{t.insurance.advisorIntelligence}</div>
           {alerts.length === 0 ? (
             <div className="text-xs text-slate-400">Add policies to generate intelligence</div>
           ) : (
@@ -754,8 +756,8 @@ export function PoliciesTab({ clientId, client }: Props) {
             <div className="space-y-2">
               {[
                 { label: "Survivor Income",    ok: totalLife >= (income * 5), desc: totalLife >= (income * 5) ? "Protected" : "Gap exists" },
-                { label: "Disability Income",  ok: totalDisability > 0,      desc: totalDisability > 0 ? "Covered" : "Unprotected" },
-                { label: "Critical Illness",   ok: totalCritical > 0,        desc: totalCritical > 0 ? "Covered" : "No coverage" },
+                { label: t.insurance.disabilityIncome,  ok: totalDisability > 0,      desc: totalDisability > 0 ? t.insurance.covered : t.insurance.unprotected },
+                { label: t.insurance.criticalIllness,   ok: totalCritical > 0,        desc: totalCritical > 0 ? t.insurance.covered : t.insurance.noCoverage },
                 { label: "Estate Liquidity",   ok: totalLife > 500000,       desc: totalLife > 500000 ? "Adequate" : "Review needed" },
               ].map(s => (
                 <div key={s.label} className="flex items-center justify-between py-1 border-b border-slate-50 last:border-0">

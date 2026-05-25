@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { api } from "../lib/api";
+import { type T } from "../i18n/translations";
 import { Plus, Trash2, Pencil, Save, X, Building2 } from "lucide-react";
 
 interface PensionPlan {
@@ -112,8 +113,8 @@ const emptyPlan = (owner = "primary", retirementAge = 65, pensionType = "dbpp", 
   bridgeBenefitEndAge: 65, survivorBenefitPct: "65", isVested: true, notes: "",
 });
 
-export function PensionTab({ clientId, client, person = "primary" }: {
-  clientId: number; client?: any; person?: string;
+export function PensionTab({ clientId, client, person = "primary", t }: {
+  clientId: number; client?: any; person?: string; t: T;
 }) {
   const [plans, setPlans]         = useState<PensionPlan[]>([]);
   const [showForm, setShowForm]   = useState(false);
@@ -248,23 +249,23 @@ export function PensionTab({ clientId, client, person = "primary" }: {
 
       {/* Summary bar */}
       <SummaryBar items={[
-        { label: "DBPP income / yr",  value: dbppIncome > 0 ? fmt$(dbppIncome) : "—",    color: "text-blue-600",    bg: "bg-blue-50"    },
-        { label: "DC / GRSP balance", value: totalDCPP  > 0 ? fmt$(totalDCPP)  : "—",    color: "text-violet-600",  bg: "bg-violet-50"  },
-        { label: "DC drawdown / yr",  value: dcppDrawdown > 0 ? fmt$(dcppDrawdown) : "—", color: "text-emerald-600", bg: "bg-emerald-50" },
-        { label: "Plans on file",     value: String(filteredPlans.length),                color: "text-gray-700",    bg: "bg-gray-100"   },
+        { label: t.retirement.dbppIncomeYr,  value: dbppIncome > 0 ? fmt$(dbppIncome) : "—",    color: "text-blue-600",    bg: "bg-blue-50"    },
+        { label: t.retirement.dcGrspBalance, value: totalDCPP  > 0 ? fmt$(totalDCPP)  : "—",    color: "text-violet-600",  bg: "bg-violet-50"  },
+        { label: t.retirement.dcDrawdownYr,  value: dcppDrawdown > 0 ? fmt$(dcppDrawdown) : "—", color: "text-emerald-600", bg: "bg-emerald-50" },
+        { label: t.retirement.plansOnFile,   value: String(filteredPlans.length),                color: "text-gray-700",    bg: "bg-gray-100"   },
       ]} />
 
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h2 className="text-xl font-bold text-gray-900">Pension Plans</h2>
+          <h2 className="text-xl font-bold text-gray-900">{t.retirement.pensionPlans}</h2>
           <p className="text-sm text-gray-400 mt-0.5">
-            {filteredPlans.length} plan{filteredPlans.length !== 1 ? "s" : ""} on file
+            {filteredPlans.length} {t.retirement.plansOnFile}
           </p>
         </div>
         <button onClick={openNew}
           className="flex items-center gap-2 bg-[#0c1e3a] hover:bg-[#0e2a4a] text-white text-sm font-semibold px-4 py-2 rounded-xl transition-colors">
-          <Plus className="w-4 h-4" /> Add Plan
+          <Plus className="w-4 h-4" /> {t.retirement.addPlan}
         </button>
       </div>
 
@@ -272,8 +273,8 @@ export function PensionTab({ clientId, client, person = "primary" }: {
       {filteredPlans.length === 0 ? (
         <div className="text-center py-16 border-2 border-dashed border-gray-200 rounded-2xl">
           <Building2 className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-          <p className="text-gray-500 font-semibold">No pension plans on file</p>
-          <p className="text-sm text-gray-400 mt-1">Add DBPP, DCPP, Group RRSP, DPSP, Life Annuity, or Investment Plan</p>
+          <p className="text-gray-500 font-semibold">{t.retirement.noPensionPlans}</p>
+          <p className="text-sm text-gray-400 mt-1">{t.retirement.addPensionTypes}</p>
         </div>
       ) : (
         <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
@@ -649,7 +650,7 @@ export function PensionTab({ clientId, client, person = "primary" }: {
               <button onClick={() => setShowForm(false)} className="px-4 py-2.5 text-sm font-semibold text-gray-500 hover:text-gray-700">Cancel</button>
               <button onClick={save} disabled={busy}
                 className="flex items-center gap-2 px-6 py-2.5 bg-[#0c1e3a] hover:bg-[#0e2a4a] disabled:opacity-50 text-white text-sm font-semibold rounded-xl transition-colors">
-                <Save className="w-4 h-4" /> {busy ? "Saving…" : editingId ? "Save Changes" : "Add Plan"}
+                <Save className="w-4 h-4" /> {busy ? t.common.saving : editingId ? t.common.save : t.retirement.addPlan}
               </button>
             </div>
           </div>

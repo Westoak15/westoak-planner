@@ -1757,12 +1757,12 @@ export function DebtTab({ clientId, t }: { clientId: number; t: T }) {
     <div className="p-6 max-w-5xl mx-auto">
       <div className="flex items-center justify-between mb-5">
         <div>
-          <h2 className="text-xl font-bold text-gray-900">Debt &amp; Cash Flow</h2>
+          <h2 className="text-xl font-bold text-gray-900">{t.debt.debtCashFlow}</h2>
           {rows.length > 0 && <p className="text-sm font-bold text-red-500">Total: {fmt$(totalDebt)}</p>}
         </div>
         <button onClick={() => setDrafts(d => [...d, emptyDebt()])}
           className="flex items-center gap-1.5 text-sm font-semibold text-white bg-[#0c1e3a] hover:bg-[#0e2a4a] px-3 py-1.5 rounded-lg">
-          <Plus className="w-3.5 h-3.5" /> Add Debt
+          <Plus className="w-3.5 h-3.5" /> {t.debt.addDebt}
         </button>
       </div>
      <DebtDashboard rows={rows} />
@@ -1801,7 +1801,7 @@ export function DebtTab({ clientId, t }: { clientId: number; t: T }) {
       )}
 
       {rows.length === 0 && drafts.length === 0 && (
-        <Card className="p-8 text-center text-gray-400">No debts recorded yet.</Card>
+        <Card className="p-8 text-center text-gray-400">{t.debt.noDebtsYet}</Card>
       )}
       {rows.length > 0 && (
         <Card>

@@ -92,7 +92,7 @@ export function ProtectionHub({ clientId, client, person, onPersonChange, t = tr
       >
         <div className="p-6">
           {subtab === "coverage" && (
-            <PoliciesTab clientId={clientId} client={client} />
+            <PoliciesTab clientId={clientId} client={client} t={t} />
           )}
           {subtab === "gap" && (
             <FnaWorksheetTab clientId={clientId} planId={null} client={client} />

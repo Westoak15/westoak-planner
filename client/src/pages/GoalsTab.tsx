@@ -388,6 +388,8 @@ function GoalForm({
 }) {
   const GOAL_TYPES      = goalTypes(t);
   const FUNDING_SOURCES = fundingSources(t);
+  const PRIORITY_LABELS = priorityLabels(t);
+  const STATUS_CONFIG   = statusConfig(t);
   const [form, setForm] = useState(initial);
   const [liabilities, setLiabilities] = useState<Array<{
     id: number; name: string | null; category: string | null;

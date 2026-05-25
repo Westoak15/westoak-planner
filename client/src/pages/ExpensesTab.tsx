@@ -191,7 +191,7 @@ export function ExpensesTab({ clientId, addTrigger = 0, t = translations.en }: {
             </button>
           </div>
         </div>
-        {showForm && <ExpenseForm form={form} setForm={setForm} editing={editing} onSubmit={handleSubmit} onClose={resetForm} creating={createExp.isPending} updating={updateExp.isPending} />}
+        {showForm && <ExpenseForm form={form} setForm={setForm} editing={editing} onSubmit={handleSubmit} onClose={resetForm} creating={createExp.isPending} updating={updateExp.isPending} t={t} />}
       </div>
     );
   }
@@ -385,12 +385,12 @@ export function ExpensesTab({ clientId, addTrigger = 0, t = translations.en }: {
       </div>
 
       {/* Add/Edit form */}
-      {showForm && <ExpenseForm form={form} setForm={setForm} editing={editing} onSubmit={handleSubmit} onClose={resetForm} creating={createExp.isPending} updating={updateExp.isPending} />}
+      {showForm && <ExpenseForm form={form} setForm={setForm} editing={editing} onSubmit={handleSubmit} onClose={resetForm} creating={createExp.isPending} updating={updateExp.isPending} t={t} />}
     </div>
   );
 }
 
-function ExpenseForm({ form, setForm, editing, onSubmit, onClose, creating, updating }: any) {
+function ExpenseForm({ form, setForm, editing, onSubmit, onClose, creating, updating, t = translations.en }: any) {
   return (
     <div className="fixed inset-0 z-[200] flex">
       <div className="flex-1 bg-black/40 backdrop-blur-sm" onClick={onClose} />

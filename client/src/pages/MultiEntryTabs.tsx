@@ -70,6 +70,13 @@ function assetCatLabel(cat: string, t: T): string {
     "Other Asset":            t.netWorth.catOtherAsset,
     "Mortgage":               t.netWorth.catMortgage,
     "Other Liability":        t.netWorth.catOtherLiability,
+    "HELOC":                  t.netWorth.catHELOC,
+    "Car Loan":               t.netWorth.catCarLoan,
+    "Credit Card":            t.netWorth.catCreditCard,
+    "Student Loan":           t.netWorth.catStudentLoan,
+    "Line of Credit":         t.netWorth.catLineOfCredit,
+    "Property Taxes Owing":   t.netWorth.catPropertyTax,
+    "Personal Taxes Owing":   t.netWorth.catPersonalTax,
   };
   return m[cat] ?? cat;
 }
@@ -844,7 +851,7 @@ export function NetWorthTab({ clientId, client, t }: { clientId: number; t: T; c
 
           {activeRows.length === 0 && activeDrafts.length === 0 && (
             <div className="bg-white border border-slate-200 rounded-2xl p-10 text-center shadow-sm">
-              <p className="text-slate-400 text-sm">No {isAssets ? "assets" : "liabilities"} added yet</p>
+              <p className="text-slate-400 text-sm">{t.netWorth.noAssetsYet}</p>
               <button onClick={() => addDraft(isAssets ? "asset" : "liability")} className="mt-3 text-cyan-500 text-sm hover:underline">
                 {isAssets ? t.netWorth.addFirstAsset : t.netWorth.addFirstLiability}
               </button>
@@ -885,7 +892,7 @@ export function NetWorthTab({ clientId, client, t }: { clientId: number; t: T; c
 
           {/* Net Worth summary */}
           <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
-            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-3">Summary</p>
+            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-3">{t.netWorth.summaryPanel}</p>
             <div className="space-y-2.5">
               <div className="flex justify-between items-center text-sm">
                 <span className="text-slate-500">{t.netWorth.totalAssets}</span>
@@ -1634,11 +1641,11 @@ function EducationSubTab({ clientId, client, t = translations.en }: { clientId: 
       {/* KPI tiles */}
       <div className="grid grid-cols-2 gap-3 mt-5 mb-5">
         <div className="fp-insightled-card p-4">
-          <p className="text-xs font-semibold text-[var(--text-tertiary)] uppercase tracking-wide mb-1">Total RESP Balance</p>
+          <p className="text-xs font-semibold text-[var(--text-tertiary)] uppercase tracking-wide mb-1">{t.netWorth.eduTotalRESP}</p>
           <p className="text-2xl font-bold text-[var(--accent-cyan)] font-mono">{fmt$(totalResp)}</p>
         </div>
         <div className="fp-insightled-card p-4">
-          <p className="text-xs font-semibold text-[var(--text-tertiary)] uppercase tracking-wide mb-1">Total Target</p>
+          <p className="text-xs font-semibold text-[var(--text-tertiary)] uppercase tracking-wide mb-1">{t.netWorth.eduTotalTarget}</p>
           <p className="text-2xl font-bold text-[var(--text-primary)] font-mono">{totalTarget ? fmt$(totalTarget) : "—"}</p>
         </div>
       </div>
@@ -1646,7 +1653,7 @@ function EducationSubTab({ clientId, client, t = translations.en }: { clientId: 
       {/* Table header */}
       <div className="border border-[var(--border-subtle)] rounded-xl overflow-hidden">
         <div className="px-4 py-3 flex items-center justify-between border-b border-[var(--border-subtle)] bg-[var(--bg-card)]">
-          <h3 className="font-semibold text-[var(--text-primary)] text-sm">Children's Education Plans</h3>
+          <h3 className="font-semibold text-[var(--text-primary)] text-sm">{t.netWorth.educationPlansTitle}</h3>
           <div className="flex items-center gap-2">
             <button
               onClick={() => setVoiceOpen(true)}
@@ -1685,7 +1692,7 @@ function EducationSubTab({ clientId, client, t = translations.en }: { clientId: 
         <table className="w-full text-sm">
           <thead className="bg-[var(--bg-card)]/60 border-b border-[var(--border-subtle)]">
             <tr>
-              {["Child", "Date of Birth", "RESP Balance", "Annual Contrib", "Target", "CESG", "Projected", "Notes", ""].map(h => (
+              {[t.netWorth.eduChild, t.netWorth.eduDOB, t.netWorth.eduRESPBalance, t.netWorth.eduAnnualContrib, t.netWorth.eduTarget, "CESG", t.netWorth.eduProjected, t.common.notes, ""].map(h => (
                 <th key={h} className="text-left px-3 py-2 text-xs font-semibold text-[var(--text-tertiary)] uppercase tracking-wide">{h}</th>
               ))}
             </tr>
@@ -1749,7 +1756,7 @@ function EducationSubTab({ clientId, client, t = translations.en }: { clientId: 
             {rows.length === 0 && drafts.length === 0 && (
               <tr>
                 <td colSpan={9} className="px-4 py-8 text-center text-[var(--text-tertiary)] text-sm">
-                  No education plans yet — click <span className="text-[var(--accent-cyan)]">Add Child</span> to get started
+                  {t.netWorth.noEducationPlans}
                 </td>
               </tr>
             )}

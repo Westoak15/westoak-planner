@@ -402,7 +402,7 @@ export function RetirementProjectionForm({ clientId, clientName, projection, onS
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-semibold text-slate-900">Retirement</h1>
-          <p className="text-sm text-slate-500">Projection through age 95 · Pension and savings under one roof</p>
+          <p className="text-sm text-slate-500">{t.retirement.projectionSubtitle}</p>
         </div>
         {onCancel && (
           <button onClick={onCancel} className="text-slate-400 hover:text-slate-600 p-1 text-lg leading-none">✕</button>
@@ -604,7 +604,7 @@ export function RetirementProjectionForm({ clientId, clientName, projection, onS
 // Drop-in replacement for the existing retirement tab.
 // Usage: <RetirementTab clientId={clientId} />
 
-export function RetirementTab({ clientId, clientName, person: personProp }: { clientId: number; clientName?: string; person?: string }) {
+export function RetirementTab({ clientId, clientName, person: personProp, t = translations.en }: { clientId: number; clientName?: string; person?: string; t?: T }) {
   const qc = useQueryClient();
   const view = (personProp ?? "primary") as "primary" | "spouse" | "combined";
   const [adding, setAdding] = useState(false);
@@ -745,7 +745,7 @@ export function RetirementTab({ clientId, clientName, person: personProp }: { cl
     <div>
       {/* Header */}
       <div className="flex items-center justify-between mb-5">
-        <h3 className="text-lg font-semibold text-gray-900">Retirement Projections</h3>
+        <h3 className="text-lg font-semibold text-gray-900">{t.retirement.retirementProjections}</h3>
         <div className="flex gap-2 items-center">
           {checkupError && <span className="text-xs text-red-500">{checkupError}</span>}
           <button
@@ -753,10 +753,10 @@ export function RetirementTab({ clientId, clientName, person: personProp }: { cl
             disabled={checkupLoading}
             className="px-4 py-2 text-sm border border-gray-200 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50"
           >
-            {checkupLoading ? "Running…" : "Retirement Checkup"}
+            {checkupLoading ? t.common.saving : t.retirement.retirementCheckup}
           </button>
           <button onClick={() => setAdding(true)} className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium">
-            + Add Projection
+            {t.retirement.addProjection}
           </button>
         </div>
       </div>
@@ -788,10 +788,10 @@ export function RetirementTab({ clientId, clientName, person: personProp }: { cl
       {!isLoading && activeProjections.length === 0 && (
         <div className="border border-dashed border-gray-200 rounded-xl py-12 text-center">
           <p className="text-gray-400 text-sm mb-3">
-            No {view === "combined" ? "" : view + " "}projections yet
+            {t.retirement.noProjectionsYet}
           </p>
           <button onClick={() => setAdding(true)} className="text-sm text-blue-600 hover:underline">
-            Create the first projection →
+            {t.retirement.createFirstProjection}
           </button>
         </div>
       )}

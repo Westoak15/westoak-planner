@@ -591,7 +591,7 @@ export function NetWorthTab({ clientId, client, t }: { clientId: number; t: T; c
 
   // Education sub-tab
   if (nwTab === "education") {
-    return <RespTab clientId={clientId} client={client} />;
+    return <RespTab clientId={clientId} client={client} t={t} />;
   }
 
   const isAssets = nwTab !== "liabilities";
@@ -1561,7 +1561,7 @@ type EduDraft = { childName: string; childDob: string; currentRespBalance: strin
 const emptyEdu = (): EduDraft => ({ childName:"", childDob:"", currentRespBalance:"", annualContribution:"2500", targetAmount:"", notes:"" });
 
 // Dark-themed education sub-tab used inside the Net Worth hub
-function EducationSubTab({ clientId, client }: { clientId: number; client?: any }) {
+function EducationSubTab({ clientId, client, t = translations.en }: { clientId: number; client?: any; t?: T }) {
   const [rows, setRows]     = useState<EduPlan[]>([]);
   const [drafts, setDrafts] = useState<EduDraft[]>([]);
   const [saving, setSaving] = useState(false);
@@ -1774,8 +1774,8 @@ function EducationSubTab({ clientId, client }: { clientId: number; client?: any 
 }
 
 /** @deprecated Use EducationSubTab (rendered inside NetWorthTab) instead. Kept for API compatibility. */
-export function RespTab({ clientId, client }: { clientId: number; client?: any }) {
-  return <EducationSubTab clientId={clientId} client={client} />;
+export function RespTab({ clientId, client, t = translations.en }: { clientId: number; client?: any; t?: T }) {
+  return <EducationSubTab clientId={clientId} client={client} t={t} />;
 }
 
 // ── DEBT ──────────────────────────────────────────────────────────────────────

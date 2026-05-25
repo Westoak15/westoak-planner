@@ -473,16 +473,30 @@ export function runCanadianProjection(input: EngineInput): EngineResult {
       const portfolioNeeded = Math.max(0, desiredGross - guaranteedNom);
 
       if (portfolioNeeded > 0) {
-        // Draw order: additional RRIF (if below tax bracket ceiling) → TFSA → Non-Reg
-        // For simplicity: take from TFSA first (zero tax impact), then non-reg
+        // Draw order: TFSA first (tax-free) → Non-Reg → voluntary RRSP (pre-71) or RRIF extra (post-71)
         const tfsaAvail = Math.max(0, tfsa);
         tfsaDraw   = Math.min(tfsaAvail, portfolioNeeded);
-        const remaining = portfolioNeeded - tfsaDraw;
-        nonRegDraw = Math.min(Math.max(0, nonReg), remaining);
+        let remaining  = portfolioNeeded - tfsaDraw;
+
+        // Non-reg next
+        const nonRegAvail = Math.max(0, nonReg);
+        nonRegDraw = Math.min(nonRegAvail, remaining);
+        remaining -= nonRegDraw;
+
+        // If still short and pre-RRIF: voluntary RRSP withdrawal to cover gap
+        // This models early-retirement RRSP drawdown (also reduces RRIF mass at 71)
+        if (remaining > 0 && !isRRIF && rrsp > 0) {
+          rrifExtra = Math.min(rrsp, remaining);  // reuse rrifExtra field for voluntary RRSP draw
+        }
+        // If post-RRIF and still short: additional RRIF above minimum
+        if (remaining > 0 && isRRIF && rrsp > rrifMin) {
+          rrifExtra = Math.min(rrsp - rrifMin, remaining);
+        }
       } else if (rrifMin > desiredGross && tfsa >= 0) {
-        // Excess RRIF forces more taxable income than needed — park excess in TFSA
-        const excess = rrifMin - desiredGross;
-        tfsa = tfsa + excess; // excess mandatory RRIF goes into TFSA (simplified)
+        // Excess mandatory RRIF — park in TFSA up to annual room ($7,000 in 2024)
+        const annualTfsaRoom = 7000;
+        const excess = Math.min(annualTfsaRoom, rrifMin - desiredGross);
+        tfsa = tfsa + excess;
       }
     }
 
@@ -494,7 +508,7 @@ export function runCanadianProjection(input: EngineInput): EngineResult {
     acb = newAcb;
 
     // ── Compute taxable income ────────────────────────────────────────────────
-    const rrifTotal    = rrifMin + rrifExtra;
+    // rrifTotal computed below with rrspBeforeUpdate
     const taxableInc   = empNom + cppNom + oasNomGross + pensionNom + bridgeNom + rrifTotal + nonRegTaxInc;
     // OAS clawback based on net income (before clawback)
     const clawback     = isRetired ? oasClawback(taxableInc, oasNomGross) : 0;
@@ -510,12 +524,18 @@ export function runCanadianProjection(input: EngineInput): EngineResult {
     const funding   = isRetired && desiredNom > 0
       ? Math.min(200, Math.round((netIncome / desiredNom) * 100)) : 0;
 
+    // ── Capture pre-update balances (used for retirement portfolio snapshot) ────
+    const rrspBeforeUpdate   = rrsp;
+    const tfsaBeforeUpdate   = tfsa;
+    const nonRegBeforeUpdate = nonReg;
+
     // ── Update account balances ───────────────────────────────────────────────
+    const rrifTotal = rrifMin + rrifExtra;
     if (!isRetired) {
       // Accumulation
       rrsp   = (rrsp   + annualRrspContrib) * (1 + rate);
       tfsa   = (tfsa   + annualTfsaContrib) * (1 + rate);
-      nonReg = (nonReg * (1 + rate));  // grows; contributions go to RRSP/TFSA
+      nonReg = (nonReg * (1 + rate));
     } else {
       // Retirement: apply withdrawals THEN growth
       rrsp   = Math.max(0, rrsp - rrifTotal) * (1 + rate);
@@ -526,16 +546,27 @@ export function runCanadianProjection(input: EngineInput): EngineResult {
     const totalPortfolio = Math.round(rrsp + tfsa + nonReg);
     lifetimeTax += totalTax;
 
-    // ── Capture retirement-start metrics ────────────────────────────────────
+    // ── Capture retirement-start metrics ─────────────────────────────────────
+    // Use pre-update balances for "portfolio at retirement" — reflects the actual
+    // accumulated portfolio the day the client stops working, before any year 1
+    // withdrawals or growth. This is what the client "walks in with."
     if (age === retirementAge) {
-      retirementPortfolio = totalPortfolio;
-      rrspAtRet    = Math.round(rrsp);
-      tfsaAtRet    = Math.round(tfsa);
-      nonRegAtRet  = Math.round(nonReg);
+      rrspAtRet    = Math.round(rrspBeforeUpdate);
+      tfsaAtRet    = Math.round(tfsaBeforeUpdate);
+      nonRegAtRet  = Math.round(nonRegBeforeUpdate);
+      retirementPortfolio = rrspAtRet + tfsaAtRet + nonRegAtRet;
       surplusAtRet = surplus;
       fundingAtRet = funding;
       cppAtRet     = Math.round(cppNom);
       oasAtRet     = Math.round(oasNomGross - clawback);
+      // If CPP/OAS not yet started at retirement, guaranteedAtRet will be updated
+      // when they first activate (see below)
+      guaranteedAtRet = Math.round(cppNom + (oasNomGross - clawback) + pensionNom + bridgeNom);
+    }
+
+    // Update guaranteedAtRet to the first year ALL government sources are active
+    // (handles case where CPP/OAS deferred past retirement age)
+    if (isRetired && cppNom > 0 && oasNomGross > 0 && guaranteedAtRet === 0) {
       guaranteedAtRet = Math.round(cppNom + (oasNomGross - clawback) + pensionNom + bridgeNom);
     }
 

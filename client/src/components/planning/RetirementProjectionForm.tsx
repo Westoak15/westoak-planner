@@ -347,7 +347,18 @@ export function RetirementProjectionForm({ clientId, clientName, projection, onS
       }
       return apiFetch(`/api/clients/${clientId}/retirement`, { method: "POST", body: JSON.stringify(body) });
     },
-    onSuccess: (saved) => {
+    onSuccess: async (saved) => {
+      // Run the proper Canadian engine immediately after save to update stored values
+      if (saved?.id) {
+        try {
+          const token = localStorage.getItem("authToken") || localStorage.getItem("fp_token") || "";
+          await fetch(`/api/clients/${clientId}/retirement/${saved.id}/project`, {
+            method: "POST",
+            headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+            credentials: "include",
+          });
+        } catch {}  // Non-blocking — projection was saved, engine is best-effort
+      }
       qc.invalidateQueries({ queryKey: [`/api/clients/${clientId}/retirement`] });
       onSaved?.(saved);
     },
@@ -640,6 +651,27 @@ export function RetirementTab({ clientId, clientName, person: personProp, t = tr
     enabled: !!clientId && clientId > 0,
   });
 
+  // ── Engine data: auto-run for all projections on load ─────────────────────
+  const [engineData, setEngineData]       = React.useState<Record<number, any>>({});
+  const [engineRunning, setEngineRunning] = React.useState<Set<number>>(new Set());
+
+  React.useEffect(() => {
+    if (!allProjections.length) return;
+    const token = localStorage.getItem("authToken") || localStorage.getItem("fp_token") || "";
+    const headers: HeadersInit = { Authorization: `Bearer ${token}`, "Content-Type": "application/json" };
+    allProjections.forEach(p => {
+      if (!p.id || engineData[p.id] || engineRunning.has(p.id!)) return;
+      setEngineRunning(prev => new Set(prev).add(p.id!));
+      fetch(`/api/clients/${clientId}/retirement/${p.id}/project`, {
+        method: "POST", headers, credentials: "include",
+      })
+        .then(r => r.ok ? r.json() : null)
+        .then(data => { if (data) setEngineData(prev => ({ ...prev, [p.id!]: data })); })
+        .catch(() => {})
+        .finally(() => setEngineRunning(prev => { const s = new Set(prev); s.delete(p.id!); return s; }));
+    });
+  }, [allProjections, clientId]);  // eslint-disable-line
+
   const primaryProjections = allProjections.filter(p => (p.person ?? "primary") === "primary");
   const spouseProjections  = allProjections.filter(p => p.person === "spouse");
 
@@ -732,10 +764,17 @@ export function RetirementTab({ clientId, clientName, person: personProp, t = tr
     const p = primaryProjections[0];
     const s = spouseProjections[0];
     if (!p && !s) return null;
-    const totalPortfolio   = Number(p?.projectedBalance ?? 0) + Number(s?.projectedBalance ?? 0);
-    const totalDesired     = Number(p?.desiredRetirementIncome ?? 0) + Number(s?.desiredRetirementIncome ?? 0);
-    const totalSurplus     = Number(p?.shortfallSurplus ?? 0) + Number(s?.shortfallSurplus ?? 0);
-    const avgSuccess       = (Number(p?.successRate ?? 0) + Number(s?.successRate ?? 0)) / (p && s ? 2 : 1);
+    // Prefer engine results; fall back to stored values
+    const pEng = p?.id ? engineData[p.id]?.summary : null;
+    const sEng = s?.id ? engineData[s.id]?.summary : null;
+    const totalPortfolio = (pEng?.portfolioAtRetirement ?? Number(p?.projectedBalance ?? 0))
+                         + (sEng?.portfolioAtRetirement ?? Number(s?.projectedBalance ?? 0));
+    const totalDesired   = Number(p?.desiredRetirementIncome ?? 0) + Number(s?.desiredRetirementIncome ?? 0);
+    const totalSurplus   = (pEng?.annualSurplusAtRetirement ?? Number(p?.shortfallSurplus ?? 0))
+                         + (sEng?.annualSurplusAtRetirement ?? Number(s?.shortfallSurplus ?? 0));
+    const avgSuccess     = ((pEng?.fundingRateAtRetirement ?? Number(p?.successRate ?? 0))
+                         +  (sEng?.fundingRateAtRetirement ?? Number(s?.successRate ?? 0)))
+                         / (p && s ? 2 : 1);
     return { totalPortfolio, totalDesired, totalSurplus, avgSuccess };
   })();
 
@@ -801,7 +840,6 @@ export function RetirementTab({ clientId, clientName, person: personProp, t = tr
       {/* Projection cards */}
       <div className="space-y-4">
         {activeProjections.map((proj) => {
-          const funded    = proj.successRate ? +proj.successRate : null;
           const barColor  = funded === null ? "#9ca3af" : funded >= 90 ? "#16a34a" : funded >= 70 ? "#d97706" : "#dc2626";
           const isPerson  = (proj.person ?? "primary") as "primary" | "spouse";
           const personName = isPerson === "spouse" ? (clientData?.spouseFirstName ?? "Spouse") : (clientName ?? "Primary");
@@ -835,8 +873,18 @@ export function RetirementTab({ clientId, clientName, person: personProp, t = tr
           const phase3GuaranteedAnnual = pensionIncome + cppAdjusted * 12 + oasAdjusted * 12;
           const phase3PortfolioNeeded  = Math.max(0, desiredIncome - phase3GuaranteedAnnual);
 
-          const projectedBalance = Number(proj.projectedBalance ?? 0);
-          const surplus = Number(proj.shortfallSurplus ?? 0);
+          // Prefer engine-computed values when available
+          const eng = proj.id ? engineData[proj.id] : null;
+          const engSummary = eng?.summary;
+          const isEngineRunning = proj.id ? engineRunning.has(proj.id) : false;
+          const projectedBalance = engSummary?.portfolioAtRetirement ?? Number(proj.projectedBalance ?? 0);
+          const funded           = engSummary?.fundingRateAtRetirement ?? (proj.successRate ? +proj.successRate : null);
+          const surplus          = engSummary?.annualSurplusAtRetirement ?? Number(proj.shortfallSurplus ?? 0);
+          const estateValue      = engSummary?.estateValueAtDeath ?? 0;
+          const guaranteedIncome = engSummary?.guaranteedIncomeAtRet ?? 0;
+          const rrifMin          = engSummary?.rrifMinYear1 ?? 0;
+          const lifetimeTax      = engSummary?.lifetimeTaxPaid ?? 0;
+          const hasEngineData    = !!engSummary;
 
           return (
             <div key={proj.id} className="border border-gray-200 rounded-xl overflow-hidden hover:border-gray-300 transition-colors">
@@ -848,6 +896,10 @@ export function RetirementTab({ clientId, clientName, person: personProp, t = tr
                     isPerson === "spouse" ? "bg-purple-100 text-purple-700" : "bg-blue-100 text-blue-700"
                   }`}>{isPerson === "spouse" ? "Spouse" : "Primary"}</span>
                   <span className="text-xs text-gray-400">Age {proj.currentAge} → {proj.retirementAge} · to age {proj.lifeExpectancy}</span>
+                  {isEngineRunning && <span className="text-[10px] text-gray-400 animate-pulse">Calculating…</span>}
+                  {hasEngineData && !isEngineRunning && (
+                    <span className="text-[10px] px-1.5 py-0.5 bg-emerald-100 text-emerald-700 rounded font-semibold">Engine ✓</span>
+                  )}
                 </div>
                 <div className="flex gap-1.5">
                   <button onClick={() => setEditing(proj)} className="text-xs px-2.5 py-1 border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-100">Edit</button>
@@ -933,6 +985,49 @@ export function RetirementTab({ clientId, clientName, person: personProp, t = tr
                        funded >= 70 ? "⚠ Moderate — consider increasing contributions or adjusting retirement age" :
                        "✗ At risk — significant changes needed to meet retirement income goals"}
                     </p>
+                  </div>
+                )}
+
+                {/* Engine metrics — only shown when engine has run */}
+                {hasEngineData && (
+                  <div className="border-t border-gray-100 pt-3 mt-1">
+                    <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-2">
+                      Canadian Engine Results
+                    </p>
+                    <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                      {[
+                        {
+                          label: "Estate at Life Expectancy",
+                          value: estateValue > 0 ? "$" + Math.round(estateValue / 1000).toLocaleString() + "K" : "—",
+                          sub: "age " + (proj.lifeExpectancy ?? 90),
+                          color: estateValue > 0 ? "#16a34a" : "#dc2626",
+                        },
+                        {
+                          label: "Guaranteed Income",
+                          value: guaranteedIncome > 0 ? "$" + Math.round(guaranteedIncome).toLocaleString() + "/yr" : "—",
+                          sub: "CPP + OAS + Pension",
+                          color: "#0c1e3a",
+                        },
+                        {
+                          label: "RRIF Min at 71",
+                          value: rrifMin > 0 ? "$" + Math.round(rrifMin).toLocaleString() + "/yr" : "N/A",
+                          sub: "mandatory withdrawal",
+                          color: rrifMin > 0 ? "#d97706" : "#9ca3af",
+                        },
+                        {
+                          label: "Est. Lifetime Taxes",
+                          value: lifetimeTax > 0 ? "$" + Math.round(lifetimeTax / 1000).toLocaleString() + "K" : "—",
+                          sub: "retirement period",
+                          color: "#64748b",
+                        },
+                      ].map((m, i) => (
+                        <div key={i} className="bg-slate-50 rounded-lg px-2.5 py-2">
+                          <p className="text-[10px] text-gray-400 mb-0.5">{m.label}</p>
+                          <p className="text-xs font-bold" style={{ color: m.color }}>{m.value}</p>
+                          <p className="text-[10px] text-gray-400">{m.sub}</p>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )}
               </div>

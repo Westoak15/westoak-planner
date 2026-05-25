@@ -631,7 +631,7 @@ function ClientsTab({ onSelect }: { onSelect: (c: Client) => void }) {
 // ─────────────────────────────────────────────────────────────────────────────
 // Client Detail — shown when a client is selected (name, family, plans)
 // ─────────────────────────────────────────────────────────────────────────────
-function ClientDetail({ client, onBack, onPlanSelect, onUpdate, onLocaleChange, t = translations.en, level }: { client: Client; onBack: () => void; onPlanSelect: (p: Plan) => void; onUpdate: (c: Client) => void; onLocaleChange: (l: ClientLocale) => void; t?: T; level?: string }) {
+function ClientDetail({ client, onBack, onPlanSelect, onUpdate, onLocaleChange, t = translations.en, advisorLocale = "en", level }: { client: Client; onBack: () => void; onPlanSelect: (p: Plan) => void; onUpdate: (c: Client) => void; onLocaleChange: (l: ClientLocale) => void; t?: T; advisorLocale?: ClientLocale; level?: string }) {
   const [plans, setPlans]       = useState<Plan[]>([]);
   const [editing, setEditing]   = useState(false);
   const [form, setForm]         = useState<Partial<Client>>({ ...client });
@@ -727,7 +727,8 @@ function ClientDetail({ client, onBack, onPlanSelect, onUpdate, onLocaleChange, 
           </div>
         </div>
         <div className="ml-auto flex items-center gap-3">
-          {/* Client language toggle — controls report/letter language */}
+          {/* Client language toggle — hidden for QC advisors (all screens enforced FR) */}
+          {advisorLocale !== "fr" && (
           <div className="flex items-center gap-1.5">
             <div className="flex items-center gap-1 border border-gray-200 rounded-lg p-0.5" title="Report language">
               <Globe className="w-3.5 h-3.5 text-gray-400 ml-1.5" />
@@ -754,6 +755,7 @@ function ClientDetail({ client, onBack, onPlanSelect, onUpdate, onLocaleChange, 
             </div>
             <span className="text-[10px] text-gray-400">Report lang</span>
           </div>
+          )}
           <div className="flex gap-2">
           {editing ? (
             <>
@@ -1193,7 +1195,8 @@ export default function App() {
   //              letter templates). Follows the per-client preferredLanguage setting.
   const advisorLocale: ClientLocale = advisorLocaleStr === "fr" ? "fr" : "en";
   const tAdvisor: T = translations[advisorLocale];
-  const tClient: T  = translations[clientLocale];
+  // QC advisors: everything is French — client locale is irrelevant, all screens enforced FR
+  const tClient: T  = advisorLocale === "fr" ? translations["fr"] : translations[clientLocale];
   const clientName = client ? `${client.firstName} ${client.lastName}` : undefined;
   const hasSpouse = !!client?.spouseFirstName;
   // Person toggle is rendered by HubShell inside each hub / PlanningDocFlow.
@@ -1291,7 +1294,7 @@ export default function App() {
             <ClientsTab onSelect={selectClient} />
           )}
           {tab === "clients" && showClientDetail && client && (
-            <ClientDetail client={client} onBack={backToClients} onPlanSelect={selectPlan} onUpdate={setClient} onLocaleChange={setClientLocale} t={tAdvisor} level={level} />
+            <ClientDetail client={client} onBack={backToClients} onPlanSelect={selectPlan} onUpdate={setClient} onLocaleChange={setClientLocale} t={tAdvisor} advisorLocale={advisorLocale} level={level} />
           )}
           {tab !== "agents" && tab !== "clients" && !client && (
             <div className="flex flex-col items-center justify-center h-full text-center p-8">
@@ -1307,7 +1310,7 @@ export default function App() {
           )}
           {tab === "agents"  && <AgentsTab />}
           {tab === "overview" && client && <ClientOverview client={client} onNavigate={(t) => setTab(t as Tab)} />}
-          {tab === "profile"  && client && <ClientDetail client={client} onBack={() => setTab("overview" as Tab)} onPlanSelect={selectPlan} onUpdate={setClient} onLocaleChange={setClientLocale} t={tAdvisor} level={level} />}
+          {tab === "profile"  && client && <ClientDetail client={client} onBack={() => setTab("overview" as Tab)} onPlanSelect={selectPlan} onUpdate={setClient} onLocaleChange={setClientLocale} t={tAdvisor} advisorLocale={advisorLocale} level={level} />}
           {tab === "dashboard" && client && <InsightLedDashboard clientId={client.id} client={client} onNavigate={(t) => { const [tabKey, subtab] = t.split(":"); setTab(tabKey as Tab); setNwSubtabHint(subtab); }} />}
 
           {/* ── Merged Insight-Led hubs ─────────────────────────────────────────

@@ -127,8 +127,9 @@ export function AgentsTab({ onSelectClient }: { onSelectClient?: (clientId: numb
 
   // Validation
   const regionMissing = isUS ? !form.usState : !form.province;
-  const canSubmit = !busy && form.firstName && form.lastName && !regionMissing &&
-    (editId ? true : (form.email && form.password));
+  // Province/State mandatory for NEW agents only — existing agents may pre-date address fields
+  const canSubmit = !busy && !!form.firstName && !!form.lastName &&
+    (editId ? true : (!!form.email && !!form.password && !regionMissing));
 
   // ── Navigation ──────────────────────────────────────────────────────────────
 
@@ -496,13 +497,13 @@ export function AgentsTab({ onSelectClient }: { onSelectClient?: (clientId: numb
                   <input type={showPw ? "text" : "password"} value={form.password}
                     onChange={e => u("password", e.target.value)}
                     className={INPUT + " pr-11"}
-                    placeholder={editId ? "Leave blank to keep current" : "Min 8 characters"} />
+                    placeholder={editId ? "Leave blank to keep current" : "Min 12 characters"} />
                   <button type="button" onClick={() => setShowPw(s => !s)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
                     {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
-                {!editId && <p className="text-xs text-gray-400 mt-1">Agent will be prompted to reset on first login.</p>}
+                {!editId && <p className="text-xs text-gray-400 mt-1">Min 12 characters. Agent will be prompted to reset on first login.</p>}
               </div>
 
               {/* Agent ID + Phone */}
@@ -627,15 +628,10 @@ export function AgentsTab({ onSelectClient }: { onSelectClient?: (clientId: numb
               {error && <p className="text-red-500 text-sm bg-red-50 rounded-lg px-3 py-2">{error}</p>}
             </div>
 
-            <div className="flex-shrink-0 flex justify-end gap-3 px-6 pb-6 border-t border-gray-100 pt-4">
+            <div className="flex-shrink-0 flex justify-end px-6 pb-4 pt-3 border-t border-gray-100">
               <button onClick={() => setShowForm(false)}
-                className="px-4 py-2.5 text-sm font-semibold text-gray-500 hover:text-gray-700">
+                className="px-4 py-2 text-sm font-semibold text-gray-400 hover:text-gray-600">
                 Cancel
-              </button>
-              <button onClick={handleSubmit}
-                disabled={!canSubmit}
-                className="px-6 py-2.5 bg-[#0c1e3a] hover:bg-[#0e2a4a] disabled:opacity-50 text-white text-sm font-semibold rounded-xl transition-colors">
-                {busy ? "Saving…" : editId ? "Save Changes" : "Create Agent"}
               </button>
             </div>
           </div>

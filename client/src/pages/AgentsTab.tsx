@@ -191,13 +191,17 @@ export function AgentsTab({ onSelectClient }: { onSelectClient?: (clientId: numb
     try {
       if (editId) {
         const body: any = {
-          firstName: form.firstName, lastName: form.lastName,
-          agentId: form.agentId, agency: form.agency,
-          phone: form.phone, level: form.level,
-          address: form.address, city: form.city,
-          province: form.jurisdiction === "CA" ? form.province : null,
-          usState:  form.jurisdiction === "US" ? form.usState  : null,
-          postalCode: form.postalCode,
+          firstName:  form.firstName  || undefined,
+          lastName:   form.lastName   || undefined,
+          agentId:    form.agentId    || undefined,
+          agency:     form.agency     || undefined,
+          phone:      form.phone      || undefined,
+          level:      form.level,
+          address:    form.address    || undefined,
+          city:       form.city       || undefined,
+          province:   form.jurisdiction === "CA" ? (form.province   || undefined) : undefined,
+          usState:    form.jurisdiction === "US" ? (form.usState    || undefined) : undefined,
+          postalCode: form.postalCode  || undefined,
         };
         if (form.password) body.password = form.password;
         await api.patch(`/api/auth/users/${editId}`, body);

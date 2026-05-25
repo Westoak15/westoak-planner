@@ -508,7 +508,7 @@ export function runCanadianProjection(input: EngineInput): EngineResult {
     acb = newAcb;
 
     // ── Compute taxable income ────────────────────────────────────────────────
-    // rrifTotal computed below with rrspBeforeUpdate
+    const rrifTotal    = rrifMin + rrifExtra;
     const taxableInc   = empNom + cppNom + oasNomGross + pensionNom + bridgeNom + rrifTotal + nonRegTaxInc;
     // OAS clawback based on net income (before clawback)
     const clawback     = isRetired ? oasClawback(taxableInc, oasNomGross) : 0;
@@ -530,7 +530,6 @@ export function runCanadianProjection(input: EngineInput): EngineResult {
     const nonRegBeforeUpdate = nonReg;
 
     // ── Update account balances ───────────────────────────────────────────────
-    const rrifTotal = rrifMin + rrifExtra;
     if (!isRetired) {
       // Accumulation
       rrsp   = (rrsp   + annualRrspContrib) * (1 + rate);

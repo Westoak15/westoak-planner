@@ -846,15 +846,15 @@ export function GoalsTab({ clientId, client, t = translations.en }: { clientId: 
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-semibold text-slate-900">Financial Goals</h1>
-          <p className="text-sm text-slate-500">Plan and prioritize household goals</p>
+          <h1 className="text-xl font-semibold text-slate-900">{t.goals.financialGoals}</h1>
+          <p className="text-sm text-slate-500">{t.goals.planAndPrioritize}</p>
         </div>
         <div className="flex items-center gap-2">
           <button
             onClick={() => setVoiceOpen(true)}
             className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-900 border border-slate-200 bg-white px-3 py-2 rounded-lg transition"
           >
-            <Mic className="w-3.5 h-3.5" /> Voice
+            <Mic className="w-3.5 h-3.5" /> {t.netWorth.voice}
           </button>
           <button onClick={openNew}
             className="flex items-center gap-1.5 text-sm font-semibold bg-gradient-to-r from-blue-600 to-cyan-500 hover:shadow-md text-white px-4 py-2 rounded-lg shadow-sm transition">
@@ -917,11 +917,11 @@ export function GoalsTab({ clientId, client, t = translations.en }: { clientId: 
       {filtered.length === 0 && goals.length === 0 ? (
         <div className="bg-white border border-slate-200 rounded-2xl p-12 text-center">
           <Target className="w-10 h-10 text-slate-300 mx-auto mb-3" />
-          <p className="text-sm font-semibold text-slate-700">No goals yet</p>
-          <p className="text-xs text-slate-500 mt-1 mb-4">Add goals to track progress and inject them into your retirement simulation</p>
+          <p className="text-sm font-semibold text-slate-700">{t.goals.noGoalsYet}</p>
+          <p className="text-xs text-slate-500 mt-1 mb-4">{t.goals.addGoalsHint}</p>
           <button onClick={openNew}
             className="inline-flex items-center gap-1.5 text-sm font-semibold bg-gradient-to-r from-blue-600 to-cyan-500 hover:shadow-md text-white px-4 py-2 rounded-lg shadow-sm transition">
-            <Plus className="w-4 h-4" /> Add your first goal
+            <Plus className="w-4 h-4" /> {t.goals.addFirstGoal}
           </button>
         </div>
       ) : filtered.length === 0 ? (

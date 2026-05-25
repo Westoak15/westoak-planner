@@ -7,6 +7,7 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
 } from "recharts";
 import { api } from "../lib/api";
+import { translations, type T } from "../i18n/translations";
 import "./InsightLedDashboard.css";
 
 interface Client {
@@ -98,7 +99,7 @@ interface ScorecardItem {
   caption: string;
 }
 
-function buildScorecard(ov: Overview): ScorecardItem[] {
+function buildScorecard(ov: Overview, t: T): ScorecardItem[] {
   const cyan = "var(--accent-cyan)";
   const blue = "var(--accent-blue)";
   const green = "var(--accent-green)";
@@ -124,11 +125,11 @@ function buildScorecard(ov: Overview): ScorecardItem[] {
       : { g: "C", pct: 40, color: rose };
 
   return [
-    { label: "Retirement", grade: retirement.g, pct: retirement.pct, color: retirement.color, caption: ov.retirementProjections ? `${ov.retirementProjections} projection(s)` : "Not started" },
-    { label: "Insurance", grade: insurance.g, pct: insurance.pct, color: insurance.color, caption: ov.insuranceAnalyses ? `${ov.insuranceAnalyses} analysis` : "No coverage review" },
-    { label: "Tax", grade: tax.g, pct: tax.pct, color: tax.color, caption: ov.taxNotes ? `${ov.taxNotes} note(s)` : "Room available" },
-    { label: "Estate", grade: estate.g, pct: estate.pct, color: estate.color, caption: ov.estateNotes ? `${ov.estateNotes} note(s)` : "Wills outdated" },
-    { label: "Cash Flow", grade: cashFlow.g, pct: cashFlow.pct, color: cashFlow.color, caption: ov.netWorth >= 0 ? "Positive" : "Negative" },
+    { label: t.dashboard.retirement, grade: retirement.g, pct: retirement.pct, color: retirement.color, caption: ov.retirementProjections ? `${ov.retirementProjections} projection(s)` : t.dashboard.notStarted },
+    { label: t.dashboard.insurance,  grade: insurance.g,  pct: insurance.pct,  color: insurance.color,  caption: ov.insuranceAnalyses ? `${ov.insuranceAnalyses} analysis` : t.dashboard.noCoverageReview },
+    { label: t.dashboard.tax,        grade: tax.g,        pct: tax.pct,        color: tax.color,        caption: ov.taxNotes ? `${ov.taxNotes} note(s)` : t.dashboard.roomAvailable },
+    { label: t.dashboard.estate,     grade: estate.g,     pct: estate.pct,     color: estate.color,     caption: ov.estateNotes ? `${ov.estateNotes} note(s)` : t.dashboard.willsOutdated },
+    { label: t.dashboard.cashFlow,   grade: cashFlow.g,   pct: cashFlow.pct,   color: cashFlow.color,   caption: ov.netWorth >= 0 ? t.dashboard.positive : t.dashboard.negative },
   ];
 }
 
@@ -143,16 +144,16 @@ interface Insight {
   glow?: boolean;
 }
 
-function buildInsights(ov: Overview): Insight[] {
+function buildInsights(ov: Overview, t: T): Insight[] {
   const insights: Insight[] = [];
 
   if (ov.retirementProjections === 0) {
     insights.push({
       icon: Target,
       color: COLORS.cyan,
-      title: "Build a Retirement Projection",
-      body: "No retirement projection on file yet. Start one to see whether the household is on track to meet its goals.",
-      cta: "Open retirement planner",
+      title: t.dashboard.buildRetirementTitle,
+      body:  t.dashboard.buildRetirementBody,
+      cta:   t.dashboard.buildRetirementCta,
       target: "retirementhub",
       glow: true,
     });
@@ -160,9 +161,9 @@ function buildInsights(ov: Overview): Insight[] {
     insights.push({
       icon: Target,
       color: COLORS.cyan,
-      title: "Retirement On Track",
-      body: `${ov.retirementProjections} projection(s) on file. Review assumptions to keep the plan current.`,
-      cta: "Review projections",
+      title: t.dashboard.buildRetirementTitle,
+      body: `${ov.retirementProjections} projection(s) on file.`,
+      cta:   t.dashboard.buildRetirementCta,
       target: "retirementhub",
       glow: true,
     });
@@ -172,18 +173,18 @@ function buildInsights(ov: Overview): Insight[] {
     insights.push({
       icon: Shield,
       color: COLORS.rose,
-      title: "Run Insurance Gap Analysis",
-      body: "No insurance gap analysis recorded. An FNA will identify coverage shortfalls and protection priorities.",
-      cta: "Start FNA",
+      title: t.dashboard.runInsuranceTitle,
+      body:  t.dashboard.runInsuranceBody,
+      cta:   t.dashboard.runInsuranceCta,
       target: "protection",
     });
   } else {
     insights.push({
       icon: Shield,
       color: COLORS.rose,
-      title: "Insurance Reviewed",
-      body: `${ov.insuranceAnalyses} insurance gap analysis on file. Watch for renewal dates and coverage drift.`,
-      cta: "Open policies",
+      title: t.dashboard.runInsuranceTitle,
+      body: `${ov.insuranceAnalyses} analysis on file.`,
+      cta:   t.dashboard.runInsuranceCta,
       target: "protection",
     });
   }
@@ -192,18 +193,18 @@ function buildInsights(ov: Overview): Insight[] {
     insights.push({
       icon: TrendingUp,
       color: COLORS.green,
-      title: "AI Recommendations Available",
+      title: t.dashboard.generateAiTitle,
       body: `${ov.aiRecommendations} recommendation(s) generated, ${ov.pendingAi} pending review.`,
-      cta: "View AI insights",
+      cta:   t.dashboard.generateAiCta,
       target: "ai",
     });
   } else {
     insights.push({
       icon: TrendingUp,
       color: COLORS.green,
-      title: "Generate AI Insights",
-      body: "No AI recommendations yet. Generate suggestions based on the household's current plan data.",
-      cta: "Run AI analysis",
+      title: t.dashboard.generateAiTitle,
+      body:  t.dashboard.generateAiBody,
+      cta:   t.dashboard.generateAiCta,
       target: "ai",
     });
   }
@@ -229,9 +230,10 @@ export interface InsightLedDashboardProps {
   clientId: number;
   client: Client;
   onNavigate?: (tab: string) => void;
+  t?: T;
 }
 
-export function InsightLedDashboard({ clientId, client, onNavigate }: InsightLedDashboardProps) {
+export function InsightLedDashboard({ clientId, client, onNavigate, t = translations.en }: InsightLedDashboardProps) {
   const [ov, setOv] = useState<Overview | null>(null);
   const [nw, setNw] = useState<NWEntry[]>([]);
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
@@ -315,8 +317,8 @@ export function InsightLedDashboard({ clientId, client, onNavigate }: InsightLed
     }));
   }, [headerInfo]);
 
-  const scorecard = useMemo(() => (ov ? buildScorecard(ov) : []), [ov]);
-  const insights = useMemo(() => (ov ? buildInsights(ov) : []), [ov]);
+  const scorecard = useMemo(() => (ov ? buildScorecard(ov, t) : []), [ov, t]);
+  const insights = useMemo(() => (ov ? buildInsights(ov, t) : []), [ov]);
 
   if (status === "loading") {
     return (
@@ -363,13 +365,13 @@ export function InsightLedDashboard({ clientId, client, onNavigate }: InsightLed
             onClick={() => onNavigate?.("documents")}
             className="px-4 py-2 rounded-lg bg-white border border-slate-200 text-sm font-medium text-slate-700 hover:border-cyan-400 hover:text-cyan-700 shadow-sm transition-all"
           >
-            Schedule Review
+            {t.dashboard.scheduleReview}
           </button>
           <button
             onClick={() => onNavigate?.("fp")}
             className="px-4 py-2 rounded-lg bg-brand-gradient hover:bg-brand-gradient-hover text-white text-sm font-semibold shadow-sm transition-all"
           >
-            Generate Plan
+            {t.dashboard.generatePlan}
           </button>
         </div>
       </div>
@@ -379,7 +381,7 @@ export function InsightLedDashboard({ clientId, client, onNavigate }: InsightLed
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold flex items-center gap-2">
               <Brain className="w-5 h-5 text-[var(--accent-purple)]" />
-              <span className="text-gradient-ai font-bold">Copilot Insights</span>
+              <span className="text-gradient-ai font-bold">{t.dashboard.copilotInsights}</span>
             </h2>
           </div>
           <div className="grid grid-cols-3 gap-4">
@@ -417,7 +419,7 @@ export function InsightLedDashboard({ clientId, client, onNavigate }: InsightLed
         </section>
 
         <section className="fp-insightled-card p-6">
-          <h2 className="text-sm font-semibold text-[var(--text-secondary)] mb-6 uppercase tracking-widest">Plan Health Scorecard</h2>
+          <h2 className="text-sm font-semibold text-[var(--text-secondary)] mb-6 uppercase tracking-widest">{t.dashboard.planHealthScorecard}</h2>
           <div className="grid grid-cols-5 gap-6 divide-x divide-[var(--border-subtle)]">
             {scorecard.map((s, i) => (
               <div key={s.label} className={`px-4 ${i === 0 ? "first:pl-0" : ""} ${i === scorecard.length - 1 ? "pr-0" : ""}`}>
@@ -438,18 +440,18 @@ export function InsightLedDashboard({ clientId, client, onNavigate }: InsightLed
           <div className="col-span-8 fp-insightled-card p-6 min-h-[350px]">
             <div className="flex justify-between items-start mb-6">
               <div>
-                <h2 className="text-sm font-semibold text-[var(--text-secondary)] uppercase tracking-widest">Current Net Worth</h2>
+                <h2 className="text-sm font-semibold text-[var(--text-secondary)] uppercase tracking-widest">{t.dashboard.currentNetWorth}</h2>
                 <div className="text-3xl font-bold mt-1 tracking-tight font-mono text-[var(--text-primary)]">{formatCurrency(ov.netWorth)}</div>
                 <div className="flex items-center gap-1.5 mt-2 text-[11px] text-[var(--text-tertiary)]">
                   <Info className="w-3 h-3" />
-                  <span>Trend curve is illustrative — historical values are not yet tracked.</span>
+                  <span>{t.dashboard.trendCurveNote}</span>
                 </div>
               </div>
               <span
                 className="px-2 py-1 rounded text-[10px] font-mono font-medium uppercase tracking-wider"
                 style={{ backgroundColor: "rgba(15,23,42,0.06)", color: "#475569" }}
               >
-                Snapshot
+                {t.dashboard.snapshot}
               </span>
             </div>
             <div className="w-full" style={{ height: 240 }}>
@@ -476,11 +478,11 @@ export function InsightLedDashboard({ clientId, client, onNavigate }: InsightLed
           </div>
 
           <div className="col-span-4 fp-insightled-card p-6">
-            <h2 className="text-sm font-semibold text-[var(--text-secondary)] uppercase tracking-widest mb-6">Asset Allocation</h2>
+            <h2 className="text-sm font-semibold text-[var(--text-secondary)] uppercase tracking-widest mb-6">{t.dashboard.assetAllocation}</h2>
             <div className="w-full relative" style={{ height: 200 }}>
               {allocationData.length === 0 ? (
                 <div className="flex items-center justify-center h-full text-xs text-[var(--text-tertiary)] text-center px-4">
-                  No assets recorded yet. Add entries from the Net Worth tab.
+                  {t.dashboard.noAssetsForAllocation}
                 </div>
               ) : (
                 <>

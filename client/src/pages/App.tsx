@@ -898,7 +898,7 @@ function ClientDetail({ client, onBack, onPlanSelect, onUpdate, onLocaleChange, 
                   <UserPlus className="w-4 h-4" />
                 </div>
                 <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-0.5">{t.client.noSpouseOnFile}</p>
-                <button onClick={() => setEditing(true)} className="text-xs text-[#0c1e3a] font-semibold hover:underline">Add spouse details</button>
+                <button onClick={() => setEditing(true)} className="text-xs text-[#0c1e3a] font-semibold hover:underline">{t.client.addSpouseDetails}</button>
               </div>
             )
           )}
@@ -909,7 +909,7 @@ function ClientDetail({ client, onBack, onPlanSelect, onUpdate, onLocaleChange, 
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <Baby className="w-3.5 h-3.5 text-gray-400" />
-              <h3 className="text-[11px] font-bold uppercase tracking-wider text-gray-500">Children & Dependants</h3>
+              <h3 className="text-[11px] font-bold uppercase tracking-wider text-gray-500">{t.client.childrenDependants}</h3>
               {dependants.length > 0 && (
                 <span className="text-[11px] text-gray-400 font-medium">· {dependants.length}</span>
               )}
@@ -929,7 +929,7 @@ function ClientDetail({ client, onBack, onPlanSelect, onUpdate, onLocaleChange, 
             // Edit mode — full row inputs
             <div className="space-y-2">
               {dependants.length === 0 && (
-                <p className="text-xs text-gray-400 italic">No dependants — click "Add Dependant" to add a child or other family member.</p>
+                <p className="text-xs text-gray-400 italic">{t.client.noDependantsHint}</p>
               )}
               {dependants.map((d: any, i: number) => (
                 <div key={i} className="grid grid-cols-12 gap-2 items-end bg-white rounded-lg border border-gray-100 p-3">
@@ -951,7 +951,7 @@ function ClientDetail({ client, onBack, onPlanSelect, onUpdate, onLocaleChange, 
               ))}
             </div>
           ) : dependants.length === 0 ? (
-            <p className="text-xs text-gray-400 italic">No dependants on file</p>
+            <p className="text-xs text-gray-400 italic">{t.client.noDependants}</p>
           ) : (
             // View mode — horizontal row of executive avatar pills
             <div className="flex flex-wrap gap-2">
@@ -1311,7 +1311,7 @@ export default function App() {
           {tab === "agents"  && <AgentsTab />}
           {tab === "overview" && client && <ClientOverview client={client} onNavigate={(t) => setTab(t as Tab)} />}
           {tab === "profile"  && client && <ClientDetail client={client} onBack={() => setTab("overview" as Tab)} onPlanSelect={selectPlan} onUpdate={setClient} onLocaleChange={setClientLocale} t={tAdvisor} advisorLocale={advisorLocale} level={level} />}
-          {tab === "dashboard" && client && <InsightLedDashboard clientId={client.id} client={client} onNavigate={(t) => { const [tabKey, subtab] = t.split(":"); setTab(tabKey as Tab); setNwSubtabHint(subtab); }} />}
+          {tab === "dashboard" && client && <InsightLedDashboard clientId={client.id} client={client} t={tClient} onNavigate={(tab) => { const [tabKey, subtab] = tab.split(":"); setTab(tabKey as Tab); setNwSubtabHint(subtab); }} />}
 
           {/* ── Merged Insight-Led hubs ─────────────────────────────────────────
               Each hub provides its own dark Insight-Led shell with sub-tabs.
@@ -1343,6 +1343,7 @@ export default function App() {
                   : `${client.firstName} ${client.lastName}`}
                 client={client}
                 initialNwSubtab={tab === "networth" ? nwSubtabHint : undefined}
+                tr={tClient}
                 personToggle={tab === "goals" && hasSpouse ? {
                   person,
                   onPersonChange: setPerson,

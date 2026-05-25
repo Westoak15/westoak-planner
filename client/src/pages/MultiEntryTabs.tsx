@@ -43,11 +43,11 @@ function InlineInput({ value, onChange, type = "text", placeholder, className, m
       className={cn("border border-gray-200 rounded-lg px-2 py-1.5 text-sm w-full focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500", className)} />
   );
 }
-function InlineSelect({ value, onChange, options }: { value: string; onChange: (v: string) => void; options: string[] }) {
+function InlineSelect({ value, onChange, options, labelMap }: { value: string; onChange: (v: string) => void; options: string[]; labelMap?: Record<string, string> }) {
   return (
     <select value={value} onChange={e => onChange(e.target.value)}
       className="border border-gray-200 rounded-lg px-2 py-1.5 text-sm w-full focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 bg-white">
-      {options.map(o => <option key={o}>{o}</option>)}
+      {options.map(o => <option key={o} value={o}>{labelMap?.[o] ?? o}</option>)}
     </select>
   );
 }
@@ -56,6 +56,63 @@ const PROVINCES = ["AB","BC","MB","NB","NL","NS","NT","NU","ON","PE","QC","SK","
 // Note: Pension lives in the Retirement Hub (Pension sub-tab); RESP lives in the
 // Net Worth → Education sub-tab. They are intentionally absent from the Assets list.
 const NW_ASSET_CATS = ["Principal Residence","Real Estate (other)","RRSP","TFSA","Non-Registered","Cash / Bank","Business","Employer Stock Options","Other Asset"];
+
+function assetCatLabel(cat: string, t: T): string {
+  const m: Record<string, string> = {
+    "Principal Residence":    t.netWorth.catPrincipalResidence,
+    "Real Estate (other)":    t.netWorth.catRealEstate,
+    "RRSP":                   t.netWorth.catRRSP,
+    "TFSA":                   t.netWorth.catTFSA,
+    "Non-Registered":         t.netWorth.catNonRegistered,
+    "Cash / Bank":            t.netWorth.catCashBank,
+    "Business":               t.netWorth.catBusiness,
+    "Employer Stock Options": t.netWorth.catEmployerStock,
+    "Other Asset":            t.netWorth.catOtherAsset,
+    "Mortgage":               t.netWorth.catMortgage,
+    "Other Liability":        t.netWorth.catOtherLiability,
+  };
+  return m[cat] ?? cat;
+}
+
+function debtTypeLabel(type: string, t: T): string {
+  const m: Record<string, string> = {
+    "mortgage":       t.debt.typeMortgage,
+    "heloc":          t.debt.typeHeloc,
+    "car_loan":       t.debt.typeCarLoan,
+    "credit_card":    t.debt.typeCreditCard,
+    "student_loan":   t.debt.typeStudentLoan,
+    "line_of_credit": t.debt.typeLineOfCredit,
+    "other":          t.debt.typeOther,
+  };
+  return m[type] ?? type;
+}
+
+function strategyLabel(s: string, t: T): string {
+  const m: Record<string, string> = {
+    "avalanche": t.debt.stratAvalanche,
+    "snowball":  t.debt.stratSnowball,
+  };
+  return m[s] ?? s;
+}
+
+function holdingLabel(h: string, t: T): string {
+  const m: Record<string, string> = {
+    "Mutual Funds": t.netWorth.holdingMutualFunds,
+    "Stock":        t.netWorth.holdingStock,
+    "GIC":          t.netWorth.holdingGIC,
+    "Annuity":      t.netWorth.holdingAnnuity,
+  };
+  return m[h] ?? h;
+}
+
+function propertyTypeLabel(p: string, t: T): string {
+  const m: Record<string, string> = {
+    "Family Occupied":  t.netWorth.propFamilyOccupied,
+    "Cottage":          t.netWorth.propCottage,
+    "Rental Property":  t.netWorth.propRental,
+  };
+  return m[p] ?? p;
+}
 const NW_ASSET_COLORS: Record<string, string> = {
   "Principal Residence":     "#22d3ee",
   "Real Estate (other)":     "#60a5fa",
@@ -144,7 +201,7 @@ function ExtraFields({ draft, onChange, spouseName, dependants }: { draft: NWDra
         <span className="text-xs text-[var(--text-tertiary)]">Type:</span>
         <select value={draft.holdingType} onChange={e => onChange("holdingType", e.target.value)} className={SELECT_CLS}>
           <option value="">Select type…</option>
-          {HOLDING_TYPES.map(t => <option key={t}>{t}</option>)}
+          {HOLDING_TYPES.map(h => <option key={h} value={h}>{holdingLabel(h, t)}</option>)}
         </select>
       </div>
     );
@@ -176,11 +233,11 @@ function ExtraFields({ draft, onChange, spouseName, dependants }: { draft: NWDra
     elems.push(
       <div key="realestate-pr" className="flex flex-wrap items-center gap-3">
         <div className="flex items-center gap-1.5">
-          <span className="text-xs text-[var(--text-tertiary)]">Mortgage balance ($):</span>
+          <span className="text-xs text-[var(--text-tertiary)]">{t.netWorth.catMortgage} ($):</span>
           <InlineInput value={draft.mortgageBalance} onChange={v => onChange("mortgageBalance", v)} type="number" placeholder="0" className="w-28" />
         </div>
         <div className="flex items-center gap-1.5">
-          <span className="text-xs text-[var(--text-tertiary)]">Monthly payment ($):</span>
+          <span className="text-xs text-[var(--text-tertiary)]">{t.cashFlow.title} ($):</span>
           <InlineInput value={draft.mortgageMonthlyPayment} onChange={v => onChange("mortgageMonthlyPayment", v)} type="number" placeholder="0" className="w-28" />
         </div>
         {Number(draft.mortgageBalance) > 0 && (
@@ -196,7 +253,7 @@ function ExtraFields({ draft, onChange, spouseName, dependants }: { draft: NWDra
         <div className="flex items-center gap-1.5">
           <span className="text-xs text-[var(--text-tertiary)]">Property type:</span>
           <select value={draft.propertyType} onChange={e => onChange("propertyType", e.target.value)} className={SELECT_CLS}>
-            {PROPERTY_TYPES.map(t => <option key={t}>{t}</option>)}
+            {PROPERTY_TYPES.map(p => <option key={p} value={p}>{propertyTypeLabel(p, t)}</option>)}
           </select>
         </div>
         <div className="flex items-center gap-1.5">
@@ -204,11 +261,11 @@ function ExtraFields({ draft, onChange, spouseName, dependants }: { draft: NWDra
           <InlineInput value={draft.purchasePrice} onChange={v => onChange("purchasePrice", v)} type="number" placeholder="0" className="w-28" />
         </div>
         <div className="flex items-center gap-1.5">
-          <span className="text-xs text-[var(--text-tertiary)]">Mortgage balance ($):</span>
+          <span className="text-xs text-[var(--text-tertiary)]">{t.netWorth.catMortgage} ($):</span>
           <InlineInput value={draft.mortgageBalance} onChange={v => onChange("mortgageBalance", v)} type="number" placeholder="0" className="w-28" />
         </div>
         <div className="flex items-center gap-1.5">
-          <span className="text-xs text-[var(--text-tertiary)]">Monthly payment ($):</span>
+          <span className="text-xs text-[var(--text-tertiary)]">{t.cashFlow.title} ($):</span>
           <InlineInput value={draft.mortgageMonthlyPayment} onChange={v => onChange("mortgageMonthlyPayment", v)} type="number" placeholder="0" className="w-28" />
         </div>
         {draft.propertyType === "Rental Property" && (
@@ -587,7 +644,7 @@ export function NetWorthTab({ clientId, client, t }: { clientId: number; t: T; c
               onClick={() => setVoiceOpen(isAssets ? "asset" : "liability")}
               className="flex items-center gap-1.5 text-xs text-slate-500 border border-slate-200 px-3 py-1.5 rounded-full hover:border-cyan-400 hover:text-cyan-500 transition-colors"
             >
-              <Mic className="w-3.5 h-3.5" /> Voice
+              <Mic className="w-3.5 h-3.5" /> {t.netWorth.voice}
             </button>
           </div>
 
@@ -598,7 +655,7 @@ export function NetWorthTab({ clientId, client, t }: { clientId: number; t: T; c
                 <span className="text-sm font-semibold text-cyan-700">{isAssets ? t.netWorth.newAssets : t.netWorth.newLiabilities}</span>
                 <div className="flex gap-2">
                   <button onClick={() => setDrafts([])} className="text-xs text-slate-400 px-3 py-1 border border-slate-200 rounded-lg hover:bg-white transition-colors">
-                    Discard All
+                    {t.debt.discardAll}
                   </button>
                   <button onClick={saveAll} disabled={saving}
                     className="flex items-center gap-1.5 text-xs font-semibold text-white bg-[#0c1e3a] px-3 py-1 rounded-lg disabled:opacity-50 hover:bg-[#0e2a4a] transition-colors"
@@ -613,7 +670,7 @@ export function NetWorthTab({ clientId, client, t }: { clientId: number; t: T; c
                   <div key={ri} className="px-5 py-4 border-b border-slate-50 last:border-0">
                     <div className="grid grid-cols-4 gap-3 mb-2">
                       <div>
-                        <label className={LABEL_CLS}>Owner</label>
+                        <label className={LABEL_CLS}>{t.common.owner}</label>
                         <select value={d.owner} onChange={e => updateDraft(draftIdx, "owner", e.target.value)} className={SELECT_CLS}>
                           <option value="primary">{primaryName || "Primary"}</option>
                           {spouseName && <option value="spouse">{spouseName}</option>}
@@ -621,13 +678,13 @@ export function NetWorthTab({ clientId, client, t }: { clientId: number; t: T; c
                         </select>
                       </div>
                       <div>
-                        <label className={LABEL_CLS}>Category</label>
+                        <label className={LABEL_CLS}>{t.common.category}</label>
                         <select value={d.category} onChange={e => updateDraft(draftIdx, "category", e.target.value)} className={SELECT_CLS}>
-                          {activeCats.map(c => <option key={c}>{c}</option>)}
+                          {activeCats.map(c => <option key={c} value={c}>{assetCatLabel(c, t)}</option>)}
                         </select>
                       </div>
                       <div>
-                        <label className={LABEL_CLS}>Name / Description</label>
+                        <label className={LABEL_CLS}>{t.common.name} / {t.common.notes}</label>
                         <InlineInput value={d.name} onChange={v => updateDraft(draftIdx, "name", v)} placeholder={d.category} />
                       </div>
                       <div>
@@ -676,7 +733,7 @@ export function NetWorthTab({ clientId, client, t }: { clientId: number; t: T; c
                     <div key={e.id} className="px-5 py-4 bg-slate-50 border-b border-slate-100">
                       <div className="grid grid-cols-4 gap-3 mb-2">
                         <div>
-                          <label className={LABEL_CLS}>Owner</label>
+                          <label className={LABEL_CLS}>{t.common.owner}</label>
                           <select value={editForm.owner ?? "primary"} onChange={ev => setEditForm(f => ({ ...f, owner: ev.target.value }))} className={SELECT_CLS}>
                             <option value="primary">{primaryName || "Primary"}</option>
                             {spouseName && <option value="spouse">{spouseName}</option>}
@@ -684,13 +741,13 @@ export function NetWorthTab({ clientId, client, t }: { clientId: number; t: T; c
                           </select>
                         </div>
                         <div>
-                          <label className={LABEL_CLS}>Category</label>
+                          <label className={LABEL_CLS}>{t.common.category}</label>
                           <select value={editForm.category ?? ""} onChange={ev => setEditForm(f => ({ ...f, category: ev.target.value }))} className={SELECT_CLS}>
                             {activeCats.map(c => <option key={c}>{c}</option>)}
                           </select>
                         </div>
                         <div>
-                          <label className={LABEL_CLS}>Name / Description</label>
+                          <label className={LABEL_CLS}>{t.common.name}</label>
                           <InlineInput value={editForm.name ?? ""} onChange={v => setEditForm(f => ({ ...f, name: v }))} placeholder={editForm.category} />
                         </div>
                         <div>
@@ -724,7 +781,7 @@ export function NetWorthTab({ clientId, client, t }: { clientId: number; t: T; c
                               <span className="text-xs text-slate-400">Holding type:</span>
                               <select value={editForm.holdingType ?? ""} onChange={ev => setEditForm(f => ({ ...f, holdingType: ev.target.value }))} className="border border-slate-200 rounded-lg px-2 py-1 text-sm">
                                 <option value="">Select…</option>
-                                {HOLDING_TYPES.map(t => <option key={t}>{t}</option>)}
+                                {HOLDING_TYPES.map(h => <option key={h} value={h}>{holdingLabel(h, t)}</option>)}
                               </select>
                             </div>
                             {editForm.category === "Non-Registered" && spouseName && (
@@ -740,7 +797,7 @@ export function NetWorthTab({ clientId, client, t }: { clientId: number; t: T; c
                             <div className="flex items-center gap-1.5">
                               <span className="text-xs text-slate-400">Property type:</span>
                               <select value={editForm.propertyType ?? "Family Occupied"} onChange={ev => setEditForm(f => ({ ...f, propertyType: ev.target.value }))} className="border border-slate-200 rounded-lg px-2 py-1 text-sm">
-                                {PROPERTY_TYPES.map(t => <option key={t}>{t}</option>)}
+                                {PROPERTY_TYPES.map(p => <option key={p} value={p}>{propertyTypeLabel(p, t)}</option>)}
                               </select>
                             </div>
                             <div className="flex items-center gap-1.5">
@@ -849,7 +906,7 @@ export function NetWorthTab({ clientId, client, t }: { clientId: number; t: T; c
 
           {/* Quick Add */}
           <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
-            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-3">Quick Add</p>
+            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-3">{t.netWorth.quickAdd}</p>
             <div className="space-y-1.5">
               {(isAssets ? NW_ASSET_CATS : NW_LIAB_CATS).map(cat => (
                 <button key={cat} onClick={() => {
@@ -860,7 +917,7 @@ export function NetWorthTab({ clientId, client, t }: { clientId: number; t: T; c
                   className="w-full text-left text-xs text-slate-500 hover:text-cyan-600 hover:bg-cyan-50 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-2"
                 >
                   {isAssets && <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: NW_ASSET_COLORS[cat] ?? "#94a3b8" }} />}
-                  + {cat}
+                  + {assetCatLabel(cat, t)}
                 </button>
               ))}
             </div>
@@ -1596,7 +1653,7 @@ function EducationSubTab({ clientId, client }: { clientId: number; client?: any 
               title="Voice add child"
               className="flex items-center gap-1.5 px-3 py-2 rounded-full border border-[var(--border-light)] text-[var(--text-secondary)] hover:text-[var(--accent-cyan)] hover:border-[var(--accent-cyan)] text-xs font-semibold transition-colors"
             >
-              <Mic className="w-3.5 h-3.5" /> Voice
+              <Mic className="w-3.5 h-3.5" /> {t.netWorth.voice}
             </button>
             <button
               onClick={addDraft}
@@ -1770,31 +1827,31 @@ export function DebtTab({ clientId, t }: { clientId: number; t: T }) {
       {drafts.length > 0 && (
         <Card className="mb-5 border-blue-200 bg-blue-50/20">
           <div className="p-3 border-b border-blue-100">
-            <h3 className="font-bold text-gray-800 text-sm">New Debts — add as many as needed, then save all at once</h3>
+            <h3 className="font-bold text-gray-800 text-sm">{t.debt.newDebtsHint}</h3>
           </div>
           <table className="w-full text-sm">
             <thead className="bg-blue-50 border-b border-blue-100">
-              <tr><TH>Name</TH><TH>Type</TH><TH>Balance ($)</TH><TH>Rate (%)</TH><TH>Min Payment ($)</TH><TH>Strategy</TH><TH></TH></tr>
+              <tr><TH>{t.debt.colName}</TH><TH>{t.debt.colType}</TH><TH>{t.debt.colBalance}</TH><TH>{t.debt.colRate}</TH><TH>{t.debt.colMinPayment}</TH><TH>{t.debt.colStrategy}</TH><TH></TH></tr>
             </thead>
             <tbody className="divide-y divide-blue-100">
               {drafts.map((d, i) => (
                 <tr key={i}>
                   <TD><InlineInput value={d.name} onChange={v => updateDraft(i,"name",v)} placeholder="e.g. TD Visa" /></TD>
-                  <TD><InlineSelect value={d.type} onChange={v => updateDraft(i,"type",v)} options={DEBT_TYPES} /></TD>
+                  <TD><InlineSelect value={d.type} onChange={v => updateDraft(i,"type",v)} options={DEBT_TYPES} labelMap={Object.fromEntries(DEBT_TYPES.map(dt => [dt, debtTypeLabel(dt, t)]))} /></TD>
                   <TD><InlineInput value={d.balance} onChange={v => updateDraft(i,"balance",v)} type="number" /></TD>
                   <TD><InlineInput value={d.interestRate} onChange={v => updateDraft(i,"interestRate",v)} type="number" /></TD>
                   <TD><InlineInput value={d.minimumPayment} onChange={v => updateDraft(i,"minimumPayment",v)} type="number" /></TD>
-                  <TD><InlineSelect value={d.payoffStrategy} onChange={v => updateDraft(i,"payoffStrategy",v)} options={["avalanche","snowball"]} /></TD>
+                  <TD><InlineSelect value={d.payoffStrategy} onChange={v => updateDraft(i,"payoffStrategy",v)} options={["avalanche","snowball"]} labelMap={{ avalanche: t.debt.stratAvalanche, snowball: t.debt.stratSnowball }} /></TD>
                   <TD><button onClick={() => setDrafts(x => x.filter((_,idx)=>idx!==i))} className="text-gray-300 hover:text-red-500"><X className="w-3.5 h-3.5" /></button></TD>
                 </tr>
               ))}
             </tbody>
           </table>
           <div className="flex justify-end gap-2 p-3">
-            <button onClick={() => setDrafts([])} className="text-sm text-gray-500 px-4 py-2 border border-gray-200 rounded-lg">Discard</button>
+            <button onClick={() => setDrafts([])} className="text-sm text-gray-500 px-4 py-2 border border-gray-200 rounded-lg">{t.debt.discard}</button>
             <button onClick={saveAll} disabled={saving || !drafts.some(d => d.name && d.balance)}
               className="flex items-center gap-1.5 bg-[#0c1e3a] hover:bg-[#0e2a4a] disabled:opacity-50 text-white text-sm font-semibold px-5 py-2 rounded-lg">
-              <Save className="w-3.5 h-3.5" /> {saving ? "Saving…" : `Save ${drafts.filter(d=>d.name&&d.balance).length} Debts`}
+              <Save className="w-3.5 h-3.5" /> {saving ? t.common.saving : `${t.debt.saveDebts} ${drafts.filter(d=>d.name&&d.balance).length}`}
             </button>
           </div>
         </Card>
@@ -1807,7 +1864,7 @@ export function DebtTab({ clientId, t }: { clientId: number; t: T }) {
         <Card>
           <table className="w-full text-sm">
             <thead className="bg-gray-50 border-b border-gray-200">
-              <tr><TH>Name</TH><TH>Type</TH><TH>Balance</TH><TH>Rate</TH><TH>Min Payment</TH><TH>Strategy</TH><TH></TH></tr>
+              <tr><TH>{t.debt.colName}</TH><TH>{t.debt.colType}</TH><TH>{t.common.balance}</TH><TH>{t.common.rate}</TH><TH>{t.debt.colMinPayment}</TH><TH>{t.debt.colStrategy}</TH><TH></TH></tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
               {rows.map(d => (

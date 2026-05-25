@@ -8,6 +8,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { useVoice } from "../../contexts/VoiceContext";
+import { translations, type T } from "../../i18n/translations";
 import { cn } from "../../lib/utils";
 import { api } from "../../lib/api";
 import { HubShell } from "../insightled";
@@ -45,13 +46,15 @@ export const PLANNING_TABS = [
 
 export type PlanningTab = typeof PLANNING_TABS[number];
 
-const TAB_META: Record<PlanningTab, { icon: LucideIcon; title: string; tagline: string }> = {
-  networth: { icon: Wallet,    title: "Net Worth",   tagline: "Household assets, liabilities and education savings" },
-  goals:    { icon: Target,    title: "Goals",       tagline: "Plan and prioritize household goals" },
-  expenses: { icon: Receipt,   title: "Cash Flow",   tagline: "Monthly income vs. expenses" },
-  debt:     { icon: CreditCard, title: "Debt",        tagline: "Household liability optimization" },
-  ai:       { icon: Sparkles,  title: "AI Insights", tagline: "Generated planning recommendations" },
-};
+function makeTabMeta(t: T): Record<PlanningTab, { icon: LucideIcon; title: string; tagline: string }> {
+  return {
+    networth: { icon: Wallet,    title: t.netWorth.title,  tagline: t.netWorth.totalNetWorth },
+    goals:    { icon: Target,    title: t.goals.title,     tagline: t.goals.planAndPrioritize },
+    expenses: { icon: Receipt,   title: t.cashFlow.title,  tagline: t.cashFlow.monthlyVsExpenses },
+    debt:     { icon: CreditCard, title: t.debt.title,     tagline: t.debt.debtCashFlow },
+    ai:       { icon: Sparkles,  title: t.ai.title,        tagline: t.ai.subtitle },
+  };
+}
 
 const VOICE_HINTS: Record<PlanningTab, string> = {
   networth: "Say assets and liabilities, e.g. RRSP $220k, mortgage $410k",
@@ -103,6 +106,7 @@ interface PlanningDocFlowProps {
     spouseLabel?: string | null;
     showCombined?: boolean;
   };
+  tr?: T;
   children: ReactNode;
 }
 
@@ -112,10 +116,11 @@ export function PlanningDocFlow({
   client,
   personToggle,
   initialNwSubtab,
+  tr = translations.en,
   children,
 }: PlanningDocFlowProps) {
   const voice = useVoice();
-  const meta  = TAB_META[tab];
+  const meta  = makeTabMeta(tr)[tab];
 
   // ── Client overview (used in subtitle + NW sub-tab badges) ──────────────────
   const [overview, setOverview] = useState<ClientOverview | null>(null);
@@ -294,9 +299,9 @@ export function PlanningDocFlow({
         personToggle={personToggle}
         contentClassName={tab === "networth" ? "overflow-hidden flex flex-col" : undefined}
         subtabs={tab === "networth" ? [
-          { key: "assets",      label: "Assets",      icon: TrendingUp,      badge: overview ? fmt$(overview.totalAssets)      : undefined, badgeTone: "green" },
-          { key: "liabilities", label: "Liabilities", icon: TrendingDown,    badge: overview ? fmt$(overview.totalLiabilities) : undefined, badgeTone: "rose"  },
-          { key: "education",   label: "Education",   icon: GraduationCap,   badgeTone: "cyan" },
+          { key: "assets",      label: tr.netWorth.assetsTab,      icon: TrendingUp,      badge: overview ? fmt$(overview.totalAssets)      : undefined, badgeTone: "green" },
+          { key: "liabilities", label: tr.netWorth.liabilitiesTab, icon: TrendingDown,    badge: overview ? fmt$(overview.totalLiabilities) : undefined, badgeTone: "rose"  },
+          { key: "education",   label: tr.netWorth.educationTab,   icon: GraduationCap,   badgeTone: "cyan" },
         ] : undefined}
         activeSubtab={tab === "networth" ? nwSubtab : undefined}
         onSubtabChange={tab === "networth" ? setNwSubtab : undefined}

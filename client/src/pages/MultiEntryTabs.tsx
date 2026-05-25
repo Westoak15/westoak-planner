@@ -171,7 +171,7 @@ function emptyDraft(type: "asset"|"liability"): NWDraft {
   };
 }
 
-function ExtraFields({ draft, onChange, spouseName, dependants }: { draft: NWDraft; onChange: (k: keyof NWDraft, v: any) => void; spouseName: string; dependants?: any[] }) {
+function ExtraFields({ draft, onChange, spouseName, dependants, t }: { draft: NWDraft; onChange: (k: keyof NWDraft, v: any) => void; spouseName: string; dependants?: any[]; t: T }) {
   const elems: React.ReactNode[] = [];
 
   if (draft.category === "RRSP") {
@@ -708,7 +708,7 @@ export function NetWorthTab({ clientId, client, t }: { clientId: number; t: T; c
     Include in Debt Tracker
   </label>
 )}
-                    <ExtraFields draft={d} onChange={(k, v) => updateDraft(draftIdx, k, v)} spouseName={spouseName} dependants={[]} />
+                    <ExtraFields draft={d} onChange={(k, v) => updateDraft(draftIdx, k, v)} spouseName={spouseName} dependants={[]} t={t} />
                   </div>
                 );
               })}

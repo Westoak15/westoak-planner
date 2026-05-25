@@ -16,7 +16,7 @@ import {
   ArrowRight, Zap, Eye, EyeOff,
 } from "lucide-react";
 import { api } from "../lib/api";
-import { type T } from "../i18n/translations";
+import { translations, type T } from "../i18n/translations";
 import { toast } from "@/hooks/use-toast";
 import { PolicyImporter } from "../components/PolicyImporter";
 
@@ -56,6 +56,32 @@ const POLICY_TYPES = [
 const FREQ_MULT: Record<string, number> = {
   Monthly: 12, Quarterly: 4, "Semi-Annual": 2, Annual: 1,
 };
+
+function policyTypeLabel(type: string, t: T): string {
+  const m: Record<string, string> = {
+    "Term Life":          t.insurance.typeTermLife,
+    "Whole Life":         t.insurance.typeWholeLife,
+    "Universal Life":     t.insurance.typeUniversalLife,
+    "Variable Life":      t.insurance.typeVariableLife,
+    "Critical Illness":   t.insurance.typeCriticalIllness,
+    "Disability":         t.insurance.typeDisability,
+    "Long-Term Care":     t.insurance.typeLTC,
+    "Group Life":         t.insurance.typeGroupLife,
+    "Group Disability":   t.insurance.typeGroupDisability,
+    "Annuity":            t.insurance.typeAnnuity,
+  };
+  return m[type] ?? type;
+}
+
+function freqLabel(freq: string, t: T): string {
+  const m: Record<string, string> = {
+    "Monthly":     t.insurance.freqMonthly,
+    "Quarterly":   t.insurance.freqQuarterly,
+    "Semi-Annual": t.insurance.freqSemiAnnual,
+    "Annual":      t.insurance.freqAnnual,
+  };
+  return m[freq] ?? freq;
+}
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -124,9 +150,9 @@ function StatusDot({ level }: { level: "low" | "medium" | "high" | "ok" | "warn"
 
 // ── Inline Edit Field ─────────────────────────────────────────────────────────
 
-function EditField({ label, value, onChange, type = "text", options }: {
+function EditField({ label, value, onChange, type = "text", options, optionLabels }: {
   label: string; value: string; onChange: (v: string) => void;
-  type?: string; options?: string[];
+  type?: string; options?: string[]; optionLabels?: string[];
 }) {
   return (
     <div>
@@ -134,7 +160,7 @@ function EditField({ label, value, onChange, type = "text", options }: {
       {options ? (
         <select value={value} onChange={e => onChange(e.target.value)}
           className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-900 focus:outline-none focus:ring-1 focus:ring-blue-400/40 focus:border-blue-400">
-          {options.map(o => <option key={o} value={o}>{o}</option>)}
+          {options.map((o, i) => <option key={o} value={o}>{optionLabels?.[i] ?? o}</option>)}
         </select>
       ) : (
         <input type={type} value={value} onChange={e => onChange(e.target.value)}
@@ -320,9 +346,10 @@ function PolicyRow({
 
 // ── Add Policy Form (inline) ──────────────────────────────────────────────────
 
-function AddPolicyForm({ onSave, onCancel }: {
+function AddPolicyForm({ onSave, onCancel, t = translations.en }: {
   onSave: (p: Omit<Policy, "id">) => Promise<void>;
   onCancel: () => void;
+  t?: T;
 }) {
   const [form, setForm] = useState({
     type: "Term Life", insured: "", carrier: "", policyNumber: "",
@@ -347,32 +374,33 @@ function AddPolicyForm({ onSave, onCancel }: {
     <div className="border-b border-slate-100 bg-blue-50/30">
       <div className="px-4 py-3 bg-gradient-to-r from-blue-600/5 to-transparent border-l-2 border-blue-500">
         <div className="text-xs font-semibold text-blue-700 mb-3 flex items-center gap-1.5">
-          <Plus className="w-3 h-3" /> New Policy
+          <Plus className="w-3 h-3" /> {t.insurance.newPolicy}
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
-          <EditField label="Policy Type" value={form.type} onChange={u("type")} options={POLICY_TYPES} />
-          <EditField label="Insured" value={form.insured} onChange={u("insured")} />
-          <EditField label="Carrier" value={form.carrier} onChange={u("carrier")} />
-          <EditField label="Coverage Amount" value={form.coverageAmount} onChange={u("coverageAmount")} type="number" />
+          <EditField label={t.insurance.policyType} value={form.type} onChange={u("type")} options={POLICY_TYPES} optionLabels={POLICY_TYPES.map(p => policyTypeLabel(p, t))} />
+          <EditField label={t.insurance.insuredPerson} value={form.insured} onChange={u("insured")} />
+          <EditField label={t.insurance.carrier} value={form.carrier} onChange={u("carrier")} />
+          <EditField label={t.insurance.coverageAmt} value={form.coverageAmount} onChange={u("coverageAmount")} type="number" />
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
-          <EditField label="Premium" value={form.premium} onChange={u("premium")} type="number" />
-          <EditField label="Frequency" value={form.premiumFrequency} onChange={u("premiumFrequency")}
-            options={["Monthly", "Quarterly", "Semi-Annual", "Annual"]} />
-          <EditField label="Issue Date" value={form.issueDate} onChange={u("issueDate")} type="date" />
-          <EditField label="Beneficiary" value={form.beneficiary} onChange={u("beneficiary")} />
+          <EditField label={t.common.amount} value={form.premium} onChange={u("premium")} type="number" />
+          <EditField label={t.insurance.premiumFrequency} value={form.premiumFrequency} onChange={u("premiumFrequency")}
+            options={["Monthly", "Quarterly", "Semi-Annual", "Annual"]}
+            optionLabels={["Monthly","Quarterly","Semi-Annual","Annual"].map(f => freqLabel(f, t))} />
+          <EditField label={t.insurance.issueDate} value={form.issueDate} onChange={u("issueDate")} type="date" />
+          <EditField label={t.insurance.beneficiary} value={form.beneficiary} onChange={u("beneficiary")} />
         </div>
         <div className="flex items-center justify-end gap-2">
           <button onClick={onCancel}
             className="text-xs text-slate-500 hover:text-slate-700 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1">
-            <X className="w-3 h-3" /> Cancel
+            <X className="w-3 h-3" /> {t.common.cancel}
           </button>
           <button onClick={handleSave} disabled={saving}
             className="flex items-center gap-1.5 text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white px-4 py-1.5 rounded-lg transition-colors disabled:opacity-50">
             {saving
               ? <span className="w-3 h-3 border border-white/40 border-t-white rounded-full animate-spin" />
               : <Save className="w-3 h-3" />}
-            Add Policy
+            {t.insurance.addPolicy}
           </button>
         </div>
       </div>
@@ -628,7 +656,7 @@ export function PoliciesTab({ clientId, client, t }: Props) {
           ) : (
             <>
               {showAdd && (
-                <AddPolicyForm onSave={handleAdd} onCancel={() => setShowAdd(false)} />
+                <AddPolicyForm onSave={handleAdd} onCancel={() => setShowAdd(false)} t={t} />
               )}
 
               {policies.length === 0 && !showAdd ? (

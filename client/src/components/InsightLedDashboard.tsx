@@ -502,7 +502,7 @@ export function InsightLedDashboard({ clientId, client, onNavigate, t = translat
                     </PieChart>
                   </ResponsiveContainer>
                   <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none" style={{ height: "100%", zIndex: 0 }}>
-                    <span className="text-[10px] text-[var(--text-secondary)] uppercase tracking-wider">Invested</span>
+                    <span className="text-[10px] text-[var(--text-secondary)] uppercase tracking-wider">{t.dashboard.invested}</span>
                     <span className="text-lg font-bold font-mono text-[var(--accent-blue)]">{investedPct}%</span>
                   </div>
                 </>
@@ -524,11 +524,11 @@ export function InsightLedDashboard({ clientId, client, onNavigate, t = translat
           </div>
 
           <div className="col-span-6 fp-insightled-card p-6 min-h-[300px]">
-            <h2 className="text-sm font-semibold text-[var(--text-secondary)] uppercase tracking-widest mb-6">Cash Flow (Estimated, 6 Mo)</h2>
+            <h2 className="text-sm font-semibold text-[var(--text-secondary)] uppercase tracking-widest mb-6">{t.dashboard.cashFlowEstimated}</h2>
             <div className="w-full relative" style={{ height: 220 }}>
               {headerInfo.totalIncome === 0 ? (
                 <div className="flex items-center justify-center h-full text-xs text-[var(--text-tertiary)] text-center">
-                  Add household income to see cash flow.
+                  {t.dashboard.addIncomeForCashFlow}
                 </div>
               ) : (
                 <ResponsiveContainer width="100%" height="100%">
@@ -550,41 +550,41 @@ export function InsightLedDashboard({ clientId, client, onNavigate, t = translat
           </div>
 
           <div className="col-span-6 fp-insightled-card p-6 flex flex-col">
-            <h2 className="text-sm font-semibold text-[var(--text-secondary)] uppercase tracking-widest mb-6">Plan Module Coverage</h2>
+            <h2 className="text-sm font-semibold text-[var(--text-secondary)] uppercase tracking-widest mb-6">{t.dashboard.planModuleCoverage}</h2>
 
             <div className="space-y-6 flex-1">
               <ModuleProgress
-                label="Retirement Projections"
+                label={t.dashboard.retirementProjections}
                 count={ov.retirementProjections}
                 target={1}
                 color="var(--accent-cyan)"
               />
               <ModuleProgress
-                label="Insurance Analyses"
+                label={t.dashboard.insuranceAnalyses}
                 count={ov.insuranceAnalyses}
                 target={1}
                 color="var(--accent-purple)"
               />
               <ModuleProgress
-                label="Education Plans"
+                label={t.dashboard.educationPlans}
                 count={ov.educationPlans}
                 target={1}
                 color="var(--accent-green)"
               />
               <ModuleProgress
-                label="Tax / Estate Notes"
+                label={t.dashboard.taxEstateNotes}
                 count={ov.taxNotes + ov.estateNotes}
                 target={2}
                 color="var(--accent-amber)"
               />
 
               <div className="pt-4 border-t border-[var(--border-subtle)]">
-                <h3 className="text-xs font-semibold text-[var(--text-secondary)] mb-3">QUICK STATS</h3>
+                <h3 className="text-xs font-semibold text-[var(--text-secondary)] mb-3">{t.dashboard.quickStats}</h3>
                 <div className="grid grid-cols-2 gap-3">
-                  <QuickStat label="Total Assets" value={formatCurrency(ov.totalAssets)} color="var(--accent-green)" />
-                  <QuickStat label="Total Liabilities" value={formatCurrency(ov.totalLiabilities)} color="var(--accent-rose)" />
-                  <QuickStat label="Plans" value={String(ov.plans)} color="var(--accent-cyan)" />
-                  <QuickStat label="AI Recs" value={String(ov.aiRecommendations)} color="var(--accent-purple)" />
+                  <QuickStat label={t.dashboard.totalAssets} value={formatCurrency(ov.totalAssets)} color="var(--accent-green)" />
+                  <QuickStat label={t.dashboard.totalLiabilities} value={formatCurrency(ov.totalLiabilities)} color="var(--accent-rose)" />
+                  <QuickStat label={t.dashboard.plans} value={String(ov.plans)} color="var(--accent-cyan)" />
+                  <QuickStat label={t.dashboard.aiRecs} value={String(ov.aiRecommendations)} color="var(--accent-purple)" />
                 </div>
               </div>
             </div>

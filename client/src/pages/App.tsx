@@ -308,7 +308,7 @@ function HouseholdRow({
 
 // ── Clients Tab (Advisor Operations Queue) ────────────────────────────────────
 
-function ClientsTab({ onSelect }: { onSelect: (c: Client) => void }) {
+function ClientsTab({ onSelect, tAdv = translations.en }: { onSelect: (c: Client) => void; tAdv?: T }) {
   const { user } = useAuth();
   const jurisdiction  = (user as any)?.jurisdiction ?? "CA";
   const regions       = jurisdiction === "US"
@@ -407,20 +407,20 @@ function ClientsTab({ onSelect }: { onSelect: (c: Client) => void }) {
         <div className="flex-shrink-0 border-b border-slate-200 bg-white px-5 py-3">
           <div className="flex items-center gap-3">
             <div>
-              <h1 className="text-sm font-bold text-slate-900 leading-none">Household Queue</h1>
-              <p className="text-[10px] text-slate-400 mt-0.5">{clients.length} households · Avg score {avgScore}</p>
+              <h1 className="text-sm font-bold text-slate-900 leading-none">{tAdv.common.householdQueue}</h1>
+              <p className="text-[10px] text-slate-400 mt-0.5">{clients.length} {tAdv.common.householdsCount} · {tAdv.common.avgScore} {avgScore}</p>
             </div>
             <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
               <input
                 value={search} onChange={e => setSearch(e.target.value)}
-                placeholder="Search households…"
+                placeholder={tAdv.common.searchHouseholds}
                 className="w-full pl-8 pr-4 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400/30 focus:border-blue-400 transition"
               />
             </div>
             <div className="flex items-center gap-1 text-[10px] text-slate-400">
-              <span>Sort:</span>
-              {([["score","Priority"],["name","Name"],["nw","Net Worth"]] as const).map(([k, l]) => (
+              <span>{tAdv.common.sortLabel}</span>
+              {([["score",tAdv.common.colScoreStatus],["name",tAdv.common.colHousehold],["nw",tAdv.common.colNetWorth]] as [string,string][]).map(([k, l]) => (
                 <button key={k} onClick={() => setSortBy(k)}
                   className={`px-2 py-1 rounded transition-colors font-medium ${sortBy === k ? "bg-blue-600 text-white" : "hover:bg-slate-100 text-slate-500"}`}>
                   {l}
@@ -430,7 +430,7 @@ function ClientsTab({ onSelect }: { onSelect: (c: Client) => void }) {
             <button onClick={() => setShowNew(s => !s)}
               className="flex items-center gap-1 text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg transition-colors flex-shrink-0">
               <Plus className="w-3.5 h-3.5" />
-              {showNew ? "Cancel" : "New Household"}
+              {showNew ? tAdv.common.cancel : tAdv.common.newHousehold}
             </button>
           </div>
         </div>
@@ -457,9 +457,9 @@ function ClientsTab({ onSelect }: { onSelect: (c: Client) => void }) {
               <button onClick={create} disabled={busy || !form.firstName || !form.lastName}
                 className="flex items-center gap-1 text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50">
                 {busy ? <span className="w-3 h-3 border border-white/40 border-t-white rounded-full animate-spin" /> : <Plus className="w-3 h-3" />}
-                Add Household
+                {tAdv.common.addHousehold}
               </button>
-              <button onClick={() => setShowNew(false)} className="text-xs text-slate-500 hover:text-slate-700 px-2 py-1">Cancel</button>
+              <button onClick={() => setShowNew(false)} className="text-xs text-slate-500 hover:text-slate-700 px-2 py-1">{tAdv.common.cancel}</button>
               <div className="ml-auto">
                 <IntakeRecorderTrigger onComplete={handleIntakeComplete} />
               </div>
@@ -473,12 +473,12 @@ function ClientsTab({ onSelect }: { onSelect: (c: Client) => void }) {
             className="grid items-center px-4 py-2 text-[9px] font-semibold uppercase tracking-widest text-slate-400"
             style={{ gridTemplateColumns: "2fr 110px 100px 120px 1fr 90px" }}
           >
-            <span>Household</span>
-            <span>Score / Status</span>
-            <span className="text-right">Net Worth</span>
-            <span>Alerts</span>
-            <span>Next Action</span>
-            <span className="text-right">Actions</span>
+            <span>{tAdv.common.colHousehold}</span>
+            <span>{tAdv.common.colScoreStatus}</span>
+            <span className="text-right">{tAdv.common.colNetWorth}</span>
+            <span>{tAdv.common.colAlerts}</span>
+            <span>{tAdv.common.colNextAction}</span>
+            <span className="text-right">{tAdv.common.colActions}</span>
           </div>
         </div>
 
@@ -1291,7 +1291,7 @@ export default function App() {
             </div>
           )}
           {tab === "clients" && !showClientDetail && (
-            <ClientsTab onSelect={selectClient} />
+            <ClientsTab onSelect={selectClient} tAdv={tAdvisor} />
           )}
           {tab === "clients" && showClientDetail && client && (
             <ClientDetail client={client} onBack={backToClients} onPlanSelect={selectPlan} onUpdate={setClient} onLocaleChange={setClientLocale} t={tAdvisor} advisorLocale={advisorLocale} level={level} />
@@ -1309,7 +1309,7 @@ export default function App() {
             </div>
           )}
           {tab === "agents"  && <AgentsTab />}
-          {tab === "overview" && client && <ClientOverview client={client} onNavigate={(t) => setTab(t as Tab)} />}
+          {tab === "overview" && client && <ClientOverview client={client} onNavigate={(tab) => setTab(tab as Tab)} t={tClient} />}
           {tab === "profile"  && client && <ClientDetail client={client} onBack={() => setTab("overview" as Tab)} onPlanSelect={selectPlan} onUpdate={setClient} onLocaleChange={setClientLocale} t={tAdvisor} advisorLocale={advisorLocale} level={level} />}
           {tab === "dashboard" && client && <InsightLedDashboard clientId={client.id} client={client} t={tClient} onNavigate={(tab) => { const [tabKey, subtab] = tab.split(":"); setTab(tabKey as Tab); setNwSubtabHint(subtab); }} />}
 

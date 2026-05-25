@@ -101,7 +101,7 @@ function ModuleCard({ title, icon: Icon, value, insight, color = "text-blue-600"
   );
 }
 
-export function ClientOverview({ client, onNavigate }: { client: Client; onNavigate: (tab: string) => void }) {
+export function ClientOverview({ client, onNavigate, t = translations.en }: { client: Client; onNavigate: (tab: string) => void; t?: T }) {
   const [ov, setOv]           = useState<Overview | null>(null);
   const [retPlans, setRetPlans] = useState<RetirementProjection[]>([]);
   const [policies, setPolicies] = useState<Policy[]>([]);
@@ -124,7 +124,7 @@ export function ClientOverview({ client, onNavigate }: { client: Client; onNavig
   // Retirement funded %
   const primaryPlan = retPlans.find(p => !p.inputData?.person || p.inputData?.person === "primary");
   const retFunded = primaryPlan?.resultData?.funded ?? primaryPlan?.resultData?.fundedPct ?? null;
-  const retFundedStr = retFunded !== null ? `${Math.round(retFunded)}% funded` : retPlans.length > 0 ? `${retPlans.length} plan${retPlans.length > 1 ? "s" : ""}` : "No plan";
+  const retFundedStr = retFunded !== null ? `${Math.round(retFunded)}% funded` : retPlans.length > 0 ? `${retPlans.length} plan${retPlans.length > 1 ? "s" : ""}` : t.client.noRetirementPlan;
 
   // Life coverage
   const lifeCoverage = policies
@@ -146,10 +146,10 @@ export function ClientOverview({ client, onNavigate }: { client: Client; onNavig
   // Alerts
   const alerts: string[] = [];
   if (ov && ov.pendingAi > 0) alerts.push(`${ov.pendingAi} AI recommendation${ov.pendingAi > 1 ? "s" : ""} awaiting review`);
-  if (retFunded !== null && retFunded < 80) alerts.push(`Retirement funding at ${Math.round(retFunded)}% — below 80% target`);
+  if (retFunded !== null && retFunded < 80) alerts.push(`${t.client.retirementFundingBelow} ${Math.round(retFunded)}${t.client.belowTarget}`);
   if (lifeCoverage === 0 && policies.length > 0) alerts.push("No life insurance on file — protection gap unknown");
-  if (retPlans.length === 0) alerts.push("No retirement projection on file");
-  if (ov && ov.insuranceAnalyses === 0) alerts.push("No insurance analysis completed");
+  if (retPlans.length === 0) alerts.push(t.client.noRetProjectionFile);
+  if (ov && ov.insuranceAnalyses === 0) alerts.push(t.client.noInsuranceAnalysisCompleted);
 
   return (
     <div className="max-w-6xl mx-auto px-6 py-6 space-y-6">
@@ -166,34 +166,34 @@ export function ClientOverview({ client, onNavigate }: { client: Client; onNavig
         </div>
         {/* Quick actions */}
         <div className="flex items-center gap-2">
-          <button onClick={() => onNavigate("expenses")} className="flex items-center gap-1.5 text-xs font-medium bg-white border border-slate-200 text-slate-600 hover:border-blue-400 hover:text-blue-600 px-3 py-1.5 rounded-lg transition">+ Expense</button>
-          <button onClick={() => onNavigate("goals")} className="flex items-center gap-1.5 text-xs font-medium bg-white border border-slate-200 text-slate-600 hover:border-blue-400 hover:text-blue-600 px-3 py-1.5 rounded-lg transition">+ Goal</button>
-          <button onClick={() => onNavigate("networth")} className="flex items-center gap-1.5 text-xs font-medium bg-white border border-slate-200 text-slate-600 hover:border-blue-400 hover:text-blue-600 px-3 py-1.5 rounded-lg transition">+ Asset</button>
-          <button onClick={() => onNavigate("retirementhub")} className="flex items-center gap-1.5 text-xs font-medium bg-gradient-to-r from-blue-600 to-cyan-500 text-white px-3 py-1.5 rounded-lg shadow-sm hover:shadow-md transition">+ Projection</button>
+          <button onClick={() => onNavigate("expenses")} className="flex items-center gap-1.5 text-xs font-medium bg-white border border-slate-200 text-slate-600 hover:border-blue-400 hover:text-blue-600 px-3 py-1.5 rounded-lg transition">{t.client.addExpenseBtn}</button>
+          <button onClick={() => onNavigate("goals")} className="flex items-center gap-1.5 text-xs font-medium bg-white border border-slate-200 text-slate-600 hover:border-blue-400 hover:text-blue-600 px-3 py-1.5 rounded-lg transition">{t.goals.addGoal}</button>
+          <button onClick={() => onNavigate("networth")} className="flex items-center gap-1.5 text-xs font-medium bg-white border border-slate-200 text-slate-600 hover:border-blue-400 hover:text-blue-600 px-3 py-1.5 rounded-lg transition">{t.client.addAssetBtn}</button>
+          <button onClick={() => onNavigate("retirementhub")} className="flex items-center gap-1.5 text-xs font-medium bg-gradient-to-r from-blue-600 to-cyan-500 text-white px-3 py-1.5 rounded-lg shadow-sm hover:shadow-md transition">{t.client.addProjectionBtn}</button>
         </div>
       </div>
 
       {/* Key metrics */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Stat
-          label="Net Worth"
+          label={t.client.overview.netWorth}
           value={ov ? fmt(ov.netWorth) : "—"}
-          sub={ov ? `${fmt(ov.totalAssets)} assets` : undefined}
+          sub={ov ? `${fmt(ov.totalAssets)} ${t.netWorth.assets}` : undefined}
           color={ov && ov.netWorth >= 0 ? "text-emerald-600" : "text-red-500"}
         />
         <Stat
-          label="Retirement"
+          label={t.client.retirementCard}
           value={retFundedStr}
           sub={retPlans.length > 0 ? `${retPlans.length} projection${retPlans.length > 1 ? "s" : ""}` : undefined}
           color={retFunded !== null && retFunded < 80 ? "text-amber-600" : "text-blue-600"}
         />
         <Stat
-          label="Monthly Spend"
+          label={t.client.monthlySpend}
           value={totalMonthly > 0 ? `${fmt(totalMonthly)}/mo` : "—"}
           sub={topCat ? `${topCat[0]} is largest` : undefined}
         />
         <Stat
-          label="Life Coverage"
+          label={t.client.lifeCoverage}
           value={lifeCoverage > 0 ? fmt(lifeCoverage) : policies.length === 0 ? "—" : "No life ins."}
           sub={policies.length > 0 ? `${policies.length} polic${policies.length > 1 ? "ies" : "y"}` : undefined}
           color={lifeCoverage === 0 && policies.length > 0 ? "text-red-500" : "text-slate-900"}
@@ -203,7 +203,7 @@ export function ClientOverview({ client, onNavigate }: { client: Client; onNavig
       {/* Alerts */}
       {alerts.length > 0 && (
         <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5">
-          <p className="text-sm font-medium text-amber-700 mb-2">Advisor Alerts</p>
+          <p className="text-sm font-medium text-amber-700 mb-2">{t.client.advisorAlerts}</p>
           <ul className="text-sm text-amber-600 space-y-1">
             {alerts.map((a, i) => <li key={i}>• {a}</li>)}
           </ul>
@@ -213,10 +213,10 @@ export function ClientOverview({ client, onNavigate }: { client: Client; onNavig
       {/* Module snapshots */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <ModuleCard
-          title="Goals"
+          title={t.client.goalsCard}
           icon={Target}
-          value={activeGoals.length > 0 ? `${activeGoals.length} active goal${activeGoals.length > 1 ? "s" : ""}` : "No goals yet"}
-          insight={activeGoals[0]?.title ?? "Add goals to track progress"}
+          value={activeGoals.length > 0 ? `${activeGoals.length} ${activeGoals.length > 1 ? t.client.activeGoals2 : t.client.activeGoals}` : t.client.noGoalsCard}
+          insight={activeGoals[0]?.title ?? t.client.addGoalsToTrack}
           color={activeGoals.length > 0 ? "text-blue-600" : "text-slate-400"}
           onClick={() => onNavigate("goals")}
         />
@@ -224,23 +224,23 @@ export function ClientOverview({ client, onNavigate }: { client: Client; onNavig
           title="Retirement"
           icon={PiggyBank}
           value={retFundedStr}
-          insight={retFunded !== null && retFunded < 80 ? `Shortfall projected — review contributions` : retPlans.length === 0 ? "Add a projection to get started" : "On track — review annually"}
+          insight={retFunded !== null && retFunded < 80 ? `${t.client.shortfallReview}` : retPlans.length === 0 ? t.client.addProjectionStart : t.client.onTrackAnnually}
           color={retFunded !== null && retFunded < 80 ? "text-amber-600" : retPlans.length === 0 ? "text-slate-400" : "text-emerald-600"}
           onClick={() => onNavigate("retirementhub")}
         />
         <ModuleCard
-          title="Cash Flow"
+          title={t.client.cashFlowCard}
           icon={DollarSign}
-          value={totalMonthly > 0 ? `${fmt(totalMonthly)}/mo` : "No expenses yet"}
-          insight={topCat ? `${topCat[0]} dominates at ${fmt(topCat[1])}/mo` : "Add expenses to inform retirement needs"}
+          value={totalMonthly > 0 ? `${fmt(totalMonthly)}/mo` : t.client.noExpensesCard}
+          insight={topCat ? `${topCat[0]} dominates at ${fmt(topCat[1])}/mo` : t.client.addExpensesForRet}
           color={totalMonthly > 0 ? "text-blue-600" : "text-slate-400"}
           onClick={() => onNavigate("expenses")}
         />
         <ModuleCard
-          title="Protection"
+          title={t.client.protectionCard}
           icon={Shield}
-          value={lifeCoverage > 0 ? `${fmt(lifeCoverage)} life coverage` : policies.length > 0 ? `${policies.length} polic${policies.length > 1 ? "ies" : "y"} on file` : "No policies yet"}
-          insight={lifeCoverage === 0 && policies.length > 0 ? "Life insurance gap — review coverage" : policies.length === 0 ? "Add insurance policies" : "Review coverage annually"}
+          value={lifeCoverage > 0 ? `${fmt(lifeCoverage)} life coverage` : policies.length > 0 ? `${policies.length} polic${policies.length > 1 ? "ies" : "y"} on file` : t.client.noPoliciesCard}
+          insight={lifeCoverage === 0 && policies.length > 0 ? "Life insurance gap — review coverage" : policies.length === 0 ? t.client.addInsurancePols : "Review coverage annually"}
           color={lifeCoverage === 0 && policies.length > 0 ? "text-red-500" : policies.length === 0 ? "text-slate-400" : "text-blue-600"}
           onClick={() => onNavigate("protection")}
         />

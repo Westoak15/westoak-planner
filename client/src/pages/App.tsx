@@ -1190,13 +1190,20 @@ export default function App() {
   // Two locales, not one:
   //   tAdvisor — drives advisor-facing UI (form labels, profile fields).
   //              Follows the i18next locale which already hard-forces QC advisors to FR.
-  //   tClient  — drives everything the *client* sees (plan views, reports, AI narratives,
-  //              letter templates). Follows the per-client preferredLanguage setting.
+  //   tAdvisor — drives the advisor UI (all forms, menus, planning screens)
+  //   tClient  — drives client-facing content; follows client preferredLanguage
+  //              UNLESS the advisor has manually toggled the sidebar to FR/EN,
+  //              in which case the sidebar locale overrides (so QC advisors
+  //              serving EN residents can flip the whole UI to EN).
   const advisorLocale: ClientLocale = advisorLocaleStr === "fr" ? "fr" : "en";
   const tAdvisor: T = translations[advisorLocale];
-  // tClient follows the advisor's active language selection.
-  // QC advisors default to FR but can toggle to EN for English-speaking clients.
-  const tClient: T  = translations[advisorLocale];
+  // tClient rule:
+  //  - If advisor sidebar is FR (QC default OR manual toggle): show FR everywhere
+  //  - Otherwise: follow the client's own preferredLanguage setting
+  //    (so an EN advisor serving a QC client gets FR client-facing content)
+  const tClient: T = advisorLocale === "fr"
+    ? translations["fr"]
+    : translations[clientLocale];
   const clientName = client ? `${client.firstName} ${client.lastName}` : undefined;
   const hasSpouse = !!client?.spouseFirstName;
   // Person toggle is rendered by HubShell inside each hub / PlanningDocFlow.

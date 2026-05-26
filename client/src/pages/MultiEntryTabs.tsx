@@ -190,7 +190,7 @@ function ExtraFields({ draft, onChange, spouseName, dependants, t }: { draft: NW
         </label>
         {draft.isSpousal && (
           <div className="flex items-center gap-1.5">
-            <span className="text-xs text-[var(--text-tertiary)]">{{t.netWorth.contributor}:}</span>
+            <span className="text-xs text-[var(--text-tertiary)]">{t.netWorth.contributor + ":"}</span>
             <select value={draft.rrspContributor} onChange={e => onChange("rrspContributor", e.target.value)} className={SELECT_CLS}>
               <option value="">{t.netWorth.selectContributor}</option>
               <option value="client">{t.common.primary}</option>
@@ -227,7 +227,7 @@ function ExtraFields({ draft, onChange, spouseName, dependants, t }: { draft: NW
   if (draft.category === "Employer Stock Options") {
     elems.push(
       <div key="stockopt" className="flex items-center gap-1.5">
-        <span className="text-xs text-[var(--text-tertiary)]">{{t.netWorth.subType}:}</span>
+        <span className="text-xs text-[var(--text-tertiary)]">{t.netWorth.subType + ":"}</span>
         <select value={draft.stockOptionType} onChange={e => onChange("stockOptionType", e.target.value)} className={SELECT_CLS}>
           <option value="RSU">RSU — Restricted Stock Unit</option>
           <option value="ESU">ESU — Employee Stock Unit</option>
@@ -258,7 +258,7 @@ function ExtraFields({ draft, onChange, spouseName, dependants, t }: { draft: NW
     elems.push(
       <div key="realestate-other" className="flex flex-wrap items-center gap-3">
         <div className="flex items-center gap-1.5">
-          <span className="text-xs text-[var(--text-tertiary)]">{{t.netWorth.propertyType}:}</span>
+          <span className="text-xs text-[var(--text-tertiary)]">{t.netWorth.propertyType + ":"}</span>
           <select value={draft.propertyType} onChange={e => onChange("propertyType", e.target.value)} className={SELECT_CLS}>
             {PROPERTY_TYPES.map(p => <option key={p} value={p}>{propertyTypeLabel(p, t)}</option>)}
           </select>
@@ -774,7 +774,7 @@ export function NetWorthTab({ clientId, client, t }: { clientId: number; t: T; c
                                 </label>
                                 {editForm.isSpousal && (
                                   <div className="flex items-center gap-1.5">
-                                    <span className="text-xs text-slate-400">{{t.netWorth.contributor}:}</span>
+                                    <span className="text-xs text-slate-400">{t.netWorth.contributor + ":"}</span>
                                     <select value={editForm.rrspContributor ?? ""} onChange={ev => setEditForm(f => ({ ...f, rrspContributor: ev.target.value }))} className="border border-slate-200 rounded-lg px-2 py-1 text-sm">
                                       <option value="">Select…</option>
                                       <option value="client">{primaryName || "Client"}</option>
@@ -785,7 +785,7 @@ export function NetWorthTab({ clientId, client, t }: { clientId: number; t: T; c
                               </>
                             )}
                             <div className="flex items-center gap-1.5">
-                              <span className="text-xs text-slate-400">{{t.netWorth.holdingType}:}</span>
+                              <span className="text-xs text-slate-400">{t.netWorth.holdingType + ":"}</span>
                               <select value={editForm.holdingType ?? ""} onChange={ev => setEditForm(f => ({ ...f, holdingType: ev.target.value }))} className="border border-slate-200 rounded-lg px-2 py-1 text-sm">
                                 <option value="">Select…</option>
                                 {HOLDING_TYPES.map(h => <option key={h} value={h}>{holdingLabel(h, t)}</option>)}
@@ -802,7 +802,7 @@ export function NetWorthTab({ clientId, client, t }: { clientId: number; t: T; c
                         {editForm.category === "Real Estate (other)" && (
                           <>
                             <div className="flex items-center gap-1.5">
-                              <span className="text-xs text-slate-400">{{t.netWorth.propertyType}:}</span>
+                              <span className="text-xs text-slate-400">{t.netWorth.propertyType + ":"}</span>
                               <select value={editForm.propertyType ?? "Family Occupied"} onChange={ev => setEditForm(f => ({ ...f, propertyType: ev.target.value }))} className="border border-slate-200 rounded-lg px-2 py-1 text-sm">
                                 {PROPERTY_TYPES.map(p => <option key={p} value={p}>{propertyTypeLabel(p, t)}</option>)}
                               </select>

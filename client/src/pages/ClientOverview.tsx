@@ -194,7 +194,7 @@ export function ClientOverview({ client, onNavigate, t = translations.en }: { cl
         />
         <Stat
           label={t.client.lifeCoverage}
-          value={lifeCoverage > 0 ? fmt(lifeCoverage) : policies.length === 0 ? "—" : "No life ins."}
+          value={lifeCoverage > 0 ? fmt(lifeCoverage) : policies.length === 0 ? "—" : {t.client.noLifeIns}}
           sub={policies.length > 0 ? `${policies.length} polic${policies.length > 1 ? "ies" : "y"}` : undefined}
           color={lifeCoverage === 0 && policies.length > 0 ? "text-red-500" : "text-slate-900"}
         />
@@ -221,7 +221,7 @@ export function ClientOverview({ client, onNavigate, t = translations.en }: { cl
           onClick={() => onNavigate("goals")}
         />
         <ModuleCard
-          title="Retirement"
+          title={t.retirement.title}
           icon={PiggyBank}
           value={retFundedStr}
           insight={retFunded !== null && retFunded < 80 ? `${t.client.shortfallReview}` : retPlans.length === 0 ? t.client.addProjectionStart : t.client.onTrackAnnually}
@@ -240,25 +240,25 @@ export function ClientOverview({ client, onNavigate, t = translations.en }: { cl
           title={t.client.protectionCard}
           icon={Shield}
           value={lifeCoverage > 0 ? `${fmt(lifeCoverage)} life coverage` : policies.length > 0 ? `${policies.length} polic${policies.length > 1 ? "ies" : "y"} on file` : t.client.noPoliciesCard}
-          insight={lifeCoverage === 0 && policies.length > 0 ? "Life insurance gap — review coverage" : policies.length === 0 ? t.client.addInsurancePols : "Review coverage annually"}
+          insight={lifeCoverage === 0 && policies.length > 0 ? "Life insurance gap — review coverage" : policies.length === 0 ? t.client.addInsurancePols : {t.client.reviewCoverageAnnually}}
           color={lifeCoverage === 0 && policies.length > 0 ? "text-red-500" : policies.length === 0 ? "text-slate-400" : "text-blue-600"}
           onClick={() => onNavigate("protection")}
         />
         {(ov?.educationPlans ?? 0) > 0 && (
           <ModuleCard
-            title="Education / RESP"
+            title={t.client.educationResp}
             icon={Users}
             value={`${ov!.educationPlans} plan${ov!.educationPlans > 1 ? "s" : ""}`}
-            insight="Review contribution room and grants"
+            insight={t.client.reviewContribRoom}
             onClick={() => onNavigate("fp")}
           />
         )}
         {(ov?.pendingAi ?? 0) > 0 && (
           <ModuleCard
-            title="AI Insights"
+            title={t.plan.aiInsights}
             icon={Brain}
             value={`${ov!.pendingAi} pending`}
-            insight="Review AI-generated recommendations"
+            insight={t.client.reviewAiRecs}
             color="text-amber-600"
             onClick={() => onNavigate("ai")}
           />

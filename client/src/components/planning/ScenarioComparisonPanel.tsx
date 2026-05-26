@@ -288,7 +288,7 @@ function buildRows(years: YearData[][], projections: Projection[], engineData: R
       fmt: fmt$, higher: true,
     },
     {
-      key: "estate",     label: "Estate Value at Life Expectancy",
+      key: "estate",     label: {t.scenarioComparison.estateValue2},
       get: (p: Projection, i: number) => {
         const eng = engineData[p.id!]?.summary;
         return eng?.estateValueAtDeath ?? years[i]?.[years[i].length - 1]?.totalNW ?? 0;
@@ -628,7 +628,7 @@ export function ScenarioComparisonPanel({ clientId, onClose, t = translations.en
                   <YAxis tickFormatter={fmtAxis} tick={{ fontSize: 11, fill: "#94A3B8" }} width={64} />
                   <Tooltip content={<ChartTooltip />} />
                   <ReferenceLine x={retAge} stroke="#94A3B8" strokeDasharray="4 4"
-                    label={{ value: "Ret.", position: "top", fontSize: 10, fill: "#94A3B8" }} />
+                    label={{ value: {t.scenarioComparison.retLabel}, position: "top", fontSize: 10, fill: "#94A3B8" }} />
                   {compared.map((p, i) => (
                     <Line key={i} type="monotone" dataKey={`s${i}`} name={getLabel(p)}
                       stroke={COLORS[i]} strokeWidth={2.5} dot={false}

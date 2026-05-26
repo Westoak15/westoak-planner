@@ -49,17 +49,17 @@ import {
 type TabKey = "overview" | "dashboard" | "networth" | "retirement" | "insurance" | "resp" | "debt" | "tax" | "estate" | "ai" | "plan";
 
 const tabs: { key: TabKey; label: string; icon: typeof Target }[] = [
-  { key: "overview",    label: "Overview",       icon: Target },
-  { key: "plan",        label: "Financial Plan", icon: Sparkles },
-  { key: "dashboard",   label: "Dashboard",      icon: BarChart3 },
-  { key: "networth",    label: "Net Worth",      icon: DollarSign },
-  { key: "retirement",  label: "Retirement",     icon: PiggyBank },
-  { key: "insurance",   label: "Insurance",      icon: Shield },
+  { key: "overview",    label: {t.plan.overview},       icon: Target },
+  { key: "plan",        label: {t.plan.financialPlan}, icon: Sparkles },
+  { key: "dashboard",   label: {t.plan.dashboard2},      icon: BarChart3 },
+  { key: "networth",    label: {t.netWorth.title},      icon: DollarSign },
+  { key: "retirement",  label: {t.retirement.title},     icon: PiggyBank },
+  { key: "insurance",   label: {t.plan.insurance2},      icon: Shield },
   { key: "resp",        label: "RESP",           icon: GraduationCap },
-  { key: "debt",        label: "Debt",           icon: CreditCard },
+  { key: "debt",        label: {t.plan.debt},           icon: CreditCard },
   { key: "tax",         label: "Tax",            icon: Receipt },
-  { key: "estate",      label: "Estate",         icon: ScrollText },
-  { key: "ai",          label: "AI Insights",    icon: Brain },
+  { key: "estate",      label: {t.plan.estate},         icon: ScrollText },
+  { key: "ai",          label: {t.plan.aiInsights},    icon: Brain },
 ];
 
 const moduleToTabMap: Record<string, TabKey> = {
@@ -114,25 +114,25 @@ function OverviewTab({ clientId, onTabChange }: { clientId: number; onTabChange?
   if (!overview) return null;
 
   const cards = [
-    { label: "Net Worth",            value: `$${Number(overview.netWorth).toLocaleString()}`,          icon: DollarSign,  color: overview.netWorth >= 0 ? "text-green-600" : "text-red-600",    bg: overview.netWorth >= 0 ? "bg-green-50" : "bg-red-50" },
-    { label: "Total Assets",         value: `$${Number(overview.totalAssets).toLocaleString()}`,        icon: TrendingUp,  color: "text-green-600", bg: "bg-green-50" },
-    { label: "Total Liabilities",    value: `$${Number(overview.totalLiabilities).toLocaleString()}`,   icon: TrendingDown, color: "text-red-500",  bg: "bg-red-50" },
-    { label: "Total Debt",           value: `$${Number(overview.totalDebt).toLocaleString()}`,          icon: CreditCard,  color: "text-orange-600", bg: "bg-orange-50" },
-    { label: "Financial Goals",      value: overview.goals,                    icon: Target,        color: "text-primary",    bg: "bg-primary/5",   tab: "dashboard" },
-    { label: "Retirement Plans",     value: overview.retirementProjections,    icon: PiggyBank,     color: "text-blue-600",   bg: "bg-blue-50",     tab: "retirement" },
-    { label: "Insurance Analyses",   value: overview.insuranceAnalyses,        icon: Shield,        color: "text-purple-600", bg: "bg-purple-50",   tab: "insurance" },
-    { label: "Education Plans",      value: overview.educationPlans,           icon: GraduationCap, color: "text-teal-600",   bg: "bg-teal-50",     tab: "resp" },
-    { label: "Tax Notes",            value: overview.taxNotes,                 icon: Receipt,       color: "text-amber-600",  bg: "bg-amber-50",    tab: "tax" },
-    { label: "Estate Notes",         value: overview.estateNotes,              icon: ScrollText,    color: "text-indigo-600", bg: "bg-indigo-50",   tab: "estate" },
-    { label: "AI Recommendations",   value: overview.aiRecommendations,        icon: Brain,         color: "text-pink-600",   bg: "bg-pink-50",     tab: "ai" },
-    { label: "Pending Actions",      value: overview.pendingRecommendations,   icon: Clock,         color: "text-yellow-600", bg: "bg-yellow-50",   tab: "ai" },
+    { label: {t.netWorth.title},            value: `$${Number(overview.netWorth).toLocaleString()}`,          icon: DollarSign,  color: overview.netWorth >= 0 ? "text-green-600" : "text-red-600",    bg: overview.netWorth >= 0 ? "bg-green-50" : "bg-red-50" },
+    { label: {t.netWorth.totalAssets},         value: `$${Number(overview.totalAssets).toLocaleString()}`,        icon: TrendingUp,  color: "text-green-600", bg: "bg-green-50" },
+    { label: {t.netWorth.totalLiabilities},    value: `$${Number(overview.totalLiabilities).toLocaleString()}`,   icon: TrendingDown, color: "text-red-500",  bg: "bg-red-50" },
+    { label: {t.plan.totalDebt},           value: `$${Number(overview.totalDebt).toLocaleString()}`,          icon: CreditCard,  color: "text-orange-600", bg: "bg-orange-50" },
+    { label: {t.plan.financialGoals},      value: overview.goals,                    icon: Target,        color: "text-primary",    bg: "bg-primary/5",   tab: "dashboard" },
+    { label: {t.plan.retirementPlans},     value: overview.retirementProjections,    icon: PiggyBank,     color: "text-blue-600",   bg: "bg-blue-50",     tab: "retirement" },
+    { label: {t.plan.insuranceAnalyses},   value: overview.insuranceAnalyses,        icon: Shield,        color: "text-purple-600", bg: "bg-purple-50",   tab: "insurance" },
+    { label: {t.plan.educationPlans},      value: overview.educationPlans,           icon: GraduationCap, color: "text-teal-600",   bg: "bg-teal-50",     tab: "resp" },
+    { label: {t.plan.taxNotes},            value: overview.taxNotes,                 icon: Receipt,       color: "text-amber-600",  bg: "bg-amber-50",    tab: "tax" },
+    { label: {t.plan.estateNotes},         value: overview.estateNotes,              icon: ScrollText,    color: "text-indigo-600", bg: "bg-indigo-50",   tab: "estate" },
+    { label: {t.plan.aiRecommendations},   value: overview.aiRecommendations,        icon: Brain,         color: "text-pink-600",   bg: "bg-pink-50",     tab: "ai" },
+    { label: {t.plan.pendingActions},      value: overview.pendingRecommendations,   icon: Clock,         color: "text-yellow-600", bg: "bg-yellow-50",   tab: "ai" },
   ];
 
   const reportButtons = [
-    { type: "comprehensive", label: "Full Plan",   available: true,                   icon: FileText,  tab: null },
-    { type: "retirement",    label: "Retirement",  available: !!reports?.retirement,  icon: PiggyBank, tab: "retirement" as TabKey },
-    { type: "insurance",     label: "Insurance",   available: !!reports?.insurance,   icon: Shield,    tab: "insurance" as TabKey },
-    { type: "net-worth",     label: "Net Worth",   available: !!reports?.netWorth,    icon: DollarSign, tab: "networth" as TabKey },
+    { type: "comprehensive", label: {t.plan.fullPlan},   available: true,                   icon: FileText,  tab: null },
+    { type: "retirement",    label: {t.retirement.title},  available: !!reports?.retirement,  icon: PiggyBank, tab: "retirement" as TabKey },
+    { type: "insurance",     label: {t.plan.insurance2},   available: !!reports?.insurance,   icon: Shield,    tab: "insurance" as TabKey },
+    { type: "net-worth",     label: {t.netWorth.title},   available: !!reports?.netWorth,    icon: DollarSign, tab: "networth" as TabKey },
   ];
 
   return (
@@ -231,7 +231,7 @@ function NetWorthSection({ title, total, color, isAsset, children, onAdd }: {
           <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: color }} />
           <div>
             <p className="font-semibold text-slate-900 text-sm">{title}</p>
-            <p className="text-xs text-slate-400">{open ? "Click to collapse" : "Click to expand"}</p>
+            <p className="text-xs text-slate-400">{open ? "Click to collapse" : {t.common.clickExpand}}</p>
           </div>
         </div>
         <div className="flex items-center gap-3">
@@ -299,7 +299,7 @@ export function NetWorthTab({ clientId }: { clientId: number }) {
       });
       const data = await res.json();
       if (res.ok) { setShowAdd(false); setForm({ category: "", name: "", value: "" }); }
-      else { toast({ title: "Error", description: data.message, variant: "destructive" }); }
+      else { toast({ title: t.common.error, description: data.message, variant: "destructive" }); }
     } catch(e: any) { alert("Failed: " + e.message); }
   };
 
@@ -312,7 +312,7 @@ export function NetWorthTab({ clientId }: { clientId: number }) {
     <div className="max-w-6xl mx-auto px-6 py-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-semibold text-slate-900">{sub === "liabilities" ? "Liabilities" : "Net Worth"}</h1>
+          <h1 className="text-xl font-semibold text-slate-900">{sub === "liabilities" ? "Liabilities" : {t.netWorth.title}}</h1>
           <p className="text-sm text-slate-500">{entries.length} entr{entries.length !== 1 ? "ies" : "y"}</p>
         </div>
         <button onClick={() => openAdd(sub === "liabilities" ? "liability" : "asset")} data-testid="button-fp-add-nw"
@@ -428,11 +428,11 @@ export function NetWorthTab({ clientId }: { clientId: number }) {
       {showAdd && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[200] flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl p-6">
-            <h2 className="text-lg font-bold mb-5 text-slate-900">Add {addType === "asset" ? "Asset" : "Liability"}</h2>
+            <h2 className="text-lg font-bold mb-5 text-slate-900">Add {addType === "asset" ? "Asset" : {t.common.liability}}</h2>
             <div className="space-y-4">
               <div className="flex gap-2">
-                <button type="button" onClick={() => setAddType("asset")} className={`flex-1 py-2 rounded-xl font-semibold text-sm transition ${addType === "asset" ? "bg-emerald-100 text-emerald-700 border-2 border-emerald-300" : "bg-slate-100 text-slate-500"}`}>Asset</button>
-                <button type="button" onClick={() => setAddType("liability")} className={`flex-1 py-2 rounded-xl font-semibold text-sm transition ${addType === "liability" ? "bg-red-100 text-red-600 border-2 border-red-300" : "bg-slate-100 text-slate-500"}`}>Liability</button>
+                <button type="button" onClick={() => setAddType("asset")} className={`flex-1 py-2 rounded-xl font-semibold text-sm transition ${addType === "asset" ? "bg-emerald-100 text-emerald-700 border-2 border-emerald-300" : "bg-slate-100 text-slate-500"}`}>{t.common.asset}</button>
+                <button type="button" onClick={() => setAddType("liability")} className={`flex-1 py-2 rounded-xl font-semibold text-sm transition ${addType === "liability" ? "bg-red-100 text-red-600 border-2 border-red-300" : "bg-slate-100 text-slate-500"}`}>{t.common.liability}</button>
               </div>
               <div>
                 <label className="text-sm font-semibold text-slate-600 block mb-1">{t.common.category}</label>
@@ -454,7 +454,7 @@ export function NetWorthTab({ clientId }: { clientId: number }) {
               <button onClick={() => setShowAdd(false)} className="px-5 py-2.5 rounded-xl font-semibold text-slate-500 hover:bg-slate-100">{t.common.cancel}</button>
               <button onClick={handleAdd} disabled={createEntry.isPending || !form.category || !form.name || !form.value} data-testid="button-fp-submit-nw"
                 className="px-5 py-2.5 rounded-xl font-semibold bg-gradient-to-r from-blue-600 to-cyan-500 text-white hover:shadow-md disabled:opacity-50 transition">
-                {createEntry.isPending ? "Adding…" : "Add Entry"}
+                {createEntry.isPending ? "Adding…" : {t.common.addEntry}}
               </button>
             </div>
           </div>
@@ -471,7 +471,7 @@ function ModuleScenarioPreview({ planId, module }: { planId: number | null; modu
   const { data: simResults = [] } = useSimulationResults(planId);
   const moduleResults = simResults.filter(r => r.module === module);
   if (moduleResults.length === 0) return null;
-  const scenarioLabels: Record<string, string> = { Conservative: "Stress", Moderate: "Base", Aggressive: "Optimistic" };
+  const scenarioLabels: Record<string, string> = { Conservative: {t.common.stress}, Moderate: {t.common.base}, Aggressive: {t.common.optimistic} };
   return (
     <div className="border border-border rounded-2xl p-4" data-testid={`module-scenario-${module}`}>
       <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">Monte Carlo Results</p>
@@ -685,8 +685,8 @@ function buildDefaultFromNW() {
               <p className="text-xs text-muted-foreground">Created {a.createdAt ? new Date(a.createdAt).toLocaleDateString() : "-"}</p>
             </div>
             <div className="flex items-center gap-1">
-              <button onClick={() => { if (a.worksheetData) { setForm({ ...defaultWs, ...a.worksheetData }); } else { setForm({ ...defaultWs, primaryName: a.primaryName ?? "", primaryAge: a.primaryAge ? String(a.primaryAge) : "", spouseName: a.spouseName ?? "", spouseAge: a.spouseAge ? String(a.spouseAge) : "" }); } setViewingId(a.id); setShowWorksheet(true); }} className="p-1.5 text-primary hover:bg-primary/10 rounded-lg" title="Open"><Eye className="w-4 h-4" /></button>
-              <button onClick={async () => { const token = localStorage.getItem("fp_token"); const res = await fetch(`/api/reports/${clientId}/fna/${a.id}`, { headers: { Authorization: `Bearer ${token}` } }); const html = await res.text(); const blob = new Blob([html], { type: "text/html" }); window.open(URL.createObjectURL(blob), "_blank"); }} className="p-1.5 text-gray-500 hover:bg-gray-100 rounded-lg" title="Report"><Printer className="w-4 h-4" /></button>
+              <button onClick={() => { if (a.worksheetData) { setForm({ ...defaultWs, ...a.worksheetData }); } else { setForm({ ...defaultWs, primaryName: a.primaryName ?? "", primaryAge: a.primaryAge ? String(a.primaryAge) : "", spouseName: a.spouseName ?? "", spouseAge: a.spouseAge ? String(a.spouseAge) : "" }); } setViewingId(a.id); setShowWorksheet(true); }} className="p-1.5 text-primary hover:bg-primary/10 rounded-lg" title={t.common.edit}><Eye className="w-4 h-4" /></button>
+              <button onClick={async () => { const token = localStorage.getItem("fp_token"); const res = await fetch(`/api/reports/${clientId}/fna/${a.id}`, { headers: { Authorization: `Bearer ${token}` } }); const html = await res.text(); const blob = new Blob([html], { type: "text/html" }); window.open(URL.createObjectURL(blob), "_blank"); }} className="p-1.5 text-gray-500 hover:bg-gray-100 rounded-lg" title={t.report.summaryLabel}><Printer className="w-4 h-4" /></button>
               <button onClick={() => { if (confirm("Delete this analysis?")) deleteAnalysis.mutate(a.id); }} className="p-1.5 text-red-400 hover:bg-red-50 rounded-lg" title={t.common.delete}><Trash2 className="w-4 h-4" /></button>
             </div>
           </div>
@@ -700,8 +700,8 @@ function buildDefaultFromNW() {
                 const items = [
                   { label: `${a.primaryName || "Primary"} - Life Need`, val: pNet },
                   ...(a.spouseName ? [{ label: `${a.spouseName} - Life Need`, val: sNet }] : []),
-                  { label: "DI Need", val: parseFloat(a.recommendedDisabilityCoverage || "0") },
-                  { label: "LTC Need", val: parseFloat(a.criticalIllnessLumpSum || "0") },
+                  { label: {t.insurance.diNeed}, val: parseFloat(a.recommendedDisabilityCoverage || "0") },
+                  { label: {t.insurance.ltcNeed}, val: parseFloat(a.criticalIllnessLumpSum || "0") },
                 ];
                 return items.map(item => (
                   <div key={item.label} className="p-1.5 bg-muted/30 rounded-lg flex items-center justify-between gap-2">
@@ -727,13 +727,13 @@ function buildDefaultFromNW() {
             <div className="sticky top-0 bg-background z-10 px-8 pt-6 pb-4 border-b border-border">
               <div className="flex justify-between items-center">
                 <div>
-                  <h2 className="text-2xl font-display font-bold" data-testid="text-worksheet-title">Family Needs Analysis</h2>
+                  <h2 className="text-2xl font-display font-bold" data-testid="text-worksheet-title">{t.insurance.familyNeedsAnalysis}</h2>
                   <p className="text-sm text-muted-foreground mt-1">Complete all sections to calculate total life insurance need</p>
                 </div>
                 <div className="flex items-center gap-4">
                   <TranscriptRecorderTrigger
                     endpoint="/api/ai/needs-analysis-transcript"
-                    label="Record Needs Analysis"
+                    label={t.insurance.recordNeedsAnalysis}
                     processingLabel="Extracting needs analysis data…"
                     onComplete={(data) => {
                       setForm(f => ({
@@ -808,7 +808,7 @@ function buildDefaultFromNW() {
                     <div><label className="text-xs font-medium text-muted-foreground">Full Name</label><input type="text" required value={form.primaryName} onChange={e => setForm(f => ({ ...f, primaryName: e.target.value }))} data-testid="input-ws-primary-name" className="w-full px-3 py-2 rounded-lg border text-sm mt-1 bg-background" /></div>
                     <div className="grid grid-cols-2 gap-3">
                       <WorksheetFieldImpl label="Age" value={form.primaryAge} onChange={v => setForm(f => ({ ...f, primaryAge: v }))} testId="input-ws-primary-age" prefix="" />
-                      <WorksheetFieldImpl label="Annual Income" value={form.primaryAnnualIncome} onChange={v => setForm(f => ({ ...f, primaryAnnualIncome: v }))} testId="input-ws-primary-income" />
+                      <WorksheetFieldImpl label={t.insurance.annualIncome} value={form.primaryAnnualIncome} onChange={v => setForm(f => ({ ...f, primaryAnnualIncome: v }))} testId="input-ws-primary-income" />
                     </div>
                   </div>
                   <div className="space-y-3 p-4 border border-border rounded-xl">
@@ -816,7 +816,7 @@ function buildDefaultFromNW() {
                     <div><label className="text-xs font-medium text-muted-foreground">Full Name</label><input type="text" value={form.spouseName} onChange={e => setForm(f => ({ ...f, spouseName: e.target.value }))} data-testid="input-ws-spouse-name" className="w-full px-3 py-2 rounded-lg border text-sm mt-1 bg-background" /></div>
                     <div className="grid grid-cols-2 gap-3">
                       <WorksheetFieldImpl label="Age" value={form.spouseAge} onChange={v => setForm(f => ({ ...f, spouseAge: v }))} testId="input-ws-spouse-age" prefix="" />
-                      <WorksheetFieldImpl label="Annual Income" value={form.spouseAnnualIncome} onChange={v => setForm(f => ({ ...f, spouseAnnualIncome: v }))} testId="input-ws-spouse-income" />
+                      <WorksheetFieldImpl label={t.insurance.annualIncome} value={form.spouseAnnualIncome} onChange={v => setForm(f => ({ ...f, spouseAnnualIncome: v }))} testId="input-ws-spouse-income" />
                     </div>
                   </div>
                 </div>
@@ -828,12 +828,12 @@ function buildDefaultFromNW() {
                   <div className="text-right"><span className="text-xs text-muted-foreground">Subtotal (A)</span><p className="font-bold text-red-600" data-testid="text-ws-subtotal-a">{fmt$(calc.subtotalA)}</p></div>
                 </div>
                 <div className="grid grid-cols-3 gap-4">
-                  <WorksheetFieldImpl label="Mortgage Balance" value={form.liabilities.mortgageBalance} onChange={v => updateLiabilities("mortgageBalance", v)} testId="input-ws-mortgage" />
-                  <WorksheetFieldImpl label="Car Loans" value={form.liabilities.carLoans} onChange={v => updateLiabilities("carLoans", v)} testId="input-ws-car-loans" />
-                  <WorksheetFieldImpl label="Lines of Credit" value={form.liabilities.linesOfCredit} onChange={v => updateLiabilities("linesOfCredit", v)} testId="input-ws-loc" />
-                  <WorksheetFieldImpl label="Credit Cards" value={form.liabilities.creditCards} onChange={v => updateLiabilities("creditCards", v)} testId="input-ws-credit-cards" />
-                  <WorksheetFieldImpl label="Final Expenses" value={form.liabilities.finalExpenses} onChange={v => updateLiabilities("finalExpenses", v)} testId="input-ws-final-expenses" />
-                  <WorksheetFieldImpl label="Emergency Fund" value={form.liabilities.emergencyFund} onChange={v => updateLiabilities("emergencyFund", v)} testId="input-ws-emergency" />
+                  <WorksheetFieldImpl label={t.insurance.mortgageBalance} value={form.liabilities.mortgageBalance} onChange={v => updateLiabilities("mortgageBalance", v)} testId="input-ws-mortgage" />
+                  <WorksheetFieldImpl label={t.netWorth.carLoans} value={form.liabilities.carLoans} onChange={v => updateLiabilities("carLoans", v)} testId="input-ws-car-loans" />
+                  <WorksheetFieldImpl label={t.netWorth.linesOfCredit} value={form.liabilities.linesOfCredit} onChange={v => updateLiabilities("linesOfCredit", v)} testId="input-ws-loc" />
+                  <WorksheetFieldImpl label={t.netWorth.creditCards} value={form.liabilities.creditCards} onChange={v => updateLiabilities("creditCards", v)} testId="input-ws-credit-cards" />
+                  <WorksheetFieldImpl label={t.insurance.finalExpenses} value={form.liabilities.finalExpenses} onChange={v => updateLiabilities("finalExpenses", v)} testId="input-ws-final-expenses" />
+                  <WorksheetFieldImpl label={t.insurance.emergencyFund2} value={form.liabilities.emergencyFund} onChange={v => updateLiabilities("emergencyFund", v)} testId="input-ws-emergency" />
                 </div>
               </section>
               <section>
@@ -842,10 +842,10 @@ function buildDefaultFromNW() {
                   <div className="text-right"><span className="text-xs text-muted-foreground">Subtotal (B)</span><p className="font-bold text-amber-600">{fmt$(calc.subtotalB)}</p></div>
                 </div>
                 <div className="grid grid-cols-4 gap-4">
-                  <WorksheetFieldImpl label="Education Fund" value={form.legacy.educationFund} onChange={v => updateLegacy("educationFund", v)} testId="input-ws-edu" />
-                  <WorksheetFieldImpl label="Legacy Fund for Children" value={form.legacy.legacyFundForChildren} onChange={v => updateLegacy("legacyFundForChildren", v)} testId="input-ws-legacy" />
-                  <WorksheetFieldImpl label="Charitable Bequest" value={form.legacy.charitableBequest} onChange={v => updateLegacy("charitableBequest", v)} testId="input-ws-charity" />
-                  <WorksheetFieldImpl label="Other" value={form.legacy.other} onChange={v => updateLegacy("other", v)} testId="input-ws-legacy-other" />
+                  <WorksheetFieldImpl label={t.insurance.educationFund} value={form.legacy.educationFund} onChange={v => updateLegacy("educationFund", v)} testId="input-ws-edu" />
+                  <WorksheetFieldImpl label={t.insurance.legacyFund} value={form.legacy.legacyFundForChildren} onChange={v => updateLegacy("legacyFundForChildren", v)} testId="input-ws-legacy" />
+                  <WorksheetFieldImpl label={t.insurance.charitableBequest} value={form.legacy.charitableBequest} onChange={v => updateLegacy("charitableBequest", v)} testId="input-ws-charity" />
+                  <WorksheetFieldImpl label={t.common.other} value={form.legacy.other} onChange={v => updateLegacy("other", v)} testId="input-ws-legacy-other" />
                 </div>
               </section>
 
@@ -854,16 +854,16 @@ function buildDefaultFromNW() {
                 <div className="grid grid-cols-2 gap-6">
                   <div className="space-y-3 p-4 border border-border rounded-xl">
                     <div className="flex justify-between"><p className="text-sm font-semibold text-primary">Primary (C)</p><p className="font-bold text-blue-600">{fmt$(calc.subtotalC)}</p></div>
-                    <WorksheetFieldImpl label="Income Replacement %" value={form.primaryIncome.replacementPct} onChange={v => setForm(f => ({ ...f, primaryIncome: { ...f.primaryIncome, replacementPct: v } }))} testId="input-ws-primary-rep-pct" prefix="%" />
-                    <WorksheetFieldImpl label="CPP/QPP Survivor Benefit ($/mo)" value={form.primaryIncome.cppSurvivorBenefit} onChange={v => setForm(f => ({ ...f, primaryIncome: { ...f.primaryIncome, cppSurvivorBenefit: v } }))} testId="input-ws-primary-cpp" />
-                    <WorksheetFieldImpl label="Target Age (Income Needed To)" value={form.primaryIncome.targetAge} onChange={v => setForm(f => ({ ...f, primaryIncome: { ...f.primaryIncome, targetAge: v } }))} testId="input-ws-primary-target-age" prefix="" />
+                    <WorksheetFieldImpl label={t.insurance.incomeReplacePct} value={form.primaryIncome.replacementPct} onChange={v => setForm(f => ({ ...f, primaryIncome: { ...f.primaryIncome, replacementPct: v } }))} testId="input-ws-primary-rep-pct" prefix="%" />
+                    <WorksheetFieldImpl label={t.insurance.cppSurvivorBenefit} value={form.primaryIncome.cppSurvivorBenefit} onChange={v => setForm(f => ({ ...f, primaryIncome: { ...f.primaryIncome, cppSurvivorBenefit: v } }))} testId="input-ws-primary-cpp" />
+                    <WorksheetFieldImpl label={t.insurance.targetAge} value={form.primaryIncome.targetAge} onChange={v => setForm(f => ({ ...f, primaryIncome: { ...f.primaryIncome, targetAge: v } }))} testId="input-ws-primary-target-age" prefix="" />
                     <p className="text-xs text-muted-foreground">Years of income: {calc.primaryYears}</p>
                   </div>
                   <div className="space-y-3 p-4 border border-border rounded-xl">
                     <div className="flex justify-between"><p className="text-sm font-semibold text-purple-600">Spouse (D)</p><p className="font-bold text-blue-600">{fmt$(calc.subtotalD)}</p></div>
-                    <WorksheetFieldImpl label="Income Replacement %" value={form.spouseIncome.replacementPct} onChange={v => setForm(f => ({ ...f, spouseIncome: { ...f.spouseIncome, replacementPct: v } }))} testId="input-ws-spouse-rep-pct" prefix="%" />
-                    <WorksheetFieldImpl label="CPP/QPP Survivor Benefit ($/mo)" value={form.spouseIncome.cppSurvivorBenefit} onChange={v => setForm(f => ({ ...f, spouseIncome: { ...f.spouseIncome, cppSurvivorBenefit: v } }))} testId="input-ws-spouse-cpp" />
-                    <WorksheetFieldImpl label="Target Age (Income Needed To)" value={form.spouseIncome.targetAge} onChange={v => setForm(f => ({ ...f, spouseIncome: { ...f.spouseIncome, targetAge: v } }))} testId="input-ws-spouse-target-age" prefix="" />
+                    <WorksheetFieldImpl label={t.insurance.incomeReplacePct} value={form.spouseIncome.replacementPct} onChange={v => setForm(f => ({ ...f, spouseIncome: { ...f.spouseIncome, replacementPct: v } }))} testId="input-ws-spouse-rep-pct" prefix="%" />
+                    <WorksheetFieldImpl label={t.insurance.cppSurvivorBenefit} value={form.spouseIncome.cppSurvivorBenefit} onChange={v => setForm(f => ({ ...f, spouseIncome: { ...f.spouseIncome, cppSurvivorBenefit: v } }))} testId="input-ws-spouse-cpp" />
+                    <WorksheetFieldImpl label={t.insurance.targetAge} value={form.spouseIncome.targetAge} onChange={v => setForm(f => ({ ...f, spouseIncome: { ...f.spouseIncome, targetAge: v } }))} testId="input-ws-spouse-target-age" prefix="" />
                     <p className="text-xs text-muted-foreground">Years of income: {calc.spouseYears}</p>
                   </div>
                 </div>
@@ -874,19 +874,19 @@ function buildDefaultFromNW() {
                 <div className="grid grid-cols-2 gap-6">
                   <div className="space-y-3 p-4 border border-border rounded-xl">
                     <div className="flex justify-between"><p className="text-sm font-semibold text-primary">Primary (E)</p><p className="font-bold text-green-600">{fmt$(calc.subtotalE)}</p></div>
-                    <WorksheetFieldImpl label="Liquid Savings" value={form.primaryAssets.liquidSavings} onChange={v => setForm(f => ({ ...f, primaryAssets: { ...f.primaryAssets, liquidSavings: v } }))} testId="input-ws-primary-liquid" />
+                    <WorksheetFieldImpl label={t.insurance.liquidSavings} value={form.primaryAssets.liquidSavings} onChange={v => setForm(f => ({ ...f, primaryAssets: { ...f.primaryAssets, liquidSavings: v } }))} testId="input-ws-primary-liquid" />
                     <AssetRowImpl label="RRSPs" value={form.primaryAssets.rrsps} onValueChange={v => setForm(f => ({ ...f, primaryAssets: { ...f.primaryAssets, rrsps: v } }))} useIt={form.primaryAssets.rrspsUse} onToggle={() => setForm(f => ({ ...f, primaryAssets: { ...f.primaryAssets, rrspsUse: !f.primaryAssets.rrspsUse } }))} testId="primary-rrsp" />
                     <AssetRowImpl label="Non-Registered" value={form.primaryAssets.nonRegistered} onValueChange={v => setForm(f => ({ ...f, primaryAssets: { ...f.primaryAssets, nonRegistered: v } }))} useIt={form.primaryAssets.nonRegisteredUse} onToggle={() => setForm(f => ({ ...f, primaryAssets: { ...f.primaryAssets, nonRegisteredUse: !f.primaryAssets.nonRegisteredUse } }))} testId="primary-nonreg" />
                     <AssetRowImpl label="TFSA" value={form.primaryAssets.tfsa} onValueChange={v => setForm(f => ({ ...f, primaryAssets: { ...f.primaryAssets, tfsa: v } }))} useIt={form.primaryAssets.tfsaUse} onToggle={() => setForm(f => ({ ...f, primaryAssets: { ...f.primaryAssets, tfsaUse: !f.primaryAssets.tfsaUse } }))} testId="primary-tfsa" />
-                    <WorksheetFieldImpl label="Other" value={form.primaryAssets.other} onChange={v => setForm(f => ({ ...f, primaryAssets: { ...f.primaryAssets, other: v } }))} testId="input-ws-primary-other-asset" />
+                    <WorksheetFieldImpl label={t.common.other} value={form.primaryAssets.other} onChange={v => setForm(f => ({ ...f, primaryAssets: { ...f.primaryAssets, other: v } }))} testId="input-ws-primary-other-asset" />
                   </div>
                   <div className="space-y-3 p-4 border border-border rounded-xl">
                     <div className="flex justify-between"><p className="text-sm font-semibold text-purple-600">Spouse (F)</p><p className="font-bold text-green-600">{fmt$(calc.subtotalF)}</p></div>
-                    <WorksheetFieldImpl label="Liquid Savings" value={form.spouseAssets.liquidSavings} onChange={v => setForm(f => ({ ...f, spouseAssets: { ...f.spouseAssets, liquidSavings: v } }))} testId="input-ws-spouse-liquid" />
+                    <WorksheetFieldImpl label={t.insurance.liquidSavings} value={form.spouseAssets.liquidSavings} onChange={v => setForm(f => ({ ...f, spouseAssets: { ...f.spouseAssets, liquidSavings: v } }))} testId="input-ws-spouse-liquid" />
                     <AssetRowImpl label="RRSPs" value={form.spouseAssets.rrsps} onValueChange={v => setForm(f => ({ ...f, spouseAssets: { ...f.spouseAssets, rrsps: v } }))} useIt={form.spouseAssets.rrspsUse} onToggle={() => setForm(f => ({ ...f, spouseAssets: { ...f.spouseAssets, rrspsUse: !f.spouseAssets.rrspsUse } }))} testId="spouse-rrsp" />
                     <AssetRowImpl label="Non-Registered" value={form.spouseAssets.nonRegistered} onValueChange={v => setForm(f => ({ ...f, spouseAssets: { ...f.spouseAssets, nonRegistered: v } }))} useIt={form.spouseAssets.nonRegisteredUse} onToggle={() => setForm(f => ({ ...f, spouseAssets: { ...f.spouseAssets, nonRegisteredUse: !f.spouseAssets.nonRegisteredUse } }))} testId="spouse-nonreg" />
                     <AssetRowImpl label="TFSA" value={form.spouseAssets.tfsa} onValueChange={v => setForm(f => ({ ...f, spouseAssets: { ...f.spouseAssets, tfsaUse: !f.spouseAssets.tfsaUse } }))} useIt={form.spouseAssets.tfsaUse} onToggle={() => setForm(f => ({ ...f, spouseAssets: { ...f.spouseAssets, tfsaUse: !f.spouseAssets.tfsaUse } }))} testId="spouse-tfsa" />
-                    <WorksheetFieldImpl label="Other" value={form.spouseAssets.other} onChange={v => setForm(f => ({ ...f, spouseAssets: { ...f.spouseAssets, other: v } }))} testId="input-ws-spouse-other-asset" />
+                    <WorksheetFieldImpl label={t.common.other} value={form.spouseAssets.other} onChange={v => setForm(f => ({ ...f, spouseAssets: { ...f.spouseAssets, other: v } }))} testId="input-ws-spouse-other-asset" />
                   </div>
                 </div>
               </section>
@@ -898,7 +898,7 @@ function buildDefaultFromNW() {
                     <p className="text-sm font-semibold mb-2">Primary: A + B + C - E</p>
                     <p className="text-2xl font-bold mt-2" data-testid="text-ws-primary-total">{fmt$(calc.primaryNeed)}</p>
                     <div className="mt-3 space-y-2">
-                      <WorksheetFieldImpl label="Existing Life Coverage" value={form.primaryExistingCoverage} onChange={v => setForm(f => ({ ...f, primaryExistingCoverage: v }))} testId="input-ws-primary-existing" />
+                      <WorksheetFieldImpl label={t.insurance.existingLifeCoverage} value={form.primaryExistingCoverage} onChange={v => setForm(f => ({ ...f, primaryExistingCoverage: v }))} testId="input-ws-primary-existing" />
                       <p className={`text-lg font-bold ${calc.primaryNet > 0 ? "text-red-600" : "text-green-600"}`} data-testid="text-ws-primary-net-need">Net Need: {fmt$(calc.primaryNet)}</p>
                     </div>
                   </div>
@@ -906,7 +906,7 @@ function buildDefaultFromNW() {
                     <p className="text-sm font-semibold mb-2">Spouse: A + B + D - F</p>
                     <p className="text-2xl font-bold mt-2" data-testid="text-ws-spouse-total">{fmt$(calc.spouseNeed)}</p>
                     <div className="mt-3 space-y-2">
-                      <WorksheetFieldImpl label="Existing Life Coverage" value={form.spouseExistingCoverage} onChange={v => setForm(f => ({ ...f, spouseExistingCoverage: v }))} testId="input-ws-spouse-existing" />
+                      <WorksheetFieldImpl label={t.insurance.existingLifeCoverage} value={form.spouseExistingCoverage} onChange={v => setForm(f => ({ ...f, spouseExistingCoverage: v }))} testId="input-ws-spouse-existing" />
                       <p className={`text-lg font-bold ${calc.spouseNet > 0 ? "text-red-600" : "text-green-600"}`} data-testid="text-ws-spouse-net-need">Net Need: {fmt$(calc.spouseNet)}</p>
                     </div>
                   </div>
@@ -917,14 +917,14 @@ function buildDefaultFromNW() {
                 <div className="grid grid-cols-2 gap-6">
                   <div className="space-y-3 p-4 border border-border rounded-xl">
                     <p className="text-sm font-semibold text-primary">{t.common.primary}</p>
-                    <WorksheetFieldImpl label="Coverage Amount Purchased" value={form.primaryCoveragePurchased} onChange={v => setForm(f => ({ ...f, primaryCoveragePurchased: v }))} testId="input-ws-primary-purchased" />
+                    <WorksheetFieldImpl label={t.insurance.coverageAmountPurchased} value={form.primaryCoveragePurchased} onChange={v => setForm(f => ({ ...f, primaryCoveragePurchased: v }))} testId="input-ws-primary-purchased" />
                     <div><label className="text-xs font-medium text-muted-foreground">Acknowledged Shortfall</label>
                     <p className="text-sm font-bold text-red-600 mt-1">{fmt$(Math.max(0, calc.primaryNet - v(form.primaryCoveragePurchased)))}</p></div>
                     <div><label className="text-xs font-medium text-muted-foreground">Signature (Printed Name)</label><input type="text" value={form.primarySignature} onChange={e => setForm(f => ({ ...f, primarySignature: e.target.value }))} className="w-full px-3 py-2 rounded-lg border text-sm mt-1 bg-background" /></div>
                   </div>
                   <div className="space-y-3 p-4 border border-border rounded-xl">
                     <p className="text-sm font-semibold text-purple-600">{t.common.spouse}</p>
-                    <WorksheetFieldImpl label="Coverage Amount Purchased" value={form.spouseCoveragePurchased} onChange={v => setForm(f => ({ ...f, spouseCoveragePurchased: v }))} testId="input-ws-spouse-purchased" />
+                    <WorksheetFieldImpl label={t.insurance.coverageAmountPurchased} value={form.spouseCoveragePurchased} onChange={v => setForm(f => ({ ...f, spouseCoveragePurchased: v }))} testId="input-ws-spouse-purchased" />
                     <div><label className="text-xs font-medium text-muted-foreground">Acknowledged Shortfall</label>
                     <p className="text-sm font-bold text-red-600 mt-1">{fmt$(Math.max(0, calc.spouseNet - v(form.spouseCoveragePurchased)))}</p></div>
                     <div><label className="text-xs font-medium text-muted-foreground">Signature (Printed Name)</label><input type="text" value={form.spouseSignature} onChange={e => setForm(f => ({ ...f, spouseSignature: e.target.value }))} className="w-full px-3 py-2 rounded-lg border text-sm mt-1 bg-background" /></div>
@@ -949,7 +949,7 @@ function buildDefaultFromNW() {
                 <div className="flex gap-3">
                   <button type="button" onClick={() => setShowWorksheet(false)} data-testid="button-ws-cancel" className="px-6 py-3 rounded-xl font-semibold text-muted-foreground hover:bg-muted">{t.common.cancel}</button>
                   <button type="submit" disabled={createWorksheet.isPending} data-testid="button-ws-save" className="px-8 py-3 rounded-xl font-semibold bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">
-                    {createWorksheet.isPending ? <><Loader2 className="w-4 h-4 animate-spin inline mr-2" />Saving...</> : viewingId ? "Update Analysis" : "Save Analysis"}
+                    {createWorksheet.isPending ? <><Loader2 className="w-4 h-4 animate-spin inline mr-2" />{t.common.saving2}</> : viewingId ? "Update Analysis" : {t.common.saveAnalysis2}}
                   </button>
                 </div>
               </div>
@@ -1021,7 +1021,7 @@ function RESPTab({ clientId, planId }: { clientId: number; planId: number | null
             <form onSubmit={handleSubmit} className="space-y-4" data-testid="form-fp-resp">
               <div className="grid grid-cols-2 gap-4">
                 <div><label className="text-sm font-semibold">Child Name</label><input required value={form.childName} onChange={e => setForm({ ...form, childName: e.target.value })} data-testid="input-fp-resp-name" className="w-full px-3 py-2 rounded-xl border mt-1" /></div>
-                <div><label className="text-sm font-semibold">Account Type</label><select value={form.accountType} onChange={e => setForm({ ...form, accountType: e.target.value })} data-testid="select-fp-resp-type" className="w-full px-3 py-2 rounded-xl border mt-1"><option value="RESP">RESP</option><option value="RDSP">RDSP</option><option value="Other">Other</option></select></div>
+                <div><label className="text-sm font-semibold">Account Type</label><select value={form.accountType} onChange={e => setForm({ ...form, accountType: e.target.value })} data-testid="select-fp-resp-type" className="w-full px-3 py-2 rounded-xl border mt-1"><option value="RESP">RESP</option><option value="RDSP">RDSP</option><option value={t.common.other}>{t.common.other}</option></select></div>
               </div>
               <div className="grid grid-cols-3 gap-4">
                 <div><label className="text-sm font-semibold">Current Age</label><input type="number" required value={form.childAge} onChange={e => setForm({ ...form, childAge: e.target.value })} data-testid="input-fp-resp-age" className="w-full px-3 py-2 rounded-xl border mt-1" /></div>
@@ -1036,7 +1036,7 @@ function RESPTab({ clientId, planId }: { clientId: number; planId: number | null
               <div><label className="text-sm font-semibold">{t.common.notes}</label><textarea value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} data-testid="input-fp-resp-notes" className="w-full px-3 py-2 rounded-xl border mt-1 min-h-[80px]" /></div>
               <div className="pt-4 flex justify-end space-x-3">
                 <button type="button" onClick={() => setShowAdd(false)} className="px-6 py-3 rounded-xl font-semibold text-muted-foreground hover:bg-muted">{t.common.cancel}</button>
-                <button type="submit" disabled={createSaving.isPending} data-testid="button-fp-submit-resp" className="px-6 py-3 rounded-xl font-semibold bg-primary text-primary-foreground">{createSaving.isPending ? "Adding..." : "Add Plan"}</button>
+                <button type="submit" disabled={createSaving.isPending} data-testid="button-fp-submit-resp" className="px-6 py-3 rounded-xl font-semibold bg-primary text-primary-foreground">{createSaving.isPending ? t.common.adding : {t.plan.addPlan}}</button>
               </div>
             </form>
           </div>
@@ -1053,7 +1053,7 @@ function DebtTab({ clientId, planId }: { clientId: number; planId: number | null
   const createDebt = useCreateDebtEntry();
   const deleteDebt = useDeleteDebtEntry(clientId);
   const [showAdd, setShowAdd] = useState(false);
-  const [form, setForm] = useState({ name: "", category: "Credit Card", balance: "", interestRate: "", minimumPayment: "", term: "", notes: "" });
+  const [form, setForm] = useState({ name: "", category: {t.netWorth.creditCard2}, balance: "", interestRate: "", minimumPayment: "", term: "", notes: "" });
   const categories = ["Mortgage", "Car Loan", "Student Loan", "Credit Card", "Personal Loan", "Line of Credit", "Other"];
   const totalDebt = (debts as any[]).reduce((s, d) => s + parseFloat(d.balance || "0"), 0);
   const avgRate = debts.length > 0 ? (debts as any[]).reduce((s, d) => s + parseFloat(d.interestRate || "0"), 0) / debts.length : 0;
@@ -1061,7 +1061,7 @@ function DebtTab({ clientId, planId }: { clientId: number; planId: number | null
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     createDebt.mutate({ clientId, data: { name: form.name, category: form.category, balance: form.balance, interestRate: form.interestRate, minimumPayment: form.minimumPayment || "0", term: form.term || undefined, notes: form.notes || undefined } },
-      { onSuccess: () => { setShowAdd(false); setForm({ name: "", category: "Credit Card", balance: "", interestRate: "", minimumPayment: "", term: "", notes: "" }); } });
+      { onSuccess: () => { setShowAdd(false); setForm({ name: "", category: {t.netWorth.creditCard2}, balance: "", interestRate: "", minimumPayment: "", term: "", notes: "" }); } });
   };
 
   return (
@@ -1073,7 +1073,7 @@ function DebtTab({ clientId, planId }: { clientId: number; planId: number | null
         </button>
       </div>
       <div className="grid grid-cols-3 gap-4">
-        <div className="border border-red-200 rounded-2xl p-5 bg-red-50/50" data-testid="fp-total-debt"><p className="text-xs font-semibold text-red-500 uppercase tracking-wider">Total Debt</p><p className="text-2xl font-bold text-red-600 mt-1">{fmt$(totalDebt)}</p></div>
+        <div className="border border-red-200 rounded-2xl p-5 bg-red-50/50" data-testid="fp-total-debt"><p className="text-xs font-semibold text-red-500 uppercase tracking-wider">{t.plan.totalDebt}</p><p className="text-2xl font-bold text-red-600 mt-1">{fmt$(totalDebt)}</p></div>
         <div className="border border-border rounded-2xl p-5" data-testid="fp-debt-accounts"><p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Accounts</p><p className="text-2xl font-bold mt-1">{debts.length}</p></div>
         <div className="border border-orange-200 rounded-2xl p-5 bg-orange-50/50" data-testid="fp-avg-rate"><p className="text-xs font-semibold text-orange-600 uppercase tracking-wider">Avg Interest Rate</p><p className="text-2xl font-bold text-orange-700 mt-1">{avgRate.toFixed(1)}%</p></div>
       </div>
@@ -1120,7 +1120,7 @@ function DebtTab({ clientId, planId }: { clientId: number; planId: number | null
               </div>
               <div className="pt-4 flex justify-end space-x-3">
                 <button type="button" onClick={() => setShowAdd(false)} className="px-6 py-3 rounded-xl font-semibold text-muted-foreground hover:bg-muted">{t.common.cancel}</button>
-                <button type="submit" disabled={createDebt.isPending} data-testid="button-fp-submit-debt" className="px-6 py-3 rounded-xl font-semibold bg-primary text-primary-foreground">{createDebt.isPending ? "Adding..." : "Add Debt"}</button>
+                <button type="submit" disabled={createDebt.isPending} data-testid="button-fp-submit-debt" className="px-6 py-3 rounded-xl font-semibold bg-primary text-primary-foreground">{createDebt.isPending ? t.common.adding : t.debt.addDebt}</button>
               </div>
             </form>
           </div>
@@ -1174,7 +1174,7 @@ function TaxNotesPanel({ clientId }: { clientId: number }) {
   const [showAdd, setShowAdd] = useState(false);
   const [form, setForm] = useState({
     taxYear: String(new Date().getFullYear()),
-    category: "General",
+    category: {t.common.general},
     title: "",
     content: "",
   });
@@ -1206,7 +1206,7 @@ function TaxNotesPanel({ clientId }: { clientId: number }) {
       {
         onSuccess: () => {
           setShowAdd(false);
-          setForm({ taxYear: String(new Date().getFullYear()), category: "General", title: "", content: "" });
+          setForm({ taxYear: String(new Date().getFullYear()), category: {t.common.general}, title: "", content: "" });
         },
       }
     );
@@ -1280,7 +1280,7 @@ function TaxNotesPanel({ clientId }: { clientId: number }) {
           </div>
           <div className="flex gap-2">
             <button type="submit" className="px-4 py-2 bg-primary text-primary-foreground rounded-xl text-sm font-semibold">
-              {createNote.isPending ? "Saving..." : "Save Note"}
+              {createNote.isPending ? t.common.saving2 : {t.common.saveNote}}
             </button>
             <button
               type="button"
@@ -1482,10 +1482,10 @@ function RrspRoomPanel({ clientId, prefill, person = "primary", primaryLabel = "
                 {r && (
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                     {[
-                      { label: "Available Room", value: r.summary?.totalAvailableRoom, color: "blue" },
-                      { label: "Tax Savings", value: r.marginalTaxSavings, color: "green" },
-                      { label: "Annual to Catch Up", value: r.catchUpStrategy?.annualContributionNeeded, color: "amber" },
-                      { label: "Refund / Year", value: r.catchUpStrategy?.projectedRefundPerYear, color: "purple" },
+                      { label: {t.plan.availableRoom}, value: r.summary?.totalAvailableRoom, color: "blue" },
+                      { label: {t.plan.taxSavings}, value: r.marginalTaxSavings, color: "green" },
+                      { label: {t.plan.annualToCatchUp}, value: r.catchUpStrategy?.annualContributionNeeded, color: "amber" },
+                      { label: {t.plan.refundYear}, value: r.catchUpStrategy?.projectedRefundPerYear, color: "purple" },
                     ].map(c => (
                       <div key={c.label} className={`bg-${c.color}-50 rounded-xl p-3`}>
                         <p className={`text-[10px] font-bold text-${c.color}-600 uppercase`}>{c.label}</p>
@@ -1656,9 +1656,9 @@ function TfsaRoomPanel({ clientId, prefill, person = "primary", primaryLabel = "
                 {r && (
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                     {[
-                      { label: "Available Room", value: r.summary?.totalAvailableRoom, color: "teal" },
+                      { label: {t.plan.availableRoom}, value: r.summary?.totalAvailableRoom, color: "teal" },
                       { label: "30yr TFSA Value", value: r.thirtyYearProjection?.tfsaBalanceFinal, color: "green" },
-                      { label: "TFSA Advantage", value: r.thirtyYearProjection?.tfsaAdvantage, color: "blue" },
+                      { label: {t.plan.tfsaAdvantage}, value: r.thirtyYearProjection?.tfsaAdvantage, color: "blue" },
                     ].map(c => (
                       <div key={c.label} className={`bg-${c.color}-50 rounded-xl p-3`}>
                         <p className={`text-[10px] font-bold text-${c.color}-600 uppercase`}>{c.label}</p>
@@ -1948,10 +1948,10 @@ function TaxProjectionPanel({ clientId, prefillPrimary, prefillSpouse, person = 
             const s = activeAnalysis.resultData.summary;
             return (
               <div className="grid grid-cols-4 gap-4">
-                <Metric label="Lifetime Tax" value={fmt$(s.totalLifetimeTax)} tone="text-red-600" />
-                <Metric label="Effective Rate" value={fmtPct(s.averageEffectiveRate)} tone="text-orange-600" />
-                <Metric label="Final Wealth" value={fmt$(s.projectedFinalWealth)} tone="text-emerald-600" />
-                <Metric label="Success" value={fmtPct(s.successProbability)} tone="text-blue-600" />
+                <Metric label={t.plan.lifetimeTax2} value={fmt$(s.totalLifetimeTax)} tone="text-red-600" />
+                <Metric label={t.plan.effectiveRate} value={fmtPct(s.averageEffectiveRate)} tone="text-orange-600" />
+                <Metric label={t.plan.finalWealth} value={fmt$(s.projectedFinalWealth)} tone="text-emerald-600" />
+                <Metric label={t.plan.success2} value={fmtPct(s.successProbability)} tone="text-blue-600" />
               </div>
             );
           })()}
@@ -1968,9 +1968,9 @@ function TaxProjectionPanel({ clientId, prefillPrimary, prefillSpouse, person = 
                   {baseAnalysis.label} vs {compareAnalysis.label}
                 </p>
                 <div className="grid grid-cols-3 gap-4">
-                  <Metric label="Tax Savings" value={(taxSavings >= 0 ? "-" : "+") + fmt$(Math.abs(taxSavings))} tone={taxSavings >= 0 ? "text-emerald-600" : "text-red-600"} />
-                  <Metric label="Wealth Difference" value={(wealthDiff >= 0 ? "+" : "") + fmt$(wealthDiff)} tone={wealthDiff >= 0 ? "text-emerald-600" : "text-red-600"} />
-                  <Metric label="Rate Difference" value={`${((b.averageEffectiveRate - o.averageEffectiveRate) * 100).toFixed(1)}pp`} tone="text-blue-600" />
+                  <Metric label={t.plan.taxSavings} value={(taxSavings >= 0 ? "-" : "+") + fmt$(Math.abs(taxSavings))} tone={taxSavings >= 0 ? "text-emerald-600" : "text-red-600"} />
+                  <Metric label={t.plan.wealthDifference} value={(wealthDiff >= 0 ? "+" : "") + fmt$(wealthDiff)} tone={wealthDiff >= 0 ? "text-emerald-600" : "text-red-600"} />
+                  <Metric label={t.plan.rateDifference} value={`${((b.averageEffectiveRate - o.averageEffectiveRate) * 100).toFixed(1)}pp`} tone="text-blue-600" />
                 </div>
               </div>
             );
@@ -2063,11 +2063,11 @@ function CapitalGainsPanel({ clientId, client, person = "primary" }: {
 
   const provinces = ["ON","BC","AB","QC","MB","SK","NS","NB","PE","NL","YT","NT","NU"];
   const ASSET_TYPES = [
-    { key: "stock",      label: "Stock / ETF" },
-    { key: "realestate", label: "Real Estate" },
-    { key: "smallbiz",   label: "Small Business Shares" },
-    { key: "farmfish",   label: "Farm / Fishing Property" },
-    { key: "other",      label: "Other" },
+    { key: "stock",      label: {t.plan.stockEtf} },
+    { key: "realestate", label: {t.netWorth.realEstate2} },
+    { key: "smallbiz",   label: {t.plan.smallBusinessShares} },
+    { key: "farmfish",   label: {t.plan.farmFishing} },
+    { key: "other",      label: {t.common.other} },
   ];
   const LCGE_TYPES = ["smallbiz", "farmfish"];
   const LCGE_LIMIT = 1250000;
@@ -2294,10 +2294,10 @@ function CapitalGainsPanel({ clientId, client, person = "primary" }: {
               {(totalGain > 0 || totalLoss > 0) && (
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                   {[
-                    { label: "Gross Gains",        value: totalGain,    color: "text-green-700",  bg: "bg-green-50" },
+                    { label: {t.plan.grossGains},        value: totalGain,    color: "text-green-700",  bg: "bg-green-50" },
                     { label: "Losses + Carry-Fwd", value: totalLoss + Number(form.carryForwardLoss || 0), color: "text-red-600", bg: "bg-red-50" },
-                    { label: "LCGE Sheltered",     value: lcgeSheltered, color: "text-blue-700",  bg: "bg-blue-50" },
-                    { label: "Est. Tax Owing",     value: estTax,       color: "text-orange-700", bg: "bg-orange-50" },
+                    { label: {t.plan.lcgeSheltered},     value: lcgeSheltered, color: "text-blue-700",  bg: "bg-blue-50" },
+                    { label: {t.plan.estTaxOwing},     value: estTax,       color: "text-orange-700", bg: "bg-orange-50" },
                   ].map(c => (
                     <div key={c.label} className={`${c.bg} rounded-xl p-3`}>
                       <p className="text-[10px] font-bold text-gray-500 uppercase">{c.label}</p>
@@ -2349,9 +2349,9 @@ function CapitalGainsPanel({ clientId, client, person = "primary" }: {
                 </div>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                   {[
-                    { label: "Gross Gains",    value: gains, color: "text-green-700",  bg: "bg-green-50" },
-                    { label: "Net Losses",     value: losses, color: "text-red-600",   bg: "bg-red-50" },
-                    { label: "LCGE Sheltered", value: lcge,  color: "text-blue-700",   bg: "bg-blue-50" },
+                    { label: {t.plan.grossGains},    value: gains, color: "text-green-700",  bg: "bg-green-50" },
+                    { label: {t.plan.netLosses},     value: losses, color: "text-red-600",   bg: "bg-red-50" },
+                    { label: {t.plan.lcgeSheltered}, value: lcge,  color: "text-blue-700",   bg: "bg-blue-50" },
                     { label: "Est. Tax",       value: tax,   color: "text-orange-700", bg: "bg-orange-50" },
                   ].map(c => (
                     <div key={c.label} className={`${c.bg} rounded-xl p-3`}>
@@ -2668,13 +2668,13 @@ export function EstateNotesTab({ clientId, planId, client }: { clientId: number;
   const createNote = useCreateEstatePlanningNote();
   const deleteNote = useDeleteEstatePlanningNote(clientId);
   const [showAdd, setShowAdd] = useState(false);
-  const [form, setForm] = useState({ category: "Will", title: "", content: "" });
+  const [form, setForm] = useState({ category: {t.plan.will}, title: "", content: "" });
   const categories = ["Will", "Power of Attorney", "Trust", "Beneficiary Designations", "Estate Tax", "Succession Planning", "Charitable Giving", "Other"];
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     createNote.mutate({ clientId, data: { category: form.category, title: form.title, content: form.content } },
-      { onSuccess: () => { setShowAdd(false); setForm({ category: "Will", title: "", content: "" }); } });
+      { onSuccess: () => { setShowAdd(false); setForm({ category: {t.plan.will}, title: "", content: "" }); } });
   };
 
   return (
@@ -2698,7 +2698,7 @@ export function EstateNotesTab({ clientId, planId, client }: { clientId: number;
         ))}
       </div>
       {notes.length === 0 && <div className="text-center py-12 text-muted-foreground border border-dashed border-border rounded-2xl">No estate planning notes yet.</div>}
-      <EstateScorecard notes={notes as any[]} province={(assumptions as any[]).find(a => a.scenario === "Moderate")?.province} />
+      <EstateScorecard notes={notes as any[]} province={(assumptions as any[]).find(a => a.scenario === t.common.medium)?.province} />
       {showAdd && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl w-full max-w-md shadow-2xl p-6">
@@ -2713,7 +2713,7 @@ export function EstateNotesTab({ clientId, planId, client }: { clientId: number;
               <div><label className="text-sm font-semibold">Content</label><textarea required value={form.content} onChange={e => setForm({ ...form, content: e.target.value })} data-testid="input-fp-estate-content" className="w-full px-3 py-2 rounded-xl border mt-1 min-h-[120px]" /></div>
               <div className="pt-4 flex justify-end space-x-3">
                 <button type="button" onClick={() => setShowAdd(false)} className="px-6 py-3 rounded-xl font-semibold text-muted-foreground hover:bg-muted">{t.common.cancel}</button>
-                <button type="submit" disabled={createNote.isPending} data-testid="button-fp-submit-estate" className="px-6 py-3 rounded-xl font-semibold bg-primary text-primary-foreground">{createNote.isPending ? "Adding..." : "Add Note"}</button>
+                <button type="submit" disabled={createNote.isPending} data-testid="button-fp-submit-estate" className="px-6 py-3 rounded-xl font-semibold bg-primary text-primary-foreground">{createNote.isPending ? t.common.adding : t.common.addNote}</button>
               </div>
             </form>
           </div>
@@ -2872,7 +2872,7 @@ const deleteSession = async (runId: string) => {
               <button
                 onClick={() => deleteSession(runId)}
                 className="p-1.5 hover:bg-red-50 rounded-lg shrink-0 mt-0.5"
-                title="Delete this session"
+                title={t.plan.deleteSession}
                 data-testid={`button-delete-session-${runId}`}
               >
                 <Trash2 className="w-4 h-4 text-red-400" />

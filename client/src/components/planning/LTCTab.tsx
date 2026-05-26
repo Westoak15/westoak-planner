@@ -514,7 +514,7 @@ export function LTCTab({ clientId, client, t = translations.en }: Props) {
                     value={`~${r.poolDuration.atFullRate.toFixed(1)} yrs`}
                     sub={`~${r.poolDuration.at80pctRate.toFixed(1)} yrs at 80% use`} />
                   <StatCard label={t.ltc.breakEvenAge}
-                    value={r.breakEvenAge < 95 ? `Age ${r.breakEvenAge}` : "Beyond 95"}
+                    value={r.breakEvenAge < 95 ? `Age ${r.breakEvenAge}` : {t.ltc.beyond95}}
                     sub={r.breakEvenAge < 95 ? `${r.breakEvenYears} yrs from now` : "Premiums < care cost"}
                     color={r.breakEvenAge < form.estClaimAge ? "#16a34a" : "#d97706"} />
                 </div>
@@ -555,10 +555,10 @@ export function LTCTab({ clientId, client, t = translations.en }: Props) {
                     <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">{t.ltc.selfInsureCost}</p>
                     <div className="space-y-2">
                       {[
-                        { label: "Daily care cost at claim", value: `$${Math.round(r.selfInsure.selectedLevelCost)}/day` },
-                        { label: "Annual care cost at claim", value: fmt$(r.selfInsure.totalCareCostAtClaim) + "/yr" },
+                        { label: {t.ltc.dailyCostAtClaim2}, value: `$${Math.round(r.selfInsure.selectedLevelCost)}/day` },
+                        { label: {t.ltc.annualCostAtClaim2}, value: fmt$(r.selfInsure.totalCareCostAtClaim) + "/yr" },
                         { label: `NPV today (${form.poolYears}-yr pool)`, value: fmt$(r.selfInsure.npvTodayAtPool), highlight: true },
-                        { label: "Elimination period cost", value: fmt$(r.eliminationCost), note: `${form.eliminationDays} days out-of-pocket` },
+                        { label: {t.ltc.eliminationCost2}, value: fmt$(r.eliminationCost), note: `${form.eliminationDays} days out-of-pocket` },
                       ].map((row, i) => (
                         <div key={i} className={`flex justify-between text-sm py-1 ${i < 3 ? "border-b border-gray-200" : ""}`}>
                           <span className="text-gray-500 text-xs">{row.label}</span>
@@ -576,10 +576,10 @@ export function LTCTab({ clientId, client, t = translations.en }: Props) {
                     <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">{t.ltc.insuranceCost}</p>
                     <div className="space-y-2">
                       {[
-                        { label: "Est. annual premium", value: fmt$(form.estAnnualPremium || Math.round(form.dailyBenefit * (form.currentAge < 55 ? 4.8 : form.currentAge < 60 ? 7.2 : 11.5))) + "/yr" },
+                        { label: {t.ltc.estAnnualPremium2}, value: fmt$(form.estAnnualPremium || Math.round(form.dailyBenefit * (form.currentAge < 55 ? 4.8 : form.currentAge < 60 ? 7.2 : 11.5))) + "/yr" },
                         { label: `Premiums to age ${form.estClaimAge}`, value: fmt$(r.totalPremiumsToClaimAge) },
-                        { label: "Premiums to age 90", value: fmt$(r.totalPremiumsToLife), highlight: true },
-                        { label: "Break-even vs self-insure", value: r.breakEvenAge < 95 ? `Age ${r.breakEvenAge}` : "Beyond 95" },
+                        { label: {t.ltc.premiumsToAge90}, value: fmt$(r.totalPremiumsToLife), highlight: true },
+                        { label: "Break-even vs self-insure", value: r.breakEvenAge < 95 ? `Age ${r.breakEvenAge}` : {t.ltc.beyond95} },
                       ].map((row, i) => (
                         <div key={i} className={`flex justify-between text-sm py-1 ${i < 3 ? "border-b border-gray-200" : ""}`}>
                           <span className="text-gray-500 text-xs">{row.label}</span>

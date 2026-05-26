@@ -98,7 +98,7 @@ export function ExpensesTab({ clientId, addTrigger = 0, t = translations.en }: {
   const [selected, setSelected] = useState<string | null>(null);
   const [hovered, setHovered] = useState<string | null>(null);
   const [kbIndex, setKbIndex] = useState(0);
-  const [form, setForm] = useState({ category: "Housing", description: "", monthlyAmount: "", isEssential: true, includeInRetirement: true, retirementAdjustmentPct: "100", notes: "" });
+  const [form, setForm] = useState({ category: {t.cashFlow.housing}, description: "", monthlyAmount: "", isEssential: true, includeInRetirement: true, retirementAdjustmentPct: "100", notes: "" });
 
   // Global A key trigger
   useEffect(() => {
@@ -154,7 +154,7 @@ export function ExpensesTab({ clientId, addTrigger = 0, t = translations.en }: {
   const biggestSaving = biggestCat ? biggestCat.total * 0.10 * 12 / 0.04 : 0;
 
   function resetForm() {
-    setForm({ category: "Housing", description: "", monthlyAmount: "", isEssential: true, includeInRetirement: true, retirementAdjustmentPct: "100", notes: "" });
+    setForm({ category: {t.cashFlow.housing}, description: "", monthlyAmount: "", isEssential: true, includeInRetirement: true, retirementAdjustmentPct: "100", notes: "" });
     setEditing(null); setShowForm(false);
   }
 
@@ -207,8 +207,8 @@ export function ExpensesTab({ clientId, addTrigger = 0, t = translations.en }: {
         </div>
         <div className="flex items-center gap-8">
           <Metric label={t.common.monthly}   value={`${fmt(totalMonthly)}/mo`} />
-          <Metric label="Retirement" value={`${fmt(retirementMonthly)}/mo`} />
-          <Metric label="Required Portfolio" value={fmt(requiredPortfolio)} color="text-amber-600" />
+          <Metric label={t.cashFlow.retirement2} value={`${fmt(retirementMonthly)}/mo`} />
+          <Metric label={t.cashFlow.requiredPortfolio} value={fmt(requiredPortfolio)} color="text-amber-600" />
           <button onClick={() => { resetForm(); setShowForm(true); }}
             className="flex items-center gap-1.5 bg-gradient-to-r from-blue-600 to-cyan-500 text-white text-sm font-semibold px-3 py-1.5 rounded-lg shadow-sm hover:shadow-md transition">
             <Plus className="w-3.5 h-3.5" /> Add
@@ -323,7 +323,7 @@ export function ExpensesTab({ clientId, addTrigger = 0, t = translations.en }: {
                 {selectedCat.items.map(e => (
                   <div key={e.id} className="flex items-center justify-between py-1.5 px-2 rounded hover:bg-slate-50 group">
                     <div className="flex items-center gap-2 min-w-0">
-                      <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${e.isEssential ? "bg-red-400" : "bg-blue-400"}`} title={e.isEssential ? "Essential" : "Discretionary"} />
+                      <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${e.isEssential ? "bg-red-400" : "bg-blue-400"}`} title={e.isEssential ? "Essential" : {t.common.discretionary}} />
                       <span className="text-sm text-slate-600 truncate">{e.description || selectedCat.cat}</span>
                       {e.includeInRetirement && e.retirementAdjustmentPct !== 100 && (
                         <span className="text-[10px] bg-amber-50 text-amber-600 px-1 py-0.5 rounded">{e.retirementAdjustmentPct}% ret.</span>
@@ -332,7 +332,7 @@ export function ExpensesTab({ clientId, addTrigger = 0, t = translations.en }: {
                     <div className="flex items-center gap-1.5 flex-shrink-0">
                       <span className="text-sm font-medium text-slate-700">{fmt(parseFloat(e.monthlyAmount))}</span>
                       <button onClick={() => startEdit(e)} className="p-0.5 opacity-0 group-hover:opacity-100 text-slate-400 hover:text-blue-600"><Pencil className="w-3 h-3" /></button>
-                      <button onClick={() => { if (confirm("Delete?")) deleteExp.mutate(e.id); }} className="p-0.5 opacity-0 group-hover:opacity-100 text-slate-400 hover:text-red-500"><Trash2 className="w-3 h-3" /></button>
+                      <button onClick={() => { if (confirm(t.common.deleteConfirm)) deleteExp.mutate(e.id); }} className="p-0.5 opacity-0 group-hover:opacity-100 text-slate-400 hover:text-red-500"><Trash2 className="w-3 h-3" /></button>
                     </div>
                   </div>
                 ))}

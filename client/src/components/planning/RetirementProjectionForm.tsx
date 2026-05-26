@@ -379,7 +379,7 @@ export function RetirementProjectionForm({ clientId, clientName, projection, onS
       sub: `RRSP ${fmt(calc.projRrsp)} · TFSA ${fmt(calc.projTfsa)} · Non-Reg ${fmt(calc.projNonReg)}`,
     },
     {
-      label: "Guaranteed income / yr at retirement",
+      label: {t.retirement.guaranteedIncomeAtRet},
       value: calc.govIncome > 0 ? fmt(calc.govIncome) : "—",
       sub: [
         cppNotStarted
@@ -393,16 +393,16 @@ export function RetirementProjectionForm({ clientId, clientName, projection, onS
       warn: cppNotStarted || oasNotStarted,
     },
     {
-      label: "Desired income",
+      label: {t.retirement.desiredIncomeLabel},
       value: fmt(calc.desiredToday),
       sub: calc.desiredAtRet > 0
         ? `Today · inflation-adjusted ${fmt(calc.desiredAtRet)}/yr at age ${f.retirementAge}`
-        : "Enter desired income above",
+        : {t.retirement.enterDesiredIncome},
     },
     {
-      label: calc.surplus >= 0 ? "Surplus / yr" : "Shortfall / yr",
+      label: calc.surplus >= 0 ? "Surplus / yr" : {t.retirement.shortfallYr},
       value: fmt(Math.abs(calc.surplus)),
-      sub:   calc.surplus >= 0 ? "Portfolio can sustain this" : "Annual gap to close",
+      sub:   calc.surplus >= 0 ? "Portfolio can sustain this" : {t.retirement.annualGap},
       color: surplusCol,
     },
   ];
@@ -808,12 +808,12 @@ export function RetirementTab({ clientId, clientName, person: personProp, t = tr
           <p className="text-xs font-semibold tracking-widest text-blue-600 uppercase mb-3">{t.retirement.householdCombined}</p>
           <div className="grid grid-cols-4 gap-3">
             {[
-              { label: "Combined portfolio", value: "$" + Math.round(combinedCalc.totalPortfolio).toLocaleString() },
-              { label: "Combined desired income", value: "$" + Math.round(combinedCalc.totalDesired).toLocaleString() + "/yr" },
-              { label: combinedCalc.totalSurplus >= 0 ? "Combined surplus" : "Combined shortfall",
+              { label: {t.retirement.combinedPortfolio}, value: "$" + Math.round(combinedCalc.totalPortfolio).toLocaleString() },
+              { label: {t.retirement.combinedDesired}, value: "$" + Math.round(combinedCalc.totalDesired).toLocaleString() + "/yr" },
+              { label: combinedCalc.totalSurplus >= 0 ? "Combined surplus" : {t.retirement.combinedShortfall},
                 value: "$" + Math.abs(Math.round(combinedCalc.totalSurplus)).toLocaleString() + "/yr",
                 color: combinedCalc.totalSurplus >= 0 ? "#16a34a" : "#dc2626" },
-              { label: "Avg. funding rate", value: Math.round(combinedCalc.avgSuccess) + "%" },
+              { label: {t.retirement.avgFundingRate}, value: Math.round(combinedCalc.avgSuccess) + "%" },
             ].map((m, i) => (
               <div key={i} className="bg-white rounded-lg px-3 py-2.5">
                 <p className="text-xs text-gray-500 mb-0.5">{m.label}</p>
@@ -894,7 +894,7 @@ export function RetirementTab({ clientId, clientName, person: personProp, t = tr
                   <h4 className="font-semibold text-gray-900 text-sm">{proj.label || personName}</h4>
                   <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${
                     isPerson === "spouse" ? "bg-purple-100 text-purple-700" : "bg-blue-100 text-blue-700"
-                  }`}>{isPerson === "spouse" ? "Spouse" : "Primary"}</span>
+                  }`}>{isPerson === "spouse" ? "Spouse" : {t.common.primary}}</span>
                   <span className="text-xs text-gray-400">Age {proj.currentAge} → {proj.retirementAge} · to age {proj.lifeExpectancy}</span>
                   {isEngineRunning && <span className="text-[10px] text-gray-400 animate-pulse">{t.common.calculating}</span>}
                   {hasEngineData && !isEngineRunning && (
@@ -921,7 +921,7 @@ export function RetirementTab({ clientId, clientName, person: personProp, t = tr
                     <p className="text-[10px] text-gray-400">${Math.round(desiredIncome / 12).toLocaleString()}/mo target</p>
                   </div>
                   <div className={`rounded-lg px-3 py-2.5 ${surplus >= 0 ? "bg-green-50" : "bg-red-50"}`}>
-                    <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-1">{surplus >= 0 ? "Annual Surplus" : "Annual Shortfall"}</p>
+                    <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-1">{surplus >= 0 ? "Annual Surplus" : {t.retirement.annualShortfall}}</p>
                     <p className={`text-base font-bold ${surplus >= 0 ? "text-green-700" : "text-red-700"}`}>${Math.abs(Math.round(surplus)).toLocaleString()}/yr</p>
                     <p className="text-[10px] text-gray-400">at retirement</p>
                   </div>
@@ -936,8 +936,8 @@ export function RetirementTab({ clientId, clientName, person: personProp, t = tr
                         label:      `At Retirement (age ${retirementAge})`,
                         guaranteed: phase1GuaranteedAnnual,
                         portfolio:  phase1PortfolioNeeded,
-                        sources:    pensionIncome > 0 ? `Pension: $${Math.round(pensionIncome / 12).toLocaleString()}/mo` : "No pension",
-                        note:       cppStartAge > retirementAge ? `CPP starts age ${cppStartAge}` : "CPP included",
+                        sources:    pensionIncome > 0 ? `Pension: $${Math.round(pensionIncome / 12).toLocaleString()}/mo` : {t.retirement.noPension},
+                        note:       cppStartAge > retirementAge ? `CPP starts age ${cppStartAge}` : {t.retirement.cppIncluded},
                         color:      "border-[#0c1e3a]/20 bg-[#0c1e3a]/3",
                       },
                       {
@@ -945,7 +945,7 @@ export function RetirementTab({ clientId, clientName, person: personProp, t = tr
                         guaranteed: phase2GuaranteedAnnual,
                         portfolio:  phase2PortfolioNeeded,
                         sources:    `CPP: $${Math.round(cppAdjusted).toLocaleString()}/mo${cppDeferralYears > 0 ? ` (+${(cppDeferralYears * 8.4).toFixed(0)}% deferral)` : ""}`,
-                        note:       oasStartAge > cppStartAge ? `OAS starts age ${oasStartAge}` : "OAS included",
+                        note:       oasStartAge > cppStartAge ? `OAS starts age ${oasStartAge}` : {t.retirement.oasIncluded},
                         color:      "border-blue-200 bg-blue-50/50",
                       },
                       {
@@ -997,25 +997,25 @@ export function RetirementTab({ clientId, clientName, person: personProp, t = tr
                     <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                       {[
                         {
-                          label: "Estate at Life Expectancy",
+                          label: {t.retirement.estateAtLife},
                           value: estateValue > 0 ? "$" + Math.round(estateValue / 1000).toLocaleString() + "K" : "—",
                           sub: "age " + (proj.lifeExpectancy ?? 90),
                           color: estateValue > 0 ? "#16a34a" : "#dc2626",
                         },
                         {
-                          label: "Guaranteed Income",
+                          label: {t.retirement.guaranteedIncome2},
                           value: guaranteedIncome > 0 ? "$" + Math.round(guaranteedIncome).toLocaleString() + "/yr" : "—",
                           sub: "CPP + OAS + Pension",
                           color: "#0c1e3a",
                         },
                         {
-                          label: "RRIF Min at 71",
+                          label: {t.scenarioComparison.rrifMinAt71},
                           value: rrifMin > 0 ? "$" + Math.round(rrifMin).toLocaleString() + "/yr" : "N/A",
                           sub: "mandatory withdrawal",
                           color: rrifMin > 0 ? "#d97706" : "#9ca3af",
                         },
                         {
-                          label: "Est. Lifetime Taxes",
+                          label: {t.retirement.lifetimeTaxLabel},
                           value: lifetimeTax > 0 ? "$" + Math.round(lifetimeTax / 1000).toLocaleString() + "K" : "—",
                           sub: "retirement period",
                           color: "#64748b",

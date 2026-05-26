@@ -159,7 +159,7 @@ type NWDraft = {
 
 function emptyDraft(type: "asset"|"liability"): NWDraft {
   return {
-    type, category: type === "asset" ? "Principal Residence" : "Mortgage",
+    type, category: type === "asset" ? "Principal Residence" : {t.netWorth.mortgage},
     name: "", owner: "primary", value: "", notes: "",
     isSpousal: false, rrspContributor: "",
     pensionType: "DBPP", matchPct: "",
@@ -168,7 +168,7 @@ function emptyDraft(type: "asset"|"liability"): NWDraft {
     holdingType: "",
     jointWithSpouse: false,
     stockOptionType: "RSU",
-    propertyType: "Family Occupied",
+    propertyType: {t.netWorth.familyOccupied},
     purchasePrice: "",
     rentalIncome: "",
     rentalExpenses: "",
@@ -376,10 +376,10 @@ function AssetRow({
           {fmt$(entry.value)}
         </p>
         <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
-          <button onClick={onEdit} className="p-1.5 hover:bg-blue-50 rounded-lg transition-colors" title="Edit">
+          <button onClick={onEdit} className="p-1.5 hover:bg-blue-50 rounded-lg transition-colors" title={t.common.edit}>
             <Pencil className="w-3.5 h-3.5 text-blue-400" />
           </button>
-          <button onClick={onDelete} className="p-1.5 hover:bg-red-50 rounded-lg transition-colors" title="Delete">
+          <button onClick={onDelete} className="p-1.5 hover:bg-red-50 rounded-lg transition-colors" title={t.common.delete}>
             <Trash2 className="w-3.5 h-3.5 text-red-400" />
           </button>
         </div>
@@ -391,9 +391,9 @@ function AssetRow({
 // ── normalizeCat — remap legacy category names ────────────────────────────────
 function normalizeCat(e: NWEntry): NWEntry {
   if (e.category === "ESU" || e.category === "RSU")
-    return { ...e, category: "Employer Stock Options", metadata: { ...(e.metadata ?? {}), stockOptionType: e.category } };
+    return { ...e, category: {t.netWorth.employerStockOptions}, metadata: { ...(e.metadata ?? {}), stockOptionType: e.category } };
   if (e.category === "Real Estate")
-    return { ...e, category: "Real Estate (other)" };
+    return { ...e, category: {t.netWorth.realEstateOther} };
   if (e.category === "RRSP/TFSA" || e.category === "Registered Investments (RRSP/TFSA)")
     return { ...e, category: "RRSP" };
   return e;
@@ -426,7 +426,7 @@ export function NetWorthTab({ clientId, client, t }: { clientId: number; t: T; c
   const [voiceOpen, setVoiceOpen] = useState<null | "asset" | "liability">(null);
 
   const spouseName  = client?.spouseFirstName ? `${client.spouseFirstName} ${client.spouseLastName ?? ""}`.trim() : "";
-  const primaryName = client ? `${client.firstName} ${client.lastName}` : "Primary";
+  const primaryName = client ? `${client.firstName} ${client.lastName}` : {t.common.primary};
 
   const load = () => api.get<NWEntry[]>(`/api/clients/${clientId}/net-worth`).then(raw => setEntries(raw.map(normalizeCat)));
   useEffect(() => { load(); }, [clientId]);
@@ -443,7 +443,7 @@ export function NetWorthTab({ clientId, client, t }: { clientId: number; t: T; c
   function addVoiceDraft(type: "asset" | "liability", parsed: Record<string, string>) {
     const base = emptyDraft(type);
     const cats = type === "asset" ? NW_ASSET_CATS : NW_LIAB_CATS;
-    const safeFallback = type === "asset" ? "Other Asset" : "Other Liability";
+    const safeFallback = type === "asset" ? "Other Asset" : {t.netWorth.otherLiability2};
     let category = base.category || safeFallback;
     if (parsed.category) {
       const match = cats.find(c => c.toLowerCase() === parsed.category.toLowerCase());
@@ -544,7 +544,7 @@ export function NetWorthTab({ clientId, client, t }: { clientId: number; t: T; c
           const mortgageMeta: any = { linkedAssetName: propName };
           if (d.mortgageMonthlyPayment) mortgageMeta.monthlyPayment = d.mortgageMonthlyPayment;
           await api.post(`/api/clients/${clientId}/net-worth`, {
-            type: "liability", category: "Mortgage",
+            type: "liability", category: {t.netWorth.mortgage},
             name: `Mortgage — ${propName}`, owner,
             value: String(mortgageVal), notes: `Linked to ${propName}`,
             metadata: mortgageMeta,
@@ -681,7 +681,7 @@ export function NetWorthTab({ clientId, client, t }: { clientId: number; t: T; c
                         <select value={d.owner} onChange={e => updateDraft(draftIdx, "owner", e.target.value)} className={SELECT_CLS}>
                           <option value={t.common.primary}>{primaryName || "Primary"}</option>
                           {spouseName && <option value={t.common.spouse}>{spouseName}</option>}
-                          {spouseName && <option value={t.common.joint}>Joint</option>}
+                          {spouseName && <option value={t.common.joint}>{t.common.joint}</option>}
                         </select>
                       </div>
                       <div>
@@ -744,7 +744,7 @@ export function NetWorthTab({ clientId, client, t }: { clientId: number; t: T; c
                           <select value={editForm.owner ?? "primary"} onChange={ev => setEditForm(f => ({ ...f, owner: ev.target.value }))} className={SELECT_CLS}>
                             <option value={t.common.primary}>{primaryName || "Primary"}</option>
                             {spouseName && <option value={t.common.spouse}>{spouseName}</option>}
-                            {spouseName && <option value={t.common.joint}>Joint</option>}
+                            {spouseName && <option value={t.common.joint}>{t.common.joint}</option>}
                           </select>
                         </div>
                         <div>
@@ -829,7 +829,7 @@ export function NetWorthTab({ clientId, client, t }: { clientId: number; t: T; c
                       <div className="flex gap-2 justify-end">
                         <button onClick={() => { setEditingId(null); setEditForm({}); }} className="text-sm text-slate-500 px-3 py-1.5 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors">{t.common.cancel}</button>
                         <button onClick={saveEdit} disabled={saving} className="text-sm font-semibold text-white bg-[#0c1e3a] px-4 py-1.5 rounded-lg disabled:opacity-50 hover:bg-[#0e2a4a] transition-colors">
-                          {saving ? "Saving…" : "Save"}
+                          {saving ? "Saving…" : {t.common.save}}
                         </button>
                       </div>
                     </div>
@@ -936,16 +936,16 @@ export function NetWorthTab({ clientId, client, t }: { clientId: number; t: T; c
       {/* Voice dialog */}
       {voiceOpen && (
         <VoiceAddDialog
-          title={`Voice-Add ${voiceOpen === "asset" ? "Asset" : "Liability"}`}
+          title={`Voice-Add ${voiceOpen === "asset" ? "Asset" : {t.common.liability}}`}
           moduleId={`net-worth-${voiceOpen}`}
           prompt={voiceOpen === "asset"
             ? `Try: "TFSA at TD worth twenty-five thousand, jointly with spouse"`
             : `Try: "RBC mortgage balance 320 thousand, monthly payment 1850"`}
           fieldSchema={[
-            { key: "category", label: "Category", description: `Type of ${voiceOpen}`, enum: voiceOpen === "asset" ? NW_ASSET_CATS : NW_LIAB_CATS },
-            { key: "name", label: "Name", description: "Description" },
-            { key: "value", label: voiceOpen === "asset" ? "Value" : "Balance", description: "Amount in dollars" },
-            { key: "owner", label: "Owner", description: "Who owns it", enum: ["primary", "spouse", "joint"] },
+            { key: "category", label: {t.common.category}, description: `Type of ${voiceOpen}`, enum: voiceOpen === "asset" ? NW_ASSET_CATS : NW_LIAB_CATS },
+            { key: "name", label: {t.common.name}, description: "Description" },
+            { key: "value", label: voiceOpen === "asset" ? "Value" : {t.common.balance}, description: "Amount in dollars" },
+            { key: "owner", label: {t.common.owner}, description: "Who owns it", enum: ["primary", "spouse", "joint"] },
             ...(voiceOpen === "liability" ? [{ key: "monthlyPayment", label: "Monthly Pmt", description: "Monthly payment" }] : []),
           ]}
           onConfirm={(parsed: Record<string, string>) => { addVoiceDraft(voiceOpen, parsed); setVoiceOpen(null); }}
@@ -1010,7 +1010,7 @@ export function RetirementTab({ clientId, client, person = "primary" }: { client
 , []);
   const clientAge = calcAge(client?.dateOfBirth);
   const spouseAge = calcAge(client?.spouseDateOfBirth);
-  const clientName = client ? client.firstName : "Primary";
+  const clientName = client ? client.firstName : {t.common.primary};
   const spouseName = client?.spouseFirstName ?? "Spouse";
   const isSpouse   = person === "spouse";
   const isCouple   = person === "combined";
@@ -1181,7 +1181,7 @@ export function RetirementTab({ clientId, client, person = "primary" }: { client
   }
 
   async function del(id: number) {
-    if (!confirm("Delete projection?")) return;
+    if (!confirm(t.netWorth.deleteProjection)) return;
     await api.delete(`/api/retirement/${id}`);
     await load();
   }
@@ -1233,7 +1233,7 @@ export function RetirementTab({ clientId, client, person = "primary" }: { client
         {(["projections","drawdown"] as const).map(key => (
           <button key={key} onClick={() => setActiveSubTab(key)}
             className={`px-4 py-2 text-sm font-semibold rounded-t-lg transition-colors ${activeSubTab === key ? "bg-white border border-b-white border-gray-200 text-[#0c1e3a] -mb-px" : "text-gray-500 hover:text-gray-700"}`}>
-            {key === "projections" ? "Retirement Projections" : "Drawdown Strategies"}
+            {key === "projections" ? "Retirement Projections" : {t.netWorth.drawdownStrategies}}
           </button>
         ))}
       </div>
@@ -1241,11 +1241,11 @@ export function RetirementTab({ clientId, client, person = "primary" }: { client
       {activeSubTab === "projections" && (
       <div>
       <div className="flex items-center justify-between mb-5">
-        <h2 className="text-xl font-bold text-gray-900">Retirement Projections</h2>
+        <h2 className="text-xl font-bold text-gray-900">{t.netWorth.retirementProjections}</h2>
         <div className="flex gap-2">
           <button onClick={runSim} disabled={simulating}
             className="bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-sm font-semibold px-4 py-1.5 rounded-lg">
-            {simulating ? "Running..." : "Retirement Checkup"}
+            {simulating ? t.common.running : {t.netWorth.retirementCheckup}}
           </button>
           <button onClick={addDraft}
             className="flex items-center gap-1.5 text-sm font-semibold text-white bg-[#0c1e3a] hover:bg-[#0e2a4a] px-3 py-1.5 rounded-lg">
@@ -1309,7 +1309,7 @@ export function RetirementTab({ clientId, client, person = "primary" }: { client
             <button onClick={() => { setDrafts([]); setEditingId(null); }} className="text-sm text-gray-500 px-4 py-2 border border-gray-200 rounded-lg">{t.common.cancel}</button>
             <button onClick={saveAll} disabled={saving}
               className="flex items-center gap-1.5 bg-[#0c1e3a] hover:bg-[#0e2a4a] disabled:opacity-50 text-white text-sm font-semibold px-5 py-2 rounded-lg">
-              <Save className="w-3.5 h-3.5" /> {saving ? "Saving..." : editingId ? "Save Changes" : `Save ${drafts.length} Projection${drafts.length > 1 ? "s" : ""}`}
+              <Save className="w-3.5 h-3.5" /> {saving ? t.common.saving2 : editingId ? t.common.saveChanges : `Save ${drafts.length} Projection${drafts.length > 1 ? "s" : ""}`}
             </button>
           </div>
         </div>
@@ -1373,13 +1373,13 @@ export function RetirementTab({ clientId, client, person = "primary" }: { client
                           <p className="text-[10px] text-blue-400 mt-0.5">CPP + OAS + portfolio</p>
                         </div>
                         <div className="bg-purple-50 rounded-xl p-3">
-                          <p className="text-[10px] font-bold text-purple-600 uppercase">Desired Income</p>
+                          <p className="text-[10px] font-bold text-purple-600 uppercase">{t.retirement.desiredIncome}</p>
                           <p className="text-lg font-bold text-purple-700">{hasDesired ? `${fmt$(desired)}/yr` : "—"}</p>
                           <p className="text-[10px] text-purple-400 mt-0.5">retirement target</p>
                         </div>
                         <div className={`rounded-xl p-3 ${!hasDesired ? "bg-gray-50" : gap >= 0 ? "bg-emerald-50" : "bg-red-50"}`}>
                           <p className={`text-[10px] font-bold uppercase ${!hasDesired ? "text-gray-400" : gap >= 0 ? "text-emerald-600" : "text-red-600"}`}>
-                            {!hasDesired ? "Shortfall" : gap >= 0 ? "Surplus" : "Shortfall"}
+                            {!hasDesired ? "Shortfall" : gap >= 0 ? "Surplus" : {t.common.shortfall}}
                           </p>
                           <p className={`text-lg font-bold ${!hasDesired ? "text-gray-400" : gap >= 0 ? "text-emerald-700" : "text-red-700"}`}>
                             {!hasDesired ? "—" : `${gap >= 0 ? "+" : ""}${fmt$(gap)}/yr`}
@@ -1478,7 +1478,7 @@ export function InsuranceTab({ clientId }: { clientId: number }) {
  
 
   async function del(id: number) {
-    if (!confirm("Delete?")) return;
+    if (!confirm(t.common.deleteConfirm)) return;
     await api.delete(`/api/insurance/${id}`); await load();
   }
 
@@ -1621,7 +1621,7 @@ function EducationSubTab({ clientId, client, t = translations.en }: { clientId: 
   }
 
   async function del(id: number) {
-    if (!confirm("Delete?")) return;
+    if (!confirm(t.common.deleteConfirm)) return;
     await api.delete(`/api/education/${id}`); await load();
   }
 
@@ -1657,7 +1657,7 @@ function EducationSubTab({ clientId, client, t = translations.en }: { clientId: 
           <div className="flex items-center gap-2">
             <button
               onClick={() => setVoiceOpen(true)}
-              title="Voice add child"
+              title={t.netWorth.voiceAddChild}
               className="flex items-center gap-1.5 px-3 py-2 rounded-full border border-[var(--border-light)] text-[var(--text-secondary)] hover:text-[var(--accent-cyan)] hover:border-[var(--accent-cyan)] text-xs font-semibold transition-colors"
             >
               <Mic className="w-3.5 h-3.5" /> {t.netWorth.voice}
@@ -1677,10 +1677,10 @@ function EducationSubTab({ clientId, client, t = translations.en }: { clientId: 
             moduleId="education-plan"
             prompt={`Try: "Sarah, born June 12 2015, RESP balance 12 thousand, contributing twenty-five hundred a year, target sixty thousand"`}
             fieldSchema={[
-              { key: "childName",          label: "Child Name", description: "Full first name" },
+              { key: "childName",          label: {t.netWorth.childName}, description: "Full first name" },
               { key: "childDob",           label: "DOB",        description: "Date of birth (YYYY-MM-DD)" },
-              { key: "currentRespBalance", label: "RESP Balance", description: "Current RESP balance, number only" },
-              { key: "annualContribution", label: "Annual Contrib", description: "Annual contribution, number only" },
+              { key: "currentRespBalance", label: {t.netWorth.respBalance}, description: "Current RESP balance, number only" },
+              { key: "annualContribution", label: {t.netWorth.annualContribNum}, description: "Annual contribution, number only" },
               { key: "targetAmount",       label: "Target", description: "Target amount, number only" },
               { key: "notes",              label: "Notes", description: "Free-form notes" },
             ]}
@@ -1813,7 +1813,7 @@ export function DebtTab({ clientId, t }: { clientId: number; t: T }) {
   }
 
   async function del(id: number) {
-    if (!confirm("Delete?")) return;
+    if (!confirm(t.common.deleteConfirm)) return;
     await api.delete(`/api/debt/${id}`); await load();
   }
 

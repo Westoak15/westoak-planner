@@ -541,8 +541,8 @@ export function InsightLedDashboard({ clientId, client, onNavigate, t = translat
                       contentStyle={{ backgroundColor: "#ffffff", border: "1px solid rgba(15,23,42,0.1)", borderRadius: "8px", boxShadow: "0 8px 24px rgba(15,23,42,0.08)", color: "#0f172a" }}
                     />
                     <Legend iconType="circle" wrapperStyle={{ fontSize: "12px", paddingTop: "10px" }} />
-                    <Bar dataKey="income" name="Income" fill={COLORS.blue} radius={[4, 4, 0, 0]} maxBarSize={40} />
-                    <Bar dataKey="expenses" name="Expenses (est)" fill={COLORS.rose} radius={[4, 4, 0, 0]} maxBarSize={40} />
+                    <Bar dataKey="income" name={t.common.income} fill={COLORS.blue} radius={[4, 4, 0, 0]} maxBarSize={40} />
+                    <Bar dataKey="expenses" name={t.dashboard.expensesEst} fill={COLORS.rose} radius={[4, 4, 0, 0]} maxBarSize={40} />
                   </BarChart>
                 </ResponsiveContainer>
               )}

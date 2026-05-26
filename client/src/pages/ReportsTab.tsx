@@ -204,7 +204,7 @@ ${bodies.join('\n<div class="report-divider"></div>\n')}
                       selected.has(section.id) ? "bg-[#0c1e3a] border-[#0c1e3a]" : "border-slate-300"
                     }`}>
                       {selected.has(section.id) && (
-                        <svg className="w-2.5 h-2.5 text-white" viewBox="0 0 10 10" fill="none">
+                        <svg className="w-2.5 h-2.5 text-white" viewBox="0 0 10 10" fill={t.report.none}>
                           <path d="M1.5 5L4 7.5L8.5 2.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                         </svg>
                       )}

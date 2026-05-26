@@ -76,25 +76,6 @@ const fmt$ = (n: number) => {
 };
 
 const PROVINCES = ["AB","BC","MB","NB","NL","NS","ON","PE","QC","SK"];
-const CARE_LEVELS = [
-  { value: "basic",       label: "Basic / Standard" },
-  { value: "semi_private", label: "Semi-Private" },
-  { value: "private",     label: "Private" },
-];
-const ELIM_OPTIONS = [
-  { value: 0,   label: "0 days (no wait)" },
-  { value: 30,  label: "30 days" },
-  { value: 60,  label: "60 days" },
-  { value: 90,  label: "90 days (standard)" },
-  { value: 180, label: "180 days" },
-  { value: 365, label: "365 days" },
-];
-const INFLATION_OPTIONS = [
-  { value: "none", label: "None" },
-  { value: "cpi",  label: "CPI-linked (~2%)" },
-  { value: "3pct", label: "3% compound" },
-  { value: "5pct", label: "5% compound" },
-];
 
 const DEFAULT_FORM: FormState = {
   person: "primary", label: "", currentAge: 55, province: "ON",
@@ -296,6 +277,26 @@ export function LTCTab({ clientId, client, t = translations.en }: Props) {
   }, [form, showHybrid]);
 
   const set = (k: keyof FormState) => (v: any) => setForm(f => ({ ...f, [k]: v }));
+  // Translated option arrays — defined inside component so t is in scope
+  const ELIM_OPTIONS = [
+    { value: 0,   label: t.ltc.noDays },
+    { value: 30,  label: t.ltc.days30 },
+    { value: 60,  label: t.ltc.days60 },
+    { value: 90,  label: t.ltc.days90 },
+    { value: 180, label: t.ltc.days180 },
+    { value: 365, label: t.ltc.days365 },
+  ];
+  const INFLATION_OPTIONS = [
+    { value: "none", label: t.ltc.inflNone },
+    { value: "cpi",  label: t.ltc.inflCpi },
+    { value: "3pct", label: t.ltc.infl3pct },
+    { value: "5pct", label: t.ltc.infl5pct },
+  ];
+  const CARE_LEVELS = [
+    { value: "basic",        label: t.ltc.careBasic },
+    { value: "semi_private", label: t.ltc.careSemi },
+    { value: "private",      label: t.ltc.carePrivate },
+  ];
 
   // ── Save ──────────────────────────────────────────────────────────────────
   async function handleSave() {
@@ -408,7 +409,7 @@ export function LTCTab({ clientId, client, t = translations.en }: Props) {
               </Field>
             </div>
 
-            <Field label="Daily Benefit">
+            <Field label=t.ltc.dailyBenefit>
               <Input type="number" value={form.dailyBenefit} onChange={set("dailyBenefit")} min={50} step={25} prefix="$" />
             </Field>
 
@@ -426,30 +427,30 @@ export function LTCTab({ clientId, client, t = translations.en }: Props) {
             </div>
 
             <div className="grid grid-cols-2 gap-3">
-              <Field label="Elimination Period">
+              <Field label=t.ltc.eliminationPeriod>
                 <Select value={form.eliminationDays} onChange={v => set("eliminationDays")(+v)}
                   options={ELIM_OPTIONS.map(o => ({ value: o.value, label: o.label }))} />
               </Field>
-              <Field label="Care Level">
+              <Field label=t.ltc.careLevel>
                 <Select value={form.careLevel} onChange={set("careLevel")} options={CARE_LEVELS} />
               </Field>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
-              <Field label="Inflation Protection">
+              <Field label=t.ltc.inflationProtection>
                 <Select value={form.inflationProtection} onChange={set("inflationProtection")} options={INFLATION_OPTIONS} />
               </Field>
-              <Field label="Est. Claim Age">
+              <Field label=t.ltc.estClaimAge>
                 <Input type="number" value={form.estClaimAge} onChange={set("estClaimAge")} min={60} max={90} />
               </Field>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
-              <Field label="Annual Premium">
+              <Field label=t.ltc.annualPremium>
                 <Input type="number" value={form.estAnnualPremium} onChange={set("estAnnualPremium")} prefix="$"
                   placeholder="0 = estimate" />
               </Field>
-              <Field label="Care Cost Inflation">
+              <Field label=t.ltc.careCostInflation>
                 <Input type="number" value={form.careCostInflation} onChange={set("careCostInflation")} min={0} max={10} step={0.5} prefix="%" />
               </Field>
             </div>
@@ -463,24 +464,24 @@ export function LTCTab({ clientId, client, t = translations.en }: Props) {
               </button>
               {showHybrid && (
                 <div className="mt-2 grid grid-cols-2 gap-3 bg-gray-50 rounded-xl p-3">
-                  <Field label="Total Benefit">
+                  <Field label=t.ltc.totalBenefit>
                     <Input type="number" value={form.hybridLifeBenefit} onChange={set("hybridLifeBenefit")} prefix="$" />
                   </Field>
-                  <Field label="% Allocated to LTC">
+                  <Field label=t.ltc.pctAllocatedLtc>
                     <Input type="number" value={form.hybridLtcPct} onChange={set("hybridLtcPct")} min={10} max={90} prefix="%" />
                   </Field>
                 </div>
               )}
             </div>
 
-            <Field label="Label (optional)">
+            <Field label=t.ltc.label>
               <Input value={form.label} onChange={set("label")} />
             </Field>
 
             <button onClick={handleSave} disabled={saving}
               className="w-full flex items-center justify-center gap-2 py-2.5 bg-[#0c1e3a] hover:bg-[#0e2a4a] text-white text-sm font-semibold rounded-xl disabled:opacity-50 transition-colors">
               <Save className="w-4 h-4" />
-              {saving ? "Saving…" : editing ? "Update Analysis" : "Save Analysis"}
+              {saving ? "Saving…" : editing ? t.ltc.updateAnalysis : t.ltc.saveAnalysis}
             </button>
           </div>
 
@@ -503,16 +504,16 @@ export function LTCTab({ clientId, client, t = translations.en }: Props) {
 
                 {/* Pool summary cards */}
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                  <StatCard label="Total Benefit Pool" value={fmt$(r.totalPoolDollars)}
+                  <StatCard label=t.ltc.totalBenefitPool value={fmt$(r.totalPoolDollars)}
                     sub={`${form.poolYears}-year pool`} highlight />
-                  <StatCard label="Daily Benefit at Claim"
+                  <StatCard label=t.ltc.dailyBenefitAtClaim
                     value={`$${Math.round(r.dailyBenefitAtClaim)}/day`}
                     sub={`age ${form.estClaimAge}${form.inflationProtection !== "none" ? " (inflation adj.)" : ""}`}
                     color="#0891b2" />
-                  <StatCard label="Pool Lasts (Full Rate)"
+                  <StatCard label=t.ltc.poolLastsFullRate
                     value={`~${r.poolDuration.atFullRate.toFixed(1)} yrs`}
                     sub={`~${r.poolDuration.at80pctRate.toFixed(1)} yrs at 80% use`} />
-                  <StatCard label="Break-Even Age"
+                  <StatCard label=t.ltc.breakEvenAge
                     value={r.breakEvenAge < 95 ? `Age ${r.breakEvenAge}` : "Beyond 95"}
                     sub={r.breakEvenAge < 95 ? `${r.breakEvenYears} yrs from now` : "Premiums < care cost"}
                     color={r.breakEvenAge < form.estClaimAge ? "#16a34a" : "#d97706"} />
@@ -525,9 +526,9 @@ export function LTCTab({ clientId, client, t = translations.en }: Props) {
                   </p>
                   <div className="space-y-2">
                     {[
-                      { label: "100% daily rate", years: r.poolDuration.atFullRate, color: "#dc2626" },
-                      { label:  "80% daily rate",  years: r.poolDuration.at80pctRate, color: "#d97706" },
-                      { label:  "60% daily rate",  years: r.poolDuration.at60pctRate, color: "#16a34a" },
+                      { label: t.ltc.fullDailyRate, years: r.poolDuration.atFullRate, color: "#dc2626" },
+                      { label:  t.ltc.rate80pct,  years: r.poolDuration.at80pctRate, color: "#d97706" },
+                      { label:  t.ltc.rate60pct,  years: r.poolDuration.at60pctRate, color: "#16a34a" },
                     ].map(row => (
                       <div key={row.label} className="flex items-center gap-3">
                         <span className="text-xs text-gray-500 w-32 flex-shrink-0">{row.label}</span>
@@ -615,9 +616,9 @@ export function LTCTab({ clientId, client, t = translations.en }: Props) {
                       Hybrid Life / LTC Breakdown
                     </p>
                     <div className="grid grid-cols-3 gap-3">
-                      <StatCard label="LTC Benefit Pool"    value={fmt$(r.hybrid.ltcPool)}        sub={`${form.hybridLtcPct}% of total`} color="#0891b2" />
-                      <StatCard label="Life / Death Benefit" value={fmt$(r.hybrid.lifeBenefit)}   sub="if LTC not claimed" color="#0c1e3a" />
-                      <StatCard label="Approx Monthly Max"  value={fmt$(r.hybrid.ltcMonthlyMax)}  sub="from LTC pool" color="#16a34a" />
+                      <StatCard label=t.ltc.ltcBenefitPool    value={fmt$(r.hybrid.ltcPool)}        sub={`${form.hybridLtcPct}% of total`} color="#0891b2" />
+                      <StatCard label=t.ltc.lifeDeathBenefit value={fmt$(r.hybrid.lifeBenefit)}   sub=t.ltc.ifLtcNotClaimed color="#0c1e3a" />
+                      <StatCard label=t.ltc.approxMonthlyMax  value={fmt$(r.hybrid.ltcMonthlyMax)}  sub=t.ltc.fromLtcPool color="#16a34a" />
                     </div>
                     <p className="text-[10px] text-gray-500 mt-3">
                       In a hybrid product, the LTC pool ({fmt$(r.hybrid.ltcPool)}) is drawn first.

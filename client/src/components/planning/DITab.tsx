@@ -51,34 +51,6 @@ interface SavedAnalysis extends FormState { id: number; result?: DIResult; resul
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
-const OCC_CLASSES = [
-  { value: "4A", label: "4A — Physicians, lawyers, professionals" },
-  { value: "3A", label: "3A — Financial advisors, engineers, managers" },
-  { value: "2A", label: "2A — Teachers, nurses, office supervisors" },
-  { value: "A",  label: "A — Skilled trades, technicians" },
-  { value: "B",  label: "B — Heavy labour, manual workers" },
-];
-const DEFINITIONS = [
-  { value: "own_occ", label: "Own Occupation (strongest)" },
-  { value: "regular", label: "Regular Occupation" },
-  { value: "any_occ", label: "Any Occupation (weakest)" },
-];
-const WAITING_PERIODS = [
-  { value: 30,  label: "30 days" },
-  { value: 60,  label: "60 days" },
-  { value: 90,  label: "90 days (standard)" },
-  { value: 120, label: "120 days" },
-  { value: 180, label: "180 days" },
-  { value: 365, label: "365 days" },
-];
-const BENEFIT_PERIODS = [
-  { value: "2yr",   label: "2 Years" },
-  { value: "5yr",   label: "5 Years" },
-  { value: "10yr",  label: "10 Years" },
-  { value: "age65", label: "To Age 65 (standard)" },
-  { value: "age70", label: "To Age 70" },
-];
-const PROVINCES = ["AB","BC","MB","NB","NL","NS","ON","PE","QC","SK"];
 
 const DEFAULT_FORM: FormState = {
   person: "primary", label: "", currentAge: 45, province: "ON",
@@ -256,6 +228,33 @@ export function DITab({ clientId, client, t = translations.en }: Props) {
 
   const r = useMemo(() => calcLive(form), [form]);
   const set = (k: keyof FormState) => (v: any) => setForm(f => ({ ...f, [k]: v }));
+  const OCC_CLASSES = [
+    { value: "4A", label: "4A — Physicians, lawyers, professionals" },
+    { value: "3A", label: "3A — Financial advisors, engineers, managers" },
+    { value: "2A", label: "2A — Teachers, nurses, office supervisors" },
+    { value: "A",  label: "A — Skilled trades, technicians" },
+    { value: "B",  label: "B — Heavy labour, manual workers" },
+  ];
+  const DEFINITIONS = [
+    { value: "own_occ", label: t.di.ownOcc },
+    { value: "regular", label: t.di.regularOcc },
+    { value: "any_occ", label: t.di.anyOcc },
+  ];
+  const WAITING_PERIODS = [
+    { value: 30,  label: t.di.days30 },
+    { value: 60,  label: t.di.days60 },
+    { value: 90,  label: t.di.days90 },
+    { value: 120, label: t.di.days120 },
+    { value: 180, label: t.di.days180 },
+    { value: 365, label: t.di.days365 },
+  ];
+  const BENEFIT_PERIODS = [
+    { value: "2yr",   label: t.di.yr2 },
+    { value: "5yr",   label: t.di.yr5 },
+    { value: "10yr",  label: t.di.yr10 },
+    { value: "age65", label: t.di.toAge65 },
+    { value: "age70", label: t.di.toAge70 },
+  ];
 
   async function handleSave() {
     setSaving(true);
@@ -343,24 +342,24 @@ export function DITab({ clientId, client, t = translations.en }: Props) {
               </Field>
             </div>
 
-            <Field label="Gross Monthly Income">
+            <Field label=t.di.grossMonthlyIncome>
               <Input type="number" value={form.grossMonthlyIncome} onChange={set("grossMonthlyIncome")} min={0} step={500} prefix="$" />
             </Field>
 
             <div className="grid grid-cols-2 gap-3">
-              <Field label="Occupation Class">
+              <Field label=t.di.occupationClass>
                 <Select value={form.occupationClass} onChange={set("occupationClass")} options={OCC_CLASSES} />
               </Field>
-              <Field label="DI Definition">
+              <Field label=t.di.diDefinition>
                 <Select value={form.definition} onChange={set("definition")} options={DEFINITIONS} />
               </Field>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
-              <Field label="Waiting Period">
+              <Field label=t.di.waitingPeriod>
                 <Select value={form.waitingPeriodDays} onChange={v => set("waitingPeriodDays")(+v)} options={WAITING_PERIODS} />
               </Field>
-              <Field label="Benefit Period">
+              <Field label=t.di.benefitPeriod>
                 <Select value={form.benefitPeriod} onChange={set("benefitPeriod")} options={BENEFIT_PERIODS} />
               </Field>
             </div>
@@ -368,7 +367,7 @@ export function DITab({ clientId, client, t = translations.en }: Props) {
             {/* Existing coverage */}
             <div className="bg-gray-50 rounded-xl p-3 space-y-3">
               <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Existing Coverage</p>
-              <Field label="Group DI (monthly benefit)">
+              <Field label=t.di.groupDi>
                 <Input type="number" value={form.groupDiMonthly} onChange={set("groupDiMonthly")} min={0} step={100} prefix="$" />
               </Field>
               <div className="flex items-center gap-2">
@@ -377,29 +376,29 @@ export function DITab({ clientId, client, t = translations.en }: Props) {
                   className="rounded" />
                 <label htmlFor="empPaid" className="text-xs text-gray-600">Employer-paid premiums (benefit is taxable)</label>
               </div>
-              <Field label="Individual DI (monthly benefit)">
+              <Field label=t.di.individualDi>
                 <Input type="number" value={form.individualDiMonthly} onChange={set("individualDiMonthly")} min={0} step={100} prefix="$" />
               </Field>
-              <Field label="CPP Disability (monthly)">
+              <Field label=t.di.cppDisability>
                 <Input type="number" value={form.cppDisabilityMonthly} onChange={set("cppDisabilityMonthly")} min={0} step={100} prefix="$" />
               </Field>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
-              <Field label="Partial Disability Threshold">
+              <Field label=t.di.partialDisThreshold>
                 <Input type="number" value={form.partialDisabilityPct} onChange={set("partialDisabilityPct")} min={20} max={80} prefix="%" />
               </Field>
-              <Field label="COLA Rider">
+              <Field label=t.di.colaRider>
                 <Input type="number" value={form.colaPct} onChange={set("colaPct")} min={0} max={5} step={0.5} prefix="%" />
               </Field>
             </div>
 
-            <Field label="Label (optional)"><Input value={form.label} onChange={set("label")} /></Field>
+            <Field label=t.di.label><Input value={form.label} onChange={set("label")} /></Field>
 
             <button onClick={handleSave} disabled={saving}
               className="w-full flex items-center justify-center gap-2 py-2.5 bg-[#0c1e3a] hover:bg-[#0e2a4a] text-white text-sm font-semibold rounded-xl disabled:opacity-50 transition-colors">
               <Save className="w-4 h-4" />
-              {saving ? "Saving…" : editing ? "Update Analysis" : "Save Analysis"}
+              {saving ? "Saving…" : editing ? t.di.updateAnalysis : t.di.saveAnalysis}
             </button>
           </div>
 
@@ -426,9 +425,9 @@ export function DITab({ clientId, client, t = translations.en }: Props) {
                 <ReplacementGauge ratio={r.replacementRatio} />
               </div>
               {[
-                { label: "Coverage Gap (70%)",  value: fmt$(r.coverageGap) + "/mo",     color: r.coverageGap === 0 ? "#16a34a" : "#dc2626" },
-                { label: "Coverage Gap (85%)",  value: fmt$(r.coverageGapHigh) + "/mo", color: r.coverageGapHigh === 0 ? "#16a34a" : "#d97706" },
-                { label: "Total Benefit Period",value: fmt$(r.maxBenefit.totalAtTarget), color: "#0c1e3a",
+                { label: t.di.coverageGap70,  value: fmt$(r.coverageGap) + "/mo",     color: r.coverageGap === 0 ? "#16a34a" : "#dc2626" },
+                { label: t.di.coverageGap85,  value: fmt$(r.coverageGapHigh) + "/mo", color: r.coverageGapHigh === 0 ? "#16a34a" : "#d97706" },
+                { label: t.di.totalBenefitPeriod,value: fmt$(r.maxBenefit.totalAtTarget), color: "#0c1e3a",
                   sub: `over ${r.maxBenefit.yearsOfCoverage} yrs at 70%` },
               ].map((c, i) => (
                 <div key={i} className="bg-gray-50 rounded-xl px-3 py-2.5">
@@ -444,17 +443,17 @@ export function DITab({ clientId, client, t = translations.en }: Props) {
               <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Coverage Breakdown</p>
               <div className="space-y-2">
                 {[
-                  { label: "Gross monthly income",         value: fmt$(r.grossMonthlyIncome) + "/mo", bold: true },
-                  { label: "→ Target (70%)",               value: fmt$(r.targetMonthlyBenefit) + "/mo",     color: "#0c1e3a" },
-                  { label: "→ Target (85%)",               value: fmt$(r.targetMonthlyBenefitHigh) + "/mo", color: "#64748b" },
-                  { label: "Group DI (gross)",             value: fmt$(r.existing.groupGross) + "/mo" },
+                  { label: t.di.grossMonthly,         value: fmt$(r.grossMonthlyIncome) + "/mo", bold: true },
+                  { label: t.di.target70,               value: fmt$(r.targetMonthlyBenefit) + "/mo",     color: "#0c1e3a" },
+                  { label: t.di.target85,               value: fmt$(r.targetMonthlyBenefitHigh) + "/mo", color: "#64748b" },
+                  { label: t.di.groupDiGross,             value: fmt$(r.existing.groupGross) + "/mo" },
                   { label: `Group DI (after ${Math.round(r.taxTreatment.groupEffectiveRate * 100)}% tax)`,
                     value: fmt$(r.existing.groupAfterTax) + "/mo",
-                    note: r.taxTreatment.groupTaxable ? "taxable — employer-paid" : "tax-free — employee-paid" },
-                  { label: "Individual DI",                value: fmt$(r.existing.individual) + "/mo", note: "tax-free" },
+                    note: r.taxTreatment.groupTaxable ? t.di.taxable : "tax-free — employee-paid" },
+                  { label: "Individual DI",                value: fmt$(r.existing.individual) + "/mo", note: t.di.taxFree },
                   { label: "CPP Disability (after tax)",   value: fmt$(r.existing.cppDisability) + "/mo" },
-                  { label: "Total existing coverage",      value: fmt$(r.existing.totalAfterTax) + "/mo", bold: true, color: r.isAdequate ? "#16a34a" : "#dc2626" },
-                  { label: "Recommended additional DI",    value: fmt$(r.coverageGap) + "/mo", bold: true, color: r.coverageGap > 0 ? "#dc2626" : "#16a34a" },
+                  { label: t.di.totalExisting,      value: fmt$(r.existing.totalAfterTax) + "/mo", bold: true, color: r.isAdequate ? "#16a34a" : "#dc2626" },
+                  { label: t.di.recommendedDi,    value: fmt$(r.coverageGap) + "/mo", bold: true, color: r.coverageGap > 0 ? "#dc2626" : "#16a34a" },
                 ].map((row, i) => (
                   <div key={i} className={`flex justify-between text-xs py-1 ${i < 8 ? "border-b border-gray-200" : ""}`}>
                     <span className={`${row.bold ? "font-semibold text-gray-700" : "text-gray-500"}`}>{row.label}</span>
@@ -473,8 +472,8 @@ export function DITab({ clientId, client, t = translations.en }: Props) {
                 Lifetime Claim Probability — Class {form.occupationClass}
               </p>
               <div className="space-y-2.5">
-                <ProbBar label="Own Occupation" prob={r.claimProbability.ownOcc} color="#dc2626" />
-                <ProbBar label="Any Occupation" prob={r.claimProbability.anyOcc} color="#d97706" />
+                <ProbBar label=t.di.ownOccupation prob={r.claimProbability.ownOcc} color="#dc2626" />
+                <ProbBar label=t.di.anyOccupation prob={r.claimProbability.anyOcc} color="#d97706" />
               </div>
               {form.definition === "any_occ" && r.claimProbability.ownVsAnyGap > 0 && (
                 <div className="mt-3 flex items-start gap-2 bg-amber-50 rounded-lg px-3 py-2">

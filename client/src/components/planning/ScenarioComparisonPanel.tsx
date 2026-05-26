@@ -255,27 +255,27 @@ function buildNarrative(
 function buildRows(years: YearData[][], projections: Projection[], engineData: Record<number, any>) {
   return [
     {
-      key: "retAge",     label: "Retirement Age",
+      key: "retAge",     label: t.scenarioComparison.retirementAge,
       get: (p: Projection) => p.retirementAge ?? 65,
       fmt: (n: number) => `${n} yrs`,  higher: false,
     },
     {
-      key: "portfolio",  label: "Portfolio at Retirement",
+      key: "portfolio",  label: t.scenarioComparison.portfolioAtRet,
       get: (p: Projection) => Number(p.projectedBalance ?? 0),
       fmt: fmtK, higher: true,
     },
     {
-      key: "funded",     label: "Funding Rate",
+      key: "funded",     label: t.scenarioComparison.fundingRate,
       get: (p: Projection) => Number(p.successRate ?? 0),
       fmt: (n: number) => `${Math.round(n)}%`,  higher: true, isPercent: true,
     },
     {
-      key: "surplus",    label: "Annual Surplus / (Deficit)",
+      key: "surplus",    label: t.scenarioComparison.annualSurplus,
       get: (p: Projection) => Number(p.shortfallSurplus ?? 0),
       fmt: fmt$, higher: true,
     },
     {
-      key: "desired",    label: "Target Annual Income",
+      key: "desired",    label: t.scenarioComparison.targetIncome,
       get: (p: Projection) => Number(p.desiredRetirementIncome ?? 0),
       fmt: fmt$, higher: true,
     },
@@ -296,7 +296,7 @@ function buildRows(years: YearData[][], projections: Projection[], engineData: R
       fmt: fmtK, higher: true,
     },
     {
-      key: "lifetaxes",  label: "Est. Lifetime Taxes (Retirement)",
+      key: "lifetaxes",  label: t.scenarioComparison.lifetimeTaxes,
       get: (p: Projection, i: number) => {
         const eng = engineData[p.id!]?.summary;
         return eng?.lifetimeTaxPaid ?? years[i]?.filter(y => y.isRetired).reduce((s, y) => s + y.taxes, 0) ?? 0;
@@ -304,7 +304,7 @@ function buildRows(years: YearData[][], projections: Projection[], engineData: R
       fmt: fmtK, higher: false,
     },
     {
-      key: "rrif",       label: "RRIF Min Withdrawal at 71",
+      key: "rrif",       label: t.scenarioComparison.rrifMinAt71,
       get: (p: Projection) => {
         const eng = engineData[p.id!]?.summary;
         return eng?.rrifMinYear1 ?? 0;
@@ -312,22 +312,22 @@ function buildRows(years: YearData[][], projections: Projection[], engineData: R
       fmt: fmt$, higher: false,
     },
     {
-      key: "cpp",        label: "CPP Start Age",
+      key: "cpp",        label: t.scenarioComparison.cppStartAge,
       get: (p: Projection) => p.cppStartAge ?? 65,
       fmt: (n: number) => `Age ${n}`,  higher: false,
     },
     {
-      key: "oas",        label: "OAS Start Age",
+      key: "oas",        label: t.scenarioComparison.oasStartAge,
       get: (p: Projection) => p.oasStartAge ?? 65,
       fmt: (n: number) => `Age ${n}`,  higher: false,
     },
     {
-      key: "contrib",    label: "Annual RRSP Contribution",
+      key: "contrib",    label: t.scenarioComparison.annualContrib,
       get: (p: Projection) => Number(p.annualContribution ?? 0),
       fmt: fmt$, higher: true,
     },
     {
-      key: "return",     label: "Expected Return",
+      key: "return",     label: t.scenarioComparison.expectedReturn,
       get: (p: Projection) => Number(p.expectedReturn ?? 6.5),
       fmt: (n: number) => `${n.toFixed(1)}%`, higher: true,
     },
@@ -552,7 +552,7 @@ export function ScenarioComparisonPanel({ clientId, onClose, t = translations.en
 
           <div className="flex items-center justify-between px-6 py-4 border-t border-gray-100">
             <p className="text-sm text-gray-400">
-              {selected.length === 0 ? "Select 2–3 scenarios" :
+              {selected.length === 0 ? t.scenarioComparison.selectTwo :
                selected.length === 1 ? "Select 1 more to compare" :
                `${selected.length} selected — ready`}
             </p>
@@ -805,12 +805,12 @@ export function ScenarioComparisonPanel({ clientId, onClose, t = translations.en
             ) : (
               <>
                 <input value={savedLabel} onChange={e => setSavedLabel(e.target.value)}
-                  placeholder="Label (optional)"
+                  placeholder=t.scenarioComparison.labelOptional
                   className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 w-44 focus:outline-none focus:ring-2 focus:ring-[#0c1e3a]/20" />
                 <button onClick={handleSave} disabled={saving}
                   className="flex items-center gap-2 px-4 py-2 bg-[#0c1e3a] hover:bg-[#0e2a4a] text-white text-sm font-semibold rounded-xl disabled:opacity-50 transition-colors">
                   <Save className="w-4 h-4" />
-                  {saving ? "Saving…" : "Save Comparison"}
+                  {saving ? t.scenarioComparison.saving : t.scenarioComparison.saveComparison}
                 </button>
               </>
             )}

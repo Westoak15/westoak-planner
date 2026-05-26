@@ -208,11 +208,12 @@ function GoalTimeline({ goals, clientAge }: { goals: Goal[]; clientAge?: number 
 
 function GoalCard({ goal, t, onEdit, onDelete, onInlineUpdate }: { goal: Goal; t: T; onEdit: () => void; onDelete: () => void; onInlineUpdate: (id: number, data: Partial<Goal>) => void }) {
   const GOAL_TYPES      = goalTypes(t);
+  const FUNDING_SOURCES = fundingSources(t);
   const PRIORITY_LABELS = priorityLabels(t);
   const STATUS_CONFIG   = statusConfig(t);
   const typeInfo  = GOAL_TYPES.find(t => t.key === goal.goalType) ?? GOAL_TYPES[7];
   const Icon      = typeInfo.icon;
-  const priority  = PRIORITY_LABELS[goal.priority ?? 3];
+  const priority  = PRIORITY_LABELS[goal.priority ?? 3] ?? PRIORITY_LABELS[3];
   const status    = STATUS_CONFIG[goal.status] ?? STATUS_CONFIG.in_progress;
   const isOutflow = goal.cashflowType === "outflow" || goal.cashflowType === "recurring_expense";
   const hasProgress = goal.cashflowType === "savings_target" && goal.targetAmount && Number(goal.targetAmount) > 0;

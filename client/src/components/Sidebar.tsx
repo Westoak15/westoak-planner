@@ -166,29 +166,25 @@ export function Sidebar({ activeTab, onTab, clientName, role, level }: Props) {
       {/* Footer */}
       <div className="px-3 pb-4 pt-2 border-t border-white/10 space-y-2">
 
-        {/* Language toggle */}
-        {!isForced ? (
-          <div className="flex items-center gap-1 justify-center">
-            <Globe className="w-3 h-3 text-white/30" />
-            {(["en", "fr"] as const).map(lang => (
-              <button
-                key={lang}
-                onClick={() => setLocale(lang)}
-                className={cn(
-                  "text-[10px] font-bold px-2 py-0.5 rounded transition-colors uppercase",
-                  locale === lang
-                    ? "bg-cyan-500/20 text-cyan-400"
-                    : "text-white/30 hover:text-white/60"
-                )}
-              >{lang}</button>
-            ))}
-          </div>
-        ) : (
-          <div className="flex items-center gap-1 justify-center text-white/30">
-            <Globe className="w-3 h-3" />
-            <span className="text-[10px]">Français (Québec)</span>
-          </div>
-        )}
+        {/* Language toggle — QC advisors default FR but can serve EN clients */}
+        <div className="flex items-center gap-1 justify-center">
+          <Globe className="w-3 h-3 text-white/30" />
+          {(["en", "fr"] as const).map(lang => (
+            <button
+              key={lang}
+              onClick={() => setLocale(lang)}
+              className={cn(
+                "text-[10px] font-bold px-2 py-0.5 rounded transition-colors uppercase",
+                locale === lang
+                  ? "bg-cyan-500/20 text-cyan-400"
+                  : "text-white/30 hover:text-white/60"
+              )}
+            >{lang}</button>
+          ))}
+          {isForced && locale === "fr" && (
+            <span className="text-[10px] text-white/20 ml-0.5">(QC)</span>
+          )}
+        </div>
 
         {/* Role badge */}
         <div className="text-center">

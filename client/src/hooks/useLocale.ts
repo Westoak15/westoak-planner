@@ -24,12 +24,17 @@ export function useLocale() {
   const isForced  = isFrenchForced(user?.province);
 
   /**
-   * Change locale. If the advisor is in QC the switch to English is blocked.
+   * Change locale.
+   * QC advisors default to French but CAN switch to English for English-speaking clients.
+   * The switch is per-session only — refreshing reloads their QC default (French).
    */
   const setLocale = useCallback((l: Locale) => {
-    if (isForced && l === "en") return; // QC advisors cannot switch to English
     i18nInst.changeLanguage(l);
-    localStorage.setItem("be_locale", l);
+    // For QC advisors: store session override but don't persist to localStorage
+    // so they return to French on next login/refresh
+    if (!isForced) {
+      localStorage.setItem("be_locale", l);
+    }
   }, [isForced, i18nInst]);
 
   return { t, locale, setLocale, isFrench, isForced };

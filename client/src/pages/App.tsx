@@ -728,7 +728,6 @@ function ClientDetail({ client, onBack, onPlanSelect, onUpdate, onLocaleChange, 
         </div>
         <div className="ml-auto flex items-center gap-3">
           {/* Client language toggle — hidden for QC advisors (all screens enforced FR) */}
-          {advisorLocale !== "fr" && (
           <div className="flex items-center gap-1.5">
             <div className="flex items-center gap-1 border border-gray-200 rounded-lg p-0.5" title="Report language">
               <Globe className="w-3.5 h-3.5 text-gray-400 ml-1.5" />
@@ -755,7 +754,7 @@ function ClientDetail({ client, onBack, onPlanSelect, onUpdate, onLocaleChange, 
             </div>
             <span className="text-[10px] text-gray-400">Report lang</span>
           </div>
-          )}
+          
           <div className="flex gap-2">
           {editing ? (
             <>
@@ -1195,8 +1194,9 @@ export default function App() {
   //              letter templates). Follows the per-client preferredLanguage setting.
   const advisorLocale: ClientLocale = advisorLocaleStr === "fr" ? "fr" : "en";
   const tAdvisor: T = translations[advisorLocale];
-  // QC advisors: everything is French — client locale is irrelevant, all screens enforced FR
-  const tClient: T  = advisorLocale === "fr" ? translations["fr"] : translations[clientLocale];
+  // tClient follows the advisor's active language selection.
+  // QC advisors default to FR but can toggle to EN for English-speaking clients.
+  const tClient: T  = translations[advisorLocale];
   const clientName = client ? `${client.firstName} ${client.lastName}` : undefined;
   const hasSpouse = !!client?.spouseFirstName;
   // Person toggle is rendered by HubShell inside each hub / PlanningDocFlow.

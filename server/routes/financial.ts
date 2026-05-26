@@ -20,7 +20,9 @@ import {
   taxPlanningNotes, estatePlanningNotes, aiRecommendations,
   planAssumptions, simulationResults, planSnapshots,
   planStaleFlags, planActionItems, pensionPlans,
-  scenarioComparisons
+  scenarioComparisons,
+  ltcAnalyses,
+  diAnalyses,
 } from "../../shared/schema.js";
 import { isAuthenticated, type AuthRequest } from "../auth/index.js";
 import { safe, ownsClient, ownsPlan } from "../fpUtils.js";
@@ -1340,3 +1342,79 @@ r.get("/clients/:id/retirement/:projId/projection-data", isAuthenticated, async 
   if (!data) return res.status(404).json({ message: "No projection data — run the engine first" });
   res.json(data);
 });
+
+// ── LTC Analyses ─────────────────────────────────────────────────────────────
+
+r.get("/clients/:id/ltc-analyses", isAuthenticated, async (req: AuthRequest, res: Response) => {
+  const cid = +req.params.id;
+  if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
+  const rows = await db.select().from(ltcAnalyses).where(eq(ltcAnalyses.clientId, cid));
+  res.json(rows);
+});
+
+r.post("/clients/:id/ltc-analyses", isAuthenticated, async (req: AuthRequest, res: Response) => {
+  const cid = +req.params.id;
+  if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
+  const b = req.body;
+  const { runLTCEngine } = await import("../engine/ltcEngine.js");
+  const result = runLTCEngine({
+    currentAge: +b.currentAge||55, province: b.province||"ON",
+    dailyBenefit: +b.dailyBenefit||200, poolYears: (+b.poolYears||5) as any,
+    eliminationDays: (+b.eliminationDays||90) as any, inflationProtection: (b.inflationProtection||"none") as any,
+    estAnnualPremium: +b.estAnnualPremium||0, careCostInflation: +b.careCostInflation||0.04,
+    estClaimAge: +b.estClaimAge||80, careLevel: (b.careLevel||"semi_private") as any,
+    hybridLifeBenefit: b.hybridLifeBenefit ? +b.hybridLifeBenefit : undefined,
+    hybridLtcPct: b.hybridLtcPct ? +b.hybridLtcPct : undefined,
+  });
+  const [row] = await (db.insert(ltcAnalyses) as any).values({
+    clientId: cid, person: b.person||"primary", label: b.label||null,
+    currentAge: +b.currentAge||55, province: b.province||"ON",
+    dailyBenefit: String(+b.dailyBenefit||200), poolYears: +b.poolYears||5,
+    eliminationDays: +b.eliminationDays||90, inflationProtection: b.inflationProtection||"none",
+    estAnnualPremium: b.estAnnualPremium ? String(b.estAnnualPremium) : null,
+    careCostInflation: String(+b.careCostInflation||0.04), estClaimAge: +b.estClaimAge||80,
+    careLevel: b.careLevel||"semi_private",
+    hybridLifeBenefit: b.hybridLifeBenefit ? String(b.hybridLifeBenefit) : null,
+    hybridLtcPct: b.hybridLtcPct ? String(b.hybridLtcPct) : null,
+    notes: b.notes||null, resultData: result,
+  }).returning();
+  res.status(201).json({ ...row, result });
+});
+
+r.patch("/clients/:id/ltc-analyses/:aid", isAuthenticated, async (req: AuthRequest, res: Response) => {
+  const cid = +req.params.id; const aid = +req.params.aid;
+  if (!await ownsClient(cid, req.userId!)) return res.status(403).json({ message: "Forbidden" });
+  const b = req.body;
+  const { runLTCEngine } = await import("../engine/ltcEngine.js");
+  const result = runLTCEngine({
+    currentAge: +b.currentAge||55, province: b.province||"ON",
+    dailyBenefit: +b.dailyBenefit||200, poolYears: (+b.poolYears||5) as any,
+    eliminationDays: (+b.eliminationDays||90) as any, inflationProtection: (b.inflationProtection||"none") as any,
+    estAnnualPremium: +b.estAnnualPremium||0, careCostInflation: +b.careCostInflation||0.04,
+    estClaimAge: +b.estClaimAge||80, careLevel: (b.careLevel||"semi_private") as any,
+    hybridLifeBenefit: b.hybridLifeBenefit ? +b.hybridLifeBenefit : undefined,
+    hybridLtcPct: b.hybridLtcPct ? +b.hybridLtcPct : undefined,
+  });
+  await (db.update(ltcAnalyses) as any).set({
+    label: b.label||null, currentAge: +b.currentAge||55, province: b.province||"ON",
+    dailyBenefit: String(+b.dailyBenefit||200), poolYears: +b.poolYears||5,
+    eliminationDays: +b.eliminationDays||90, inflationProtection: b.inflationProtection||"none",
+    estAnnualPremium: b.estAnnualPremium ? String(b.estAnnualPremium) : null,
+    careCostInflation: String(+b.careCostInflation||0.04), estClaimAge: +b.estClaimAge||80,
+    careLevel: b.careLevel||"semi_private",
+    hybridLifeBenefit: b.hybridLifeBenefit ? String(b.hybridLifeBenefit) : null,
+    hybridLtcPct: b.hybridLtcPct ? String(b.hybridLtcPct) : null,
+    notes: b.notes||null, resultData: result, updatedAt: new Date(),
+  }).where(eq(ltcAnalyses.id, aid));
+  const [row] = await db.select().from(ltcAnalyses).where(eq(ltcAnalyses.id, aid));
+  res.json({ ...row, result });
+});
+
+r.delete("/clients/:id/ltc-analyses/:aid", isAuthenticated, async (req: AuthRequest, res: Response) => {
+  const cid = +req.params.id; const aid = +req.params.aid;
+  if (!await ownsClient(cid, req.userId!)) return res.status(403).json({ message: "Forbidden" });
+  await db.delete(ltcAnalyses).where(eq(ltcAnalyses.id, aid));
+  res.json({ deleted: true });
+});
+
+export default r;

@@ -83,13 +83,13 @@ export function ProtectionHub({ clientId, client, person, onPersonChange, t = tr
           },
           {
             key: "ltc",
-            label: {t.insurance.ltcPlanning},
+            label: t.insurance.ltcPlanning,
             icon: Heart,
             badgeTone: "cyan",
           },
           {
             key: "di",
-            label: {t.insurance.diPlanning},
+            label: t.insurance.diPlanning,
             icon: Briefcase,
             badgeTone: "amber",
           },

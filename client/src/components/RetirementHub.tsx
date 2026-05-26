@@ -44,7 +44,7 @@ export function RetirementHub({ clientId, client, person, onPersonChange, t = tr
         }
         subtabs={[
           { key: "pension",    label: t.retirement.pension,     icon: Building2,    badgeTone: "purple" },
-          { key: "meltdown",   label: {t.retirement.rrspMeltdown}, icon: TrendingDown, badge: "NEW", badgeTone: "cyan" },
+          { key: "meltdown",   label: t.retirement.rrspMeltdown, icon: TrendingDown, badge: "NEW", badgeTone: "cyan" },
           { key: "strategist", label: t.retirement.strategist, icon: Sparkles, badge: "AI", badgeTone: "purple" },
           { key: "projection", label: t.retirement.projection,  icon: TrendingUp,   badgeTone: "cyan" },
         ]}

@@ -235,7 +235,7 @@ function PolicyRow({
         {/* Coverage */}
         <div className="text-right">
           <div className="text-xs font-semibold text-slate-900">{fmt$(parseFloat(policy.coverageAmount || "0"))}</div>
-          <div className="text-[10px] text-slate-400">coverage</div>
+          <div className="text-[10px] text-slate-400">{t.insurance.coverage}</div>
         </div>
 
         {/* Premium */}
@@ -247,11 +247,11 @@ function PolicyRow({
         {/* Status */}
         <div className="text-center">
           {expired ? (
-            <span className="text-[9px] font-bold uppercase tracking-wide text-red-600 bg-red-50 px-1.5 py-0.5 rounded">Expired</span>
+            <span className="text-[9px] font-bold uppercase tracking-wide text-red-600 bg-red-50 px-1.5 py-0.5 rounded">{t.common.expired}</span>
           ) : expSoon ? (
-            <span className="text-[9px] font-bold uppercase tracking-wide text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded">Expiring</span>
+            <span className="text-[9px] font-bold uppercase tracking-wide text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded">{t.common.expiring}</span>
           ) : (
-            <span className="text-[9px] font-bold uppercase tracking-wide text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">Active</span>
+            <span className="text-[9px] font-bold uppercase tracking-wide text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">{t.common.active}</span>
           )}
         </div>
 
@@ -285,21 +285,21 @@ function PolicyRow({
           {editing ? (
             <div className="bg-white border border-slate-200 rounded-xl p-4 space-y-3">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <EditField label="Policy Type" value={form.type} onChange={u("type")} options={POLICY_TYPES} />
-                <EditField label="Insured" value={form.insured} onChange={u("insured")} />
-                <EditField label="Carrier" value={form.carrier ?? ""} onChange={u("carrier")} />
+                <EditField label={t.insurance.policyType} value={form.type} onChange={u("type")} options={POLICY_TYPES} />
+                <EditField label={t.insurance.insured} value={form.insured} onChange={u("insured")} />
+                <EditField label={t.insurance.carrier} value={form.carrier ?? ""} onChange={u("carrier")} />
                 <EditField label="Policy Number" value={form.policyNumber ?? ""} onChange={u("policyNumber")} />
               </div>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <EditField label="Coverage Amount" value={form.coverageAmount} onChange={u("coverageAmount")} type="number" />
+                <EditField label={t.insurance.coverageAmount} value={form.coverageAmount} onChange={u("coverageAmount")} type="number" />
                 <EditField label="Premium" value={form.premium} onChange={u("premium")} type="number" />
-                <EditField label="Frequency" value={form.premiumFrequency} onChange={u("premiumFrequency")}
+                <EditField label={t.cashFlow.frequency} value={form.premiumFrequency} onChange={u("premiumFrequency")}
                   options={["Monthly", "Quarterly", "Semi-Annual", "Annual"]} />
-                <EditField label="Beneficiary" value={form.beneficiary ?? ""} onChange={u("beneficiary")} />
+                <EditField label={t.insurance.beneficiary} value={form.beneficiary ?? ""} onChange={u("beneficiary")} />
               </div>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <EditField label="Issue Date" value={form.issueDate ?? ""} onChange={u("issueDate")} type="date" />
-                <EditField label="Expiry Date" value={form.expiryDate ?? ""} onChange={u("expiryDate")} type="date" />
+                <EditField label={t.insurance.issueDate} value={form.issueDate ?? ""} onChange={u("issueDate")} type={t.common.date} />
+                <EditField label={t.insurance.expiryDate} value={form.expiryDate ?? ""} onChange={u("expiryDate")} type={t.common.date} />
                 <EditField label="Riders" value={form.riders ?? ""} onChange={u("riders")} />
                 <EditField label="Notes" value={form.notes ?? ""} onChange={u("notes")} />
               </div>
@@ -387,7 +387,7 @@ function AddPolicyForm({ onSave, onCancel, t = translations.en }: {
           <EditField label={t.insurance.premiumFrequency} value={form.premiumFrequency} onChange={u("premiumFrequency")}
             options={["Monthly", "Quarterly", "Semi-Annual", "Annual"]}
             optionLabels={["Monthly","Quarterly","Semi-Annual","Annual"].map(f => freqLabel(f, t))} />
-          <EditField label={t.insurance.issueDate} value={form.issueDate} onChange={u("issueDate")} type="date" />
+          <EditField label={t.insurance.issueDate} value={form.issueDate} onChange={u("issueDate")} type={t.common.date} />
           <EditField label={t.insurance.beneficiary} value={form.beneficiary} onChange={u("beneficiary")} />
         </div>
         <div className="flex items-center justify-end gap-2">
@@ -637,7 +637,7 @@ export function PoliciesTab({ clientId, client, t }: Props) {
               className="grid gap-2 flex-1 text-[9px] font-semibold uppercase tracking-widest text-slate-400"
               style={{ gridTemplateColumns: "1fr 100px 90px 70px 60px 80px" }}
             >
-              <span>Policy / Insured</span>
+              <span>{t.insurance.policyInsured}</span>
               <span className="text-right">{t.insurance.coverage}</span>
               <span className="text-right">{t.common.amount}</span>
               <span className="text-center">{t.common.status}</span>
@@ -705,8 +705,8 @@ export function PoliciesTab({ clientId, client, t }: Props) {
             {/* Circular score gauge */}
             <div className="relative w-16 h-16 flex-shrink-0">
               <svg viewBox="0 0 36 36" className="w-16 h-16 -rotate-90">
-                <circle cx="18" cy="18" r="15" fill="none" stroke="#f1f5f9" strokeWidth="3" />
-                <circle cx="18" cy="18" r="15" fill="none"
+                <circle cx="18" cy="18" r="15" fill={t.report.none} stroke="#f1f5f9" strokeWidth="3" />
+                <circle cx="18" cy="18" r="15" fill={t.report.none}
                   className={scoreRing}
                   strokeWidth="3"
                   strokeDasharray={`${(protectionScore / 100) * 94.2} 94.2`}
@@ -753,7 +753,7 @@ export function PoliciesTab({ clientId, client, t }: Props) {
         <div className="px-4 py-4 flex-1">
           <div className="text-[9px] font-semibold uppercase tracking-widest text-slate-400 mb-3">{t.insurance.advisorIntelligence}</div>
           {alerts.length === 0 ? (
-            <div className="text-xs text-slate-400">Add policies to generate intelligence</div>
+            <div className="text-xs text-slate-400">{t.insurance.addPoliciesToGen}</div>
           ) : (
             <div className="space-y-2">
               {alerts.map((a, i) => (
@@ -780,7 +780,7 @@ export function PoliciesTab({ clientId, client, t }: Props) {
         {/* Household scenarios */}
         {policies.length > 0 && (
           <div className="px-4 py-4 border-t border-slate-100">
-            <div className="text-[9px] font-semibold uppercase tracking-widest text-slate-400 mb-3">Household Scenarios</div>
+            <div className="text-[9px] font-semibold uppercase tracking-widest text-slate-400 mb-3">{t.insurance.householdScenarios}</div>
             <div className="space-y-2">
               {[
                 { label: "Survivor Income",    ok: totalLife >= (income * 5), desc: totalLife >= (income * 5) ? "Protected" : "Gap exists" },

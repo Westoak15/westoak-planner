@@ -203,7 +203,7 @@ export function ExpensesTab({ clientId, addTrigger = 0, t = translations.en }: {
       <div className="px-6 py-3 border-b border-slate-200 bg-white flex items-center justify-between flex-shrink-0">
         <div>
           <p className="text-xs text-slate-400 uppercase tracking-wide">{t.cashFlow.title}</p>
-          <p className="text-base font-semibold text-slate-900">Monthly Expenses</p>
+          <p className="text-base font-semibold text-slate-900">{t.cashFlow.monthlyExpenses}</p>
         </div>
         <div className="flex items-center gap-8">
           <Metric label={t.common.monthly}   value={`${fmt(totalMonthly)}/mo`} />
@@ -222,7 +222,7 @@ export function ExpensesTab({ clientId, addTrigger = 0, t = translations.en }: {
         {/* LEFT — dense category list */}
         <div className="border-r border-slate-200 bg-white overflow-y-auto">
           <div className="px-4 py-2 border-b border-slate-100 flex items-center justify-between">
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Categories</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">{t.cashFlow.categories}</p>
             <p className="text-xs text-slate-400">{sortedCats.length}</p>
           </div>
           {sortedCats.map(({ cat, items, total, retTotal }, catI) => {
@@ -267,7 +267,7 @@ export function ExpensesTab({ clientId, addTrigger = 0, t = translations.en }: {
 
           {/* Donut chart */}
           <div className="bg-white border border-slate-200 rounded-xl p-4">
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-3">Spending Breakdown</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-3">{t.cashFlow.spendingBreakdown}</p>
             <div style={{ height: 200 }}>
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
@@ -313,10 +313,10 @@ export function ExpensesTab({ clientId, addTrigger = 0, t = translations.en }: {
                 >+ Add</button>
               </div>
               <div className="flex gap-6 mb-4">
-                <div><p className="text-xs text-slate-400">Monthly</p><p className="text-lg font-bold text-slate-900">{fmt(selectedCat.total)}</p></div>
-                <div><p className="text-xs text-slate-400">Yearly</p><p className="text-lg font-bold text-slate-900">{fmt(selectedCat.total * 12)}</p></div>
+                <div><p className="text-xs text-slate-400">{t.common.monthly}</p><p className="text-lg font-bold text-slate-900">{fmt(selectedCat.total)}</p></div>
+                <div><p className="text-xs text-slate-400">{t.cashFlow.yearlyView}</p><p className="text-lg font-bold text-slate-900">{fmt(selectedCat.total * 12)}</p></div>
                 {selectedCat.retTotal !== selectedCat.total && (
-                  <div><p className="text-xs text-slate-400">In Retirement</p><p className="text-lg font-bold text-amber-600">{fmt(selectedCat.retTotal)}/mo</p></div>
+                  <div><p className="text-xs text-slate-400">{t.cashFlow.inRetirement}</p><p className="text-lg font-bold text-amber-600">{fmt(selectedCat.retTotal)}/mo</p></div>
                 )}
               </div>
               <div className="space-y-1">
@@ -342,13 +342,13 @@ export function ExpensesTab({ clientId, addTrigger = 0, t = translations.en }: {
 
           {/* Bar chart */}
           <div className="bg-white border border-slate-200 rounded-xl p-4">
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-3">All Categories</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-3">{t.common.allCategories}</p>
             <div style={{ height: Math.max(120, sortedCats.length * 28) }}>
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={sortedCats.map(c => ({ name: c.cat.split(" ")[0], value: Math.round(c.total), full: c.cat }))} layout="vertical" margin={{ top: 0, right: 10, left: 10, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
                   <XAxis type="number" tick={{ fontSize: 10 }} tickFormatter={v => `$${(v/1000).toFixed(0)}k`} />
-                  <YAxis type="category" dataKey="name" tick={{ fontSize: 10 }} width={60} />
+                  <YAxis type={t.common.category} dataKey={t.common.name} tick={{ fontSize: 10 }} width={60} />
                   <Tooltip
                     wrapperStyle={{ zIndex: 50 }}
                     contentStyle={{ backgroundColor: "#fff", border: "1px solid #e2e8f0", borderRadius: "8px", fontSize: "12px" }}
@@ -367,7 +367,7 @@ export function ExpensesTab({ clientId, addTrigger = 0, t = translations.en }: {
           {/* Retirement guardrail */}
           {retirementMonthly > 0 && (
             <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
-              <p className="text-sm font-medium text-amber-700">Retirement Impact</p>
+              <p className="text-sm font-medium text-amber-700">{t.cashFlow.retirementImpact}</p>
               <p className="text-sm text-amber-600 mt-1">
                 Spending requires <strong>{fmt(requiredPortfolio)}</strong> invested (4% rule) to sustain <strong>{fmt(retirementMonthly * 12)}/yr</strong>.
               </p>
@@ -402,35 +402,35 @@ function ExpenseForm({ form, setForm, editing, onSubmit, onClose, creating, upda
         <div className="flex-1 overflow-y-auto px-6 py-6 space-y-5">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="text-sm font-semibold block mb-1 text-slate-600">Category</label>
+              <label className="text-sm font-semibold block mb-1 text-slate-600">{t.cashFlow.category}</label>
               <select value={form.category} onChange={(e: any) => setForm((f: any) => ({ ...f, category: e.target.value }))} className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400">
                 {EXPENSE_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
               </select>
             </div>
             <div>
-              <label className="text-sm font-semibold block mb-1 text-slate-600">Monthly Amount ($)</label>
+              <label className="text-sm font-semibold block mb-1 text-slate-600">{t.cashFlow.monthlyAmountLbl}</label>
               <input type="number" min="0" step="10" value={form.monthlyAmount} onChange={(e: any) => setForm((f: any) => ({ ...f, monthlyAmount: e.target.value }))} className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" placeholder="0" />
             </div>
           </div>
           <div>
             <label className="text-sm font-semibold block mb-1 text-slate-600">Description <span className="font-normal text-slate-400">(optional)</span></label>
-            <input value={form.description} onChange={(e: any) => setForm((f: any) => ({ ...f, description: e.target.value }))} placeholder="e.g. Mortgage payment..." className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" />
+            <input value={form.description} onChange={(e: any) => setForm((f: any) => ({ ...f, description: e.target.value }))} placeholder={t.cashFlow.mortgagePlaceholder} className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" />
           </div>
           <div className="space-y-3 bg-slate-50 rounded-xl p-4 border border-slate-200">
-            <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Retirement Planning</p>
+            <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">{t.cashFlow.retirementPlanning}</p>
             <label className="flex items-center gap-2 cursor-pointer">
               <input type="checkbox" checked={form.isEssential} onChange={(e: any) => setForm((f: any) => ({ ...f, isEssential: e.target.checked }))} className="w-4 h-4 rounded accent-blue-600" />
-              <span className="text-sm font-medium text-slate-700">Essential expense</span>
+              <span className="text-sm font-medium text-slate-700">{t.cashFlow.essentialExpense}</span>
             </label>
             <label className="flex items-center gap-2 cursor-pointer">
               <input type="checkbox" checked={form.includeInRetirement} onChange={(e: any) => setForm((f: any) => ({ ...f, includeInRetirement: e.target.checked }))} className="w-4 h-4 rounded accent-blue-600" />
-              <span className="text-sm font-medium text-slate-700">Include in retirement income need</span>
+              <span className="text-sm font-medium text-slate-700">{t.cashFlow.includeInRetirement}</span>
             </label>
             {form.includeInRetirement && (
               <div>
-                <label className="text-sm font-semibold block mb-1 text-slate-600">Retirement adjustment: <span className="text-blue-600">{form.retirementAdjustmentPct}%</span></label>
+                <label className="text-sm font-semibold block mb-1 text-slate-600">{t.cashFlow.retirementAdjustment} <span className="text-blue-600">{form.retirementAdjustmentPct}%</span></label>
                 <input type="range" min="0" max="150" step="5" value={form.retirementAdjustmentPct} onChange={(e: any) => setForm((f: any) => ({ ...f, retirementAdjustmentPct: e.target.value }))} className="w-full accent-blue-600" />
-                <p className="text-xs text-slate-400 mt-1">{fmt(parseFloat(form.monthlyAmount || "0") * parseInt(form.retirementAdjustmentPct) / 100)}/mo in retirement</p>
+                <p className="text-xs text-slate-400 mt-1">{fmt(parseFloat(form.monthlyAmount || "0") * parseInt(form.retirementAdjustmentPct) / 100)}{t.cashFlow.moInRetirement}</p>
               </div>
             )}
           </div>

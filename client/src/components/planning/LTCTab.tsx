@@ -172,7 +172,7 @@ function SelfInsureChart({ result, currentAge }: { result: LTCResult; currentAge
           label={{ value: "Age", position: "insideBottom", offset: -2, fontSize: 10, fill: "#94A3B8" }} />
         <YAxis tickFormatter={v => "$" + Math.round(v / 1000) + "K"} tick={{ fontSize: 10, fill: "#94A3B8" }} width={52} />
         <Tooltip formatter={(v: any) => "$" + Math.round(v).toLocaleString()} />
-        <Bar dataKey="premiums"  name="Cumulative Premiums" fill="#0891b2" radius={[2,2,0,0]} />
+        <Bar dataKey="premiums"  name={t.ltc.cumulativePremiums2} fill="#0891b2" radius={[2,2,0,0]} />
         {result.breakEvenAge < 90 && (
           <ReferenceLine x={result.breakEvenAge} stroke="#dc2626" strokeDasharray="4 4"
             label={{ value: `Break-even ${result.breakEvenAge}`, position: "top", fontSize: 9, fill: "#dc2626" }} />
@@ -396,14 +396,14 @@ export function LTCTab({ clientId, client, t = translations.en }: Props) {
           <div className="lg:col-span-1 space-y-4">
             <div className="flex items-center gap-2 mb-1">
               <Heart className="w-4 h-4 text-[#0891b2]" />
-              <h3 className="text-sm font-bold text-gray-800">LTC Analysis Inputs</h3>
+              <h3 className="text-sm font-bold text-gray-800">{t.ltc.analysisInputs}</h3>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
-              <Field label="Current Age">
+              <Field label={t.common.currentAge}>
                 <Input type="number" value={form.currentAge} onChange={set("currentAge")} min={40} max={80} />
               </Field>
-              <Field label="Province">
+              <Field label={t.common.province}>
                 <Select value={form.province} onChange={set("province")}
                   options={PROVINCES.map(p => ({ value: p, label: p }))} />
               </Field>
@@ -415,7 +415,7 @@ export function LTCTab({ clientId, client, t = translations.en }: Props) {
 
             {/* Pool selector */}
             <div>
-              <label className="block text-xs font-semibold text-gray-600 mb-2">Benefit Pool Size</label>
+              <label className="block text-xs font-semibold text-gray-600 mb-2">{t.ltc.poolSize}</label>
               <div className="flex gap-2">
                 {([3, 5, 10] as PoolYears[]).map(y => (
                   <PoolTile key={y} years={y} dailyBenefit={form.dailyBenefit}
@@ -552,7 +552,7 @@ export function LTCTab({ clientId, client, t = translations.en }: Props) {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {/* Self-insure cost */}
                   <div className="bg-gray-50 rounded-xl p-4">
-                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Self-Insure Cost</p>
+                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">{t.ltc.selfInsureCost}</p>
                     <div className="space-y-2">
                       {[
                         { label: "Daily care cost at claim", value: `$${Math.round(r.selfInsure.selectedLevelCost)}/day` },
@@ -573,7 +573,7 @@ export function LTCTab({ clientId, client, t = translations.en }: Props) {
 
                   {/* Insure cost */}
                   <div className="bg-gray-50 rounded-xl p-4">
-                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Insurance Cost</p>
+                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">{t.ltc.insuranceCost}</p>
                     <div className="space-y-2">
                       {[
                         { label: "Est. annual premium", value: fmt$(form.estAnnualPremium || Math.round(form.dailyBenefit * (form.currentAge < 55 ? 4.8 : form.currentAge < 60 ? 7.2 : 11.5))) + "/yr" },
@@ -633,7 +633,7 @@ export function LTCTab({ clientId, client, t = translations.en }: Props) {
             {!r && (
               <div className="flex flex-col items-center justify-center py-16 text-gray-400">
                 <Shield className="w-8 h-8 mb-2 opacity-30" />
-                <p className="text-sm">Enter inputs on the left to see the LTC analysis</p>
+                <p className="text-sm">{t.ltc.enterInputs}</p>
               </div>
             )}
           </div>

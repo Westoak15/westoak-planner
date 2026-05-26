@@ -557,7 +557,7 @@ export function ScenarioComparisonPanel({ clientId, onClose, t = translations.en
                `${selected.length} selected — ready`}
             </p>
             <div className="flex gap-3">
-              <button onClick={onClose} className="px-4 py-2 text-sm text-gray-500 hover:text-gray-700">Cancel</button>
+              <button onClick={onClose} className="px-4 py-2 text-sm text-gray-500 hover:text-gray-700">{t.common.cancel}</button>
               <button onClick={() => setStep("compare")} disabled={selected.length < 2}
                 className="px-5 py-2 bg-[#0c1e3a] hover:bg-[#0e2a4a] disabled:opacity-40 text-white text-sm font-semibold rounded-xl transition-colors">
                 Compare →
@@ -588,7 +588,7 @@ export function ScenarioComparisonPanel({ clientId, onClose, t = translations.en
               ))}
             </div>
             <div>
-              <h2 className="text-lg font-bold text-white">Scenario Comparison</h2>
+              <h2 className="text-lg font-bold text-white">{t.scenarioComparison.scenarioTitle}</h2>
               <p className="text-xs text-white/50">{compared.length} scenarios · Summary uses saved projection results</p>
             </div>
           </div>
@@ -646,7 +646,7 @@ export function ScenarioComparisonPanel({ clientId, onClose, t = translations.en
               <table className="w-full text-sm">
                 <thead>
                   <tr className="bg-[#0c1e3a]">
-                    <th className="text-left px-4 py-3 text-xs font-semibold text-white/60 uppercase tracking-wider w-52">Metric</th>
+                    <th className="text-left px-4 py-3 text-xs font-semibold text-white/60 uppercase tracking-wider w-52">{t.scenarioComparison.metric}</th>
                     {compared.map((p, i) => (
                       <th key={p.id} className={`px-4 py-3 text-center ${i === bestIdx ? "bg-emerald-900/30" : ""}`}>
                         <div className="flex flex-col items-center gap-1">
@@ -736,11 +736,11 @@ export function ScenarioComparisonPanel({ clientId, onClose, t = translations.en
                         <th className="px-3 py-1.5 text-left text-[10px] font-medium text-gray-400" />
                         {compared.map((_, i) => (
                           <> 
-                            <th key={`${i}-nw`} className="px-3 py-1.5 text-center text-[10px] font-medium text-gray-400 border-l border-gray-200">Net Worth</th>
+                            <th key={`${i}-nw`} className="px-3 py-1.5 text-center text-[10px] font-medium text-gray-400 border-l border-gray-200">{t.scenarioComparison.netWorthLabel}</th>
                             <th key={`${i}-rrsp`} className="px-2 py-1.5 text-center text-[10px] font-medium text-gray-400">RRSP</th>
                             <th key={`${i}-tfsa`} className="px-2 py-1.5 text-center text-[10px] font-medium text-gray-400">TFSA</th>
-                            <th key={`${i}-nonreg`} className="px-2 py-1.5 text-center text-[10px] font-medium text-gray-400">Non-Reg</th>
-                            <th key={`${i}-tax`} className="px-2 py-1.5 text-center text-[10px] font-medium text-gray-400">Est. Taxes</th>
+                            <th key={`${i}-nonreg`} className="px-2 py-1.5 text-center text-[10px] font-medium text-gray-400">{t.scenarioComparison.nonReg}</th>
+                            <th key={`${i}-tax`} className="px-2 py-1.5 text-center text-[10px] font-medium text-gray-400">{t.scenarioComparison.estTaxes}</th>
                           </>
                         ))}
                       </tr>

@@ -117,12 +117,12 @@ function ReplacementGauge({ ratio }: { ratio: number }) {
         </ResponsiveContainer>
         <div className="absolute bottom-0 left-0 right-0 text-center">
           <p className="text-2xl font-bold" style={{ color }}>{ratio}%</p>
-          <p className="text-[10px] text-gray-400">replacement ratio</p>
+          <p className="text-[10px] text-gray-400">{t.di.replacementRatio}</p>
         </div>
       </div>
       <div className="flex items-center gap-1 mt-1">
         <div className="h-0.5 w-8 bg-gray-200 rounded" />
-        <span className="text-[10px] text-gray-400">70% target</span>
+        <span className="text-[10px] text-gray-400">{t.di.target}</span>
         <div className="h-0.5 w-8 bg-gray-200 rounded" />
       </div>
     </div>
@@ -330,14 +330,14 @@ export function DITab({ clientId, client, t = translations.en }: Props) {
           <div className="lg:col-span-1 space-y-4">
             <div className="flex items-center gap-2 mb-1">
               <Briefcase className="w-4 h-4 text-[#0891b2]" />
-              <h3 className="text-sm font-bold text-gray-800">DI Analysis Inputs</h3>
+              <h3 className="text-sm font-bold text-gray-800">{t.di.analysisInputs}</h3>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
-              <Field label="Current Age">
+              <Field label={t.common.currentAge}>
                 <Input type="number" value={form.currentAge} onChange={set("currentAge")} min={20} max={64} />
               </Field>
-              <Field label="Province">
+              <Field label={t.common.province}>
                 <Select value={form.province} onChange={set("province")} options={PROVINCES.map(p => ({ value: p, label: p }))} />
               </Field>
             </div>
@@ -366,7 +366,7 @@ export function DITab({ clientId, client, t = translations.en }: Props) {
 
             {/* Existing coverage */}
             <div className="bg-gray-50 rounded-xl p-3 space-y-3">
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Existing Coverage</p>
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">{t.di.existingCoverage}</p>
               <Field label={t.di.groupDi}>
                 <Input type="number" value={form.groupDiMonthly} onChange={set("groupDiMonthly")} min={0} step={100} prefix="$" />
               </Field>
@@ -374,7 +374,7 @@ export function DITab({ clientId, client, t = translations.en }: Props) {
                 <input type="checkbox" id="empPaid" checked={form.groupDiEmployerPaid}
                   onChange={e => set("groupDiEmployerPaid")(e.target.checked)}
                   className="rounded" />
-                <label htmlFor="empPaid" className="text-xs text-gray-600">Employer-paid premiums (benefit is taxable)</label>
+                <label htmlFor="empPaid" className="text-xs text-gray-600">{t.di.employerPaid}</label>
               </div>
               <Field label={t.di.individualDi}>
                 <Input type="number" value={form.individualDiMonthly} onChange={set("individualDiMonthly")} min={0} step={100} prefix="$" />
@@ -440,7 +440,7 @@ export function DITab({ clientId, client, t = translations.en }: Props) {
 
             {/* Coverage breakdown */}
             <div className="bg-gray-50 rounded-xl p-4">
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Coverage Breakdown</p>
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">{t.di.coverageBreakdown}</p>
               <div className="space-y-2">
                 {[
                   { label: t.di.grossMonthly,         value: fmt$(r.grossMonthlyIncome) + "/mo", bold: true },
@@ -489,7 +489,7 @@ export function DITab({ clientId, client, t = translations.en }: Props) {
             {/* Two column — waiting period + COLA */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="bg-gray-50 rounded-xl p-4">
-                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Waiting Period Cost</p>
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">{t.di.waitingCost}</p>
                 <p className="text-xl font-bold text-[#0c1e3a]">{fmt$(r.waitingPeriodCost)}</p>
                 <p className="text-xs text-gray-400 mt-1">out-of-pocket during {form.waitingPeriodDays}-day wait</p>
                 <p className="text-xs text-gray-500 mt-2">
@@ -504,7 +504,7 @@ export function DITab({ clientId, client, t = translations.en }: Props) {
                   <>
                     <div className="space-y-1">
                       <div className="flex justify-between text-xs">
-                        <span className="text-gray-500">Benefit today</span>
+                        <span className="text-gray-500">{t.di.benefitToday}</span>
                         <span className="font-semibold">{fmt$(r.coverageGap)}/mo</span>
                       </div>
                       <div className="flex justify-between text-xs">

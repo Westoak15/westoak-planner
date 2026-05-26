@@ -332,7 +332,7 @@ export function InsightLedDashboard({ clientId, client, onNavigate, t = translat
     return (
       <div className="fp-insightled flex items-center justify-center h-full">
         <div className="fp-insightled-card p-6 max-w-md text-center">
-          <div className="text-[var(--accent-rose)] text-sm font-bold mb-2">Could not load dashboard</div>
+          <div className="text-[var(--accent-rose)] text-sm font-bold mb-2">{t.dashboard.couldNotLoad}</div>
           <div className="text-[var(--text-secondary)] text-xs">{errMsg || "Please retry or check the network connection."}</div>
         </div>
       </div>
@@ -464,7 +464,7 @@ export function InsightLedDashboard({ clientId, client, onNavigate, t = translat
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke={COLORS.border} vertical={false} />
-                  <XAxis dataKey="year" axisLine={false} tickLine={false} tick={{ fill: COLORS.tick, fontSize: 12 }} dy={10} />
+                  <XAxis dataKey={t.common.year} axisLine={false} tickLine={false} tick={{ fill: COLORS.tick, fontSize: 12 }} dy={10} />
                   <YAxis axisLine={false} tickLine={false} tick={{ fill: COLORS.tick, fontSize: 12 }} tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} dx={-10} />
                   <Tooltip
                     contentStyle={{ backgroundColor: "#ffffff", border: "1px solid rgba(15,23,42,0.1)", borderRadius: "8px", boxShadow: "0 8px 24px rgba(15,23,42,0.08)", color: "#0f172a" }}
@@ -488,7 +488,7 @@ export function InsightLedDashboard({ clientId, client, onNavigate, t = translat
                 <>
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
-                      <Pie data={allocationData} cx="50%" cy="50%" innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value" stroke="none">
+                      <Pie data={allocationData} cx="50%" cy="50%" innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value" stroke={t.report.none}>
                         {allocationData.map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={entry.color} />
                         ))}

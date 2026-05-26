@@ -76,7 +76,18 @@ export const translations = {
       record:           "Record",
       stop:             "Stop",
       search:           "Search",
-    },
+    
+       active:              "Active",
+       expired:             "Expired",
+       expiring:            "Expiring",
+       adequate:            "Adequate",
+       gap:                 "Gap",
+       phase:               "Phase",
+       household:           "Household",
+       allCategories:       "All Categories",
+       clickToSet:            "Click to set",
+       clickToEdit:           "Click to edit",
+       calculating:           "Calculating…",},
 
     // ── Net Worth ──────────────────────────────────────────────────────────────
     netWorth: {
@@ -149,7 +160,13 @@ export const translations = {
       eduTotalRESP:         "Total RESP Balance",
       eduTotalTarget:       "Total Target",
       noEducationPlans:     "No education plans yet — click Add Child to get started",
-    },
+    
+       cppMonthly:          "CPP Monthly",
+       childName:           "Child Name",
+       holdingType:         "Holding type",
+       contributor:         "Contributor",
+       selectContributor:   "Select contributor",
+       portfolio:             "Portfolio",},
 
     // ── Debt ──────────────────────────────────────────────────────────────────
     debt: {
@@ -284,7 +301,18 @@ export const translations = {
       noGoalsYet:         "No goals yet",
       addGoalsHint:       "Add goals to track progress and inject them into your retirement simulation",
       addFirstGoal:       "Add your first goal",
-    },
+    
+       annualCost:          "Annual Cost",
+       cashflowEvents:      "Cashflow Events",
+       goalType:            "Goal Type",
+       goalTitleLabel:      "Goal Title",
+       inflationAdjust:     "Inflation-adjust amount",
+       inPlan:              "IN PLAN",
+       events:              "Events",
+       endYear:             "End Year",
+       startYear:           "Start Year",
+       annualAmount:        "Annual Amount",
+       categoryOfGoal:      "Category of goal",},
 
     // ── Insurance / Protection ─────────────────────────────────────────────────
     insurance: {
@@ -366,7 +394,14 @@ export const translations = {
       policyInsured:      "Policy / Insured",
       missing:            "Missing",
       disabilityIncome:   "Disability Income",
-    },
+    
+       addPoliciesToGen:    "Add policies to generate intelligence",
+       householdScenarios:  "Household Scenarios",
+       buySell:             "Buy-Sell",
+       disCovInPlace:       "Disability coverage in place",
+       ltcPlanning:         "LTC Planning",
+       diPlanning:          "DI Planning",
+       expiryDate:            "Expiry Date",},
 
     // ── Retirement ────────────────────────────────────────────────────────────
     retirement: {
@@ -446,7 +481,40 @@ export const translations = {
       dcGrspBalance:      "DC / GRSP balance",
       dcDrawdownYr:       "DC drawdown / yr",
       rrspMeltdown:       "RRSP Meltdown",
-    },
+    
+       annualShortfall:     "Annual Shortfall",
+       annualSurplusLabel:  "Annual Surplus",
+       annualGapToClose:    "Annual gap to close",
+       avgFundingRate:      "Avg. funding rate",
+       incomeByPhase:       "Income by Phase",
+       incomeAdjusted:      "Income coverage (inflation-adjusted)",
+       retirementSetup:     "Retirement Setup",
+       cppIncluded:         "CPP included",
+       oasIncluded:         "OAS included",
+       householdCombined:   "Household Combined",
+       combinedPortfolio:   "Combined portfolio",
+       combinedDesired:     "Combined desired income",
+       combinedSurplus:     "Combined surplus",
+       combinedShortfall:   "Combined shortfall",
+       phase1Label:         "Pre-CPP / Pre-OAS",
+       phase2Label:         "With CPP",
+       phase3Label:         "With CPP + OAS",
+       engineResults:       "Canadian Engine Results",
+       estateAtLife:        "Estate at Life Expectancy",
+       guaranteedIncome2:   "Guaranteed Income",
+       lifetimeTaxLabel:    "Est. Lifetime Taxes",
+       annualRrspContrib:     "Annual RRSP Contrib. ($)",
+       annualTfsaContrib:     "Annual TFSA Contrib. ($)",
+       cppMonthly65:          "CPP Monthly at 65 ($)",
+       oasMonthly65:          "OAS Monthly at 65 ($)",
+       cppStartAge:           "CPP Start Age",
+       oasStartAge:           "OAS Start Age",
+       pensionDb:             "Pension / DB",
+       growthContrib:         "Growth & Contributions",
+       govBenefits:           "Government Benefits",
+       projectedPortfolio:    "Projected Portfolio",
+       baseCaseLabel:         "e.g. Base case",
+       tfsaContribMade:       "TFSA contributions made to date ($)",},
 
     // ── Cash Flow / Expenses ──────────────────────────────────────────────────
     cashFlow: {
@@ -487,7 +555,14 @@ export const translations = {
       includeInRetirement: "Include in retirement income need",
       retirementAdjustment: "Retirement adjustment:",
       moInRetirement:     "/mo in retirement",
-    },
+    
+       categories:          "Categories",
+       spendingBreakdown:   "Spending Breakdown",
+       monthlyExpenses:     "Monthly Expenses",
+       yearlyView:          "Yearly",
+       inRetirement:        "In Retirement",
+       retirementImpact:    "Retirement Impact",
+       addCategory:         "Add Category",},
 
     // ── Tax & Estate ──────────────────────────────────────────────────────────
     taxEstate: {
@@ -591,7 +666,8 @@ export const translations = {
       planSummaryDesc:    "Plan summary",
       endToEndWorkflow:   "End-to-end planning workflow",
       aiGeneratedDesc:    "AI-generated comprehensive plan based on all available client data",
-    },
+    
+       inPlan:                "In Plan",},
 
     // ── Reports ───────────────────────────────────────────────────────────────
     report: {
@@ -705,7 +781,13 @@ export const translations = {
       plans:                  "Plans",
       aiRecs:                 "AI Recs",
       invested:               "Invested",
-    },
+    
+       couldNotLoad:        "Could not load dashboard",
+       failedToLoad:        "Failed to load dashboard data",
+       pleaseRetry:         "Please retry or check the network connection.",
+       cashBank:            "Cash/Bank",
+       currentLabel:        "Current",
+       expensesEst:         "Expenses (est)",},
 
     // ── Meeting recorder ──────────────────────────────────────────────────────
     meeting: {
@@ -863,7 +945,9 @@ export const translations = {
        riderValueAdd:      "The inflation rider adds {amount} to the total benefit pool by age {age} vs no inflation protection.",
        hybridNote:         "In a hybrid product, the LTC pool is drawn first. Any unused LTC pool remains as death benefit.",
        label:              "Label (optional)",
-     },
+     
+       cumulativePremiums2: "Cumulative Premiums",
+       enterInputs:         "Enter inputs on the left to see the LTC analysis",},
 
      di: {
        title:              "Disability Income Planning",
@@ -933,7 +1017,9 @@ export const translations = {
        label:              "Label (optional)",
        noGapCola:          "No coverage gap — COLA would apply to any new coverage purchased.",
        requiresEmergency:  "Requires {n} months emergency fund to bridge the elimination period.",
-     },
+     
+       individualDi2:       "Individual DI",
+       cppDisAfterTax:      "CPP Disability (after tax)",},
 
      scenarioComparison: {
        title:             "Compare Scenarios",
@@ -974,7 +1060,12 @@ export const translations = {
        annualContrib:     "Annual RRSP Contribution",
        expectedReturn:    "Expected Return",
        rrifMinAt71:       "RRIF Min Withdrawal at 71",
-     },
+     
+       metric:              "Metric",
+       nonReg:              "Non-Reg",
+       estTaxes:            "Est. Taxes",
+       scenarioTitle:       "Scenario Comparison",
+       netWorthLabel:       "Net Worth",},
       dateOfBirth:        "Date of Birth",
       province:           "Province",
       occupation:         "Occupation",
@@ -1054,7 +1145,18 @@ export const translations = {
       record:           "Enregistrer",
       stop:             "Arrêter",
       search:           "Rechercher",
-    },
+    
+       active:              "Actif",
+       expired:             "Expiré",
+       expiring:            "Bientôt expiré",
+       adequate:            "Adéquat",
+       gap:                 "Écart",
+       phase:               "Phase",
+       household:           "Ménage",
+       allCategories:       "Toutes les catégories",
+       clickToSet:            "Cliquer pour définir",
+       clickToEdit:           "Cliquer pour modifier",
+       calculating:           "Calcul…",},
 
     // ── Net Worth ──────────────────────────────────────────────────────────────
     netWorth: {
@@ -1124,7 +1226,13 @@ export const translations = {
       eduTotalRESP:         "Solde REEE total",
       eduTotalTarget:       "Cible totale",
       noEducationPlans:     "Aucun plan d\'éducation — cliquez sur Ajouter un enfant pour commencer",
-    },
+    
+       cppMonthly:          "RPC mensuel",
+       childName:           "Nom de l'enfant",
+       holdingType:         "Type de détention",
+       contributor:         "Cotisant",
+       selectContributor:   "Sélectionner le cotisant",
+       portfolio:             "Portefeuille",},
 
     // ── Debt ──────────────────────────────────────────────────────────────────
     debt: {
@@ -1255,7 +1363,18 @@ export const translations = {
       noGoalsYet:         "Aucun objectif pour l'instant",
       addGoalsHint:       "Ajoutez des objectifs pour suivre les progrès et les intégrer dans votre simulation de retraite",
       addFirstGoal:       "Ajoutez votre premier objectif",
-    },
+    
+       annualCost:          "Coût annuel",
+       cashflowEvents:      "Événements de trésorerie",
+       goalType:            "Type d'objectif",
+       goalTitleLabel:      "Titre de l'objectif",
+       inflationAdjust:     "Ajuster pour l'inflation",
+       inPlan:              "AU PLAN",
+       events:              "Événements",
+       endYear:             "Année de fin",
+       startYear:           "Année de début",
+       annualAmount:        "Montant annuel",
+       categoryOfGoal:      "Catégorie d'objectif",},
 
     // ── Insurance / Protection ─────────────────────────────────────────────────
     insurance: {
@@ -1337,7 +1456,14 @@ export const translations = {
       policyInsured:      "Police / Assuré",
       missing:            "Manquante",
       disabilityIncome:   "Revenu d'invalidité",
-    },
+    
+       addPoliciesToGen:    "Ajoutez des polices pour générer des analyses",
+       householdScenarios:  "Scénarios du ménage",
+       buySell:             "Achat-vente",
+       disCovInPlace:       "Couverture d'invalidité en place",
+       ltcPlanning:         "Planification SLD",
+       diPlanning:          "Planification RI",
+       expiryDate:            "Date d'expiration",},
 
     // ── Retirement ────────────────────────────────────────────────────────────
     retirement: {
@@ -1416,7 +1542,40 @@ export const translations = {
       dcGrspBalance:      "Solde PRCD / REER collectif",
       dcDrawdownYr:       "Décaissement PRCD / an",
       rrspMeltdown:       "Fonte du REER",
-    },
+    
+       annualShortfall:     "Déficit annuel",
+       annualSurplusLabel:  "Surplus annuel",
+       annualGapToClose:    "Écart annuel à combler",
+       avgFundingRate:      "Taux de financement moyen",
+       incomeByPhase:       "Revenu par phase",
+       incomeAdjusted:      "Couverture du revenu (ajustée à l'inflation)",
+       retirementSetup:     "Configuration de la retraite",
+       cppIncluded:         "RPC inclus",
+       oasIncluded:         "SV incluse",
+       householdCombined:   "Ménage combiné",
+       combinedPortfolio:   "Portefeuille combiné",
+       combinedDesired:     "Revenu désiré combiné",
+       combinedSurplus:     "Surplus combiné",
+       combinedShortfall:   "Déficit combiné",
+       phase1Label:         "Avant RPC / Avant SV",
+       phase2Label:         "Avec RPC",
+       phase3Label:         "Avec RPC + SV",
+       engineResults:       "Résultats du moteur canadien",
+       estateAtLife:        "Succession à l'espérance de vie",
+       guaranteedIncome2:   "Revenu garanti",
+       lifetimeTaxLabel:    "Impôts à vie estimés",
+       annualRrspContrib:     "Cotisation annuelle REER ($)",
+       annualTfsaContrib:     "Cotisation annuelle CELI ($)",
+       cppMonthly65:          "RPC mensuel à 65 ans ($)",
+       oasMonthly65:          "SV mensuelle à 65 ans ($)",
+       cppStartAge:           "Âge de début RPC",
+       oasStartAge:           "Âge de début SV",
+       pensionDb:             "Pension / PD",
+       growthContrib:         "Croissance et cotisations",
+       govBenefits:           "Prestations gouvernementales",
+       projectedPortfolio:    "Portefeuille projeté",
+       baseCaseLabel:         "ex. Cas de base",
+       tfsaContribMade:       "Cotisations CELI versées à ce jour ($)",},
 
     // ── Cash Flow / Expenses ──────────────────────────────────────────────────
     cashFlow: {
@@ -1457,7 +1616,14 @@ export const translations = {
       includeInRetirement: "Inclure dans les besoins de revenu de retraite",
       retirementAdjustment: "Ajustement retraite :",
       moInRetirement:     "/mois à la retraite",
-    },
+    
+       categories:          "Catégories",
+       spendingBreakdown:   "Répartition des dépenses",
+       monthlyExpenses:     "Dépenses mensuelles",
+       yearlyView:          "Annuel",
+       inRetirement:        "À la retraite",
+       retirementImpact:    "Impact sur la retraite",
+       addCategory:         "Ajouter une catégorie",},
 
     // ── Tax & Estate ──────────────────────────────────────────────────────────
     taxEstate: {
@@ -1562,7 +1728,8 @@ export const translations = {
       needsAttention:     "Nécessite attention",
       atRisk:             "À risque",
       notStarted:         "Non commencé",
-    },
+    
+       inPlan:                "Au plan",},
 
     // ── Reports ───────────────────────────────────────────────────────────────
     report: {
@@ -1674,7 +1841,13 @@ export const translations = {
       plans:                  "Plans",
       aiRecs:                 "Recommandations IA",
       invested:               "Investi",
-    },
+    
+       couldNotLoad:        "Impossible de charger le tableau de bord",
+       failedToLoad:        "Échec du chargement des données",
+       pleaseRetry:         "Veuillez réessayer ou vérifier la connexion réseau.",
+       cashBank:            "Espèces/Banque",
+       currentLabel:        "Actuel",
+       expensesEst:         "Dépenses (est)",},
 
     // ── Meeting recorder ──────────────────────────────────────────────────────
     meeting: {
@@ -1832,7 +2005,9 @@ export const translations = {
        riderValueAdd:      "La protection contre l'inflation ajoute {amount} au pool à l'âge {age}.",
        hybridNote:         "Dans un produit hybride, le pool SLD est utilisé en premier. Tout pool SLD inutilisé demeure comme prestation de décès.",
        label:              "Étiquette (facultatif)",
-     },
+     
+       cumulativePremiums2: "Primes cumulatives",
+       enterInputs:         "Entrez les paramètres pour voir l'analyse SLD",},
 
      di: {
        title:              "Planification du revenu d'invalidité",
@@ -1902,7 +2077,9 @@ export const translations = {
        label:              "Étiquette (facultatif)",
        noGapCola:          "Aucun écart — l'IVAC s'appliquerait à toute nouvelle couverture.",
        requiresEmergency:  "Nécessite {n} mois de fonds d'urgence.",
-     },
+     
+       individualDi2:       "RI individuelle",
+       cppDisAfterTax:      "RPC Invalidité (après impôt)",},
 
      scenarioComparison: {
        title:             "Comparer les scénarios",
@@ -1943,7 +2120,12 @@ export const translations = {
        annualContrib:     "Cotisation annuelle REER",
        expectedReturn:    "Rendement attendu",
        rrifMinAt71:       "Retrait min. FERR à 71 ans",
-     },
+     
+       metric:              "Indicateur",
+       nonReg:              "Non immatriculé",
+       estTaxes:            "Impôts estimés",
+       scenarioTitle:       "Comparaison de scénarios",
+       netWorthLabel:       "Valeur nette",},
       dateOfBirth:        "Date de naissance",
       province:           "Province",
       occupation:         "Profession",

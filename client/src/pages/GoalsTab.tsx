@@ -249,7 +249,7 @@ function GoalCard({ goal, t, onEdit, onDelete, onInlineUpdate }: { goal: Goal; t
         </div>
         <div className="flex items-center gap-1.5 flex-shrink-0">
           {goal.projectionImpact && (
-            <span className="text-[9px] font-bold bg-cyan-500 text-white px-1.5 py-0.5 rounded">IN PLAN</span>
+            <span className="text-[9px] font-bold bg-cyan-500 text-white px-1.5 py-0.5 rounded">{t.goals.inPlan}</span>
           )}
           <span className="text-xs bg-blue-50 text-blue-600 px-2 py-0.5 rounded-md font-medium">
             {status.label}
@@ -264,7 +264,7 @@ function GoalCard({ goal, t, onEdit, onDelete, onInlineUpdate }: { goal: Goal; t
         {goal.cashflowType === "recurring_expense" ? (
           <>
             <div className="bg-slate-50 rounded-xl px-3 py-2">
-              <p className="text-[10px] text-slate-500 mb-0.5">Annual Cost</p>
+              <p className="text-[10px] text-slate-500 mb-0.5">{t.goals.annualCost}</p>
               <div className="text-sm font-bold text-slate-900 font-mono" onClick={e => e.stopPropagation()}>
                 <InlineEdit
                   value={goal.annualAmount ?? "0"}
@@ -276,7 +276,7 @@ function GoalCard({ goal, t, onEdit, onDelete, onInlineUpdate }: { goal: Goal; t
               </div>
             </div>
             <div className="bg-slate-50 rounded-xl px-3 py-2">
-              <p className="text-[10px] text-slate-500 mb-0.5">Timeline</p>
+              <p className="text-[10px] text-slate-500 mb-0.5">{t.plan.timeline}</p>
               <p className="text-sm font-bold text-slate-900 font-mono">{goal.startYear} – {goal.endYear}</p>
             </div>
           </>
@@ -297,7 +297,7 @@ function GoalCard({ goal, t, onEdit, onDelete, onInlineUpdate }: { goal: Goal; t
               </div>
             </div>
             <div className="bg-slate-50 rounded-xl px-3 py-2">
-              <p className="text-[10px] text-slate-500 mb-0.5">Target Year</p>
+              <p className="text-[10px] text-slate-500 mb-0.5">{t.goals.targetYear}</p>
               <div className="text-sm font-bold text-slate-900 font-mono" onClick={e => e.stopPropagation()}>
                 <InlineEdit
                   value={String(goal.targetYear ?? "")}
@@ -364,7 +364,7 @@ function GoalCard({ goal, t, onEdit, onDelete, onInlineUpdate }: { goal: Goal; t
             className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-blue-400 outline-none transition resize-none"
           />
           <div className="flex justify-end gap-2">
-            <button onClick={() => { setNotes(goal.notes ?? ""); setNotesOpen(false); }} className="text-xs text-slate-500 hover:text-slate-700">Cancel</button>
+            <button onClick={() => { setNotes(goal.notes ?? ""); setNotesOpen(false); }} className="text-xs text-slate-500 hover:text-slate-700">{t.common.cancel}</button>
             <button onClick={saveNotes} disabled={notesSaving} className="text-xs text-blue-600 font-semibold hover:underline disabled:opacity-50">
               {notesSaving ? t.common.saving : "Save notes"}
             </button>
@@ -454,7 +454,7 @@ function GoalForm({
         <div className="p-6 space-y-4">
           {/* Goal Type */}
           <div>
-            <label className="text-xs font-semibold text-[var(--text-tertiary)] block mb-1.5">Goal Type</label>
+            <label className="text-xs font-semibold text-[var(--text-tertiary)] block mb-1.5">{t.goals.goalType}</label>
             <div className="grid grid-cols-2 gap-2">
               {GOAL_TYPES.map(t => {
                 const Icon = t.icon;
@@ -476,7 +476,7 @@ function GoalForm({
 
           {/* Title */}
           <div>
-            <label className="text-xs font-semibold text-[var(--text-tertiary)] block mb-1">Goal Title</label>
+            <label className="text-xs font-semibold text-[var(--text-tertiary)] block mb-1">{t.goals.goalTitleLabel}</label>
             <input value={form.title} onChange={e => upd("title", e.target.value)}
               className="w-full px-3 py-2 rounded-xl border border-[var(--border-light)] bg-[var(--bg-panel)] text-[var(--text-primary)] text-sm focus:outline-none focus:border-[var(--accent-cyan)] focus:ring-0 placeholder:text-[var(--text-tertiary)]"
               placeholder={typeInfo.label + " goal"} />
@@ -484,7 +484,7 @@ function GoalForm({
 
           {/* Cashflow type override */}
           <div>
-            <label className="text-xs font-semibold text-[var(--text-tertiary)] block mb-1">Cashflow Type</label>
+            <label className="text-xs font-semibold text-[var(--text-tertiary)] block mb-1">{t.goals.cashflowType}</label>
             <select value={form.cashflowType} onChange={e => upd("cashflowType", e.target.value)}
               className="w-full px-3 py-2 rounded-xl border border-[var(--border-light)] bg-[var(--bg-panel)] text-[var(--text-primary)] text-sm focus:outline-none focus:border-[var(--accent-cyan)] focus:ring-0">
               <option value="outflow">One-time outflow (expense)</option>
@@ -511,7 +511,7 @@ function GoalForm({
                     <div key={l.id} onClick={() => toggleLiability(l.id)}
                       className={`flex items-center gap-3 px-3 py-2.5 cursor-pointer transition-colors ${isSelected ? "bg-[var(--accent-cyan)]/[0.07]" : "hover:bg-white/5"}`}>
                       <div className={`w-4 h-4 rounded border-2 flex-shrink-0 flex items-center justify-center transition-colors ${isSelected ? "bg-[var(--accent-cyan)] border-[var(--accent-cyan)]" : "border-[var(--border-light)]"}`}>
-                        {isSelected && <svg width="8" height="8" viewBox="0 0 8 8"><path d="M1 4l2 2 4-4" stroke="white" strokeWidth="1.5" fill="none" strokeLinecap="round"/></svg>}
+                        {isSelected && <svg width="8" height="8" viewBox="0 0 8 8"><path d="M1 4l2 2 4-4" stroke="white" strokeWidth="1.5" fill={t.report.none} strokeLinecap="round"/></svg>}
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-semibold text-[var(--text-primary)]">{label}</p>
@@ -546,7 +546,7 @@ function GoalForm({
                       <p className="text-sm font-bold text-[var(--text-primary)] font-mono">${totalMonthly.toLocaleString("en-CA", { maximumFractionDigits: 0 })}/mo</p>
                     </div>
                     <div>
-                      <p className="text-[10px] text-[var(--text-tertiary)]">Annual Cost</p>
+                      <p className="text-[10px] text-[var(--text-tertiary)]">{t.goals.annualCost}</p>
                       <p className="text-sm font-bold text-[var(--text-primary)] font-mono">${totalAnnual.toLocaleString("en-CA", { maximumFractionDigits: 0 })}/yr</p>
                     </div>
                   </div>
@@ -567,7 +567,7 @@ function GoalForm({
                   className="w-full px-3 py-2 rounded-xl border border-[var(--border-light)] bg-[var(--bg-panel)] text-[var(--text-primary)] text-sm focus:outline-none focus:border-[var(--accent-cyan)] focus:ring-0" placeholder="0" />
               </div>
               <div>
-                <label className="text-xs font-semibold text-[var(--text-tertiary)] block mb-1">Target Year</label>
+                <label className="text-xs font-semibold text-[var(--text-tertiary)] block mb-1">{t.goals.targetYear}</label>
                 <input type="number" value={form.targetYear} onChange={e => upd("targetYear", e.target.value)}
                   className="w-full px-3 py-2 rounded-xl border border-[var(--border-light)] bg-[var(--bg-panel)] text-[var(--text-primary)] text-sm focus:outline-none focus:border-[var(--accent-cyan)] focus:ring-0"
                   min={CURRENT_YEAR} max={CURRENT_YEAR + 60} />
@@ -592,7 +592,7 @@ function GoalForm({
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs font-semibold text-[var(--text-tertiary)] block mb-1">Target Year</label>
+                  <label className="text-xs font-semibold text-[var(--text-tertiary)] block mb-1">{t.goals.targetYear}</label>
                   <input type="number" value={form.targetYear} onChange={e => upd("targetYear", e.target.value)}
                     className="w-full px-3 py-2 rounded-xl border border-[var(--border-light)] bg-[var(--bg-panel)] text-[var(--text-primary)] text-sm focus:outline-none focus:border-[var(--accent-cyan)] focus:ring-0"
                     min={CURRENT_YEAR} max={CURRENT_YEAR + 60} />
@@ -610,13 +610,13 @@ function GoalForm({
           {isRecurring && (
             <div className="grid grid-cols-3 gap-3">
               <div>
-                <label className="text-xs font-semibold text-[var(--text-tertiary)] block mb-1">Start Year</label>
+                <label className="text-xs font-semibold text-[var(--text-tertiary)] block mb-1">{t.goals.startYear}</label>
                 <input type="number" value={form.startYear} onChange={e => upd("startYear", e.target.value)}
                   className="w-full px-3 py-2 rounded-xl border border-[var(--border-light)] bg-[var(--bg-panel)] text-[var(--text-primary)] text-sm focus:outline-none focus:border-[var(--accent-cyan)] focus:ring-0"
                   min={CURRENT_YEAR} max={CURRENT_YEAR + 60} />
               </div>
               <div>
-                <label className="text-xs font-semibold text-[var(--text-tertiary)] block mb-1">End Year</label>
+                <label className="text-xs font-semibold text-[var(--text-tertiary)] block mb-1">{t.goals.endYear}</label>
                 <input type="number" value={form.endYear} onChange={e => upd("endYear", e.target.value)}
                   className="w-full px-3 py-2 rounded-xl border border-[var(--border-light)] bg-[var(--bg-panel)] text-[var(--text-primary)] text-sm focus:outline-none focus:border-[var(--accent-cyan)] focus:ring-0"
                   min={CURRENT_YEAR} max={CURRENT_YEAR + 60} />
@@ -650,7 +650,7 @@ function GoalForm({
               </select>
             </div>
             <div>
-              <label className="text-xs font-semibold text-[var(--text-tertiary)] block mb-1">Funding Source</label>
+              <label className="text-xs font-semibold text-[var(--text-tertiary)] block mb-1">{t.goals.fundingSource}</label>
               <select value={form.fundingSource} onChange={e => upd("fundingSource", e.target.value)}
                 className="w-full px-3 py-2 rounded-xl border border-[var(--border-light)] bg-[var(--bg-panel)] text-[var(--text-primary)] text-sm focus:outline-none focus:border-[var(--accent-cyan)] focus:ring-0">
                 {FUNDING_SOURCES.map(f => <option key={f.key} value={f.key}>{f.label}</option>)}
@@ -661,7 +661,7 @@ function GoalForm({
           {/* Inflation adjust */}
           <div className="flex items-center justify-between bg-[var(--bg-panel)] border border-[var(--border-subtle)] rounded-xl px-3 py-2.5">
             <div>
-              <p className="text-xs font-semibold text-[var(--text-secondary)]">Inflation-adjust amount</p>
+              <p className="text-xs font-semibold text-[var(--text-secondary)]">{t.goals.inflationAdjust}</p>
               <p className="text-[10px] text-[var(--text-tertiary)]">Grow the goal amount with inflation to target year</p>
             </div>
             <button onClick={() => upd("inflationAdjust", !form.inflationAdjust)}
@@ -700,7 +700,7 @@ function GoalForm({
         </div>
 
         <div className="sticky bottom-0 bg-[var(--bg-card)] border-t border-[var(--border-subtle)] px-6 py-4 flex gap-3 justify-end rounded-b-2xl">
-          <button onClick={onCancel} className="text-sm text-[var(--text-secondary)] px-4 py-2 hover:text-[var(--text-primary)]">Cancel</button>
+          <button onClick={onCancel} className="text-sm text-[var(--text-secondary)] px-4 py-2 hover:text-[var(--text-primary)]">{t.common.cancel}</button>
           <button onClick={() => onSave(form)} disabled={busy || !form.title}
             className="flex items-center gap-1.5 bg-gradient-to-r from-[var(--accent-cyan)] to-[var(--accent-blue)] hover:opacity-90 disabled:opacity-50 text-[var(--bg-base)] text-sm font-semibold px-5 py-2.5 rounded-xl">
             <Save className="w-3.5 h-3.5" />
@@ -907,7 +907,7 @@ export function GoalsTab({ clientId, client, t = translations.en }: { clientId: 
       {/* Timeline card */}
       {goals.length > 0 && (
         <div className="bg-white border border-slate-200 rounded-2xl p-5">
-          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Goal Timeline</p>
+          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">{t.goals.timeline}</p>
           <GoalTimeline goals={goals} clientAge={clientAge} />
         </div>
       )}

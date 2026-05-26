@@ -242,10 +242,10 @@ function EditableField({ label, value, onSave, type = "text", format, placeholde
       ) : (
         <p
           onClick={() => setEditing(true)}
-          title="Click to edit"
+          title={t.common.clickToEdit}
           className="text-sm font-semibold text-slate-900 cursor-pointer hover:bg-slate-100 px-1.5 py-0.5 rounded transition-colors -ml-1.5"
         >
-          {display || <span className="text-slate-300 font-normal italic">Click to set</span>}
+          {display || <span className="text-slate-300 font-normal italic">{t.common.clickToSet}</span>}
         </p>
       )}
     </div>
@@ -413,7 +413,7 @@ export function RetirementProjectionForm({ clientId, clientName, projection, onS
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-semibold text-slate-900">Retirement</h1>
+          <h1 className="text-xl font-semibold text-slate-900">{t.retirement.title}</h1>
           <p className="text-sm text-slate-500">{t.retirement.projectionSubtitle}</p>
         </div>
         {onCancel && (
@@ -436,7 +436,7 @@ export function RetirementProjectionForm({ clientId, clientName, projection, onS
       <div className="bg-white border border-slate-200 rounded-2xl p-5 space-y-4 transition-all duration-200 hover:shadow-sm">
         <div>
           <div className="flex justify-between items-center mb-1">
-            <p className="text-xs text-slate-500">Income coverage (inflation-adjusted)</p>
+            <p className="text-xs text-slate-500">{t.retirement.incomeAdjusted}</p>
             <span className="text-sm font-medium" style={{ color: barColor }}>{calc.funded}% funded</span>
           </div>
           <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
@@ -464,62 +464,62 @@ export function RetirementProjectionForm({ clientId, clientName, projection, onS
       <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
         <p className="text-sm font-medium text-slate-600 mb-4">Retirement Setup <span className="text-xs text-slate-400 font-normal">· click any field to edit</span></p>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-4">
-          <EditableField label="Label"            value={f.label}                    onSave={v => setF(p => ({ ...p, label: v }))}                       placeholder="e.g. Base case" />
-          <EditableField label="Current Age"      value={f.currentAge}               onSave={v => setF(p => ({ ...p, currentAge: Number(v) }))}          type="number" format={v => `${v} yrs`} />
-          <EditableField label="Retirement Age"   value={f.retirementAge}            onSave={v => setF(p => ({ ...p, retirementAge: Number(v) }))}       type="number" format={v => `${v} yrs`} />
-          <EditableField label="Life Expectancy"  value={f.lifeExpectancy}           onSave={v => setF(p => ({ ...p, lifeExpectancy: Number(v) }))}      type="number" format={v => `${v} yrs`} />
-          <EditableField label="Desired Income"   value={f.desiredRetirementIncome}  onSave={v => setF(p => ({ ...p, desiredRetirementIncome: v }))}     type="number" format={v => `$${Number(v).toLocaleString("en-CA")}/yr`} />
-          <EditableField label="Pension / DB"     value={f.pensionIncome}            onSave={v => setF(p => ({ ...p, pensionIncome: v }))}               type="number" format={v => `$${Number(v).toLocaleString("en-CA")}/yr`} />
+          <EditableField label={t.common.name}            value={f.label}                    onSave={v => setF(p => ({ ...p, label: v }))}                       placeholder={t.retirement.baseCaseLabel} />
+          <EditableField label={t.common.currentAge}      value={f.currentAge}               onSave={v => setF(p => ({ ...p, currentAge: Number(v) }))}          type="number" format={v => `${v} yrs`} />
+          <EditableField label={t.scenarioComparison.retirementAge}   value={f.retirementAge}            onSave={v => setF(p => ({ ...p, retirementAge: Number(v) }))}       type="number" format={v => `${v} yrs`} />
+          <EditableField label={t.common.lifeExpectancy}  value={f.lifeExpectancy}           onSave={v => setF(p => ({ ...p, lifeExpectancy: Number(v) }))}      type="number" format={v => `${v} yrs`} />
+          <EditableField label={t.retirement.desiredIncome}   value={f.desiredRetirementIncome}  onSave={v => setF(p => ({ ...p, desiredRetirementIncome: v }))}     type="number" format={v => `$${Number(v).toLocaleString("en-CA")}/yr`} />
+          <EditableField label={t.retirement.pensionDb}     value={f.pensionIncome}            onSave={v => setF(p => ({ ...p, pensionIncome: v }))}               type="number" format={v => `$${Number(v).toLocaleString("en-CA")}/yr`} />
         </div>
       </div>
 
       {/* ── Portfolio (collapsible) ── */}
-      <Section title="Portfolio">
+      <Section title={t.netWorth.portfolio}>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <label className="block text-xs text-slate-500 mb-1">RRSP balance ($)</label>
+            <label className="block text-xs text-slate-500 mb-1">{t.retirement.rrspBalance}</label>
             <input type="number" value={f.rrspBalance} onChange={set("rrspBalance")} placeholder="0" className="fp-input" />
           </div>
           <div>
-            <label className="block text-xs text-slate-500 mb-1">TFSA balance ($)</label>
+            <label className="block text-xs text-slate-500 mb-1">{t.retirement.tfsaBalance}</label>
             <input type="number" value={f.tfsaBalance} onChange={set("tfsaBalance")} placeholder="0" className="fp-input" />
           </div>
           <div>
-            <label className="block text-xs text-slate-500 mb-1">TFSA contributions made to date ($)</label>
+            <label className="block text-xs text-slate-500 mb-1">{t.retirement.tfsaContribMade}</label>
             <input type="number" value={f.tfsaContributionsMade} onChange={set("tfsaContributionsMade")} placeholder="e.g. 45000" className="fp-input" />
             <p className="text-[10px] text-slate-400 mt-0.5">Total contributions ever made — excludes growth. Used to calculate available room.</p>
           </div>
           <div>
-            <label className="block text-xs text-slate-500 mb-1">Non-reg balance ($)</label>
+            <label className="block text-xs text-slate-500 mb-1">{t.retirement.nonRegBalance}</label>
             <input type="number" value={f.nonRegBalance} onChange={set("nonRegBalance")} placeholder="0" className="fp-input" />
           </div>
         </div>
       </Section>
 
       {/* ── Growth & Contributions (collapsible) ── */}
-      <Section title="Growth & Contributions">
+      <Section title={t.retirement.growthContrib}>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div>
-            <label className="block text-xs text-slate-500 mb-1">Annual RRSP contrib. ($)</label>
+            <label className="block text-xs text-slate-500 mb-1">{t.retirement.annualRrspContrib}</label>
             <input type="number" value={f.annualContribution} onChange={set("annualContribution")} placeholder="0" className="fp-input" />
           </div>
           <div>
-            <label className="block text-xs text-slate-500 mb-1">Annual TFSA contrib. ($)</label>
+            <label className="block text-xs text-slate-500 mb-1">{t.retirement.annualTfsaContrib}</label>
             <input type="number" value={f.annualTfsaContribution} onChange={set("annualTfsaContribution")} placeholder="7000" className="fp-input" />
           </div>
           <div>
-            <label className="block text-xs text-slate-500 mb-1">Expected return (%)</label>
+            <label className="block text-xs text-slate-500 mb-1">{t.retirement.expectedReturn}</label>
             <input type="number" step="0.1" value={f.expectedReturn} onChange={set("expectedReturn")} className="fp-input" />
           </div>
           <div>
-            <label className="block text-xs text-slate-500 mb-1">Inflation rate (%)</label>
+            <label className="block text-xs text-slate-500 mb-1">{t.retirement.inflationRate}</label>
             <input type="number" step="0.1" value={f.inflationRate} onChange={set("inflationRate")} className="fp-input" />
           </div>
         </div>
       </Section>
 
       {/* ── Government Benefits (collapsible) ── */}
-      <Section title="Government Benefits">
+      <Section title={t.retirement.govBenefits}>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-3">
             <div>
@@ -530,7 +530,7 @@ export function RetirementProjectionForm({ clientId, clientName, projection, onS
               )}
             </div>
             <div>
-              <label className="block text-xs text-slate-500 mb-1">CPP start age</label>
+              <label className="block text-xs text-slate-500 mb-1">{t.retirement.cppStartAge}</label>
               <select value={f.cppStartAge} onChange={set("cppStartAge")} className="fp-input">
                 <option value={60}>60 — reduced 36%</option>
                 <option value={61}>61 — reduced 30%</option>
@@ -555,7 +555,7 @@ export function RetirementProjectionForm({ clientId, clientName, projection, onS
               )}
             </div>
             <div>
-              <label className="block text-xs text-slate-500 mb-1">OAS start age</label>
+              <label className="block text-xs text-slate-500 mb-1">{t.retirement.oasStartAge}</label>
               <select value={f.oasStartAge} onChange={set("oasStartAge")} className="fp-input">
                 <option value={65}>65 — standard (100%)</option>
                 <option value={66}>66 — enhanced 7.2%</option>
@@ -578,7 +578,7 @@ export function RetirementProjectionForm({ clientId, clientName, projection, onS
 
       {/* ── Notes ── */}
       <div className="bg-white border border-slate-200 rounded-2xl p-5 transition-all duration-200 hover:shadow-sm">
-        <p className="text-sm font-medium text-slate-600 mb-2">Notes</p>
+        <p className="text-sm font-medium text-slate-600 mb-2">{t.common.notes}</p>
         <textarea
           value={f.notes}
           onChange={set("notes")}
@@ -805,7 +805,7 @@ export function RetirementTab({ clientId, clientName, person: personProp, t = tr
       {/* Combined summary */}
       {view === "combined" && combinedCalc && (
         <div className="border border-blue-200 bg-blue-50 rounded-xl p-5 mb-5">
-          <p className="text-xs font-semibold tracking-widest text-blue-600 uppercase mb-3">Household Combined</p>
+          <p className="text-xs font-semibold tracking-widest text-blue-600 uppercase mb-3">{t.retirement.householdCombined}</p>
           <div className="grid grid-cols-4 gap-3">
             {[
               { label: "Combined portfolio", value: "$" + Math.round(combinedCalc.totalPortfolio).toLocaleString() },
@@ -825,7 +825,7 @@ export function RetirementTab({ clientId, clientName, person: personProp, t = tr
       )}
 
       {/* Loading / empty */}
-      {isLoading && <p className="text-sm text-gray-400 py-8 text-center">Loading…</p>}
+      {isLoading && <p className="text-sm text-gray-400 py-8 text-center">{t.common.loading}</p>}
       {!isLoading && activeProjections.length === 0 && (
         <div className="border border-dashed border-gray-200 rounded-xl py-12 text-center">
           <p className="text-gray-400 text-sm mb-3">
@@ -896,14 +896,14 @@ export function RetirementTab({ clientId, clientName, person: personProp, t = tr
                     isPerson === "spouse" ? "bg-purple-100 text-purple-700" : "bg-blue-100 text-blue-700"
                   }`}>{isPerson === "spouse" ? "Spouse" : "Primary"}</span>
                   <span className="text-xs text-gray-400">Age {proj.currentAge} → {proj.retirementAge} · to age {proj.lifeExpectancy}</span>
-                  {isEngineRunning && <span className="text-[10px] text-gray-400 animate-pulse">Calculating…</span>}
+                  {isEngineRunning && <span className="text-[10px] text-gray-400 animate-pulse">{t.common.calculating}</span>}
                   {hasEngineData && !isEngineRunning && (
                     <span className="text-[10px] px-1.5 py-0.5 bg-emerald-100 text-emerald-700 rounded font-semibold">Engine ✓</span>
                   )}
                 </div>
                 <div className="flex gap-1.5">
                   <button onClick={() => setEditing(proj)} className="text-xs px-2.5 py-1 border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-100">Edit</button>
-                  <button onClick={() => proj.id && confirm("Delete this projection?") && deleteMut.mutate(proj.id)} className="text-xs px-2.5 py-1 border border-red-100 rounded-lg text-red-500 hover:bg-red-50">Delete</button>
+                  <button onClick={() => proj.id && confirm("Delete this projection?") && deleteMut.mutate(proj.id)} className="text-xs px-2.5 py-1 border border-red-100 rounded-lg text-red-500 hover:bg-red-50">{t.common.delete}</button>
                 </div>
               </div>
 
@@ -911,12 +911,12 @@ export function RetirementTab({ clientId, clientName, person: personProp, t = tr
                 {/* Top KPIs */}
                 <div className="grid grid-cols-3 gap-3">
                   <div className="bg-gray-50 rounded-lg px-3 py-2.5">
-                    <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-1">Projected Portfolio</p>
+                    <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-1">{t.retirement.projectedPortfolio}</p>
                     <p className="text-base font-bold text-gray-900">${Math.round(projectedBalance).toLocaleString()}</p>
                     <p className="text-[10px] text-gray-400">at retirement age {retirementAge}</p>
                   </div>
                   <div className="bg-gray-50 rounded-lg px-3 py-2.5">
-                    <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-1">Desired Income</p>
+                    <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-1">{t.retirement.desiredIncome}</p>
                     <p className="text-base font-bold text-gray-900">${Math.round(desiredIncome).toLocaleString()}/yr</p>
                     <p className="text-[10px] text-gray-400">${Math.round(desiredIncome / 12).toLocaleString()}/mo target</p>
                   </div>
@@ -929,7 +929,7 @@ export function RetirementTab({ clientId, clientName, person: personProp, t = tr
 
                 {/* Income phases */}
                 <div>
-                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide mb-2">Income by Phase</p>
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide mb-2">{t.retirement.incomeByPhase}</p>
                   <div className="grid grid-cols-3 gap-2">
                     {[
                       {

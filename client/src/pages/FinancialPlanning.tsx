@@ -110,7 +110,7 @@ function OverviewTab({ clientId, onTabChange }: { clientId: number; onTabChange?
     finally { setGeneratingReport(null); }
   };
 
-  if (isLoading) return <div className="text-center py-12 text-muted-foreground">Loading overview...</div>;
+  if (isLoading) return <div className="text-center py-12 text-muted-foreground">{t.common.loading}</div>;
   if (!overview) return null;
 
   const cards = [
@@ -138,7 +138,7 @@ function OverviewTab({ clientId, onTabChange }: { clientId: number; onTabChange?
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
       <div className="flex items-center justify-between flex-wrap gap-3">
-        <h2 className="text-xl font-display font-bold">Financial Planning Overview</h2>
+        <h2 className="text-xl font-display font-bold">{t.plan.financialPlanningOverview}</h2>
         <div className="flex items-center gap-2 flex-wrap">
           {reportButtons.map(btn => (
             <button
@@ -193,7 +193,7 @@ function NetWorthItem({ item, onUpdate, onDelete }: { item: any; onUpdate: (id: 
       <div className="flex items-center gap-3 min-w-0">
         <div className="min-w-0">
           <div className="text-sm font-medium text-slate-900" onClick={e => e.stopPropagation()}>
-            <InlineEdit value={item.name} onSave={v => onUpdate(item.id, { name: v })} placeholder="Name" />
+            <InlineEdit value={item.name} onSave={v => onUpdate(item.id, { name: v })} placeholder={t.common.name} />
           </div>
           {item.owner && (
             <span className="text-[10px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded mt-0.5 inline-block">{item.owner}</span>
@@ -324,23 +324,23 @@ export function NetWorthTab({ clientId }: { clientId: number }) {
       {/* Hero summary */}
       <div className="grid grid-cols-3 gap-4">
         <div className={`bg-white border-2 rounded-xl p-5 ${netWorth >= 0 ? "border-blue-200 bg-blue-50/30" : "border-red-200 bg-red-50/30"}`} data-testid="fp-net-worth">
-          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Net Worth</p>
+          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">{t.netWorth.title}</p>
           <p className={`text-2xl font-bold mt-1 ${netWorth >= 0 ? "text-blue-600" : "text-red-600"}`}>{fmtBig(netWorth)}</p>
         </div>
         <div className="bg-white border border-slate-200 rounded-xl p-5" data-testid="fp-total-assets">
-          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Total Assets</p>
+          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">{t.netWorth.totalAssets}</p>
           <p className="text-2xl font-bold text-emerald-600 mt-1">{fmtBig(totalAssets)}</p>
         </div>
         <div className="bg-white border border-slate-200 rounded-xl p-5" data-testid="fp-total-liabilities">
-          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Total Liabilities</p>
+          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">{t.netWorth.totalLiabilities}</p>
           <p className="text-2xl font-bold text-red-500 mt-1">{fmtBig(totalLiabilities)}</p>
         </div>
       </div>
 
       {entries.length === 0 ? (
         <div className="text-center py-16 border-2 border-dashed border-slate-200 rounded-2xl">
-          <p className="text-slate-500 font-semibold">No entries yet</p>
-          <button onClick={() => openAdd("asset")} className="mt-3 text-blue-600 text-sm hover:underline">Add your first asset</button>
+          <p className="text-slate-500 font-semibold">{t.common.noData}</p>
+          <button onClick={() => openAdd("asset")} className="mt-3 text-blue-600 text-sm hover:underline">{t.netWorth.addFirstAsset}</button>
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -348,7 +348,7 @@ export function NetWorthTab({ clientId }: { clientId: number }) {
           <div className="lg:col-span-2 space-y-4">
             {(sub !== "liabilities") && assetGroups.length > 0 && (
               <div className="space-y-3">
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Assets</p>
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">{t.netWorth.assetsTab}</p>
                 {assetGroups.map(({ cat, items, total }) => (
                   <NetWorthSection key={cat} title={cat} total={total} color={NW_CAT_COLORS[cat] ?? "#94a3b8"} isAsset onAdd={() => openAdd("asset", cat)}>
                     {items.map((e: any) => (
@@ -363,7 +363,7 @@ export function NetWorthTab({ clientId }: { clientId: number }) {
             )}
             {(sub !== "assets") && liabGroups.length > 0 && (
               <div className="space-y-3">
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Liabilities</p>
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">{t.netWorth.liabilitiesTab}</p>
                 {liabGroups.map(({ cat, items, total }) => (
                   <NetWorthSection key={cat} title={cat} total={total} color={NW_CAT_COLORS[cat] ?? "#94a3b8"} isAsset={false} onAdd={() => openAdd("liability", cat)}>
                     {items.map((e: any) => (
@@ -379,7 +379,7 @@ export function NetWorthTab({ clientId }: { clientId: number }) {
             {sub === "liabilities" && liabGroups.length === 0 && (
               <div className="text-center py-12 border-2 border-dashed border-slate-200 rounded-2xl">
                 <p className="text-slate-500 font-semibold">No liabilities</p>
-                <button onClick={() => openAdd("liability")} className="mt-3 text-blue-600 text-sm hover:underline">Add a liability</button>
+                <button onClick={() => openAdd("liability")} className="mt-3 text-blue-600 text-sm hover:underline">{t.netWorth.addFirstLiability}</button>
               </div>
             )}
           </div>
@@ -435,7 +435,7 @@ export function NetWorthTab({ clientId }: { clientId: number }) {
                 <button type="button" onClick={() => setAddType("liability")} className={`flex-1 py-2 rounded-xl font-semibold text-sm transition ${addType === "liability" ? "bg-red-100 text-red-600 border-2 border-red-300" : "bg-slate-100 text-slate-500"}`}>Liability</button>
               </div>
               <div>
-                <label className="text-sm font-semibold text-slate-600 block mb-1">Category</label>
+                <label className="text-sm font-semibold text-slate-600 block mb-1">{t.common.category}</label>
                 <select value={form.category} onChange={e => setForm({ ...form, category: e.target.value })} data-testid="select-fp-nw-cat" className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400">
                   <option value="">-- Select --</option>
                   {(addType === "asset" ? assetCats : liabilityCats).map(c => <option key={c} value={c}>{c}</option>)}
@@ -451,7 +451,7 @@ export function NetWorthTab({ clientId }: { clientId: number }) {
               </div>
             </div>
             <div className="flex justify-end gap-3 mt-5">
-              <button onClick={() => setShowAdd(false)} className="px-5 py-2.5 rounded-xl font-semibold text-slate-500 hover:bg-slate-100">Cancel</button>
+              <button onClick={() => setShowAdd(false)} className="px-5 py-2.5 rounded-xl font-semibold text-slate-500 hover:bg-slate-100">{t.common.cancel}</button>
               <button onClick={handleAdd} disabled={createEntry.isPending || !form.category || !form.name || !form.value} data-testid="button-fp-submit-nw"
                 className="px-5 py-2.5 rounded-xl font-semibold bg-gradient-to-r from-blue-600 to-cyan-500 text-white hover:shadow-md disabled:opacity-50 transition">
                 {createEntry.isPending ? "Adding…" : "Add Entry"}
@@ -673,7 +673,7 @@ function buildDefaultFromNW() {
            setForm({ ...defaultWs, ...buildDefaultFromNW(), primaryName: client ? `${client.firstName} ${client.lastName}` : "", primaryAge: client?.dateOfBirth ? String(new Date().getFullYear() - new Date(client.dateOfBirth).getFullYear()) : "", primaryAnnualIncome: client?.annualIncome ? String(client.annualIncome) : "", spouseName: client?.spouseFirstName ? `${client.spouseFirstName} ${client.spouseLastName ?? ""}`.trim() : "", spouseAge: client?.spouseDateOfBirth ? String(new Date().getFullYear() - new Date(client.spouseDateOfBirth).getFullYear()) : "", spouseAnnualIncome: client?.spouseFirstName && client?.spouseAnnualIncome ? String(client.spouseAnnualIncome) : "" }); setViewingId(null); setShowWorksheet(true); }}
           data-testid="button-fp-add-insurance"
           className="flex items-center space-x-2 px-4 py-2 bg-secondary text-secondary-foreground font-semibold rounded-xl hover:bg-secondary/90 transition-colors shadow-sm">
-          <Plus className="w-4 h-4" /><span>New Analysis</span>
+          <Plus className="w-4 h-4" /><span>{t.taxEstate.newAnalysis}</span>
         </button>
       </div>
 
@@ -687,7 +687,7 @@ function buildDefaultFromNW() {
             <div className="flex items-center gap-1">
               <button onClick={() => { if (a.worksheetData) { setForm({ ...defaultWs, ...a.worksheetData }); } else { setForm({ ...defaultWs, primaryName: a.primaryName ?? "", primaryAge: a.primaryAge ? String(a.primaryAge) : "", spouseName: a.spouseName ?? "", spouseAge: a.spouseAge ? String(a.spouseAge) : "" }); } setViewingId(a.id); setShowWorksheet(true); }} className="p-1.5 text-primary hover:bg-primary/10 rounded-lg" title="Open"><Eye className="w-4 h-4" /></button>
               <button onClick={async () => { const token = localStorage.getItem("fp_token"); const res = await fetch(`/api/reports/${clientId}/fna/${a.id}`, { headers: { Authorization: `Bearer ${token}` } }); const html = await res.text(); const blob = new Blob([html], { type: "text/html" }); window.open(URL.createObjectURL(blob), "_blank"); }} className="p-1.5 text-gray-500 hover:bg-gray-100 rounded-lg" title="Report"><Printer className="w-4 h-4" /></button>
-              <button onClick={() => { if (confirm("Delete this analysis?")) deleteAnalysis.mutate(a.id); }} className="p-1.5 text-red-400 hover:bg-red-50 rounded-lg" title="Delete"><Trash2 className="w-4 h-4" /></button>
+              <button onClick={() => { if (confirm("Delete this analysis?")) deleteAnalysis.mutate(a.id); }} className="p-1.5 text-red-400 hover:bg-red-50 rounded-lg" title={t.common.delete}><Trash2 className="w-4 h-4" /></button>
             </div>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
@@ -812,7 +812,7 @@ function buildDefaultFromNW() {
                     </div>
                   </div>
                   <div className="space-y-3 p-4 border border-border rounded-xl">
-                    <p className="text-sm font-semibold text-purple-600">Spouse</p>
+                    <p className="text-sm font-semibold text-purple-600">{t.common.spouse}</p>
                     <div><label className="text-xs font-medium text-muted-foreground">Full Name</label><input type="text" value={form.spouseName} onChange={e => setForm(f => ({ ...f, spouseName: e.target.value }))} data-testid="input-ws-spouse-name" className="w-full px-3 py-2 rounded-lg border text-sm mt-1 bg-background" /></div>
                     <div className="grid grid-cols-2 gap-3">
                       <WorksheetFieldImpl label="Age" value={form.spouseAge} onChange={v => setForm(f => ({ ...f, spouseAge: v }))} testId="input-ws-spouse-age" prefix="" />
@@ -916,14 +916,14 @@ function buildDefaultFromNW() {
                 <div className="flex items-center gap-2 mb-4"><FileSignature className="w-5 h-5 text-gray-500" /><h3 className="font-display font-bold text-lg">Decision &amp; Acknowledgement</h3></div>
                 <div className="grid grid-cols-2 gap-6">
                   <div className="space-y-3 p-4 border border-border rounded-xl">
-                    <p className="text-sm font-semibold text-primary">Primary</p>
+                    <p className="text-sm font-semibold text-primary">{t.common.primary}</p>
                     <WorksheetFieldImpl label="Coverage Amount Purchased" value={form.primaryCoveragePurchased} onChange={v => setForm(f => ({ ...f, primaryCoveragePurchased: v }))} testId="input-ws-primary-purchased" />
                     <div><label className="text-xs font-medium text-muted-foreground">Acknowledged Shortfall</label>
                     <p className="text-sm font-bold text-red-600 mt-1">{fmt$(Math.max(0, calc.primaryNet - v(form.primaryCoveragePurchased)))}</p></div>
                     <div><label className="text-xs font-medium text-muted-foreground">Signature (Printed Name)</label><input type="text" value={form.primarySignature} onChange={e => setForm(f => ({ ...f, primarySignature: e.target.value }))} className="w-full px-3 py-2 rounded-lg border text-sm mt-1 bg-background" /></div>
                   </div>
                   <div className="space-y-3 p-4 border border-border rounded-xl">
-                    <p className="text-sm font-semibold text-purple-600">Spouse</p>
+                    <p className="text-sm font-semibold text-purple-600">{t.common.spouse}</p>
                     <WorksheetFieldImpl label="Coverage Amount Purchased" value={form.spouseCoveragePurchased} onChange={v => setForm(f => ({ ...f, spouseCoveragePurchased: v }))} testId="input-ws-spouse-purchased" />
                     <div><label className="text-xs font-medium text-muted-foreground">Acknowledged Shortfall</label>
                     <p className="text-sm font-bold text-red-600 mt-1">{fmt$(Math.max(0, calc.spouseNet - v(form.spouseCoveragePurchased)))}</p></div>
@@ -947,7 +947,7 @@ function buildDefaultFromNW() {
                   )}
                 </div>
                 <div className="flex gap-3">
-                  <button type="button" onClick={() => setShowWorksheet(false)} data-testid="button-ws-cancel" className="px-6 py-3 rounded-xl font-semibold text-muted-foreground hover:bg-muted">Cancel</button>
+                  <button type="button" onClick={() => setShowWorksheet(false)} data-testid="button-ws-cancel" className="px-6 py-3 rounded-xl font-semibold text-muted-foreground hover:bg-muted">{t.common.cancel}</button>
                   <button type="submit" disabled={createWorksheet.isPending} data-testid="button-ws-save" className="px-8 py-3 rounded-xl font-semibold bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">
                     {createWorksheet.isPending ? <><Loader2 className="w-4 h-4 animate-spin inline mr-2" />Saving...</> : viewingId ? "Update Analysis" : "Save Analysis"}
                   </button>
@@ -982,7 +982,7 @@ function RESPTab({ clientId, planId }: { clientId: number; planId: number | null
       <div className="flex justify-between items-center">
         <h2 className="text-xl font-display font-bold">Education Savings (RESP)</h2>
         <button onClick={() => setShowAdd(true)} data-testid="button-fp-add-resp" className="flex items-center space-x-2 px-4 py-2 bg-secondary text-secondary-foreground font-semibold rounded-xl hover:bg-secondary/90 transition-colors shadow-sm">
-          <Plus className="w-4 h-4" /><span>Add Plan</span>
+          <Plus className="w-4 h-4" /><span>{t.plan.addPlan}</span>
         </button>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -1033,9 +1033,9 @@ function RESPTab({ clientId, planId }: { clientId: number; planId: number | null
                 <div><label className="text-sm font-semibold">Monthly ($)</label><input type="number" required value={form.monthlyContribution} onChange={e => setForm({ ...form, monthlyContribution: e.target.value })} data-testid="input-fp-resp-monthly" className="w-full px-3 py-2 rounded-xl border mt-1" /></div>
                 <div><label className="text-sm font-semibold">Est. Cost ($)</label><input type="number" required value={form.estimatedCost} onChange={e => setForm({ ...form, estimatedCost: e.target.value })} data-testid="input-fp-resp-cost" className="w-full px-3 py-2 rounded-xl border mt-1" /></div>
               </div>
-              <div><label className="text-sm font-semibold">Notes</label><textarea value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} data-testid="input-fp-resp-notes" className="w-full px-3 py-2 rounded-xl border mt-1 min-h-[80px]" /></div>
+              <div><label className="text-sm font-semibold">{t.common.notes}</label><textarea value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} data-testid="input-fp-resp-notes" className="w-full px-3 py-2 rounded-xl border mt-1 min-h-[80px]" /></div>
               <div className="pt-4 flex justify-end space-x-3">
-                <button type="button" onClick={() => setShowAdd(false)} className="px-6 py-3 rounded-xl font-semibold text-muted-foreground hover:bg-muted">Cancel</button>
+                <button type="button" onClick={() => setShowAdd(false)} className="px-6 py-3 rounded-xl font-semibold text-muted-foreground hover:bg-muted">{t.common.cancel}</button>
                 <button type="submit" disabled={createSaving.isPending} data-testid="button-fp-submit-resp" className="px-6 py-3 rounded-xl font-semibold bg-primary text-primary-foreground">{createSaving.isPending ? "Adding..." : "Add Plan"}</button>
               </div>
             </form>
@@ -1069,7 +1069,7 @@ function DebtTab({ clientId, planId }: { clientId: number; planId: number | null
       <div className="flex justify-between items-center">
         <h2 className="text-xl font-display font-bold">Debt Management</h2>
         <button onClick={() => setShowAdd(true)} data-testid="button-fp-add-debt" className="flex items-center space-x-2 px-4 py-2 bg-secondary text-secondary-foreground font-semibold rounded-xl hover:bg-secondary/90 transition-colors shadow-sm">
-          <Plus className="w-4 h-4" /><span>Add Debt</span>
+          <Plus className="w-4 h-4" /><span>{t.debt.addDebt}</span>
         </button>
       </div>
       <div className="grid grid-cols-3 gap-4">
@@ -1080,10 +1080,10 @@ function DebtTab({ clientId, planId }: { clientId: number; planId: number | null
       <div className="border border-border rounded-2xl overflow-hidden">
         <table className="w-full text-sm">
           <thead className="bg-muted/50"><tr>
-            <th className="text-left px-4 py-3 font-semibold">Name</th>
-            <th className="text-left px-4 py-3 font-semibold">Category</th>
-            <th className="text-right px-4 py-3 font-semibold">Balance</th>
-            <th className="text-right px-4 py-3 font-semibold">Rate</th>
+            <th className="text-left px-4 py-3 font-semibold">{t.common.name}</th>
+            <th className="text-left px-4 py-3 font-semibold">{t.common.category}</th>
+            <th className="text-right px-4 py-3 font-semibold">{t.common.balance}</th>
+            <th className="text-right px-4 py-3 font-semibold">{t.common.rate}</th>
             <th className="text-right px-4 py-3 font-semibold">Min. Payment</th>
             <th className="text-center px-4 py-3 font-semibold">Actions</th>
           </tr></thead>
@@ -1109,17 +1109,17 @@ function DebtTab({ clientId, planId }: { clientId: number; planId: number | null
       {showAdd && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl w-full max-w-lg shadow-2xl p-6">
-            <h2 className="text-2xl font-display font-bold mb-6">Add Debt Account</h2>
+            <h2 className="text-2xl font-display font-bold mb-6">{t.debt.addDebt}</h2>
             <form onSubmit={handleSubmit} className="space-y-4" data-testid="form-fp-debt">
-              <div><label className="text-sm font-semibold">Name</label><input required value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} data-testid="input-fp-debt-name" className="w-full px-3 py-2 rounded-xl border mt-1" placeholder="e.g. TD Visa" /></div>
-              <div><label className="text-sm font-semibold">Category</label><select value={form.category} onChange={e => setForm({ ...form, category: e.target.value })} data-testid="select-fp-debt-cat" className="w-full px-3 py-2 rounded-xl border mt-1">{categories.map(c => <option key={c} value={c}>{c}</option>)}</select></div>
+              <div><label className="text-sm font-semibold">{t.common.name}</label><input required value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} data-testid="input-fp-debt-name" className="w-full px-3 py-2 rounded-xl border mt-1" placeholder="e.g. TD Visa" /></div>
+              <div><label className="text-sm font-semibold">{t.common.category}</label><select value={form.category} onChange={e => setForm({ ...form, category: e.target.value })} data-testid="select-fp-debt-cat" className="w-full px-3 py-2 rounded-xl border mt-1">{categories.map(c => <option key={c} value={c}>{c}</option>)}</select></div>
               <div className="grid grid-cols-3 gap-4">
                 <div><label className="text-sm font-semibold">Balance ($)</label><input type="number" step="0.01" required value={form.balance} onChange={e => setForm({ ...form, balance: e.target.value })} data-testid="input-fp-debt-balance" className="w-full px-3 py-2 rounded-xl border mt-1" /></div>
                 <div><label className="text-sm font-semibold">Rate (%)</label><input type="number" step="0.01" required value={form.interestRate} onChange={e => setForm({ ...form, interestRate: e.target.value })} data-testid="input-fp-debt-rate" className="w-full px-3 py-2 rounded-xl border mt-1" /></div>
                 <div><label className="text-sm font-semibold">Min Payment ($)</label><input type="number" step="0.01" value={form.minimumPayment} onChange={e => setForm({ ...form, minimumPayment: e.target.value })} data-testid="input-fp-debt-min" className="w-full px-3 py-2 rounded-xl border mt-1" /></div>
               </div>
               <div className="pt-4 flex justify-end space-x-3">
-                <button type="button" onClick={() => setShowAdd(false)} className="px-6 py-3 rounded-xl font-semibold text-muted-foreground hover:bg-muted">Cancel</button>
+                <button type="button" onClick={() => setShowAdd(false)} className="px-6 py-3 rounded-xl font-semibold text-muted-foreground hover:bg-muted">{t.common.cancel}</button>
                 <button type="submit" disabled={createDebt.isPending} data-testid="button-fp-submit-debt" className="px-6 py-3 rounded-xl font-semibold bg-primary text-primary-foreground">{createDebt.isPending ? "Adding..." : "Add Debt"}</button>
               </div>
             </form>
@@ -1226,7 +1226,7 @@ function TaxNotesPanel({ clientId }: { clientId: number }) {
           className="flex items-center space-x-2 px-3 py-2 bg-secondary text-secondary-foreground text-sm font-semibold rounded-xl hover:bg-secondary/90"
         >
           <Plus className="w-4 h-4" />
-          <span>Add Note</span>
+          <span>{t.common.add}</span>
         </button>
       </div>
 
@@ -1244,7 +1244,7 @@ function TaxNotesPanel({ clientId }: { clientId: number }) {
               />
             </div>
             <div>
-              <label className="text-sm font-semibold">Category</label>
+              <label className="text-sm font-semibold">{t.common.category}</label>
               <select
                 value={form.category}
                 onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))}
@@ -1407,11 +1407,11 @@ function RrspRoomPanel({ clientId, prefill, person = "primary", primaryLabel = "
     <div className="space-y-5">
       <div className="flex items-start justify-between gap-4">
         <div className="flex-1 p-4 bg-blue-50 border border-blue-200 rounded-xl text-sm text-blue-800">
-          <strong>RRSP Room Tracker</strong> — Calculates available contribution room using the CRA 18% formula with carry-forward.
+          <strong>{t.taxEstate.rrspRoomTracker}</strong> — {t.taxEstate.rrspRoomDesc}
         </div>
         <button onClick={openNew}
           className="flex items-center gap-1.5 text-sm font-semibold text-white bg-[#0c1e3a] hover:bg-[#0e2a4a] px-4 py-2 rounded-xl whitespace-nowrap">
-          <Plus className="w-4 h-4" /> New Analysis
+          <Plus className="w-4 h-4" /> {t.taxEstate.newAnalysis}
         </button>
       </div>
 
@@ -1430,12 +1430,12 @@ function RrspRoomPanel({ clientId, prefill, person = "primary", primaryLabel = "
               </div>
               <div className="grid grid-cols-2 gap-3">
                 {[
-                  ["Prior Year Earned Income ($)", "priorYearEarnedIncome"],
-                  ["Pension Adjustment ($)", "pensionAdjustment"],
-                  ["Carry-Forward Room ($)", "carryForwardRoom"],
-                  ["Contributions This Year ($)", "contributionsMadeThisYear"],
-                  ["Marginal Tax Rate (e.g. 0.435)", "marginalTaxRate"],
-                  ["Years to Project", "yearsToProject"],
+                  [t.taxEstate.priorYearEarned, "priorYearEarnedIncome"],
+                  [t.taxEstate.pensionAdjustmentLbl, "pensionAdjustment"],
+                  [t.taxEstate.carryForwardRoom, "carryForwardRoom"],
+                  [t.taxEstate.contribThisYear, "contributionsMadeThisYear"],
+                  [t.taxEstate.marginalTaxRateLbl, "marginalTaxRate"],
+                  [t.taxEstate.yearsToProject, "yearsToProject"],
                 ].map(([label, key]) => (
                   <div key={key}>
                     <label className="text-xs font-semibold text-gray-500 block mb-1">{label}</label>
@@ -1447,10 +1447,10 @@ function RrspRoomPanel({ clientId, prefill, person = "primary", primaryLabel = "
               </div>
             </div>
             <div className="flex gap-3 justify-end p-5 border-t border-gray-100">
-              <button onClick={() => setShowForm(false)} className="text-sm text-gray-500 px-4 py-2">Cancel</button>
+              <button onClick={() => setShowForm(false)} className="text-sm text-gray-500 px-4 py-2">{t.common.cancel}</button>
               <button onClick={save} disabled={saving}
                 className="flex items-center gap-1.5 bg-[#0c1e3a] hover:bg-[#0e2a4a] disabled:opacity-50 text-white text-sm font-semibold px-5 py-2.5 rounded-xl">
-                <Save className="w-3.5 h-3.5" /> {saving ? "Saving…" : "Calculate & Save"}
+                <Save className="w-3.5 h-3.5" /> {saving ? t.common.saving : t.taxEstate.calculateAndSave}
               </button>
             </div>
           </div>
@@ -1460,8 +1460,8 @@ function RrspRoomPanel({ clientId, prefill, person = "primary", primaryLabel = "
       {loading ? <div className="text-center py-8 text-gray-400 text-sm">Loading…</div>
       : analyses.length === 0 ? (
         <div className="text-center py-12 border-2 border-dashed border-gray-200 rounded-2xl">
-          <p className="text-gray-500 font-semibold">No RRSP analyses yet for {personLabel}</p>
-          <p className="text-sm text-gray-400 mt-1">Click New Analysis to calculate contribution room</p>
+          <p className="text-gray-500 font-semibold">{t.taxEstate.noRRSPAnalyses} {personLabel}</p>
+          <p className="text-sm text-gray-400 mt-1">{t.taxEstate.clickNewAnalysis}</p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -1584,7 +1584,7 @@ function TfsaRoomPanel({ clientId, prefill, person = "primary", primaryLabel = "
         </div>
         <button onClick={openNew}
           className="flex items-center gap-1.5 text-sm font-semibold text-white bg-[#0c1e3a] hover:bg-[#0e2a4a] px-4 py-2 rounded-xl whitespace-nowrap">
-          <Plus className="w-4 h-4" /> New Analysis
+          <Plus className="w-4 h-4" /> {t.taxEstate.newAnalysis}
         </button>
       </div>
 
@@ -1621,10 +1621,10 @@ function TfsaRoomPanel({ clientId, prefill, person = "primary", primaryLabel = "
               </div>
             </div>
             <div className="flex gap-3 justify-end p-5 border-t border-gray-100">
-              <button onClick={() => setShowForm(false)} className="text-sm text-gray-500 px-4 py-2">Cancel</button>
+              <button onClick={() => setShowForm(false)} className="text-sm text-gray-500 px-4 py-2">{t.common.cancel}</button>
               <button onClick={save} disabled={saving}
                 className="flex items-center gap-1.5 bg-[#0c1e3a] hover:bg-[#0e2a4a] disabled:opacity-50 text-white text-sm font-semibold px-5 py-2.5 rounded-xl">
-                <Save className="w-3.5 h-3.5" /> {saving ? "Saving…" : "Calculate & Save"}
+                <Save className="w-3.5 h-3.5" /> {saving ? t.common.saving : t.taxEstate.calculateAndSave}
               </button>
             </div>
           </div>
@@ -1635,7 +1635,7 @@ function TfsaRoomPanel({ clientId, prefill, person = "primary", primaryLabel = "
       : analyses.length === 0 ? (
         <div className="text-center py-12 border-2 border-dashed border-gray-200 rounded-2xl">
           <p className="text-gray-500 font-semibold">No TFSA analyses yet for {personLabel}</p>
-          <p className="text-sm text-gray-400 mt-1">Click New Analysis to calculate contribution room</p>
+          <p className="text-sm text-gray-400 mt-1">{t.taxEstate.clickNewAnalysis}</p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -1878,20 +1878,20 @@ function TaxProjectionPanel({ clientId, prefillPrimary, prefillSpouse, person = 
             </div>
             <div className="p-5 space-y-4">
               <div>
-                <label className="text-xs font-semibold text-gray-500 block mb-1">Scenario Name</label>
+                <label className="text-xs font-semibold text-gray-500 block mb-1">{t.taxEstate.scenarioName}</label>
                 <input value={form.label} onChange={e => setForm((f: any) => ({ ...f, label: e.target.value }))}
                   className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm" placeholder="e.g. Base Plan, Optimized Withdrawal..." />
               </div>
               <div className="grid grid-cols-4 gap-3">
                 {[
-                  { key: "currentAge", label: "Current Age" }, { key: "retirementAge", label: "Retirement Age" },
-                  { key: "planToAge", label: "Plan to Age" }, { key: "province", label: "Province", select: provinces },
-                  { key: "employmentIncome", label: "Employment Income" }, { key: "rrspBalance", label: "RRSP Balance" },
-                  { key: "tfsaBalance", label: "TFSA Balance" }, { key: "nonRegBalance", label: "Non-Reg Balance" },
-                  { key: "rrspAnnualContribution", label: "RRSP Annual Contrib" }, { key: "tfsaAnnualContribution", label: "TFSA Annual Contrib" },
-                  { key: "desiredRetirementIncome", label: "Desired Income" }, { key: "pensionIncome", label: "Pension Income" },
-                  { key: "cppStartAge", label: "CPP Start Age" }, { key: "oasStartAge", label: "OAS Start Age" },
-                  { key: "portfolioYield", label: "Portfolio Yield" }, { key: "incomeGrowthRate", label: "Income Growth Rate" },
+                  { key: "currentAge", label: t.taxEstate.currentAge }, { key: "retirementAge", label: t.retirement.retirementAge },
+                  { key: "planToAge", label: t.taxEstate.planToAge }, { key: "province", label: t.client.province ?? "Province", select: provinces },
+                  { key: "employmentIncome", label: t.taxEstate.employmentIncome }, { key: "rrspBalance", label: t.taxEstate.rrspBalance },
+                  { key: "tfsaBalance", label: t.taxEstate.tfsaBalance }, { key: "nonRegBalance", label: t.taxEstate.nonRegBalance },
+                  { key: "rrspAnnualContribution", label: t.taxEstate.rrspAnnualContrib }, { key: "tfsaAnnualContribution", label: t.taxEstate.tfsaAnnualContrib },
+                  { key: "desiredRetirementIncome", label: t.taxEstate.desiredRetirementIncome }, { key: "pensionIncome", label: t.taxEstate.pensionIncome },
+                  { key: "cppStartAge", label: t.taxEstate.cppStartAge }, { key: "oasStartAge", label: t.taxEstate.oasStartAge },
+                  { key: "portfolioYield", label: t.taxEstate.portfolioYield }, { key: "incomeGrowthRate", label: t.taxEstate.incomeGrowthRate },
                 ].map(({ key, label, select }) => (
                   <div key={key}>
                     <label className="text-xs font-semibold text-gray-500 block mb-1">{label}</label>
@@ -1909,9 +1909,9 @@ function TaxProjectionPanel({ clientId, prefillPrimary, prefillSpouse, person = 
               </div>
             </div>
             <div className="p-5 border-t border-gray-100 flex gap-3 justify-end">
-              <button onClick={() => setShowForm(false)} className="px-4 py-2 text-sm border border-gray-200 rounded-xl text-gray-600">Cancel</button>
+              <button onClick={() => setShowForm(false)} className="px-4 py-2 text-sm border border-gray-200 rounded-xl text-gray-600">{t.common.cancel}</button>
               <button onClick={save} disabled={saving} className="px-4 py-2 text-sm bg-blue-600 text-white rounded-xl font-semibold disabled:opacity-50">
-                {saving ? "Saving…" : "Run Projection"}
+                {saving ? t.common.saving : t.taxEstate.runProjection}
               </button>
             </div>
           </div>
@@ -2180,7 +2180,7 @@ function CapitalGainsPanel({ clientId, client, person = "primary" }: {
         </div>
         <button onClick={openNew}
           className="flex items-center gap-1.5 text-sm font-semibold text-white bg-[#0c1e3a] hover:bg-[#0e2a4a] px-4 py-2 rounded-xl whitespace-nowrap">
-          <Plus className="w-4 h-4" /> New Analysis
+          <Plus className="w-4 h-4" /> {t.taxEstate.newAnalysis}
         </button>
       </div>
 
@@ -2232,7 +2232,7 @@ function CapitalGainsPanel({ clientId, client, person = "primary" }: {
                   <table className="w-full text-sm">
                     <thead className="bg-gray-50 border-b border-gray-200">
                       <tr>
-                        <th className="px-3 py-2 text-left text-xs font-semibold text-gray-500">Type</th>
+                        <th className="px-3 py-2 text-left text-xs font-semibold text-gray-500">{t.common.type}</th>
                         <th className="px-3 py-2 text-left text-xs font-semibold text-gray-500">Symbol</th>
                         <th className="px-3 py-2 text-right text-xs font-semibold text-gray-500">ACB ($)</th>
                         <th className="px-3 py-2 text-right text-xs font-semibold text-gray-500">FMV ($)</th>
@@ -2308,10 +2308,10 @@ function CapitalGainsPanel({ clientId, client, person = "primary" }: {
               )}
             </div>
             <div className="flex gap-3 justify-end p-5 border-t border-gray-100">
-              <button onClick={() => setShowForm(false)} className="text-sm text-gray-500 px-4 py-2">Cancel</button>
+              <button onClick={() => setShowForm(false)} className="text-sm text-gray-500 px-4 py-2">{t.common.cancel}</button>
               <button onClick={save} disabled={saving}
                 className="flex items-center gap-1.5 bg-[#0c1e3a] hover:bg-[#0e2a4a] disabled:opacity-50 text-white text-sm font-semibold px-5 py-2.5 rounded-xl">
-                <Save className="w-3.5 h-3.5" /> {saving ? "Saving…" : "Calculate & Save"}
+                <Save className="w-3.5 h-3.5" /> {saving ? t.common.saving : t.taxEstate.calculateAndSave}
               </button>
             </div>
           </div>
@@ -2451,7 +2451,7 @@ function IncomeSplittingPanel({ clientId, prefill, person = "primary", primaryLa
         </div>
         <button onClick={openNew}
           className="flex items-center gap-1.5 text-sm font-semibold text-white bg-[#0c1e3a] hover:bg-[#0e2a4a] px-4 py-2 rounded-xl whitespace-nowrap">
-          <Plus className="w-4 h-4" /> New Analysis
+          <Plus className="w-4 h-4" /> {t.taxEstate.newAnalysis}
         </button>
       </div>
 
@@ -2503,10 +2503,10 @@ function IncomeSplittingPanel({ clientId, prefill, person = "primary", primaryLa
               </div>
             </div>
             <div className="flex gap-3 justify-end p-5 border-t border-gray-100">
-              <button onClick={() => setShowForm(false)} className="text-sm text-gray-500 px-4 py-2">Cancel</button>
+              <button onClick={() => setShowForm(false)} className="text-sm text-gray-500 px-4 py-2">{t.common.cancel}</button>
               <button onClick={save} disabled={saving}
                 className="flex items-center gap-1.5 bg-[#0c1e3a] hover:bg-[#0e2a4a] disabled:opacity-50 text-white text-sm font-semibold px-5 py-2.5 rounded-xl">
-                <Save className="w-3.5 h-3.5" /> {saving ? "Saving…" : "Calculate & Save"}
+                <Save className="w-3.5 h-3.5" /> {saving ? t.common.saving : t.taxEstate.calculateAndSave}
               </button>
             </div>
           </div>
@@ -2682,7 +2682,7 @@ export function EstateNotesTab({ clientId, planId, client }: { clientId: number;
       <div className="flex justify-between items-center">
         <h2 className="text-xl font-display font-bold">Estate Planning Notes</h2>
         <button onClick={() => setShowAdd(true)} data-testid="button-fp-add-estate" className="flex items-center space-x-2 px-4 py-2 bg-secondary text-secondary-foreground font-semibold rounded-xl hover:bg-secondary/90 transition-colors shadow-sm">
-          <Plus className="w-4 h-4" /><span>Add Note</span>
+          <Plus className="w-4 h-4" /><span>{t.common.add}</span>
         </button>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -2704,7 +2704,7 @@ export function EstateNotesTab({ clientId, planId, client }: { clientId: number;
           <div className="bg-white rounded-3xl w-full max-w-md shadow-2xl p-6">
             <h2 className="text-2xl font-display font-bold mb-6">Add Estate Planning Note</h2>
             <form onSubmit={handleSubmit} className="space-y-4" data-testid="form-fp-estate">
-              <div><label className="text-sm font-semibold">Category</label>
+              <div><label className="text-sm font-semibold">{t.common.category}</label>
                 <select value={form.category} onChange={e => setForm({ ...form, category: e.target.value })} data-testid="select-fp-estate-cat" className="w-full px-3 py-2 rounded-xl border mt-1">
                   {categories.map(c => <option key={c} value={c}>{c}</option>)}
                 </select>
@@ -2712,7 +2712,7 @@ export function EstateNotesTab({ clientId, planId, client }: { clientId: number;
               <div><label className="text-sm font-semibold">Title</label><input required value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} data-testid="input-fp-estate-title" className="w-full px-3 py-2 rounded-xl border mt-1" /></div>
               <div><label className="text-sm font-semibold">Content</label><textarea required value={form.content} onChange={e => setForm({ ...form, content: e.target.value })} data-testid="input-fp-estate-content" className="w-full px-3 py-2 rounded-xl border mt-1 min-h-[120px]" /></div>
               <div className="pt-4 flex justify-end space-x-3">
-                <button type="button" onClick={() => setShowAdd(false)} className="px-6 py-3 rounded-xl font-semibold text-muted-foreground hover:bg-muted">Cancel</button>
+                <button type="button" onClick={() => setShowAdd(false)} className="px-6 py-3 rounded-xl font-semibold text-muted-foreground hover:bg-muted">{t.common.cancel}</button>
                 <button type="submit" disabled={createNote.isPending} data-testid="button-fp-submit-estate" className="px-6 py-3 rounded-xl font-semibold bg-primary text-primary-foreground">{createNote.isPending ? "Adding..." : "Add Note"}</button>
               </div>
             </form>

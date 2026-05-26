@@ -190,11 +190,11 @@ function ExtraFields({ draft, onChange, spouseName, dependants, t }: { draft: NW
         </label>
         {draft.isSpousal && (
           <div className="flex items-center gap-1.5">
-            <span className="text-xs text-[var(--text-tertiary)]">Contributor:</span>
+            <span className="text-xs text-[var(--text-tertiary)]">{{t.netWorth.contributor}:}</span>
             <select value={draft.rrspContributor} onChange={e => onChange("rrspContributor", e.target.value)} className={SELECT_CLS}>
-              <option value="">Select contributor</option>
-              <option value="client">Client</option>
-              <option value="spouse">Spouse</option>
+              <option value="">{t.netWorth.selectContributor}</option>
+              <option value="client">{t.common.primary}</option>
+              <option value={t.common.spouse}>{t.common.spouse}</option>
             </select>
           </div>
         )}
@@ -216,7 +216,7 @@ function ExtraFields({ draft, onChange, spouseName, dependants, t }: { draft: NW
 
   if (draft.category === "Non-Registered" && spouseName) {
     elems.push(
-      <label key="joint" className="flex items-center gap-1.5 text-xs text-[var(--text-secondary)] cursor-pointer">
+      <label key={t.common.joint} className="flex items-center gap-1.5 text-xs text-[var(--text-secondary)] cursor-pointer">
         <input type="checkbox" checked={draft.jointWithSpouse} onChange={e => onChange("jointWithSpouse", e.target.checked)} className="w-3.5 h-3.5 rounded accent-[var(--accent-cyan)]" />
         Jointly held with spouse
         <span className="text-[10px] text-[var(--text-tertiary)]">(sets owner to Joint)</span>
@@ -227,7 +227,7 @@ function ExtraFields({ draft, onChange, spouseName, dependants, t }: { draft: NW
   if (draft.category === "Employer Stock Options") {
     elems.push(
       <div key="stockopt" className="flex items-center gap-1.5">
-        <span className="text-xs text-[var(--text-tertiary)]">Sub-type:</span>
+        <span className="text-xs text-[var(--text-tertiary)]">{{t.netWorth.subType}:}</span>
         <select value={draft.stockOptionType} onChange={e => onChange("stockOptionType", e.target.value)} className={SELECT_CLS}>
           <option value="RSU">RSU — Restricted Stock Unit</option>
           <option value="ESU">ESU — Employee Stock Unit</option>
@@ -258,7 +258,7 @@ function ExtraFields({ draft, onChange, spouseName, dependants, t }: { draft: NW
     elems.push(
       <div key="realestate-other" className="flex flex-wrap items-center gap-3">
         <div className="flex items-center gap-1.5">
-          <span className="text-xs text-[var(--text-tertiary)]">Property type:</span>
+          <span className="text-xs text-[var(--text-tertiary)]">{{t.netWorth.propertyType}:}</span>
           <select value={draft.propertyType} onChange={e => onChange("propertyType", e.target.value)} className={SELECT_CLS}>
             {PROPERTY_TYPES.map(p => <option key={p} value={p}>{propertyTypeLabel(p, t)}</option>)}
           </select>
@@ -679,9 +679,9 @@ export function NetWorthTab({ clientId, client, t }: { clientId: number; t: T; c
                       <div>
                         <label className={LABEL_CLS}>{t.common.owner}</label>
                         <select value={d.owner} onChange={e => updateDraft(draftIdx, "owner", e.target.value)} className={SELECT_CLS}>
-                          <option value="primary">{primaryName || "Primary"}</option>
-                          {spouseName && <option value="spouse">{spouseName}</option>}
-                          {spouseName && <option value="joint">Joint</option>}
+                          <option value={t.common.primary}>{primaryName || "Primary"}</option>
+                          {spouseName && <option value={t.common.spouse}>{spouseName}</option>}
+                          {spouseName && <option value={t.common.joint}>Joint</option>}
                         </select>
                       </div>
                       <div>
@@ -742,9 +742,9 @@ export function NetWorthTab({ clientId, client, t }: { clientId: number; t: T; c
                         <div>
                           <label className={LABEL_CLS}>{t.common.owner}</label>
                           <select value={editForm.owner ?? "primary"} onChange={ev => setEditForm(f => ({ ...f, owner: ev.target.value }))} className={SELECT_CLS}>
-                            <option value="primary">{primaryName || "Primary"}</option>
-                            {spouseName && <option value="spouse">{spouseName}</option>}
-                            {spouseName && <option value="joint">Joint</option>}
+                            <option value={t.common.primary}>{primaryName || "Primary"}</option>
+                            {spouseName && <option value={t.common.spouse}>{spouseName}</option>}
+                            {spouseName && <option value={t.common.joint}>Joint</option>}
                           </select>
                         </div>
                         <div>
@@ -774,18 +774,18 @@ export function NetWorthTab({ clientId, client, t }: { clientId: number; t: T; c
                                 </label>
                                 {editForm.isSpousal && (
                                   <div className="flex items-center gap-1.5">
-                                    <span className="text-xs text-slate-400">Contributor:</span>
+                                    <span className="text-xs text-slate-400">{{t.netWorth.contributor}:}</span>
                                     <select value={editForm.rrspContributor ?? ""} onChange={ev => setEditForm(f => ({ ...f, rrspContributor: ev.target.value }))} className="border border-slate-200 rounded-lg px-2 py-1 text-sm">
                                       <option value="">Select…</option>
                                       <option value="client">{primaryName || "Client"}</option>
-                                      {spouseName && <option value="spouse">{spouseName}</option>}
+                                      {spouseName && <option value={t.common.spouse}>{spouseName}</option>}
                                     </select>
                                   </div>
                                 )}
                               </>
                             )}
                             <div className="flex items-center gap-1.5">
-                              <span className="text-xs text-slate-400">Holding type:</span>
+                              <span className="text-xs text-slate-400">{{t.netWorth.holdingType}:}</span>
                               <select value={editForm.holdingType ?? ""} onChange={ev => setEditForm(f => ({ ...f, holdingType: ev.target.value }))} className="border border-slate-200 rounded-lg px-2 py-1 text-sm">
                                 <option value="">Select…</option>
                                 {HOLDING_TYPES.map(h => <option key={h} value={h}>{holdingLabel(h, t)}</option>)}
@@ -802,7 +802,7 @@ export function NetWorthTab({ clientId, client, t }: { clientId: number; t: T; c
                         {editForm.category === "Real Estate (other)" && (
                           <>
                             <div className="flex items-center gap-1.5">
-                              <span className="text-xs text-slate-400">Property type:</span>
+                              <span className="text-xs text-slate-400">{{t.netWorth.propertyType}:}</span>
                               <select value={editForm.propertyType ?? "Family Occupied"} onChange={ev => setEditForm(f => ({ ...f, propertyType: ev.target.value }))} className="border border-slate-200 rounded-lg px-2 py-1 text-sm">
                                 {PROPERTY_TYPES.map(p => <option key={p} value={p}>{propertyTypeLabel(p, t)}</option>)}
                               </select>
@@ -827,7 +827,7 @@ export function NetWorthTab({ clientId, client, t }: { clientId: number; t: T; c
                         )}
                       </div>
                       <div className="flex gap-2 justify-end">
-                        <button onClick={() => { setEditingId(null); setEditForm({}); }} className="text-sm text-slate-500 px-3 py-1.5 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors">Cancel</button>
+                        <button onClick={() => { setEditingId(null); setEditForm({}); }} className="text-sm text-slate-500 px-3 py-1.5 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors">{t.common.cancel}</button>
                         <button onClick={saveEdit} disabled={saving} className="text-sm font-semibold text-white bg-[#0c1e3a] px-4 py-1.5 rounded-lg disabled:opacity-50 hover:bg-[#0e2a4a] transition-colors">
                           {saving ? "Saving…" : "Save"}
                         </button>
@@ -1306,7 +1306,7 @@ export function RetirementTab({ clientId, client, person = "primary" }: { client
             );
           })}
           <div className="flex justify-end gap-2">
-            <button onClick={() => { setDrafts([]); setEditingId(null); }} className="text-sm text-gray-500 px-4 py-2 border border-gray-200 rounded-lg">Cancel</button>
+            <button onClick={() => { setDrafts([]); setEditingId(null); }} className="text-sm text-gray-500 px-4 py-2 border border-gray-200 rounded-lg">{t.common.cancel}</button>
             <button onClick={saveAll} disabled={saving}
               className="flex items-center gap-1.5 bg-[#0c1e3a] hover:bg-[#0e2a4a] disabled:opacity-50 text-white text-sm font-semibold px-5 py-2 rounded-lg">
               <Save className="w-3.5 h-3.5" /> {saving ? "Saving..." : editingId ? "Save Changes" : `Save ${drafts.length} Projection${drafts.length > 1 ? "s" : ""}`}

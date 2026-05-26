@@ -1418,3 +1418,80 @@ r.delete("/clients/:id/ltc-analyses/:aid", isAuthenticated, async (req: AuthRequ
 });
 
 export default r;
+
+// ── DI Analyses ───────────────────────────────────────────────────────────────
+
+r.get("/clients/:id/di-analyses", isAuthenticated, async (req: AuthRequest, res: Response) => {
+  const cid = +req.params.id;
+  if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
+  const rows = await db.select().from(diAnalyses).where(eq(diAnalyses.clientId, cid));
+  res.json(rows);
+});
+
+async function runDI(b: any) {
+  const { runDIEngine } = await import("../engine/diEngine.js");
+  return runDIEngine({
+    currentAge:           +b.currentAge||40,
+    province:             b.province||"ON",
+    grossMonthlyIncome:   +b.grossMonthlyIncome||0,
+    occupationClass:      (b.occupationClass||"3A") as any,
+    definition:           (b.definition||"own_occ") as any,
+    waitingPeriodDays:    +b.waitingPeriodDays||90,
+    benefitPeriod:        (b.benefitPeriod||"age65") as any,
+    groupDiMonthly:       +b.groupDiMonthly||0,
+    groupDiEmployerPaid:  b.groupDiEmployerPaid !== false,
+    individualDiMonthly:  +b.individualDiMonthly||0,
+    cppDisabilityMonthly: +b.cppDisabilityMonthly||0,
+    partialDisabilityPct: +b.partialDisabilityPct||0.5,
+    colaPct:              +b.colaPct||0.02,
+  });
+}
+
+r.post("/clients/:id/di-analyses", isAuthenticated, async (req: AuthRequest, res: Response) => {
+  const cid = +req.params.id;
+  if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
+  const b = req.body;
+  const result = await runDI(b);
+  const [row] = await (db.insert(diAnalyses) as any).values({
+    clientId: cid, person: b.person||"primary", label: b.label||null,
+    grossMonthlyIncome: String(+b.grossMonthlyIncome||0),
+    occupationClass: b.occupationClass||"3A", definition: b.definition||"own_occ",
+    waitingPeriodDays: +b.waitingPeriodDays||90, benefitPeriod: b.benefitPeriod||"age65",
+    groupDiMonthly: String(+b.groupDiMonthly||0),
+    groupDiEmployerPaid: b.groupDiEmployerPaid !== false,
+    individualDiMonthly: String(+b.individualDiMonthly||0),
+    cppDisabilityMonthly: String(+b.cppDisabilityMonthly||0),
+    partialDisabilityPct: String(+b.partialDisabilityPct||0.5),
+    colaPct: String(+b.colaPct||0.02), province: b.province||"ON",
+    notes: b.notes||null, resultData: result,
+  }).returning();
+  res.status(201).json({ ...row, result });
+});
+
+r.patch("/clients/:id/di-analyses/:aid", isAuthenticated, async (req: AuthRequest, res: Response) => {
+  const cid = +req.params.id; const aid = +req.params.aid;
+  if (!await ownsClient(cid, req.userId!)) return res.status(403).json({ message: "Forbidden" });
+  const b = req.body;
+  const result = await runDI(b);
+  await (db.update(diAnalyses) as any).set({
+    label: b.label||null, grossMonthlyIncome: String(+b.grossMonthlyIncome||0),
+    occupationClass: b.occupationClass||"3A", definition: b.definition||"own_occ",
+    waitingPeriodDays: +b.waitingPeriodDays||90, benefitPeriod: b.benefitPeriod||"age65",
+    groupDiMonthly: String(+b.groupDiMonthly||0),
+    groupDiEmployerPaid: b.groupDiEmployerPaid !== false,
+    individualDiMonthly: String(+b.individualDiMonthly||0),
+    cppDisabilityMonthly: String(+b.cppDisabilityMonthly||0),
+    partialDisabilityPct: String(+b.partialDisabilityPct||0.5),
+    colaPct: String(+b.colaPct||0.02), province: b.province||"ON",
+    notes: b.notes||null, resultData: result, updatedAt: new Date(),
+  }).where(eq(diAnalyses.id, aid));
+  const [row] = await db.select().from(diAnalyses).where(eq(diAnalyses.id, aid));
+  res.json({ ...row, result });
+});
+
+r.delete("/clients/:id/di-analyses/:aid", isAuthenticated, async (req: AuthRequest, res: Response) => {
+  const cid = +req.params.id; const aid = +req.params.aid;
+  if (!await ownsClient(cid, req.userId!)) return res.status(403).json({ message: "Forbidden" });
+  await db.delete(diAnalyses).where(eq(diAnalyses.id, aid));
+  res.json({ deleted: true });
+});

@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import { translations, type T } from "../i18n/translations";
-import { Shield, FileHeart, Calendar, Heart } from "lucide-react";
+import { Shield, FileHeart, Calendar, Heart, Briefcase } from "lucide-react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { HubShell } from "./insightled";
 import { PoliciesTab } from "../pages/PoliciesTab";
 import { LTCTab } from "./planning/LTCTab";
+import { DITab }  from "./planning/DITab";
 import { InsuranceTab as FnaWorksheetTab } from "../pages/FinancialPlanning";
 import { api } from "../lib/api";
 
@@ -36,7 +37,7 @@ function annualPremium(p: Policy): number {
 }
 
 export function ProtectionHub({ clientId, client, person, onPersonChange, t = translations.en }: Props) {
-  const [subtab, setSubtab] = useState<"coverage" | "gap" | "ltc">("coverage");
+  const [subtab, setSubtab] = useState<"coverage" | "gap" | "ltc" | "di">("coverage");
   const [policies, setPolicies] = useState<Policy[]>([]);
 
   useEffect(() => {
@@ -86,6 +87,12 @@ export function ProtectionHub({ clientId, client, person, onPersonChange, t = tr
             icon: Heart,
             badgeTone: "cyan",
           },
+          {
+            key: "di",
+            label: "DI Planning",
+            icon: Briefcase,
+            badgeTone: "amber",
+          },
         ]}
         activeSubtab={subtab}
         onSubtabChange={(k) => setSubtab(k as "coverage" | "gap")}
@@ -106,6 +113,9 @@ export function ProtectionHub({ clientId, client, person, onPersonChange, t = tr
           )}
           {subtab === "ltc" && (
             <LTCTab clientId={clientId} client={client} t={t} />
+          )}
+          {subtab === "di" && (
+            <DITab clientId={clientId} client={client} t={t} />
           )}
         </div>
       </HubShell>

@@ -159,7 +159,7 @@ type NWDraft = {
 
 function emptyDraft(type: "asset"|"liability"): NWDraft {
   return {
-    type, category: type === "asset" ? "Principal Residence" : {t.netWorth.mortgage},
+    type, category: type === "asset" ? "Principal Residence" : t.netWorth.mortgage,
     name: "", owner: "primary", value: "", notes: "",
     isSpousal: false, rrspContributor: "",
     pensionType: "DBPP", matchPct: "",
@@ -168,7 +168,7 @@ function emptyDraft(type: "asset"|"liability"): NWDraft {
     holdingType: "",
     jointWithSpouse: false,
     stockOptionType: "RSU",
-    propertyType: {t.netWorth.familyOccupied},
+    propertyType: t.netWorth.familyOccupied,
     purchasePrice: "",
     rentalIncome: "",
     rentalExpenses: "",
@@ -391,9 +391,9 @@ function AssetRow({
 // ── normalizeCat — remap legacy category names ────────────────────────────────
 function normalizeCat(e: NWEntry): NWEntry {
   if (e.category === "ESU" || e.category === "RSU")
-    return { ...e, category: {t.netWorth.employerStockOptions}, metadata: { ...(e.metadata ?? {}), stockOptionType: e.category } };
+    return { ...e, category: t.netWorth.employerStockOptions, metadata: { ...(e.metadata ?? {}), stockOptionType: e.category } };
   if (e.category === "Real Estate")
-    return { ...e, category: {t.netWorth.realEstateOther} };
+    return { ...e, category: t.netWorth.realEstateOther };
   if (e.category === "RRSP/TFSA" || e.category === "Registered Investments (RRSP/TFSA)")
     return { ...e, category: "RRSP" };
   return e;
@@ -426,7 +426,7 @@ export function NetWorthTab({ clientId, client, t }: { clientId: number; t: T; c
   const [voiceOpen, setVoiceOpen] = useState<null | "asset" | "liability">(null);
 
   const spouseName  = client?.spouseFirstName ? `${client.spouseFirstName} ${client.spouseLastName ?? ""}`.trim() : "";
-  const primaryName = client ? `${client.firstName} ${client.lastName}` : {t.common.primary};
+  const primaryName = client ? `${client.firstName} ${client.lastName}` : t.common.primary;
 
   const load = () => api.get<NWEntry[]>(`/api/clients/${clientId}/net-worth`).then(raw => setEntries(raw.map(normalizeCat)));
   useEffect(() => { load(); }, [clientId]);
@@ -443,7 +443,7 @@ export function NetWorthTab({ clientId, client, t }: { clientId: number; t: T; c
   function addVoiceDraft(type: "asset" | "liability", parsed: Record<string, string>) {
     const base = emptyDraft(type);
     const cats = type === "asset" ? NW_ASSET_CATS : NW_LIAB_CATS;
-    const safeFallback = type === "asset" ? "Other Asset" : {t.netWorth.otherLiability2};
+    const safeFallback = type === "asset" ? "Other Asset" : t.netWorth.otherLiability2;
     let category = base.category || safeFallback;
     if (parsed.category) {
       const match = cats.find(c => c.toLowerCase() === parsed.category.toLowerCase());
@@ -544,7 +544,7 @@ export function NetWorthTab({ clientId, client, t }: { clientId: number; t: T; c
           const mortgageMeta: any = { linkedAssetName: propName };
           if (d.mortgageMonthlyPayment) mortgageMeta.monthlyPayment = d.mortgageMonthlyPayment;
           await api.post(`/api/clients/${clientId}/net-worth`, {
-            type: "liability", category: {t.netWorth.mortgage},
+            type: "liability", category: t.netWorth.mortgage,
             name: `Mortgage — ${propName}`, owner,
             value: String(mortgageVal), notes: `Linked to ${propName}`,
             metadata: mortgageMeta,
@@ -829,7 +829,7 @@ export function NetWorthTab({ clientId, client, t }: { clientId: number; t: T; c
                       <div className="flex gap-2 justify-end">
                         <button onClick={() => { setEditingId(null); setEditForm({}); }} className="text-sm text-slate-500 px-3 py-1.5 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors">{t.common.cancel}</button>
                         <button onClick={saveEdit} disabled={saving} className="text-sm font-semibold text-white bg-[#0c1e3a] px-4 py-1.5 rounded-lg disabled:opacity-50 hover:bg-[#0e2a4a] transition-colors">
-                          {saving ? "Saving…" : {t.common.save}}
+                          {saving ? "Saving…" : t.common.save}
                         </button>
                       </div>
                     </div>
@@ -936,16 +936,16 @@ export function NetWorthTab({ clientId, client, t }: { clientId: number; t: T; c
       {/* Voice dialog */}
       {voiceOpen && (
         <VoiceAddDialog
-          title={`Voice-Add ${voiceOpen === "asset" ? "Asset" : {t.common.liability}}`}
+          title={`Voice-Add ${voiceOpen === "asset" ? "Asset" : t.common.liability}`}
           moduleId={`net-worth-${voiceOpen}`}
           prompt={voiceOpen === "asset"
             ? `Try: "TFSA at TD worth twenty-five thousand, jointly with spouse"`
             : `Try: "RBC mortgage balance 320 thousand, monthly payment 1850"`}
           fieldSchema={[
-            { key: "category", label: {t.common.category}, description: `Type of ${voiceOpen}`, enum: voiceOpen === "asset" ? NW_ASSET_CATS : NW_LIAB_CATS },
-            { key: "name", label: {t.common.name}, description: "Description" },
-            { key: "value", label: voiceOpen === "asset" ? "Value" : {t.common.balance}, description: "Amount in dollars" },
-            { key: "owner", label: {t.common.owner}, description: "Who owns it", enum: ["primary", "spouse", "joint"] },
+            { key: "category", label: t.common.category, description: `Type of ${voiceOpen}`, enum: voiceOpen === "asset" ? NW_ASSET_CATS : NW_LIAB_CATS },
+            { key: "name", label: t.common.name, description: "Description" },
+            { key: "value", label: voiceOpen === "asset" ? "Value" : t.common.balance, description: "Amount in dollars" },
+            { key: "owner", label: t.common.owner, description: "Who owns it", enum: ["primary", "spouse", "joint"] },
             ...(voiceOpen === "liability" ? [{ key: "monthlyPayment", label: "Monthly Pmt", description: "Monthly payment" }] : []),
           ]}
           onConfirm={(parsed: Record<string, string>) => { addVoiceDraft(voiceOpen, parsed); setVoiceOpen(null); }}
@@ -1010,7 +1010,7 @@ export function RetirementTab({ clientId, client, person = "primary" }: { client
 , []);
   const clientAge = calcAge(client?.dateOfBirth);
   const spouseAge = calcAge(client?.spouseDateOfBirth);
-  const clientName = client ? client.firstName : {t.common.primary};
+  const clientName = client ? client.firstName : t.common.primary;
   const spouseName = client?.spouseFirstName ?? "Spouse";
   const isSpouse   = person === "spouse";
   const isCouple   = person === "combined";
@@ -1233,7 +1233,7 @@ export function RetirementTab({ clientId, client, person = "primary" }: { client
         {(["projections","drawdown"] as const).map(key => (
           <button key={key} onClick={() => setActiveSubTab(key)}
             className={`px-4 py-2 text-sm font-semibold rounded-t-lg transition-colors ${activeSubTab === key ? "bg-white border border-b-white border-gray-200 text-[#0c1e3a] -mb-px" : "text-gray-500 hover:text-gray-700"}`}>
-            {key === "projections" ? "Retirement Projections" : {t.netWorth.drawdownStrategies}}
+            {key === "projections" ? "Retirement Projections" : t.netWorth.drawdownStrategies}
           </button>
         ))}
       </div>
@@ -1245,7 +1245,7 @@ export function RetirementTab({ clientId, client, person = "primary" }: { client
         <div className="flex gap-2">
           <button onClick={runSim} disabled={simulating}
             className="bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-sm font-semibold px-4 py-1.5 rounded-lg">
-            {simulating ? t.common.running : {t.netWorth.retirementCheckup}}
+            {simulating ? t.common.running : t.netWorth.retirementCheckup}
           </button>
           <button onClick={addDraft}
             className="flex items-center gap-1.5 text-sm font-semibold text-white bg-[#0c1e3a] hover:bg-[#0e2a4a] px-3 py-1.5 rounded-lg">
@@ -1379,7 +1379,7 @@ export function RetirementTab({ clientId, client, person = "primary" }: { client
                         </div>
                         <div className={`rounded-xl p-3 ${!hasDesired ? "bg-gray-50" : gap >= 0 ? "bg-emerald-50" : "bg-red-50"}`}>
                           <p className={`text-[10px] font-bold uppercase ${!hasDesired ? "text-gray-400" : gap >= 0 ? "text-emerald-600" : "text-red-600"}`}>
-                            {!hasDesired ? "Shortfall" : gap >= 0 ? "Surplus" : {t.common.shortfall}}
+                            {!hasDesired ? "Shortfall" : gap >= 0 ? "Surplus" : t.common.shortfall}
                           </p>
                           <p className={`text-lg font-bold ${!hasDesired ? "text-gray-400" : gap >= 0 ? "text-emerald-700" : "text-red-700"}`}>
                             {!hasDesired ? "—" : `${gap >= 0 ? "+" : ""}${fmt$(gap)}/yr`}
@@ -1677,10 +1677,10 @@ function EducationSubTab({ clientId, client, t = translations.en }: { clientId: 
             moduleId="education-plan"
             prompt={`Try: "Sarah, born June 12 2015, RESP balance 12 thousand, contributing twenty-five hundred a year, target sixty thousand"`}
             fieldSchema={[
-              { key: "childName",          label: {t.netWorth.childName}, description: "Full first name" },
+              { key: "childName",          label: t.netWorth.childName, description: "Full first name" },
               { key: "childDob",           label: "DOB",        description: "Date of birth (YYYY-MM-DD)" },
-              { key: "currentRespBalance", label: {t.netWorth.respBalance}, description: "Current RESP balance, number only" },
-              { key: "annualContribution", label: {t.netWorth.annualContribNum}, description: "Annual contribution, number only" },
+              { key: "currentRespBalance", label: t.netWorth.respBalance, description: "Current RESP balance, number only" },
+              { key: "annualContribution", label: t.netWorth.annualContribNum, description: "Annual contribution, number only" },
               { key: "targetAmount",       label: "Target", description: "Target amount, number only" },
               { key: "notes",              label: "Notes", description: "Free-form notes" },
             ]}

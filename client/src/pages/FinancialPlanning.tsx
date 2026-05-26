@@ -49,17 +49,17 @@ import {
 type TabKey = "overview" | "dashboard" | "networth" | "retirement" | "insurance" | "resp" | "debt" | "tax" | "estate" | "ai" | "plan";
 
 const tabs: { key: TabKey; label: string; icon: typeof Target }[] = [
-  { key: "overview",    label: {t.plan.overview},       icon: Target },
-  { key: "plan",        label: {t.plan.financialPlan}, icon: Sparkles },
-  { key: "dashboard",   label: {t.plan.dashboard2},      icon: BarChart3 },
-  { key: "networth",    label: {t.netWorth.title},      icon: DollarSign },
-  { key: "retirement",  label: {t.retirement.title},     icon: PiggyBank },
-  { key: "insurance",   label: {t.plan.insurance2},      icon: Shield },
+  { key: "overview",    label: t.plan.overview,       icon: Target },
+  { key: "plan",        label: t.plan.financialPlan, icon: Sparkles },
+  { key: "dashboard",   label: t.plan.dashboard2,      icon: BarChart3 },
+  { key: "networth",    label: t.netWorth.title,      icon: DollarSign },
+  { key: "retirement",  label: t.retirement.title,     icon: PiggyBank },
+  { key: "insurance",   label: t.plan.insurance2,      icon: Shield },
   { key: "resp",        label: "RESP",           icon: GraduationCap },
-  { key: "debt",        label: {t.plan.debt},           icon: CreditCard },
+  { key: "debt",        label: t.plan.debt,           icon: CreditCard },
   { key: "tax",         label: "Tax",            icon: Receipt },
-  { key: "estate",      label: {t.plan.estate},         icon: ScrollText },
-  { key: "ai",          label: {t.plan.aiInsights},    icon: Brain },
+  { key: "estate",      label: t.plan.estate,         icon: ScrollText },
+  { key: "ai",          label: t.plan.aiInsights,    icon: Brain },
 ];
 
 const moduleToTabMap: Record<string, TabKey> = {
@@ -114,25 +114,25 @@ function OverviewTab({ clientId, onTabChange }: { clientId: number; onTabChange?
   if (!overview) return null;
 
   const cards = [
-    { label: {t.netWorth.title},            value: `$${Number(overview.netWorth).toLocaleString()}`,          icon: DollarSign,  color: overview.netWorth >= 0 ? "text-green-600" : "text-red-600",    bg: overview.netWorth >= 0 ? "bg-green-50" : "bg-red-50" },
-    { label: {t.netWorth.totalAssets},         value: `$${Number(overview.totalAssets).toLocaleString()}`,        icon: TrendingUp,  color: "text-green-600", bg: "bg-green-50" },
-    { label: {t.netWorth.totalLiabilities},    value: `$${Number(overview.totalLiabilities).toLocaleString()}`,   icon: TrendingDown, color: "text-red-500",  bg: "bg-red-50" },
-    { label: {t.plan.totalDebt},           value: `$${Number(overview.totalDebt).toLocaleString()}`,          icon: CreditCard,  color: "text-orange-600", bg: "bg-orange-50" },
-    { label: {t.plan.financialGoals},      value: overview.goals,                    icon: Target,        color: "text-primary",    bg: "bg-primary/5",   tab: "dashboard" },
-    { label: {t.plan.retirementPlans},     value: overview.retirementProjections,    icon: PiggyBank,     color: "text-blue-600",   bg: "bg-blue-50",     tab: "retirement" },
-    { label: {t.plan.insuranceAnalyses},   value: overview.insuranceAnalyses,        icon: Shield,        color: "text-purple-600", bg: "bg-purple-50",   tab: "insurance" },
-    { label: {t.plan.educationPlans},      value: overview.educationPlans,           icon: GraduationCap, color: "text-teal-600",   bg: "bg-teal-50",     tab: "resp" },
-    { label: {t.plan.taxNotes},            value: overview.taxNotes,                 icon: Receipt,       color: "text-amber-600",  bg: "bg-amber-50",    tab: "tax" },
-    { label: {t.plan.estateNotes},         value: overview.estateNotes,              icon: ScrollText,    color: "text-indigo-600", bg: "bg-indigo-50",   tab: "estate" },
-    { label: {t.plan.aiRecommendations},   value: overview.aiRecommendations,        icon: Brain,         color: "text-pink-600",   bg: "bg-pink-50",     tab: "ai" },
-    { label: {t.plan.pendingActions},      value: overview.pendingRecommendations,   icon: Clock,         color: "text-yellow-600", bg: "bg-yellow-50",   tab: "ai" },
+    { label: t.netWorth.title,            value: `$${Number(overview.netWorth).toLocaleString()}`,          icon: DollarSign,  color: overview.netWorth >= 0 ? "text-green-600" : "text-red-600",    bg: overview.netWorth >= 0 ? "bg-green-50" : "bg-red-50" },
+    { label: t.netWorth.totalAssets,         value: `$${Number(overview.totalAssets).toLocaleString()}`,        icon: TrendingUp,  color: "text-green-600", bg: "bg-green-50" },
+    { label: t.netWorth.totalLiabilities,    value: `$${Number(overview.totalLiabilities).toLocaleString()}`,   icon: TrendingDown, color: "text-red-500",  bg: "bg-red-50" },
+    { label: t.plan.totalDebt,           value: `$${Number(overview.totalDebt).toLocaleString()}`,          icon: CreditCard,  color: "text-orange-600", bg: "bg-orange-50" },
+    { label: t.plan.financialGoals,      value: overview.goals,                    icon: Target,        color: "text-primary",    bg: "bg-primary/5",   tab: "dashboard" },
+    { label: t.plan.retirementPlans,     value: overview.retirementProjections,    icon: PiggyBank,     color: "text-blue-600",   bg: "bg-blue-50",     tab: "retirement" },
+    { label: t.plan.insuranceAnalyses,   value: overview.insuranceAnalyses,        icon: Shield,        color: "text-purple-600", bg: "bg-purple-50",   tab: "insurance" },
+    { label: t.plan.educationPlans,      value: overview.educationPlans,           icon: GraduationCap, color: "text-teal-600",   bg: "bg-teal-50",     tab: "resp" },
+    { label: t.plan.taxNotes,            value: overview.taxNotes,                 icon: Receipt,       color: "text-amber-600",  bg: "bg-amber-50",    tab: "tax" },
+    { label: t.plan.estateNotes,         value: overview.estateNotes,              icon: ScrollText,    color: "text-indigo-600", bg: "bg-indigo-50",   tab: "estate" },
+    { label: t.plan.aiRecommendations,   value: overview.aiRecommendations,        icon: Brain,         color: "text-pink-600",   bg: "bg-pink-50",     tab: "ai" },
+    { label: t.plan.pendingActions,      value: overview.pendingRecommendations,   icon: Clock,         color: "text-yellow-600", bg: "bg-yellow-50",   tab: "ai" },
   ];
 
   const reportButtons = [
-    { type: "comprehensive", label: {t.plan.fullPlan},   available: true,                   icon: FileText,  tab: null },
-    { type: "retirement",    label: {t.retirement.title},  available: !!reports?.retirement,  icon: PiggyBank, tab: "retirement" as TabKey },
-    { type: "insurance",     label: {t.plan.insurance2},   available: !!reports?.insurance,   icon: Shield,    tab: "insurance" as TabKey },
-    { type: "net-worth",     label: {t.netWorth.title},   available: !!reports?.netWorth,    icon: DollarSign, tab: "networth" as TabKey },
+    { type: "comprehensive", label: t.plan.fullPlan,   available: true,                   icon: FileText,  tab: null },
+    { type: "retirement",    label: t.retirement.title,  available: !!reports?.retirement,  icon: PiggyBank, tab: "retirement" as TabKey },
+    { type: "insurance",     label: t.plan.insurance2,   available: !!reports?.insurance,   icon: Shield,    tab: "insurance" as TabKey },
+    { type: "net-worth",     label: t.netWorth.title,   available: !!reports?.netWorth,    icon: DollarSign, tab: "networth" as TabKey },
   ];
 
   return (
@@ -231,7 +231,7 @@ function NetWorthSection({ title, total, color, isAsset, children, onAdd }: {
           <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: color }} />
           <div>
             <p className="font-semibold text-slate-900 text-sm">{title}</p>
-            <p className="text-xs text-slate-400">{open ? "Click to collapse" : {t.common.clickExpand}}</p>
+            <p className="text-xs text-slate-400">{open ? "Click to collapse" : t.common.clickExpand}</p>
           </div>
         </div>
         <div className="flex items-center gap-3">
@@ -312,7 +312,7 @@ export function NetWorthTab({ clientId }: { clientId: number }) {
     <div className="max-w-6xl mx-auto px-6 py-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-semibold text-slate-900">{sub === "liabilities" ? "Liabilities" : {t.netWorth.title}}</h1>
+          <h1 className="text-xl font-semibold text-slate-900">{sub === "liabilities" ? "Liabilities" : t.netWorth.title}</h1>
           <p className="text-sm text-slate-500">{entries.length} entr{entries.length !== 1 ? "ies" : "y"}</p>
         </div>
         <button onClick={() => openAdd(sub === "liabilities" ? "liability" : "asset")} data-testid="button-fp-add-nw"
@@ -428,7 +428,7 @@ export function NetWorthTab({ clientId }: { clientId: number }) {
       {showAdd && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[200] flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl p-6">
-            <h2 className="text-lg font-bold mb-5 text-slate-900">Add {addType === "asset" ? "Asset" : {t.common.liability}}</h2>
+            <h2 className="text-lg font-bold mb-5 text-slate-900">Add {addType === "asset" ? "Asset" : t.common.liability}</h2>
             <div className="space-y-4">
               <div className="flex gap-2">
                 <button type="button" onClick={() => setAddType("asset")} className={`flex-1 py-2 rounded-xl font-semibold text-sm transition ${addType === "asset" ? "bg-emerald-100 text-emerald-700 border-2 border-emerald-300" : "bg-slate-100 text-slate-500"}`}>{t.common.asset}</button>
@@ -454,7 +454,7 @@ export function NetWorthTab({ clientId }: { clientId: number }) {
               <button onClick={() => setShowAdd(false)} className="px-5 py-2.5 rounded-xl font-semibold text-slate-500 hover:bg-slate-100">{t.common.cancel}</button>
               <button onClick={handleAdd} disabled={createEntry.isPending || !form.category || !form.name || !form.value} data-testid="button-fp-submit-nw"
                 className="px-5 py-2.5 rounded-xl font-semibold bg-gradient-to-r from-blue-600 to-cyan-500 text-white hover:shadow-md disabled:opacity-50 transition">
-                {createEntry.isPending ? "Adding…" : {t.common.addEntry}}
+                {createEntry.isPending ? "Adding…" : t.common.addEntry}
               </button>
             </div>
           </div>
@@ -471,7 +471,7 @@ function ModuleScenarioPreview({ planId, module }: { planId: number | null; modu
   const { data: simResults = [] } = useSimulationResults(planId);
   const moduleResults = simResults.filter(r => r.module === module);
   if (moduleResults.length === 0) return null;
-  const scenarioLabels: Record<string, string> = { Conservative: {t.common.stress}, Moderate: {t.common.base}, Aggressive: {t.common.optimistic} };
+  const scenarioLabels: Record<string, string> = { Conservative: t.common.stress, Moderate: t.common.base, Aggressive: t.common.optimistic };
   return (
     <div className="border border-border rounded-2xl p-4" data-testid={`module-scenario-${module}`}>
       <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">Monte Carlo Results</p>
@@ -700,8 +700,8 @@ function buildDefaultFromNW() {
                 const items = [
                   { label: `${a.primaryName || "Primary"} - Life Need`, val: pNet },
                   ...(a.spouseName ? [{ label: `${a.spouseName} - Life Need`, val: sNet }] : []),
-                  { label: {t.insurance.diNeed}, val: parseFloat(a.recommendedDisabilityCoverage || "0") },
-                  { label: {t.insurance.ltcNeed}, val: parseFloat(a.criticalIllnessLumpSum || "0") },
+                  { label: t.insurance.diNeed, val: parseFloat(a.recommendedDisabilityCoverage || "0") },
+                  { label: t.insurance.ltcNeed, val: parseFloat(a.criticalIllnessLumpSum || "0") },
                 ];
                 return items.map(item => (
                   <div key={item.label} className="p-1.5 bg-muted/30 rounded-lg flex items-center justify-between gap-2">
@@ -949,7 +949,7 @@ function buildDefaultFromNW() {
                 <div className="flex gap-3">
                   <button type="button" onClick={() => setShowWorksheet(false)} data-testid="button-ws-cancel" className="px-6 py-3 rounded-xl font-semibold text-muted-foreground hover:bg-muted">{t.common.cancel}</button>
                   <button type="submit" disabled={createWorksheet.isPending} data-testid="button-ws-save" className="px-8 py-3 rounded-xl font-semibold bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">
-                    {createWorksheet.isPending ? <><Loader2 className="w-4 h-4 animate-spin inline mr-2" />{t.common.saving2}</> : viewingId ? "Update Analysis" : {t.common.saveAnalysis2}}
+                    {createWorksheet.isPending ? <><Loader2 className="w-4 h-4 animate-spin inline mr-2" />{t.common.saving2}</> : viewingId ? "Update Analysis" : t.common.saveAnalysis2}
                   </button>
                 </div>
               </div>
@@ -1036,7 +1036,7 @@ function RESPTab({ clientId, planId }: { clientId: number; planId: number | null
               <div><label className="text-sm font-semibold">{t.common.notes}</label><textarea value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} data-testid="input-fp-resp-notes" className="w-full px-3 py-2 rounded-xl border mt-1 min-h-[80px]" /></div>
               <div className="pt-4 flex justify-end space-x-3">
                 <button type="button" onClick={() => setShowAdd(false)} className="px-6 py-3 rounded-xl font-semibold text-muted-foreground hover:bg-muted">{t.common.cancel}</button>
-                <button type="submit" disabled={createSaving.isPending} data-testid="button-fp-submit-resp" className="px-6 py-3 rounded-xl font-semibold bg-primary text-primary-foreground">{createSaving.isPending ? t.common.adding : {t.plan.addPlan}}</button>
+                <button type="submit" disabled={createSaving.isPending} data-testid="button-fp-submit-resp" className="px-6 py-3 rounded-xl font-semibold bg-primary text-primary-foreground">{createSaving.isPending ? t.common.adding : t.plan.addPlan}</button>
               </div>
             </form>
           </div>
@@ -1053,7 +1053,7 @@ function DebtTab({ clientId, planId }: { clientId: number; planId: number | null
   const createDebt = useCreateDebtEntry();
   const deleteDebt = useDeleteDebtEntry(clientId);
   const [showAdd, setShowAdd] = useState(false);
-  const [form, setForm] = useState({ name: "", category: {t.netWorth.creditCard2}, balance: "", interestRate: "", minimumPayment: "", term: "", notes: "" });
+  const [form, setForm] = useState({ name: "", category: t.netWorth.creditCard2, balance: "", interestRate: "", minimumPayment: "", term: "", notes: "" });
   const categories = ["Mortgage", "Car Loan", "Student Loan", "Credit Card", "Personal Loan", "Line of Credit", "Other"];
   const totalDebt = (debts as any[]).reduce((s, d) => s + parseFloat(d.balance || "0"), 0);
   const avgRate = debts.length > 0 ? (debts as any[]).reduce((s, d) => s + parseFloat(d.interestRate || "0"), 0) / debts.length : 0;
@@ -1061,7 +1061,7 @@ function DebtTab({ clientId, planId }: { clientId: number; planId: number | null
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     createDebt.mutate({ clientId, data: { name: form.name, category: form.category, balance: form.balance, interestRate: form.interestRate, minimumPayment: form.minimumPayment || "0", term: form.term || undefined, notes: form.notes || undefined } },
-      { onSuccess: () => { setShowAdd(false); setForm({ name: "", category: {t.netWorth.creditCard2}, balance: "", interestRate: "", minimumPayment: "", term: "", notes: "" }); } });
+      { onSuccess: () => { setShowAdd(false); setForm({ name: "", category: t.netWorth.creditCard2, balance: "", interestRate: "", minimumPayment: "", term: "", notes: "" }); } });
   };
 
   return (
@@ -1174,7 +1174,7 @@ function TaxNotesPanel({ clientId }: { clientId: number }) {
   const [showAdd, setShowAdd] = useState(false);
   const [form, setForm] = useState({
     taxYear: String(new Date().getFullYear()),
-    category: {t.common.general},
+    category: t.common.general,
     title: "",
     content: "",
   });
@@ -1206,7 +1206,7 @@ function TaxNotesPanel({ clientId }: { clientId: number }) {
       {
         onSuccess: () => {
           setShowAdd(false);
-          setForm({ taxYear: String(new Date().getFullYear()), category: {t.common.general}, title: "", content: "" });
+          setForm({ taxYear: String(new Date().getFullYear()), category: t.common.general, title: "", content: "" });
         },
       }
     );
@@ -1280,7 +1280,7 @@ function TaxNotesPanel({ clientId }: { clientId: number }) {
           </div>
           <div className="flex gap-2">
             <button type="submit" className="px-4 py-2 bg-primary text-primary-foreground rounded-xl text-sm font-semibold">
-              {createNote.isPending ? t.common.saving2 : {t.common.saveNote}}
+              {createNote.isPending ? t.common.saving2 : t.common.saveNote}
             </button>
             <button
               type="button"
@@ -1482,10 +1482,10 @@ function RrspRoomPanel({ clientId, prefill, person = "primary", primaryLabel = "
                 {r && (
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                     {[
-                      { label: {t.plan.availableRoom}, value: r.summary?.totalAvailableRoom, color: "blue" },
-                      { label: {t.plan.taxSavings}, value: r.marginalTaxSavings, color: "green" },
-                      { label: {t.plan.annualToCatchUp}, value: r.catchUpStrategy?.annualContributionNeeded, color: "amber" },
-                      { label: {t.plan.refundYear}, value: r.catchUpStrategy?.projectedRefundPerYear, color: "purple" },
+                      { label: t.plan.availableRoom, value: r.summary?.totalAvailableRoom, color: "blue" },
+                      { label: t.plan.taxSavings, value: r.marginalTaxSavings, color: "green" },
+                      { label: t.plan.annualToCatchUp, value: r.catchUpStrategy?.annualContributionNeeded, color: "amber" },
+                      { label: t.plan.refundYear, value: r.catchUpStrategy?.projectedRefundPerYear, color: "purple" },
                     ].map(c => (
                       <div key={c.label} className={`bg-${c.color}-50 rounded-xl p-3`}>
                         <p className={`text-[10px] font-bold text-${c.color}-600 uppercase`}>{c.label}</p>
@@ -1656,9 +1656,9 @@ function TfsaRoomPanel({ clientId, prefill, person = "primary", primaryLabel = "
                 {r && (
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                     {[
-                      { label: {t.plan.availableRoom}, value: r.summary?.totalAvailableRoom, color: "teal" },
+                      { label: t.plan.availableRoom, value: r.summary?.totalAvailableRoom, color: "teal" },
                       { label: "30yr TFSA Value", value: r.thirtyYearProjection?.tfsaBalanceFinal, color: "green" },
-                      { label: {t.plan.tfsaAdvantage}, value: r.thirtyYearProjection?.tfsaAdvantage, color: "blue" },
+                      { label: t.plan.tfsaAdvantage, value: r.thirtyYearProjection?.tfsaAdvantage, color: "blue" },
                     ].map(c => (
                       <div key={c.label} className={`bg-${c.color}-50 rounded-xl p-3`}>
                         <p className={`text-[10px] font-bold text-${c.color}-600 uppercase`}>{c.label}</p>
@@ -2063,11 +2063,11 @@ function CapitalGainsPanel({ clientId, client, person = "primary" }: {
 
   const provinces = ["ON","BC","AB","QC","MB","SK","NS","NB","PE","NL","YT","NT","NU"];
   const ASSET_TYPES = [
-    { key: "stock",      label: {t.plan.stockEtf} },
-    { key: "realestate", label: {t.netWorth.realEstate2} },
-    { key: "smallbiz",   label: {t.plan.smallBusinessShares} },
-    { key: "farmfish",   label: {t.plan.farmFishing} },
-    { key: "other",      label: {t.common.other} },
+    { key: "stock",      label: t.plan.stockEtf },
+    { key: "realestate", label: t.netWorth.realEstate2 },
+    { key: "smallbiz",   label: t.plan.smallBusinessShares },
+    { key: "farmfish",   label: t.plan.farmFishing },
+    { key: "other",      label: t.common.other },
   ];
   const LCGE_TYPES = ["smallbiz", "farmfish"];
   const LCGE_LIMIT = 1250000;
@@ -2294,10 +2294,10 @@ function CapitalGainsPanel({ clientId, client, person = "primary" }: {
               {(totalGain > 0 || totalLoss > 0) && (
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                   {[
-                    { label: {t.plan.grossGains},        value: totalGain,    color: "text-green-700",  bg: "bg-green-50" },
+                    { label: t.plan.grossGains,        value: totalGain,    color: "text-green-700",  bg: "bg-green-50" },
                     { label: "Losses + Carry-Fwd", value: totalLoss + Number(form.carryForwardLoss || 0), color: "text-red-600", bg: "bg-red-50" },
-                    { label: {t.plan.lcgeSheltered},     value: lcgeSheltered, color: "text-blue-700",  bg: "bg-blue-50" },
-                    { label: {t.plan.estTaxOwing},     value: estTax,       color: "text-orange-700", bg: "bg-orange-50" },
+                    { label: t.plan.lcgeSheltered,     value: lcgeSheltered, color: "text-blue-700",  bg: "bg-blue-50" },
+                    { label: t.plan.estTaxOwing,     value: estTax,       color: "text-orange-700", bg: "bg-orange-50" },
                   ].map(c => (
                     <div key={c.label} className={`${c.bg} rounded-xl p-3`}>
                       <p className="text-[10px] font-bold text-gray-500 uppercase">{c.label}</p>
@@ -2349,9 +2349,9 @@ function CapitalGainsPanel({ clientId, client, person = "primary" }: {
                 </div>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                   {[
-                    { label: {t.plan.grossGains},    value: gains, color: "text-green-700",  bg: "bg-green-50" },
-                    { label: {t.plan.netLosses},     value: losses, color: "text-red-600",   bg: "bg-red-50" },
-                    { label: {t.plan.lcgeSheltered}, value: lcge,  color: "text-blue-700",   bg: "bg-blue-50" },
+                    { label: t.plan.grossGains,    value: gains, color: "text-green-700",  bg: "bg-green-50" },
+                    { label: t.plan.netLosses,     value: losses, color: "text-red-600",   bg: "bg-red-50" },
+                    { label: t.plan.lcgeSheltered, value: lcge,  color: "text-blue-700",   bg: "bg-blue-50" },
                     { label: "Est. Tax",       value: tax,   color: "text-orange-700", bg: "bg-orange-50" },
                   ].map(c => (
                     <div key={c.label} className={`${c.bg} rounded-xl p-3`}>
@@ -2668,13 +2668,13 @@ export function EstateNotesTab({ clientId, planId, client }: { clientId: number;
   const createNote = useCreateEstatePlanningNote();
   const deleteNote = useDeleteEstatePlanningNote(clientId);
   const [showAdd, setShowAdd] = useState(false);
-  const [form, setForm] = useState({ category: {t.plan.will}, title: "", content: "" });
+  const [form, setForm] = useState({ category: t.plan.will, title: "", content: "" });
   const categories = ["Will", "Power of Attorney", "Trust", "Beneficiary Designations", "Estate Tax", "Succession Planning", "Charitable Giving", "Other"];
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     createNote.mutate({ clientId, data: { category: form.category, title: form.title, content: form.content } },
-      { onSuccess: () => { setShowAdd(false); setForm({ category: {t.plan.will}, title: "", content: "" }); } });
+      { onSuccess: () => { setShowAdd(false); setForm({ category: t.plan.will, title: "", content: "" }); } });
   };
 
   return (

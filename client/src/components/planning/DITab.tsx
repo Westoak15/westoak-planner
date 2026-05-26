@@ -450,8 +450,8 @@ export function DITab({ clientId, client, t = translations.en }: Props) {
                   { label: `Group DI (after ${Math.round(r.taxTreatment.groupEffectiveRate * 100)}% tax)`,
                     value: fmt$(r.existing.groupAfterTax) + "/mo",
                     note: r.taxTreatment.groupTaxable ? t.di.taxable : "tax-free — employee-paid" },
-                  { label: {t.di.individualDi2},                value: fmt$(r.existing.individual) + "/mo", note: t.di.taxFree },
-                  { label: {t.di.cppDisAfterTax},   value: fmt$(r.existing.cppDisability) + "/mo" },
+                  { label: t.di.individualDi2,                value: fmt$(r.existing.individual) + "/mo", note: t.di.taxFree },
+                  { label: t.di.cppDisAfterTax,   value: fmt$(r.existing.cppDisability) + "/mo" },
                   { label: t.di.totalExisting,      value: fmt$(r.existing.totalAfterTax) + "/mo", bold: true, color: r.isAdequate ? "#16a34a" : "#dc2626" },
                   { label: t.di.recommendedDi,    value: fmt$(r.coverageGap) + "/mo", bold: true, color: r.coverageGap > 0 ? "#dc2626" : "#16a34a" },
                 ].map((row, i) => (

@@ -203,7 +203,7 @@ function PolicyRow({
   async function handleSave() {
     setSaving(true);
     try { await onSave(form); setEditing(false); }
-    catch (e: any) { toast({ title: {t.common.error}, description: e.message, variant: "destructive" }); }
+    catch (e: any) { toast({ title: t.common.error, description: e.message, variant: "destructive" }); }
     finally { setSaving(false); }
   }
 
@@ -211,7 +211,7 @@ function PolicyRow({
     if (!confirm(`Remove this ${policy.type} policy?`)) return;
     setDeleting(true);
     try { await onDelete(policy.id); }
-    catch (e: any) { toast({ title: {t.common.error}, description: e.message, variant: "destructive" }); setDeleting(false); }
+    catch (e: any) { toast({ title: t.common.error, description: e.message, variant: "destructive" }); setDeleting(false); }
   }
 
   return (
@@ -318,12 +318,12 @@ function PolicyRow({
           ) : (
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-x-6 gap-y-3 pt-1 pb-1">
               {[
-                { label: {t.insurance.carrier},        value: policy.carrier       || "—" },
+                { label: t.insurance.carrier,        value: policy.carrier       || "—" },
                 { label: "Policy #",       value: policy.policyNumber  || "—" },
-                { label: {t.insurance.issueDate},     value: policy.issueDate     ? new Date(policy.issueDate).toLocaleDateString("en-CA") : "—" },
-                { label: {t.insurance.expiryDate},    value: policy.expiryDate    ? new Date(policy.expiryDate).toLocaleDateString("en-CA") : "—" },
-                { label: {t.insurance.beneficiary},    value: policy.beneficiary   || "—" },
-                { label: {t.insurance.riders},         value: policy.riders        || "—" },
+                { label: t.insurance.issueDate,     value: policy.issueDate     ? new Date(policy.issueDate).toLocaleDateString("en-CA") : "—" },
+                { label: t.insurance.expiryDate,    value: policy.expiryDate    ? new Date(policy.expiryDate).toLocaleDateString("en-CA") : "—" },
+                { label: t.insurance.beneficiary,    value: policy.beneficiary   || "—" },
+                { label: t.insurance.riders,         value: policy.riders        || "—" },
               ].map(({ label, value }) => (
                 <div key={label}>
                   <div className="text-[9px] font-semibold uppercase tracking-widest text-slate-400 mb-0.5">{label}</div>
@@ -352,8 +352,8 @@ function AddPolicyForm({ onSave, onCancel, t = translations.en }: {
   t?: T;
 }) {
   const [form, setForm] = useState({
-    type: {t.insurance.termLife}, insured: "", carrier: "", policyNumber: "",
-    coverageAmount: "", premium: "", premiumFrequency: {t.common.monthly},
+    type: t.insurance.termLife, insured: "", carrier: "", policyNumber: "",
+    coverageAmount: "", premium: "", premiumFrequency: t.common.monthly,
     issueDate: "", expiryDate: "", beneficiary: "", riders: "", notes: "",
   });
   const [saving, setSaving] = useState(false);
@@ -361,12 +361,12 @@ function AddPolicyForm({ onSave, onCancel, t = translations.en }: {
 
   async function handleSave() {
     if (!form.insured || !form.coverageAmount) {
-      toast({ title: {t.common.required}, description: {t.insurance.required}, variant: "destructive" });
+      toast({ title: t.common.required, description: t.insurance.required, variant: "destructive" });
       return;
     }
     setSaving(true);
     try { await onSave(form); }
-    catch (e: any) { toast({ title: {t.common.error}, description: e.message, variant: "destructive" }); }
+    catch (e: any) { toast({ title: t.common.error, description: e.message, variant: "destructive" }); }
     finally { setSaving(false); }
   }
 
@@ -572,7 +572,7 @@ export function PoliciesTab({ clientId, client, t }: Props) {
   if (totalLife > 0 && income > 0 && totalLife >= income * 10)
     alerts.push({ level: "ok", msg: `Life coverage adequate — ${Math.round(totalLife / income)}× income` });
   if (disabilityOk)
-    alerts.push({ level: "ok", msg: {t.insurance.disCovInPlace} });
+    alerts.push({ level: "ok", msg: t.insurance.disCovInPlace });
 
   // ── CRUD ─────────────────────────────────────────────────────────────────────
 
@@ -580,19 +580,19 @@ export function PoliciesTab({ clientId, client, t }: Props) {
     const p = await api.post<Policy>(`/api/clients/${clientId}/policies`, data);
     setPolicies(prev => [...prev, p]);
     setShowAdd(false);
-    toast({ title: {t.insurance.policyAdded}, description: `${data.type} policy added successfully` });
+    toast({ title: t.insurance.policyAdded, description: `${data.type} policy added successfully` });
   }
 
   async function handleSave(data: Policy) {
     await api.patch(`/api/clients/${clientId}/policies/${data.id}`, data);
     setPolicies(prev => prev.map(p => p.id === data.id ? data : p));
-    toast({ title: "Saved", description: {t.insurance.policySaved} });
+    toast({ title: "Saved", description: t.insurance.policySaved });
   }
 
   async function handleDelete(id: number) {
     await api.delete(`/api/clients/${clientId}/policies/${id}`);
     setPolicies(prev => prev.filter(p => p.id !== id));
-    toast({ title: "Removed", description: {t.insurance.policyRemoved} });
+    toast({ title: "Removed", description: t.insurance.policyRemoved });
   }
 
   const scoreColor = protectionScore >= 75 ? "text-emerald-600"
@@ -783,10 +783,10 @@ export function PoliciesTab({ clientId, client, t }: Props) {
             <div className="text-[9px] font-semibold uppercase tracking-widest text-slate-400 mb-3">{t.insurance.householdScenarios}</div>
             <div className="space-y-2">
               {[
-                { label: {t.insurance.survivorIncome},    ok: totalLife >= (income * 5), desc: totalLife >= (income * 5) ? "Protected" : {t.insurance.gapExists} },
+                { label: t.insurance.survivorIncome,    ok: totalLife >= (income * 5), desc: totalLife >= (income * 5) ? "Protected" : t.insurance.gapExists },
                 { label: t.insurance.disabilityIncome,  ok: totalDisability > 0,      desc: totalDisability > 0 ? t.insurance.covered : t.insurance.unprotected },
                 { label: t.insurance.criticalIllness,   ok: totalCritical > 0,        desc: totalCritical > 0 ? t.insurance.covered : t.insurance.noCoverage },
-                { label: {t.insurance.estateLiquidity},   ok: totalLife > 500000,       desc: totalLife > 500000 ? "Adequate" : {t.insurance.reviewNeeded} },
+                { label: t.insurance.estateLiquidity,   ok: totalLife > 500000,       desc: totalLife > 500000 ? "Adequate" : t.insurance.reviewNeeded },
               ].map(s => (
                 <div key={s.label} className="flex items-center justify-between py-1 border-b border-slate-50 last:border-0">
                   <div className="flex items-center gap-1.5">

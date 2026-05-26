@@ -194,7 +194,7 @@ export function ClientOverview({ client, onNavigate, t = translations.en }: { cl
         />
         <Stat
           label={t.client.lifeCoverage}
-          value={lifeCoverage > 0 ? fmt(lifeCoverage) : policies.length === 0 ? "—" : {t.client.noLifeIns}}
+          value={lifeCoverage > 0 ? fmt(lifeCoverage) : policies.length === 0 ? "—" : t.client.noLifeIns}
           sub={policies.length > 0 ? `${policies.length} polic${policies.length > 1 ? "ies" : "y"}` : undefined}
           color={lifeCoverage === 0 && policies.length > 0 ? "text-red-500" : "text-slate-900"}
         />
@@ -240,7 +240,7 @@ export function ClientOverview({ client, onNavigate, t = translations.en }: { cl
           title={t.client.protectionCard}
           icon={Shield}
           value={lifeCoverage > 0 ? `${fmt(lifeCoverage)} life coverage` : policies.length > 0 ? `${policies.length} polic${policies.length > 1 ? "ies" : "y"} on file` : t.client.noPoliciesCard}
-          insight={lifeCoverage === 0 && policies.length > 0 ? "Life insurance gap — review coverage" : policies.length === 0 ? t.client.addInsurancePols : {t.client.reviewCoverageAnnually}}
+          insight={lifeCoverage === 0 && policies.length > 0 ? "Life insurance gap — review coverage" : policies.length === 0 ? t.client.addInsurancePols : t.client.reviewCoverageAnnually}
           color={lifeCoverage === 0 && policies.length > 0 ? "text-red-500" : policies.length === 0 ? "text-slate-400" : "text-blue-600"}
           onClick={() => onNavigate("protection")}
         />

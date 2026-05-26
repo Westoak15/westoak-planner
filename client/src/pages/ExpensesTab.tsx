@@ -98,7 +98,7 @@ export function ExpensesTab({ clientId, addTrigger = 0, t = translations.en }: {
   const [selected, setSelected] = useState<string | null>(null);
   const [hovered, setHovered] = useState<string | null>(null);
   const [kbIndex, setKbIndex] = useState(0);
-  const [form, setForm] = useState({ category: {t.cashFlow.housing}, description: "", monthlyAmount: "", isEssential: true, includeInRetirement: true, retirementAdjustmentPct: "100", notes: "" });
+  const [form, setForm] = useState({ category: t.cashFlow.housing, description: "", monthlyAmount: "", isEssential: true, includeInRetirement: true, retirementAdjustmentPct: "100", notes: "" });
 
   // Global A key trigger
   useEffect(() => {
@@ -154,7 +154,7 @@ export function ExpensesTab({ clientId, addTrigger = 0, t = translations.en }: {
   const biggestSaving = biggestCat ? biggestCat.total * 0.10 * 12 / 0.04 : 0;
 
   function resetForm() {
-    setForm({ category: {t.cashFlow.housing}, description: "", monthlyAmount: "", isEssential: true, includeInRetirement: true, retirementAdjustmentPct: "100", notes: "" });
+    setForm({ category: t.cashFlow.housing, description: "", monthlyAmount: "", isEssential: true, includeInRetirement: true, retirementAdjustmentPct: "100", notes: "" });
     setEditing(null); setShowForm(false);
   }
 
@@ -323,7 +323,7 @@ export function ExpensesTab({ clientId, addTrigger = 0, t = translations.en }: {
                 {selectedCat.items.map(e => (
                   <div key={e.id} className="flex items-center justify-between py-1.5 px-2 rounded hover:bg-slate-50 group">
                     <div className="flex items-center gap-2 min-w-0">
-                      <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${e.isEssential ? "bg-red-400" : "bg-blue-400"}`} title={e.isEssential ? "Essential" : {t.common.discretionary}} />
+                      <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${e.isEssential ? "bg-red-400" : "bg-blue-400"}`} title={e.isEssential ? "Essential" : t.common.discretionary} />
                       <span className="text-sm text-slate-600 truncate">{e.description || selectedCat.cat}</span>
                       {e.includeInRetirement && e.retirementAdjustmentPct !== 100 && (
                         <span className="text-[10px] bg-amber-50 text-amber-600 px-1 py-0.5 rounded">{e.retirementAdjustmentPct}% ret.</span>

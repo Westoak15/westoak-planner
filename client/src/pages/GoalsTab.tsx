@@ -366,7 +366,7 @@ function GoalCard({ goal, t, onEdit, onDelete, onInlineUpdate }: { goal: Goal; t
           <div className="flex justify-end gap-2">
             <button onClick={() => { setNotes(goal.notes ?? ""); setNotesOpen(false); }} className="text-xs text-slate-500 hover:text-slate-700">{t.common.cancel}</button>
             <button onClick={saveNotes} disabled={notesSaving} className="text-xs text-blue-600 font-semibold hover:underline disabled:opacity-50">
-              {notesSaving ? t.common.saving : {t.goals.saveNotes}}
+              {notesSaving ? t.common.saving : t.goals.saveNotes}
             </button>
           </div>
         </div>
@@ -447,7 +447,7 @@ function GoalForm({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
       <div className="bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
         <div className="sticky top-0 bg-[var(--bg-card)] border-b border-[var(--border-subtle)] px-6 py-4 flex items-center justify-between rounded-t-2xl">
-          <h3 className="text-base font-bold text-[var(--text-primary)]">{initial.title ? "Edit Goal" : {t.goals.newGoal}}</h3>
+          <h3 className="text-base font-bold text-[var(--text-primary)]">{initial.title ? "Edit Goal" : t.goals.newGoal}</h3>
           <button onClick={onCancel} className="text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"><X className="w-5 h-5" /></button>
         </div>
 
@@ -681,7 +681,7 @@ function GoalForm({
               <p className="text-[10px] text-[var(--text-tertiary)]">
                 {form.projectionImpact
                   ? "This goal will be injected as a cashflow event in the retirement simulation"
-                  : {t.goals.enableRetirement}}
+                  : t.goals.enableRetirement}
               </p>
             </div>
             <button onClick={() => upd("projectionImpact", !form.projectionImpact)}
@@ -790,7 +790,7 @@ export function GoalsTab({ clientId, client, t = translations.en }: { clientId: 
     try {
       await api.post(`/api/clients/${clientId}/goals`, draft);
       await load();
-    } catch (e: any) { toast({ title: {t.common.error}, description: e.message, variant: "destructive" }); }
+    } catch (e: any) { toast({ title: t.common.error, description: e.message, variant: "destructive" }); }
     finally { setBusy(false); setVoiceOpen(false); }
   }
 
@@ -811,7 +811,7 @@ export function GoalsTab({ clientId, client, t = translations.en }: { clientId: 
       setShowForm(false);
       setEditingGoal(null);
       await load();
-    } catch (e: any) { toast({ title: {t.common.error}, description: e.message, variant: "destructive" }); }
+    } catch (e: any) { toast({ title: t.common.error, description: e.message, variant: "destructive" }); }
     finally { setBusy(false); }
   }
 
@@ -819,7 +819,7 @@ export function GoalsTab({ clientId, client, t = translations.en }: { clientId: 
     try {
       await api.patch(`/api/goals/${id}`, data);
       setGoals(prev => prev.map(g => g.id === id ? { ...g, ...data } : g));
-    } catch (e: any) { toast({ title: {t.common.error}, description: e.message, variant: "destructive" }); }
+    } catch (e: any) { toast({ title: t.common.error, description: e.message, variant: "destructive" }); }
   }
 
   async function del(id: number) {
@@ -916,10 +916,10 @@ export function GoalsTab({ clientId, client, t = translations.en }: { clientId: 
       {goals.length > 0 && (
         <div className="flex gap-2 bg-slate-100 p-1 rounded-lg w-fit">
           {[
-            { key: "all",     label: {t.common.active} },
+            { key: "all",     label: t.common.active },
             { key: "plan",    label: `In Plan (${goals.filter(g => g.projectionImpact).length})` },
-            { key: "savings", label: {t.goals.cashSavings} },
-            { key: "events",  label: {t.goals.cashflowEvents} },
+            { key: "savings", label: t.goals.cashSavings },
+            { key: "events",  label: t.goals.cashflowEvents },
           ].map(f => (
             <button key={f.key} onClick={() => setFilter(f.key as any)}
               className={`text-xs font-semibold px-3 py-1.5 rounded-md transition-all ${

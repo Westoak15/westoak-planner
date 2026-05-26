@@ -840,7 +840,6 @@ export function RetirementTab({ clientId, clientName, person: personProp, t = tr
       {/* Projection cards */}
       <div className="space-y-4">
         {activeProjections.map((proj) => {
-          const barColor  = funded === null ? "#9ca3af" : funded >= 90 ? "#16a34a" : funded >= 70 ? "#d97706" : "#dc2626";
           const isPerson  = (proj.person ?? "primary") as "primary" | "spouse";
           const personName = isPerson === "spouse" ? (clientData?.spouseFirstName ?? "Spouse") : (clientName ?? "Primary");
 
@@ -885,6 +884,7 @@ export function RetirementTab({ clientId, clientName, person: personProp, t = tr
           const rrifMin          = engSummary?.rrifMinYear1 ?? 0;
           const lifetimeTax      = engSummary?.lifetimeTaxPaid ?? 0;
           const hasEngineData    = !!engSummary;
+          const barColor  = funded === null ? "#9ca3af" : funded >= 90 ? "#16a34a" : funded >= 70 ? "#d97706" : "#dc2626";
 
           return (
             <div key={proj.id} className="border border-gray-200 rounded-xl overflow-hidden hover:border-gray-300 transition-colors">

@@ -342,24 +342,24 @@ export function DITab({ clientId, client, t = translations.en }: Props) {
               </Field>
             </div>
 
-            <Field label=t.di.grossMonthlyIncome>
+            <Field label={t.di.grossMonthlyIncome}>
               <Input type="number" value={form.grossMonthlyIncome} onChange={set("grossMonthlyIncome")} min={0} step={500} prefix="$" />
             </Field>
 
             <div className="grid grid-cols-2 gap-3">
-              <Field label=t.di.occupationClass>
+              <Field label={t.di.occupationClass}>
                 <Select value={form.occupationClass} onChange={set("occupationClass")} options={OCC_CLASSES} />
               </Field>
-              <Field label=t.di.diDefinition>
+              <Field label={t.di.diDefinition}>
                 <Select value={form.definition} onChange={set("definition")} options={DEFINITIONS} />
               </Field>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
-              <Field label=t.di.waitingPeriod>
+              <Field label={t.di.waitingPeriod}>
                 <Select value={form.waitingPeriodDays} onChange={v => set("waitingPeriodDays")(+v)} options={WAITING_PERIODS} />
               </Field>
-              <Field label=t.di.benefitPeriod>
+              <Field label={t.di.benefitPeriod}>
                 <Select value={form.benefitPeriod} onChange={set("benefitPeriod")} options={BENEFIT_PERIODS} />
               </Field>
             </div>
@@ -367,7 +367,7 @@ export function DITab({ clientId, client, t = translations.en }: Props) {
             {/* Existing coverage */}
             <div className="bg-gray-50 rounded-xl p-3 space-y-3">
               <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Existing Coverage</p>
-              <Field label=t.di.groupDi>
+              <Field label={t.di.groupDi}>
                 <Input type="number" value={form.groupDiMonthly} onChange={set("groupDiMonthly")} min={0} step={100} prefix="$" />
               </Field>
               <div className="flex items-center gap-2">
@@ -376,24 +376,24 @@ export function DITab({ clientId, client, t = translations.en }: Props) {
                   className="rounded" />
                 <label htmlFor="empPaid" className="text-xs text-gray-600">Employer-paid premiums (benefit is taxable)</label>
               </div>
-              <Field label=t.di.individualDi>
+              <Field label={t.di.individualDi}>
                 <Input type="number" value={form.individualDiMonthly} onChange={set("individualDiMonthly")} min={0} step={100} prefix="$" />
               </Field>
-              <Field label=t.di.cppDisability>
+              <Field label={t.di.cppDisability}>
                 <Input type="number" value={form.cppDisabilityMonthly} onChange={set("cppDisabilityMonthly")} min={0} step={100} prefix="$" />
               </Field>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
-              <Field label=t.di.partialDisThreshold>
+              <Field label={t.di.partialDisThreshold}>
                 <Input type="number" value={form.partialDisabilityPct} onChange={set("partialDisabilityPct")} min={20} max={80} prefix="%" />
               </Field>
-              <Field label=t.di.colaRider>
+              <Field label={t.di.colaRider}>
                 <Input type="number" value={form.colaPct} onChange={set("colaPct")} min={0} max={5} step={0.5} prefix="%" />
               </Field>
             </div>
 
-            <Field label=t.di.label><Input value={form.label} onChange={set("label")} /></Field>
+            <Field label={t.di.label}><Input value={form.label} onChange={set("label")} /></Field>
 
             <button onClick={handleSave} disabled={saving}
               className="w-full flex items-center justify-center gap-2 py-2.5 bg-[#0c1e3a] hover:bg-[#0e2a4a] text-white text-sm font-semibold rounded-xl disabled:opacity-50 transition-colors">
@@ -472,8 +472,8 @@ export function DITab({ clientId, client, t = translations.en }: Props) {
                 Lifetime Claim Probability — Class {form.occupationClass}
               </p>
               <div className="space-y-2.5">
-                <ProbBar label=t.di.ownOccupation prob={r.claimProbability.ownOcc} color="#dc2626" />
-                <ProbBar label=t.di.anyOccupation prob={r.claimProbability.anyOcc} color="#d97706" />
+                <ProbBar label={t.di.ownOccupation} prob={r.claimProbability.ownOcc} color="#dc2626" />
+                <ProbBar label={t.di.anyOccupation} prob={r.claimProbability.anyOcc} color="#d97706" />
               </div>
               {form.definition === "any_occ" && r.claimProbability.ownVsAnyGap > 0 && (
                 <div className="mt-3 flex items-start gap-2 bg-amber-50 rounded-lg px-3 py-2">

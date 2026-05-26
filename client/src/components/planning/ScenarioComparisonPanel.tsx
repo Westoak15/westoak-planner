@@ -805,7 +805,7 @@ export function ScenarioComparisonPanel({ clientId, onClose, t = translations.en
             ) : (
               <>
                 <input value={savedLabel} onChange={e => setSavedLabel(e.target.value)}
-                  placeholder=t.scenarioComparison.labelOptional
+                  placeholder={t.scenarioComparison.labelOptional}
                   className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 w-44 focus:outline-none focus:ring-2 focus:ring-[#0c1e3a]/20" />
                 <button onClick={handleSave} disabled={saving}
                   className="flex items-center gap-2 px-4 py-2 bg-[#0c1e3a] hover:bg-[#0e2a4a] text-white text-sm font-semibold rounded-xl disabled:opacity-50 transition-colors">

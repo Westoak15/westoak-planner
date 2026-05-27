@@ -53,7 +53,7 @@ export function RetirementHub({ clientId, client, person, onPersonChange, t = tr
         personToggle={{
           person,
           onPersonChange,
-          primaryLabel: client?.firstName ?? "Primary",
+          primaryLabel: client?.firstName ?? t.common.primary,
           spouseLabel: hasSpouse ? client.spouseFirstName : null,
           showCombined: true,
         }}

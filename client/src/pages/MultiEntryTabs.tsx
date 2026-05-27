@@ -63,12 +63,12 @@ function assetCatLabel(cat: string, t: T): string {
     "Real Estate (other)":    t.netWorth.catRealEstate,
     "RRSP":                   t.netWorth.catRRSP,
     "TFSA":                   t.netWorth.catTFSA,
-    "Non-Registered":         t.netWorth.catNonRegistered,
+    "Non-Registered":           t.netWorth.catNonRegistered,
     "Cash / Bank":            t.netWorth.catCashBank,
     "Business":               t.netWorth.catBusiness,
     "Employer Stock Options": t.netWorth.catEmployerStock,
     "Other Asset":            t.netWorth.catOtherAsset,
-    "Mortgage":               t.netWorth.catMortgage,
+    "Mortgage":                  t.netWorth.catMortgage,
     "Other Liability":        t.netWorth.catOtherLiability,
     "HELOC":                  t.netWorth.catHELOC,
     "Car Loan":               t.netWorth.catCarLoan,
@@ -125,7 +125,7 @@ const NW_ASSET_COLORS: Record<string, string> = {
   "Real Estate (other)":     "#60a5fa",
   "RRSP":                    "#34d399",
   "TFSA":                    "#fbbf24",
-  "Non-Registered":          "#c084fc",
+  "Non-Registered":            "#c084fc",
   "Cash / Bank":             "#06b6d4",
   "Business":                "#a78bfa",
   "Employer Stock Options":  "#fb923c",
@@ -202,7 +202,7 @@ function ExtraFields({ draft, onChange, spouseName, dependants, t }: { draft: NW
     );
   }
 
-  if (["RRSP","TFSA","Non-Registered"].includes(draft.category)) {
+  if (["RRSP","TFSA",t.netWorth.nonRegistered].includes(draft.category)) {
     elems.push(
       <div key="holdingType" className="flex items-center gap-1.5">
         <span className="text-xs text-[var(--text-tertiary)]">Type:</span>
@@ -214,7 +214,7 @@ function ExtraFields({ draft, onChange, spouseName, dependants, t }: { draft: NW
     );
   }
 
-  if (draft.category === "Non-Registered" && spouseName) {
+  if (draft.category === t.netWorth.nonRegistered && spouseName) {
     elems.push(
       <label key={t.common.joint} className="flex items-center gap-1.5 text-xs text-[var(--text-secondary)] cursor-pointer">
         <input type="checkbox" checked={draft.jointWithSpouse} onChange={e => onChange("jointWithSpouse", e.target.checked)} className="w-3.5 h-3.5 rounded accent-[var(--accent-cyan)]" />
@@ -392,9 +392,9 @@ function AssetRow({
 function normalizeCat(e: NWEntry): NWEntry {
   if (e.category === "ESU" || e.category === "RSU")
     return { ...e, category: t.netWorth.employerStockOptions, metadata: { ...(e.metadata ?? {}), stockOptionType: e.category } };
-  if (e.category === "Real Estate")
+  if (e.category === t.netWorth.realEstate2)
     return { ...e, category: t.netWorth.realEstateOther };
-  if (e.category === "RRSP/TFSA" || e.category === "Registered Investments (RRSP/TFSA)")
+  if (e.category === "RRSP/TFSA" || e.category === t.netWorth.registeredInv)
     return { ...e, category: "RRSP" };
   return e;
 }
@@ -486,7 +486,7 @@ export function NetWorthTab({ clientId, client, t }: { clientId: number; t: T; c
     const cat = form.category ?? "";
     if (cat === "RRSP" && form.isSpousal) { m.spousal = true; m.contributor = form.rrspContributor; }
     if ((form as any).monthlyPayment) m.monthlyPayment = (form as any).monthlyPayment;
-    if (["RRSP", "TFSA", "Non-Registered"].includes(cat) && form.holdingType) m.holdingType = form.holdingType;
+    if (["RRSP", "TFSA", t.netWorth.nonRegistered].includes(cat) && form.holdingType) m.holdingType = form.holdingType;
     if (cat === "Employer Stock Options" && form.stockOptionType) m.stockOptionType = form.stockOptionType;
     if (cat === "Real Estate (other)") {
       if (form.propertyType) m.propertyType = form.propertyType;
@@ -505,7 +505,7 @@ export function NetWorthTab({ clientId, client, t }: { clientId: number; t: T; c
     try {
       const m = buildMeta(editForm);
       let owner = editForm.owner ?? "primary";
-      if (editForm.jointWithSpouse && editForm.category === "Non-Registered") owner = "joint";
+      if (editForm.jointWithSpouse && editForm.category === t.netWorth.nonRegistered) owner = "joint";
       await api.put(`/api/net-worth/${editingId}`, {
         category: editForm.category, name: editForm.name || editForm.category,
         owner, value: editForm.value, notes: editForm.notes || null,
@@ -530,7 +530,7 @@ export function NetWorthTab({ clientId, client, t }: { clientId: number; t: T; c
       await Promise.all(valid.map(async d => {
         const m = buildMeta(d as any);
         let owner = d.owner;
-        if (d.jointWithSpouse && d.category === "Non-Registered") owner = "joint";
+        if (d.jointWithSpouse && d.category === t.netWorth.nonRegistered) owner = "joint";
         const propName = d.name || d.category;
         const isProperty = d.category === "Principal Residence" || d.category === "Real Estate (other)";
         const mortgageVal = Number(d.mortgageBalance || 0);
@@ -569,12 +569,12 @@ export function NetWorthTab({ clientId, client, t }: { clientId: number; t: T; c
   }
 
   async function del(id: number) {
-    if (!confirm("Delete this entry?")) return;
+    if (!confirm(t.netWorth.deleteEntry)) return;
     await api.delete(`/api/net-worth/${id}`); await load();
   }
 
   function ownerLabel(entry: NWEntry) {
-    return entry.owner === "spouse" ? (spouseName || "Spouse") : entry.owner === "joint" ? "Joint" : primaryName;
+    return entry.owner === "spouse" ? (spouseName || t.common.spouse) : entry.owner === "joint" ? "Joint" : primaryName;
   }
 
   function metaBadge(entry: NWEntry) {
@@ -582,7 +582,7 @@ export function NetWorthTab({ clientId, client, t }: { clientId: number; t: T; c
     const chips: React.ReactNode[] = [];
     if (entry.category === "RRSP" && m.spousal)
       chips.push(<span key="sp" className="text-[10px] bg-cyan-50 text-cyan-600 px-1.5 py-0.5 rounded font-mono">Spousal · {m.contributor}</span>);
-    if (m.linkedAssetName && entry.category === "Mortgage")
+    if (m.linkedAssetName && entry.category === t.netWorth.mortgage)
       chips.push(<span key="lnk" className="text-[10px] bg-cyan-50 text-cyan-600 px-1.5 py-0.5 rounded font-mono">↪ {m.linkedAssetName}</span>);
     if (m.holdingType)
       chips.push(<span key="ht" className="text-[10px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded font-mono">{m.holdingType}</span>);
@@ -667,7 +667,7 @@ export function NetWorthTab({ clientId, client, t }: { clientId: number; t: T; c
                   <button onClick={saveAll} disabled={saving}
                     className="flex items-center gap-1.5 text-xs font-semibold text-white bg-[#0c1e3a] px-3 py-1 rounded-lg disabled:opacity-50 hover:bg-[#0e2a4a] transition-colors"
                   >
-                    <Save className="w-3 h-3" /> {saving ? "Saving…" : `Save ${drafts.filter(isDraftSavable).length} Entries`}
+                    <Save className="w-3 h-3" /> {saving ? t.common.savingEllipsis : `Save ${drafts.filter(isDraftSavable).length} Entries`}
                   </button>
                 </div>
               </div>
@@ -679,7 +679,7 @@ export function NetWorthTab({ clientId, client, t }: { clientId: number; t: T; c
                       <div>
                         <label className={LABEL_CLS}>{t.common.owner}</label>
                         <select value={d.owner} onChange={e => updateDraft(draftIdx, "owner", e.target.value)} className={SELECT_CLS}>
-                          <option value={t.common.primary}>{primaryName || "Primary"}</option>
+                          <option value={t.common.primary}>{primaryName || t.common.primary}</option>
                           {spouseName && <option value={t.common.spouse}>{spouseName}</option>}
                           {spouseName && <option value={t.common.joint}>{t.common.joint}</option>}
                         </select>
@@ -742,7 +742,7 @@ export function NetWorthTab({ clientId, client, t }: { clientId: number; t: T; c
                         <div>
                           <label className={LABEL_CLS}>{t.common.owner}</label>
                           <select value={editForm.owner ?? "primary"} onChange={ev => setEditForm(f => ({ ...f, owner: ev.target.value }))} className={SELECT_CLS}>
-                            <option value={t.common.primary}>{primaryName || "Primary"}</option>
+                            <option value={t.common.primary}>{primaryName || t.common.primary}</option>
                             {spouseName && <option value={t.common.spouse}>{spouseName}</option>}
                             {spouseName && <option value={t.common.joint}>{t.common.joint}</option>}
                           </select>
@@ -764,7 +764,7 @@ export function NetWorthTab({ clientId, client, t }: { clientId: number; t: T; c
                       </div>
                       {/* Extra fields for edit */}
                       <div className="flex flex-wrap gap-3 mb-3">
-                        {["RRSP", "TFSA", "Non-Registered"].includes(editForm.category ?? "") && (
+                        {["RRSP", "TFSA", t.netWorth.nonRegistered].includes(editForm.category ?? "") && (
                           <>
                             {editForm.category === "RRSP" && (
                               <>
@@ -777,7 +777,7 @@ export function NetWorthTab({ clientId, client, t }: { clientId: number; t: T; c
                                     <span className="text-xs text-slate-400">{t.netWorth.contributor + ":"}</span>
                                     <select value={editForm.rrspContributor ?? ""} onChange={ev => setEditForm(f => ({ ...f, rrspContributor: ev.target.value }))} className="border border-slate-200 rounded-lg px-2 py-1 text-sm">
                                       <option value="">Select…</option>
-                                      <option value="client">{primaryName || "Client"}</option>
+                                      <option value="client">{primaryName || t.common.primary}</option>
                                       {spouseName && <option value={t.common.spouse}>{spouseName}</option>}
                                     </select>
                                   </div>
@@ -791,7 +791,7 @@ export function NetWorthTab({ clientId, client, t }: { clientId: number; t: T; c
                                 {HOLDING_TYPES.map(h => <option key={h} value={h}>{holdingLabel(h, t)}</option>)}
                               </select>
                             </div>
-                            {editForm.category === "Non-Registered" && spouseName && (
+                            {editForm.category === t.netWorth.nonRegistered && spouseName && (
                               <label className="flex items-center gap-1.5 text-xs text-slate-600 cursor-pointer">
                                 <input type="checkbox" checked={!!editForm.jointWithSpouse} onChange={ev => setEditForm(f => ({ ...f, jointWithSpouse: ev.target.checked, owner: ev.target.checked ? "joint" : f.owner }))} className="w-3.5 h-3.5 rounded" />
                                 Jointly held with spouse
@@ -829,7 +829,7 @@ export function NetWorthTab({ clientId, client, t }: { clientId: number; t: T; c
                       <div className="flex gap-2 justify-end">
                         <button onClick={() => { setEditingId(null); setEditForm({}); }} className="text-sm text-slate-500 px-3 py-1.5 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors">{t.common.cancel}</button>
                         <button onClick={saveEdit} disabled={saving} className="text-sm font-semibold text-white bg-[#0c1e3a] px-4 py-1.5 rounded-lg disabled:opacity-50 hover:bg-[#0e2a4a] transition-colors">
-                          {saving ? "Saving…" : t.common.save}
+                          {saving ? t.common.savingEllipsis : t.common.save}
                         </button>
                       </div>
                     </div>
@@ -1011,7 +1011,7 @@ export function RetirementTab({ clientId, client, person = "primary" }: { client
   const clientAge = calcAge(client?.dateOfBirth);
   const spouseAge = calcAge(client?.spouseDateOfBirth);
   const clientName = client ? client.firstName : t.common.primary;
-  const spouseName = client?.spouseFirstName ?? "Spouse";
+  const spouseName = client?.spouseFirstName ?? t.common.spouse;
   const isSpouse   = person === "spouse";
   const isCouple   = person === "combined";
   const activeAge  = isSpouse ? spouseAge : clientAge;
@@ -1056,7 +1056,7 @@ export function RetirementTab({ clientId, client, person = "primary" }: { client
     if (!rows.length || !client) return;
     const updates: Promise<any>[] = [];
     rows.forEach(r => {
-      const isSpouseRow = r.label === client.spouseFirstName || r.label === "Spouse";
+      const isSpouseRow = r.label === client.spouseFirstName || r.label === t.common.spouse;
       const correctRetAge = isSpouseRow
         ? (client.spouseRetirementAge ?? 65)
         : (client.retirementAge ?? 65);
@@ -1078,10 +1078,10 @@ export function RetirementTab({ clientId, client, person = "primary" }: { client
     const sum = (arr: any[], cat: string) => arr.filter(e => e.category === cat).reduce((s: number, e: any) => s + Number(e.value), 0);
     const pRrsp   = sum(primary, "RRSP")   + sum(joint, "RRSP")   / 2;
     const pTfsa   = sum(primary, "TFSA")   + sum(joint, "TFSA")   / 2;
-    const pNonReg = sum(primary, "Non-Registered") + sum(joint, "Non-Registered") / 2;
+    const pNonReg = sum(primary, t.netWorth.nonRegistered) + sum(joint, t.netWorth.nonRegistered) / 2;
     const sRrsp   = sum(spouse,  "RRSP")   + sum(joint, "RRSP")   / 2;
     const sTfsa   = sum(spouse,  "TFSA")   + sum(joint, "TFSA")   / 2;
-    const sNonReg = sum(spouse,  "Non-Registered") + sum(joint, "Non-Registered") / 2;
+    const sNonReg = sum(spouse,  t.netWorth.nonRegistered) + sum(joint, t.netWorth.nonRegistered) / 2;
 
  // Calculate pension income from DBPP plans
     const dbppIncome = pensions
@@ -1198,13 +1198,13 @@ export function RetirementTab({ clientId, client, person = "primary" }: { client
 
   // Filter rows and drafts by person
   const filteredRows = rows.filter(r => {
-    if (person === "primary")  return !r.label?.includes("&") && r.label !== spouseName && r.label !== "Spouse";
-    if (person === "spouse")   return r.label === spouseName || r.label === "Spouse";
+    if (person === "primary")  return !r.label?.includes("&") && r.label !== spouseName && r.label !== t.common.spouse;
+    if (person === "spouse")   return r.label === spouseName || r.label === t.common.spouse;
     return true; // combined shows all
   });
   const filteredDrafts = drafts.filter(d => {
-    if (person === "primary")  return !d.label?.includes("&") && d.label !== spouseName && d.label !== "Spouse";
-    if (person === "spouse")   return d.label === spouseName || d.label === "Spouse";
+    if (person === "primary")  return !d.label?.includes("&") && d.label !== spouseName && d.label !== t.common.spouse;
+    if (person === "spouse")   return d.label === spouseName || d.label === t.common.spouse;
     return true;
   });
 
@@ -1222,7 +1222,7 @@ export function RetirementTab({ clientId, client, person = "primary" }: { client
   const labelColor = (label: string | null) => {
     if (!label) return "text-blue-600";
     if (label.includes("&")) return "text-indigo-600";
-    if (label === spouseName || label === "Spouse") return "text-pink-600";
+    if (label === spouseName || label === t.common.spouse) return "text-pink-600";
     return "text-blue-600";
   };
 
@@ -1233,7 +1233,7 @@ export function RetirementTab({ clientId, client, person = "primary" }: { client
         {(["projections","drawdown"] as const).map(key => (
           <button key={key} onClick={() => setActiveSubTab(key)}
             className={`px-4 py-2 text-sm font-semibold rounded-t-lg transition-colors ${activeSubTab === key ? "bg-white border border-b-white border-gray-200 text-[#0c1e3a] -mb-px" : "text-gray-500 hover:text-gray-700"}`}>
-            {key === "projections" ? "Retirement Projections" : t.netWorth.drawdownStrategies}
+            {key === "projections" ? t.netWorth.retirementProjections : t.netWorth.drawdownStrategies}
           </button>
         ))}
       </div>
@@ -1265,7 +1265,7 @@ export function RetirementTab({ clientId, client, person = "primary" }: { client
               </div>
               <div className="grid grid-cols-3 gap-3">
                 {([
-                  ["Client","label","text"],["Current Age","currentAge","number"],["Retirement Age","retirementAge","number"],
+                  [t.common.primary,"label","text"],["Current Age","currentAge","number"],["Retirement Age","retirementAge","number"],
                   ["RRSP Balance","rrspBalance","number"],["TFSA Balance","tfsaBalance","number"],["Non-Reg Balance","nonRegBalance","number"],
                   ["Annual Contribution","annualContribution","number"],["Expected Return %","expectedReturn","number"],["Desired Income","desiredRetirementIncome","number"],
                   ["CPP Monthly","cppMonthly","number"],["OAS Monthly","oasMonthly","number"],
@@ -1379,13 +1379,13 @@ export function RetirementTab({ clientId, client, person = "primary" }: { client
                         </div>
                         <div className={`rounded-xl p-3 ${!hasDesired ? "bg-gray-50" : gap >= 0 ? "bg-emerald-50" : "bg-red-50"}`}>
                           <p className={`text-[10px] font-bold uppercase ${!hasDesired ? "text-gray-400" : gap >= 0 ? "text-emerald-600" : "text-red-600"}`}>
-                            {!hasDesired ? "Shortfall" : gap >= 0 ? "Surplus" : t.common.shortfall}
+                            {!hasDesired ? t.common.shortfall : gap >= 0 ? t.common.surplus : t.common.shortfall}
                           </p>
                           <p className={`text-lg font-bold ${!hasDesired ? "text-gray-400" : gap >= 0 ? "text-emerald-700" : "text-red-700"}`}>
                             {!hasDesired ? "—" : `${gap >= 0 ? "+" : ""}${fmt$(gap)}/yr`}
                           </p>
                           <p className={`text-[10px] mt-0.5 ${!hasDesired ? "text-gray-300" : gap >= 0 ? "text-emerald-400" : "text-red-400"}`}>
-                            {!hasDesired ? "set desired income" : "per year"}
+                            {!hasDesired ? t.retirement.setDesiredIncome : t.retirement.perYear}
                           </p>
                         </div>
                         <div className="bg-gray-50 rounded-xl p-3">
@@ -1526,7 +1526,7 @@ export function InsuranceTab({ clientId }: { clientId: number }) {
           <button onClick={() => setDrafts([])} className="text-sm text-gray-500 px-4 py-2 border border-gray-200 rounded-lg">Discard</button>
           <button onClick={saveAll} disabled={saving}
             className="flex items-center gap-1.5 bg-[#0c1e3a] hover:bg-[#0e2a4a] disabled:opacity-50 text-white text-sm font-semibold px-5 py-2 rounded-lg">
-            <Save className="w-3.5 h-3.5" /> {saving ? "Saving…" : `Save ${drafts.length} Analysis`}
+            <Save className="w-3.5 h-3.5" /> {saving ? t.common.savingEllipsis : `Save ${drafts.length} Analysis`}
           </button>
         </div>
       )}
@@ -1542,9 +1542,9 @@ export function InsuranceTab({ clientId }: { clientId: number }) {
               <button onClick={() => del(a.id)} className="text-gray-300 hover:text-red-500"><Trash2 className="w-4 h-4" /></button>
             </div>
             <div className="grid grid-cols-3 gap-4">
-              {[["Life Insurance","existingLifeCoverage","recommendedLife","lifeGap"],
-                ["Disability","existingDisability","recommendedDisability","disabilityGap"],
-                ["Critical Illness","existingCriticalIllness","recommendedCriticalIllness","criticalIllnessGap"]].map(([title,ex,rec,gap]) => (
+              {[[t.netWorth.lifeInsurance,"existingLifeCoverage","recommendedLife","lifeGap"],
+                [t.insurance.disability,"existingDisability","recommendedDisability","disabilityGap"],
+                [t.insurance.criticalIllness,"existingCriticalIllness","recommendedCriticalIllness","criticalIllnessGap"]].map(([title,ex,rec,gap]) => (
                 <div key={title} className="bg-gray-50 rounded-lg p-3">
                   <p className="text-xs font-bold text-gray-400 uppercase mb-2">{title}</p>
                   <div className="space-y-1 text-xs">
@@ -1673,7 +1673,7 @@ function EducationSubTab({ clientId, client, t = translations.en }: { clientId: 
 
         {voiceOpen && (
           <VoiceAddDialog
-            title="Voice-Add Education Plan"
+            title={t.common.voiceAddEduc}
             moduleId="education-plan"
             prompt={`Try: "Sarah, born June 12 2015, RESP balance 12 thousand, contributing twenty-five hundred a year, target sixty thousand"`}
             fieldSchema={[
@@ -1772,7 +1772,7 @@ function EducationSubTab({ clientId, client, t = translations.en }: { clientId: 
           </button>
           <button onClick={saveAll} disabled={saving || !drafts.some(d => d.childName)}
             className="flex items-center gap-1.5 bg-[var(--accent-cyan)] text-[var(--bg-base)] text-sm font-semibold px-5 py-2 rounded-lg disabled:opacity-50 hover:bg-[var(--accent-cyan)]/90 transition-colors">
-            <Save className="w-3.5 h-3.5" /> {saving ? "Saving…" : `Save ${drafts.filter(d=>d.childName).length} Child${drafts.filter(d=>d.childName).length !== 1 ? "ren" : ""}`}
+            <Save className="w-3.5 h-3.5" /> {saving ? t.common.savingEllipsis : `Save ${drafts.filter(d=>d.childName).length} Child${drafts.filter(d=>d.childName).length !== 1 ? "ren" : ""}`}
           </button>
         </div>
       )}

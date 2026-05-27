@@ -77,7 +77,7 @@ function freqLabel(freq: string, t: T): string {
   const m: Record<string, string> = {
     "Monthly":     t.insurance.freqMonthly,
     "Quarterly":   t.insurance.freqQuarterly,
-    "Semi-Annual": t.insurance.freqSemiAnnual,
+    "Semi-Annual": "Semi-Annual",
     "Annual":      t.insurance.freqAnnual,
   };
   return m[freq] ?? freq;
@@ -100,7 +100,7 @@ function annualPremium(p: Policy): number {
 
 function policyRiskLevel(p: Policy): "low" | "medium" | "high" {
   const cov = parseFloat(p.coverageAmount || "0");
-  if (p.type.includes("Disability") || p.type.includes("Critical")) {
+  if (p.type.includes(t.insurance.disability) || p.type.includes(t.insurance.criticalIllness)) {
     return cov > 0 ? "low" : "high";
   }
   if (cov > 500000) return "low";
@@ -319,7 +319,7 @@ function PolicyRow({
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-x-6 gap-y-3 pt-1 pb-1">
               {[
                 { label: t.insurance.carrier,        value: policy.carrier       || "—" },
-                { label: "Policy #",       value: policy.policyNumber  || "—" },
+                { label: t.insurance.policyHash,       value: policy.policyNumber  || "—" },
                 { label: t.insurance.issueDate,     value: policy.issueDate     ? new Date(policy.issueDate).toLocaleDateString("en-CA") : "—" },
                 { label: t.insurance.expiryDate,    value: policy.expiryDate    ? new Date(policy.expiryDate).toLocaleDateString("en-CA") : "—" },
                 { label: t.insurance.beneficiary,    value: policy.beneficiary   || "—" },
@@ -417,8 +417,8 @@ function GroupedPolicies({ policies, onSave, onDelete }: {
 }) {
   // Group by carrier, then by type within each carrier
   const groups = policies.reduce<Record<string, Record<string, Policy[]>>>((acc, p) => {
-    const carrier = p.carrier?.trim() || "No Carrier";
-    const type    = p.type || "Other";
+    const carrier = p.carrier?.trim() || t.insurance.noCarrier;
+    const type    = p.type || t.common.other;
     if (!acc[carrier])       acc[carrier] = {};
     if (!acc[carrier][type]) acc[carrier][type] = [];
     acc[carrier][type].push(p);
@@ -586,13 +586,13 @@ export function PoliciesTab({ clientId, client, t }: Props) {
   async function handleSave(data: Policy) {
     await api.patch(`/api/clients/${clientId}/policies/${data.id}`, data);
     setPolicies(prev => prev.map(p => p.id === data.id ? data : p));
-    toast({ title: "Saved", description: t.insurance.policySaved });
+    toast({ title: t.common.saved, description: t.insurance.policySaved });
   }
 
   async function handleDelete(id: number) {
     await api.delete(`/api/clients/${clientId}/policies/${id}`);
     setPolicies(prev => prev.filter(p => p.id !== id));
-    toast({ title: "Removed", description: t.insurance.policyRemoved });
+    toast({ title: t.common.removed, description: t.insurance.policyRemoved });
   }
 
   const scoreColor = protectionScore >= 75 ? "text-emerald-600"
@@ -611,7 +611,7 @@ export function PoliciesTab({ clientId, client, t }: Props) {
           <div className="grid grid-cols-3 md:grid-cols-6 divide-x divide-slate-100">
             {[
               { label: t.insurance.lifeInsurance,  value: totalLife > 0 ? fmt$(totalLife) : "—",          sub: t.insurance.total,           hi: totalLife > 0 },
-              { label: t.insurance.disability,     value: totalDisability > 0 ? fmt$(totalDisability) : t.insurance.missing, sub: t.insurance.coverage,     hi: totalDisability > 0 },
+              { label: "Disability",     value: totalDisability > 0 ? fmt$(totalDisability) : t.insurance.missing, sub: t.insurance.coverage,     hi: totalDisability > 0 },
               { label: t.insurance.criticalIllness, value: totalCritical > 0 ? fmt$(totalCritical) : "—", sub: t.insurance.coverage,        hi: totalCritical > 0 },
               { label: t.insurance.annualPremium,  value: fmt$(totalAnnualPremium),                       sub: t.insurance.combined,        hi: true },
               { label: t.insurance.policies,       value: String(policies.length),                        sub: t.insurance.onFile,         hi: policies.length > 0 },
@@ -620,8 +620,8 @@ export function PoliciesTab({ clientId, client, t }: Props) {
               <div key={s.label} className="px-4 py-3">
                 <div className="text-[9px] font-semibold uppercase tracking-widest text-slate-400 mb-1">{s.label}</div>
                 <div className={`text-sm font-bold leading-none ${
-                  s.label === "Disability" && !s.hi ? "text-red-600" :
-                  s.label === "Expiring Soon" && expiringPolicies.length > 0 ? "text-amber-600" :
+                  s.label === t.insurance.disability && !s.hi ? "text-red-600" :
+                  s.label === t.insurance.expiringSoon && expiringPolicies.length > 0 ? "text-amber-600" :
                   "text-slate-900"
                 }`}>{s.value}</div>
                 <div className="text-[9px] text-slate-400 mt-0.5">{s.sub}</div>
@@ -721,8 +721,8 @@ export function PoliciesTab({ clientId, client, t }: Props) {
                 {protectionScore >= 75 ? t.insurance.wellProtected : protectionScore >= 50 ? t.insurance.needsAttention : t.common.atRisk}
               </div>
               <div className="text-[10px] text-slate-400 mt-0.5 leading-relaxed">
-                {protectionScore >= 75 ? "Household coverage meets baseline thresholds" :
-                 protectionScore >= 50 ? "Some gaps detected — review recommended" :
+                {protectionScore >= 75 ? t.insurance.householdCovers :
+                 protectionScore >= 50 ? t.insurance.someGaps :
                  t.insurance.critProtectionGaps}
               </div>
             </div>
@@ -783,10 +783,10 @@ export function PoliciesTab({ clientId, client, t }: Props) {
             <div className="text-[9px] font-semibold uppercase tracking-widest text-slate-400 mb-3">{t.insurance.householdScenarios}</div>
             <div className="space-y-2">
               {[
-                { label: t.insurance.survivorIncome,    ok: totalLife >= (income * 5), desc: totalLife >= (income * 5) ? "Protected" : t.insurance.gapExists },
+                { label: t.insurance.survivorIncome,    ok: totalLife >= (income * 5), desc: totalLife >= (income * 5) ? t.insurance.protected2 : t.insurance.gapExists },
                 { label: t.insurance.disabilityIncome,  ok: totalDisability > 0,      desc: totalDisability > 0 ? t.insurance.covered : t.insurance.unprotected },
                 { label: t.insurance.criticalIllness,   ok: totalCritical > 0,        desc: totalCritical > 0 ? t.insurance.covered : t.insurance.noCoverage },
-                { label: t.insurance.estateLiquidity,   ok: totalLife > 500000,       desc: totalLife > 500000 ? "Adequate" : t.insurance.reviewNeeded },
+                { label: t.insurance.estateLiquidity,   ok: totalLife > 500000,       desc: totalLife > 500000 ? t.insurance.adequate2 : t.insurance.reviewNeeded },
               ].map(s => (
                 <div key={s.label} className="flex items-center justify-between py-1 border-b border-slate-50 last:border-0">
                   <div className="flex items-center gap-1.5">

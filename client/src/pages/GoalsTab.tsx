@@ -348,7 +348,7 @@ function GoalCard({ goal, t, onEdit, onDelete, onInlineUpdate }: { goal: Goal; t
             onClick={() => setNotesOpen(o => !o)}
             className="text-xs text-blue-600 hover:underline"
           >
-            {notesOpen ? t.common.hideNotes : (goal.notes ? "Notes ↓" : t.common.addNotes)}
+            {notesOpen ? t.common.hideNotes : (goal.notes ? t.common.notesDown : t.common.addNotes)}
           </button>
         </div>
       </div>
@@ -419,7 +419,7 @@ function GoalForm({
       const selected = liabilities.filter(l => next.has(l.id));
       const totalBalance = selected.reduce((s, l) => s + l.balance, 0);
       const totalAnnual  = selected.reduce((s, l) => s + (l.annualCost ?? 0), 0);
-      const names = selected.map(l => l.name || l.category || "Debt").join(", ");
+      const names = selected.map(l => l.name || l.category || t.goals.debt).join(", ");
 
       setForm(f => ({
         ...f,
@@ -447,7 +447,7 @@ function GoalForm({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
       <div className="bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
         <div className="sticky top-0 bg-[var(--bg-card)] border-b border-[var(--border-subtle)] px-6 py-4 flex items-center justify-between rounded-t-2xl">
-          <h3 className="text-base font-bold text-[var(--text-primary)]">{initial.title ? "Edit Goal" : t.goals.newGoal}</h3>
+          <h3 className="text-base font-bold text-[var(--text-primary)]">{initial.title ? t.goals.editGoal : t.goals.newGoal}</h3>
           <button onClick={onCancel} className="text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"><X className="w-5 h-5" /></button>
         </div>
 
@@ -479,7 +479,7 @@ function GoalForm({
             <label className="text-xs font-semibold text-[var(--text-tertiary)] block mb-1">{t.goals.goalTitleLabel}</label>
             <input value={form.title} onChange={e => upd("title", e.target.value)}
               className="w-full px-3 py-2 rounded-xl border border-[var(--border-light)] bg-[var(--bg-panel)] text-[var(--text-primary)] text-sm focus:outline-none focus:border-[var(--accent-cyan)] focus:ring-0 placeholder:text-[var(--text-tertiary)]"
-              placeholder={typeInfo.label + " goal"} />
+              placeholder={typeInfo.label + " " + t.goals.title} />
           </div>
 
           {/* Cashflow type override */}
@@ -680,7 +680,7 @@ function GoalForm({
               </p>
               <p className="text-[10px] text-[var(--text-tertiary)]">
                 {form.projectionImpact
-                  ? "This goal will be injected as a cashflow event in the retirement simulation"
+                  ? t.goals.injectedAsCashflow as a cashflow event in the retirement simulation"
                   : t.goals.enableRetirement}
               </p>
             </div>
@@ -780,7 +780,7 @@ export function GoalsTab({ clientId, client, t = translations.en }: { clientId: 
       : "other";
     const draft = {
       ...emptyForm(),
-      title:        parsed.title || "Untitled Goal",
+      title:        parsed.title || t.goals.untitledGoal,
       goalType,
       targetAmount: String(parsed.targetAmount ?? "").replace(/[^0-9.]/g, "") || "",
       targetDate:   parsed.targetDate ?? "",
@@ -823,7 +823,7 @@ export function GoalsTab({ clientId, client, t = translations.en }: { clientId: 
   }
 
   async function del(id: number) {
-    if (!confirm("Delete this goal?")) return;
+    if (!confirm(t.goals.deleteThisGoal)) return;
     await api.delete(`/api/goals/${id}`);
     await load();
   }
@@ -885,16 +885,16 @@ export function GoalsTab({ clientId, client, t = translations.en }: { clientId: 
 
       {voiceOpen && (
         <VoiceAddDialog
-          title="Voice-Add Goal"
+          title={t.common.voiceAddGoal}
           moduleId="goal"
           prompt={`Try: "Retire at 60 with 1.5 million, target 2045"`}
           fieldSchema={[
-            { key: "title",        label: "Title", description: "Short goal title (e.g. 'Retire at 60')" },
+            { key: "title",        label: t.common.name, description: t.goals.shortGoalTitle (e.g. 'Retire at 60')" },
             { key: "goalType",     label: "Type", description: "Category of goal",
               enum: ["retirement", "savings", "debt", "education", "home", "travel", "other"] },
-            { key: "targetAmount", label: "Target $", description: "Target amount, number only" },
-            { key: "targetDate",   label: "Target Date", description: "Target date YYYY-MM-DD" },
-            { key: "notes",        label: "Notes", description: "Free-form notes" },
+            { key: "targetAmount", label: t.goals.targetAmountLabel, description: t.goals.targetAmountHint },
+            { key: "targetDate",   label: "Target Date", description: t.goals.targetDateHint },
+            { key: "notes",        label: t.common.notes, description: t.common.notes },
           ]}
           onConfirm={addVoiceGoal}
           onClose={() => setVoiceOpen(false)}

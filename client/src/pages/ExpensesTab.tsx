@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus, Trash2, Pencil } from "lucide-react";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid } from "recharts";
 
+// Category keys stored in DB (always English)
 const EXPENSE_CATEGORIES = [
   "Housing", "Utilities", "Food & Groceries", "Transportation",
   "Healthcare", "Insurance Premiums", "Childcare & Education",
@@ -12,20 +13,40 @@ const EXPENSE_CATEGORIES = [
 ];
 
 const CAT_COLORS: Record<string, string> = {
-  "Housing":                 "#3b82f6",
-  "Utilities":               "#06b6d4",
-  "Food & Groceries":        "#10b981",
-  "Transportation":          "#8b5cf6",
-  "Healthcare":              "#ef4444",
-  "Insurance Premiums":      "#f59e0b",
-  "Childcare & Education":   "#ec4899",
-  "Entertainment & Leisure": "#14b8a6",
-  "Clothing & Personal Care":"#a78bfa",
-  "Savings & Investments":   "#22c55e",
-  "Debt Payments":           "#f97316",
-  "Travel":                  "#0ea5e9",
-  "Other":                   "#94a3b8",
+  "Housing":                  "#3b82f6",
+  "Utilities":                "#06b6d4",
+  "Food & Groceries":         "#10b981",
+  "Transportation":           "#8b5cf6",
+  "Healthcare":               "#ef4444",
+  "Insurance Premiums":       "#f59e0b",
+  "Childcare & Education":    "#ec4899",
+  "Entertainment & Leisure":  "#14b8a6",
+  "Clothing & Personal Care": "#a78bfa",
+  "Savings & Investments":    "#22c55e",
+  "Debt Payments":            "#f97316",
+  "Travel":                   "#0ea5e9",
+  "Other":                    "#94a3b8",
 };
+
+// Translate a category key to the current locale
+function catLabel(cat: string, t: import("../i18n/translations").T): string {
+  const map: Record<string, string> = {
+    "Housing":                  t.cashFlow.housing,
+    "Utilities":                t.cashFlow.utilities,
+    "Food & Groceries":         t.cashFlow.foodGroceries,
+    "Transportation":           t.cashFlow.transportation,
+    "Healthcare":               t.cashFlow.healthcare,
+    "Insurance Premiums":       t.cashFlow.insurancePremiums,
+    "Childcare & Education":    t.cashFlow.childcareEducation,
+    "Entertainment & Leisure":  t.cashFlow.entertainmentLeisure,
+    "Clothing & Personal Care": t.cashFlow.clothingPersonalCare,
+    "Savings & Investments":    t.cashFlow.savingsInvestments,
+    "Debt Payments":            t.cashFlow.debtPayments,
+    "Travel":                   t.cashFlow.travel,
+    "Other":                    t.common.other,
+  };
+  return map[cat] ?? cat;
+}
 
 interface Expense {
   id: number;
@@ -323,7 +344,7 @@ export function ExpensesTab({ clientId, addTrigger = 0, t = translations.en }: {
                 {selectedCat.items.map(e => (
                   <div key={e.id} className="flex items-center justify-between py-1.5 px-2 rounded hover:bg-slate-50 group">
                     <div className="flex items-center gap-2 min-w-0">
-                      <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${e.isEssential ? "bg-red-400" : "bg-blue-400"}`} title={e.isEssential ? "Essential" : t.common.discretionary} />
+                      <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${e.isEssential ? "bg-red-400" : "bg-blue-400"}`} title={e.isEssential ? t.cashFlow.essential2 : t.common.discretionary} />
                       <span className="text-sm text-slate-600 truncate">{e.description || selectedCat.cat}</span>
                       {e.includeInRetirement && e.retirementAdjustmentPct !== 100 && (
                         <span className="text-[10px] bg-amber-50 text-amber-600 px-1 py-0.5 rounded">{e.retirementAdjustmentPct}% ret.</span>
@@ -396,7 +417,7 @@ function ExpenseForm({ form, setForm, editing, onSubmit, onClose, creating, upda
       <div className="flex-1 bg-black/40 backdrop-blur-sm" onClick={onClose} />
       <div className="w-full max-w-lg bg-white shadow-2xl flex flex-col h-full border-l border-slate-200">
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200">
-          <h2 className="text-lg font-bold text-slate-900">{editing !== null ? "Edit Expense" : t.cashFlow.addExpense}</h2>
+          <h2 className="text-lg font-bold text-slate-900">{editing !== null ? t.cashFlow.editExpense2 : t.cashFlow.addExpense}</h2>
           <button onClick={onClose} className="p-2 rounded-lg hover:bg-slate-100 text-slate-400"><Plus className="w-4 h-4 rotate-45" /></button>
         </div>
         <div className="flex-1 overflow-y-auto px-6 py-6 space-y-5">
@@ -439,7 +460,7 @@ function ExpenseForm({ form, setForm, editing, onSubmit, onClose, creating, upda
           <button onClick={onClose} className="px-5 py-2.5 rounded-xl font-semibold text-slate-600 hover:bg-slate-100">Cancel</button>
           <button onClick={onSubmit} disabled={creating || updating || !form.monthlyAmount}
             className="px-6 py-2.5 rounded-xl font-semibold bg-gradient-to-r from-blue-600 to-cyan-500 text-white hover:shadow-md disabled:opacity-50 transition">
-            {editing !== null ? "Save Changes" : t.cashFlow.addExpense}
+            {editing !== null ? t.cashFlow.saveChanges2 : t.cashFlow.addExpense}
           </button>
         </div>
       </div>

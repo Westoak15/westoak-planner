@@ -15,7 +15,7 @@ async function apiFetch(url: string, init?: RequestInit) {
   const res = await fetch(url, { ...init, headers: { ...authHeaders(), ...(init?.headers ?? {}) } });
   if (!res.ok) {
     const err = await res.json().catch(() => ({ message: res.statusText }));
-    throw new Error(err.message ?? "Request failed");
+    throw new Error(err.message ?? t.common.requestFailed);
   }
   return res.json();
 }
@@ -389,7 +389,7 @@ export function RetirementProjectionForm({ clientId, clientName, projection, onS
           ? `OAS starts age ${f.oasStartAge}`
           : calc.oasAdjusted > 0 ? `OAS ${fmt(calc.oasAdjusted)}/yr` : null,
         calc.pensionAdjusted > 0 ? `Pension ${fmt(calc.pensionAdjusted)}/yr` : null,
-      ].filter(Boolean).join(' · ') || "No income starts by retirement age",
+      ].filter(Boolean).join(' · ') || t.retirement.noIncomeByRet,
       warn: cppNotStarted || oasNotStarted,
     },
     {
@@ -400,9 +400,9 @@ export function RetirementProjectionForm({ clientId, clientName, projection, onS
         : t.retirement.enterDesiredIncome,
     },
     {
-      label: calc.surplus >= 0 ? "Surplus / yr" : t.retirement.shortfallYr,
+      label: calc.surplus >= 0 ? t.retirement.surplusYr : t.retirement.shortfallYr,
       value: fmt(Math.abs(calc.surplus)),
-      sub:   calc.surplus >= 0 ? "Portfolio can sustain this" : t.retirement.annualGap,
+      sub:   calc.surplus >= 0 ? t.retirement.portfolioSustains : t.retirement.annualGap,
       color: surplusCol,
     },
   ];
@@ -600,7 +600,7 @@ export function RetirementProjectionForm({ clientId, clientName, projection, onS
           disabled={saveMut.isPending}
           className="px-5 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors font-medium"
         >
-          {saveMut.isPending ? "Saving…" : projection?.id ? "Update projection" : `Save projection`}
+          {saveMut.isPending ? t.common.savingEllipsis : projection?.id ? t.retirement.updateProjection : `Save projection`}
         </button>
       </div>
 
@@ -638,7 +638,7 @@ export function RetirementTab({ clientId, clientName, person: personProp, t = tr
     if (win) { win.document.write(html); win.document.close(); }
     else setCheckupError("Pop-up blocked — please allow pop-ups for this site");
   } catch (e: any) {
-    setCheckupError(e.message ?? "Checkup failed");
+    setCheckupError(e.message ?? t.retirement.checkupFailed);
   } finally {
     setCheckupLoading(false);
   }
@@ -704,7 +704,7 @@ export function RetirementTab({ clientId, clientName, person: personProp, t = tr
     if (person === "spouse") {
       const rrsp   = nwSum("RRSP", "primary")   + nwSum("RRSP", "joint");
       const tfsa   = nwSum("TFSA", "primary")   + nwSum("TFSA", "joint");
-      const nonReg = nwSum("Non-Registered", "primary") + nwSum("Non-Registered", "joint");
+      const nonReg = nwSum(t.retirement.nonReg, "primary") + nwSum(t.retirement.nonReg, "joint");
       const dob    = clientData.spouseDateOfBirth ? new Date(clientData.spouseDateOfBirth) : null;
       return {
         person:                  "spouse",
@@ -719,7 +719,7 @@ export function RetirementTab({ clientId, clientName, person: personProp, t = tr
 
     const rrsp   = nwSum("RRSP", "primary")   + nwSum("RRSP", "joint");
     const tfsa   = nwSum("TFSA", "primary")   + nwSum("TFSA", "joint");
-    const nonReg = nwSum("Non-Registered", "primary") + nwSum("Non-Registered", "joint");
+    const nonReg = nwSum(t.retirement.nonReg, "primary") + nwSum(t.retirement.nonReg, "joint");
     const pensionIncome = pensions.reduce((sum: number, p: any) => {
       if (p.pensionType === "dbpp" && p.accrualRate && p.projectedYearsAtRetirement && p.bestAverageEarnings)
         return sum + (Number(p.accrualRate) * Number(p.projectedYearsAtRetirement) * Number(p.bestAverageEarnings));
@@ -751,7 +751,7 @@ export function RetirementTab({ clientId, clientName, person: personProp, t = tr
       <RetirementProjectionForm
         t={t}
         clientId={clientId}
-        clientName={person === "spouse" ? (clientData?.spouseFirstName ?? "Spouse") : clientName}
+        clientName={person === "spouse" ? (clientData?.spouseFirstName ?? t.common.spouse) : clientName}
         projection={editing ?? buildSeeds(person) as any}
         onSaved={() => { setAdding(false); setEditing(null); }}
         onCancel={() => { setAdding(false); setEditing(null); }}
@@ -810,7 +810,7 @@ export function RetirementTab({ clientId, clientName, person: personProp, t = tr
             {[
               { label: t.retirement.combinedPortfolio, value: "$" + Math.round(combinedCalc.totalPortfolio).toLocaleString() },
               { label: t.retirement.combinedDesired, value: "$" + Math.round(combinedCalc.totalDesired).toLocaleString() + "/yr" },
-              { label: combinedCalc.totalSurplus >= 0 ? "Combined surplus" : t.retirement.combinedShortfall,
+              { label: combinedCalc.totalSurplus >= 0 ? t.retirement.combinedSurplusNote : t.retirement.combinedShortfall,
                 value: "$" + Math.abs(Math.round(combinedCalc.totalSurplus)).toLocaleString() + "/yr",
                 color: combinedCalc.totalSurplus >= 0 ? "#16a34a" : "#dc2626" },
               { label: t.retirement.avgFundingRate, value: Math.round(combinedCalc.avgSuccess) + "%" },
@@ -841,7 +841,7 @@ export function RetirementTab({ clientId, clientName, person: personProp, t = tr
       <div className="space-y-4">
         {activeProjections.map((proj) => {
           const isPerson  = (proj.person ?? "primary") as "primary" | "spouse";
-          const personName = isPerson === "spouse" ? (clientData?.spouseFirstName ?? "Spouse") : (clientName ?? "Primary");
+          const personName = isPerson === "spouse" ? (clientData?.spouseFirstName ?? t.common.spouse) : (clientName ?? t.common.primary);
 
           // Income phase calculations
           const desiredIncome   = Number(proj.desiredRetirementIncome ?? 0);
@@ -894,7 +894,7 @@ export function RetirementTab({ clientId, clientName, person: personProp, t = tr
                   <h4 className="font-semibold text-gray-900 text-sm">{proj.label || personName}</h4>
                   <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${
                     isPerson === "spouse" ? "bg-purple-100 text-purple-700" : "bg-blue-100 text-blue-700"
-                  }`}>{isPerson === "spouse" ? "Spouse" : t.common.primary}</span>
+                  }`}>{isPerson === "spouse" ? t.common.spouse : t.common.primary}</span>
                   <span className="text-xs text-gray-400">Age {proj.currentAge} → {proj.retirementAge} · to age {proj.lifeExpectancy}</span>
                   {isEngineRunning && <span className="text-[10px] text-gray-400 animate-pulse">{t.common.calculating}</span>}
                   {hasEngineData && !isEngineRunning && (
@@ -903,7 +903,7 @@ export function RetirementTab({ clientId, clientName, person: personProp, t = tr
                 </div>
                 <div className="flex gap-1.5">
                   <button onClick={() => setEditing(proj)} className="text-xs px-2.5 py-1 border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-100">Edit</button>
-                  <button onClick={() => proj.id && confirm("Delete this projection?") && deleteMut.mutate(proj.id)} className="text-xs px-2.5 py-1 border border-red-100 rounded-lg text-red-500 hover:bg-red-50">{t.common.delete}</button>
+                  <button onClick={() => proj.id && confirm(t.retirement.deleteProjection) && deleteMut.mutate(proj.id)} className="text-xs px-2.5 py-1 border border-red-100 rounded-lg text-red-500 hover:bg-red-50">{t.common.delete}</button>
                 </div>
               </div>
 
@@ -921,7 +921,7 @@ export function RetirementTab({ clientId, clientName, person: personProp, t = tr
                     <p className="text-[10px] text-gray-400">${Math.round(desiredIncome / 12).toLocaleString()}/mo target</p>
                   </div>
                   <div className={`rounded-lg px-3 py-2.5 ${surplus >= 0 ? "bg-green-50" : "bg-red-50"}`}>
-                    <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-1">{surplus >= 0 ? "Annual Surplus" : t.retirement.annualShortfall}</p>
+                    <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-1">{surplus >= 0 ? t.retirement.annualSurplusAtRet : t.retirement.annualShortfall}</p>
                     <p className={`text-base font-bold ${surplus >= 0 ? "text-green-700" : "text-red-700"}`}>${Math.abs(Math.round(surplus)).toLocaleString()}/yr</p>
                     <p className="text-[10px] text-gray-400">at retirement</p>
                   </div>
@@ -953,7 +953,7 @@ export function RetirementTab({ clientId, clientName, person: personProp, t = tr
                         guaranteed: phase3GuaranteedAnnual,
                         portfolio:  phase3PortfolioNeeded,
                         sources:    `OAS: $${Math.round(oasAdjusted).toLocaleString()}/mo${oasDeferralYears > 0 ? ` (+${(oasDeferralYears * 7.2).toFixed(0)}% deferral)` : ""}`,
-                        note:       phase3PortfolioNeeded <= 0 ? "Fully covered" : `Portfolio covers gap`,
+                        note:       phase3PortfolioNeeded <= 0 ? t.retirement.fullyCovered : `Portfolio covers gap`,
                         color:      phase3PortfolioNeeded <= 0 ? "border-green-200 bg-green-50/50" : "border-amber-200 bg-amber-50/50",
                       },
                     ].map((phase, i) => (
@@ -981,9 +981,9 @@ export function RetirementTab({ clientId, clientName, person: personProp, t = tr
                       <div className="h-full rounded-full transition-all" style={{ width: `${Math.min(funded, 100)}%`, backgroundColor: barColor }} />
                     </div>
                     <p className="text-[10px] text-gray-400 mt-1">
-                      {funded >= 90 ? "✓ Strong — plan is well-funded across most market scenarios" :
-                       funded >= 70 ? "⚠ Moderate — consider increasing contributions or adjusting retirement age" :
-                       "✗ At risk — significant changes needed to meet retirement income goals"}
+                      {funded >= 90 ? t.retirement.strongPlan :
+                       funded >= 70 ? t.retirement.moderatePlan :
+                       t.retirement.atRiskPlan}
                     </p>
                   </div>
                 )}
@@ -999,25 +999,25 @@ export function RetirementTab({ clientId, clientName, person: personProp, t = tr
                         {
                           label: t.retirement.estateAtLife,
                           value: estateValue > 0 ? "$" + Math.round(estateValue / 1000).toLocaleString() + "K" : "—",
-                          sub: "age " + (proj.lifeExpectancy ?? 90),
+                          sub: t.retirement.ageLabel + (proj.lifeExpectancy ?? 90),
                           color: estateValue > 0 ? "#16a34a" : "#dc2626",
                         },
                         {
                           label: t.retirement.guaranteedIncome2,
                           value: guaranteedIncome > 0 ? "$" + Math.round(guaranteedIncome).toLocaleString() + "/yr" : "—",
-                          sub: "CPP + OAS + Pension",
+                          sub: t.retirement.cppOasPension,
                           color: "#0c1e3a",
                         },
                         {
                           label: t.scenarioComparison.rrifMinAt71,
                           value: rrifMin > 0 ? "$" + Math.round(rrifMin).toLocaleString() + "/yr" : "N/A",
-                          sub: "mandatory withdrawal",
+                          sub: t.retirement.mandatoryWithdrawal,
                           color: rrifMin > 0 ? "#d97706" : "#9ca3af",
                         },
                         {
                           label: t.retirement.lifetimeTaxLabel,
                           value: lifetimeTax > 0 ? "$" + Math.round(lifetimeTax / 1000).toLocaleString() + "K" : "—",
-                          sub: "retirement period",
+                          sub: t.retirement.retirementPeriod,
                           color: "#64748b",
                         },
                       ].map((m, i) => (

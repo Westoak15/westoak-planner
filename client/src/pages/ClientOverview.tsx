@@ -147,7 +147,7 @@ export function ClientOverview({ client, onNavigate, t = translations.en }: { cl
   const alerts: string[] = [];
   if (ov && ov.pendingAi > 0) alerts.push(`${ov.pendingAi} AI recommendation${ov.pendingAi > 1 ? "s" : ""} awaiting review`);
   if (retFunded !== null && retFunded < 80) alerts.push(`${t.client.retirementFundingBelow} ${Math.round(retFunded)}${t.client.belowTarget}`);
-  if (lifeCoverage === 0 && policies.length > 0) alerts.push("No life insurance on file — protection gap unknown");
+  if (lifeCoverage === 0 && policies.length > 0) alerts.push(t.common.noLifeInsurance);
   if (retPlans.length === 0) alerts.push(t.client.noRetProjectionFile);
   if (ov && ov.insuranceAnalyses === 0) alerts.push(t.client.noInsuranceAnalysisCompleted);
 
@@ -240,7 +240,7 @@ export function ClientOverview({ client, onNavigate, t = translations.en }: { cl
           title={t.client.protectionCard}
           icon={Shield}
           value={lifeCoverage > 0 ? `${fmt(lifeCoverage)} life coverage` : policies.length > 0 ? `${policies.length} polic${policies.length > 1 ? "ies" : "y"} on file` : t.client.noPoliciesCard}
-          insight={lifeCoverage === 0 && policies.length > 0 ? "Life insurance gap — review coverage" : policies.length === 0 ? t.client.addInsurancePols : t.client.reviewCoverageAnnually}
+          insight={lifeCoverage === 0 && policies.length > 0 ? t.common.lifeInsGapReview : policies.length === 0 ? t.client.addInsurancePols : t.client.reviewCoverageAnnually}
           color={lifeCoverage === 0 && policies.length > 0 ? "text-red-500" : policies.length === 0 ? "text-slate-400" : "text-blue-600"}
           onClick={() => onNavigate("protection")}
         />

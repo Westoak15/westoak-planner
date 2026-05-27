@@ -49,17 +49,17 @@ import {
 type TabKey = "overview" | "dashboard" | "networth" | "retirement" | "insurance" | "resp" | "debt" | "tax" | "estate" | "ai" | "plan";
 
 const tabs: { key: TabKey; label: string; icon: typeof Target }[] = [
-  { key: "overview",    label: t.plan.overview,       icon: Target },
-  { key: "plan",        label: t.plan.financialPlan, icon: Sparkles },
-  { key: "dashboard",   label: t.plan.dashboard2,      icon: BarChart3 },
-  { key: "networth",    label: t.netWorth.title,      icon: DollarSign },
-  { key: "retirement",  label: t.retirement.title,     icon: PiggyBank },
-  { key: "insurance",   label: t.plan.insurance2,      icon: Shield },
+  { key: "overview",    label: "Overview",       icon: Target },
+  { key: "plan",        label: "Financial Plan", icon: Sparkles },
+  { key: "dashboard",   label: "Dashboard",      icon: BarChart3 },
+  { key: "networth",    label: "Net Worth",      icon: DollarSign },
+  { key: "retirement",  label: "Retirement",     icon: PiggyBank },
+  { key: "insurance",   label: "Insurance",      icon: Shield },
   { key: "resp",        label: "RESP",           icon: GraduationCap },
-  { key: "debt",        label: t.plan.debt,           icon: CreditCard },
+  { key: "debt",        label: "Debt",           icon: CreditCard },
   { key: "tax",         label: "Tax",            icon: Receipt },
-  { key: "estate",      label: t.plan.estate,         icon: ScrollText },
-  { key: "ai",          label: t.plan.aiInsights,    icon: Brain },
+  { key: "estate",      label: "Estate",         icon: ScrollText },
+  { key: "ai",          label: "AI Insights",    icon: Brain },
 ];
 
 const moduleToTabMap: Record<string, TabKey> = {
@@ -114,7 +114,7 @@ function OverviewTab({ clientId, onTabChange }: { clientId: number; onTabChange?
   if (!overview) return null;
 
   const cards = [
-    { label: t.netWorth.title,            value: `$${Number(overview.netWorth).toLocaleString()}`,          icon: DollarSign,  color: overview.netWorth >= 0 ? "text-green-600" : "text-red-600",    bg: overview.netWorth >= 0 ? "bg-green-50" : "bg-red-50" },
+    { label: "Net Worth",            value: `$${Number(overview.netWorth).toLocaleString()}`,          icon: DollarSign,  color: overview.netWorth >= 0 ? "text-green-600" : "text-red-600",    bg: overview.netWorth >= 0 ? "bg-green-50" : "bg-red-50" },
     { label: t.netWorth.totalAssets,         value: `$${Number(overview.totalAssets).toLocaleString()}`,        icon: TrendingUp,  color: "text-green-600", bg: "bg-green-50" },
     { label: t.netWorth.totalLiabilities,    value: `$${Number(overview.totalLiabilities).toLocaleString()}`,   icon: TrendingDown, color: "text-red-500",  bg: "bg-red-50" },
     { label: t.plan.totalDebt,           value: `$${Number(overview.totalDebt).toLocaleString()}`,          icon: CreditCard,  color: "text-orange-600", bg: "bg-orange-50" },
@@ -123,22 +123,22 @@ function OverviewTab({ clientId, onTabChange }: { clientId: number; onTabChange?
     { label: t.plan.insuranceAnalyses,   value: overview.insuranceAnalyses,        icon: Shield,        color: "text-purple-600", bg: "bg-purple-50",   tab: "insurance" },
     { label: t.plan.educationPlans,      value: overview.educationPlans,           icon: GraduationCap, color: "text-teal-600",   bg: "bg-teal-50",     tab: "resp" },
     { label: t.plan.taxNotes,            value: overview.taxNotes,                 icon: Receipt,       color: "text-amber-600",  bg: "bg-amber-50",    tab: "tax" },
-    { label: t.plan.estateNotes,         value: overview.estateNotes,              icon: ScrollText,    color: "text-indigo-600", bg: "bg-indigo-50",   tab: "estate" },
+    { label: "Estate"Notes,         value: overview.estateNotes,              icon: ScrollText,    color: "text-indigo-600", bg: "bg-indigo-50",   tab: "estate" },
     { label: t.plan.aiRecommendations,   value: overview.aiRecommendations,        icon: Brain,         color: "text-pink-600",   bg: "bg-pink-50",     tab: "ai" },
     { label: t.plan.pendingActions,      value: overview.pendingRecommendations,   icon: Clock,         color: "text-yellow-600", bg: "bg-yellow-50",   tab: "ai" },
   ];
 
   const reportButtons = [
-    { type: "comprehensive", label: t.plan.fullPlan,   available: true,                   icon: FileText,  tab: null },
-    { type: "retirement",    label: t.retirement.title,  available: !!reports?.retirement,  icon: PiggyBank, tab: "retirement" as TabKey },
-    { type: "insurance",     label: t.plan.insurance2,   available: !!reports?.insurance,   icon: Shield,    tab: "insurance" as TabKey },
-    { type: "net-worth",     label: t.netWorth.title,   available: !!reports?.netWorth,    icon: DollarSign, tab: "networth" as TabKey },
+    { type: "comprehensive", label: "Full Plan",   available: true,                   icon: FileText,  tab: null },
+    { type: "retirement",    label: "Retirement",  available: !!reports?.retirement,  icon: PiggyBank, tab: "retirement" as TabKey },
+    { type: "insurance",     label: "Insurance",   available: !!reports?.insurance,   icon: Shield,    tab: "insurance" as TabKey },
+    { type: "net-worth",     label: "Net Worth",   available: !!reports?.netWorth,    icon: DollarSign, tab: "networth" as TabKey },
   ];
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
       <div className="flex items-center justify-between flex-wrap gap-3">
-        <h2 className="text-xl font-display font-bold">{t.plan.financialPlanningOverview}</h2>
+        <h2 className="text-xl font-display font-bold">{"Financial Plan"ningOverview}</h2>
         <div className="flex items-center gap-2 flex-wrap">
           {reportButtons.map(btn => (
             <button
@@ -178,7 +178,7 @@ function OverviewTab({ clientId, onTabChange }: { clientId: number; onTabChange?
 const NW_CAT_COLORS: Record<string, string> = {
   "Liquid Assets": "#3b82f6", "Registered Investments (RRSP/TFSA)": "#10b981",
   "Non-Registered Investments": "#8b5cf6", "Real Estate": "#f59e0b",
-  "Business Assets": "#ef4444", "Personal Property": "#06b6d4", "Other": "#94a3b8",
+  "Business Assets": "#ef4444", "Personal Property": "#06b6d4", t.common.other: "#94a3b8",
   "Mortgages": "#dc2626", "Car Loans": "#f97316", "Student Loans": "#a78bfa",
   "Credit Cards": "#fb7185", "Lines of Credit": "#fbbf24", "Business Loans": "#64748b",
   "Other Liabilities": "#94a3b8",
@@ -231,7 +231,7 @@ function NetWorthSection({ title, total, color, isAsset, children, onAdd }: {
           <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: color }} />
           <div>
             <p className="font-semibold text-slate-900 text-sm">{title}</p>
-            <p className="text-xs text-slate-400">{open ? "Click to collapse" : t.common.clickExpand}</p>
+            <p className="text-xs text-slate-400">{open ? t.common.clickCollapse : t.common.clickExpand}</p>
           </div>
         </div>
         <div className="flex items-center gap-3">
@@ -263,7 +263,7 @@ export function NetWorthTab({ clientId }: { clientId: number }) {
   const [presetCat, setPresetCat] = useState("");
   const [form, setForm] = useState({ category: "", name: "", value: "" });
 
-  const assetCats = ["Liquid Assets", "Registered Investments (RRSP/TFSA)", "Non-Registered Investments", "Real Estate", "Business Assets", "Personal Property", "Other"];
+  const assetCats = ["Liquid Assets", "Registered Investments (RRSP/TFSA)", t.netWorth.nonRegInvestments, "Real Estate", "Business Assets", "Personal Property", t.common.other];
   const liabilityCats = ["Mortgages", "Car Loans", "Student Loans", "Credit Cards", "Lines of Credit", "Business Loans", "Other Liabilities"];
 
   const assets      = entries.filter(e => e.type === "asset");
@@ -312,7 +312,7 @@ export function NetWorthTab({ clientId }: { clientId: number }) {
     <div className="max-w-6xl mx-auto px-6 py-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-semibold text-slate-900">{sub === "liabilities" ? "Liabilities" : t.netWorth.title}</h1>
+          <h1 className="text-xl font-semibold text-slate-900">{sub === "liabilities" ? t.netWorth.liabilitiesTab : t.netWorth.title}</h1>
           <p className="text-sm text-slate-500">{entries.length} entr{entries.length !== 1 ? "ies" : "y"}</p>
         </div>
         <button onClick={() => openAdd(sub === "liabilities" ? "liability" : "asset")} data-testid="button-fp-add-nw"
@@ -354,7 +354,7 @@ export function NetWorthTab({ clientId }: { clientId: number }) {
                     {items.map((e: any) => (
                       <NetWorthItem key={e.id} item={e}
                         onUpdate={(id, data) => updateEntry.mutate({ id, data })}
-                        onDelete={id => { if (confirm("Delete?")) deleteEntry.mutate(id); }}
+                        onDelete={id => { if (confirm(t.common.deleteConfirm)) deleteEntry.mutate(id); }}
                       />
                     ))}
                   </NetWorthSection>
@@ -369,7 +369,7 @@ export function NetWorthTab({ clientId }: { clientId: number }) {
                     {items.map((e: any) => (
                       <NetWorthItem key={e.id} item={e}
                         onUpdate={(id, data) => updateEntry.mutate({ id, data })}
-                        onDelete={id => { if (confirm("Delete?")) deleteEntry.mutate(id); }}
+                        onDelete={id => { if (confirm(t.common.deleteConfirm)) deleteEntry.mutate(id); }}
                       />
                     ))}
                   </NetWorthSection>
@@ -428,7 +428,7 @@ export function NetWorthTab({ clientId }: { clientId: number }) {
       {showAdd && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[200] flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl p-6">
-            <h2 className="text-lg font-bold mb-5 text-slate-900">Add {addType === "asset" ? "Asset" : t.common.liability}</h2>
+            <h2 className="text-lg font-bold mb-5 text-slate-900">Add {addType === "asset" ? t.common.asset : t.common.liability}</h2>
             <div className="space-y-4">
               <div className="flex gap-2">
                 <button type="button" onClick={() => setAddType("asset")} className={`flex-1 py-2 rounded-xl font-semibold text-sm transition ${addType === "asset" ? "bg-emerald-100 text-emerald-700 border-2 border-emerald-300" : "bg-slate-100 text-slate-500"}`}>{t.common.asset}</button>
@@ -454,7 +454,7 @@ export function NetWorthTab({ clientId }: { clientId: number }) {
               <button onClick={() => setShowAdd(false)} className="px-5 py-2.5 rounded-xl font-semibold text-slate-500 hover:bg-slate-100">{t.common.cancel}</button>
               <button onClick={handleAdd} disabled={createEntry.isPending || !form.category || !form.name || !form.value} data-testid="button-fp-submit-nw"
                 className="px-5 py-2.5 rounded-xl font-semibold bg-gradient-to-r from-blue-600 to-cyan-500 text-white hover:shadow-md disabled:opacity-50 transition">
-                {createEntry.isPending ? "Adding…" : t.common.addEntry}
+                {createEntry.isPending ? t.common.adding : t.common.addEntry}
               </button>
             </div>
           </div>
@@ -580,7 +580,7 @@ function buildDefaultFromNW() {
     nwEntries.filter((e: any) => e.type === type && e.category === category && (!owner || e.owner === owner))
              .reduce((s: number, e: any) => s + parseFloat(e.value || "0"), 0);
   const policySum = (insured: string) =>
-    policies.filter((p: any) => p.insured === insured && ["Life","Term Life","Whole Life","Universal Life"].includes(p.type))
+    policies.filter((p: any) => p.insured === insured && [t.plan.insurance2,"Term Life","Whole Life","Universal Life"].includes(p.type))
             .reduce((s: number, p: any) => s + parseFloat(p.coverageAmount || "0"), 0);
   return {
     liabilities: {
@@ -592,7 +592,7 @@ function buildDefaultFromNW() {
       emergencyFund:   "0",
     },
     primaryAssets: {
-      liquidSavings:      String(sum("asset", "Cash/Bank", "primary")),
+      liquidSavings:      String(sum("asset", t.dashboard.cashBank, "primary")),
       rrsps:              String(sum("asset", "RRSP", "primary")),
       rrspsUse:           true,
       nonRegistered:      String(sum("asset", "Non-Registered", "primary")),
@@ -602,7 +602,7 @@ function buildDefaultFromNW() {
       other:              "0",
     },
     spouseAssets: {
-      liquidSavings:      String(sum("asset", "Cash/Bank", "spouse")),
+      liquidSavings:      String(sum("asset", t.dashboard.cashBank, "spouse")),
       rrsps:              String(sum("asset", "RRSP", "spouse")),
       rrspsUse:           true,
       nonRegistered:      String(sum("asset", "Non-Registered", "spouse")),
@@ -669,7 +669,7 @@ function buildDefaultFromNW() {
       <div className="flex justify-between items-center">
         <h2 className="text-xl font-display font-bold">Insurance Needs Analysis</h2>
         <button onClick={() => { 
-           console.log("policies at click:", policies.length, "sum:", policies.filter((p:any) => ["Life","Term Life","Whole Life","Universal Life"].includes(p.type) && p.insured==="primary").reduce((s:number,p:any)=>s+parseFloat(p.coverageAmount||"0"),0));
+           console.log("policies at click:", policies.length, "sum:", policies.filter((p:any) => [t.plan.insurance2,"Term Life","Whole Life","Universal Life"].includes(p.type) && p.insured==="primary").reduce((s:number,p:any)=>s+parseFloat(p.coverageAmount||"0"),0));
            setForm({ ...defaultWs, ...buildDefaultFromNW(), primaryName: client ? `${client.firstName} ${client.lastName}` : "", primaryAge: client?.dateOfBirth ? String(new Date().getFullYear() - new Date(client.dateOfBirth).getFullYear()) : "", primaryAnnualIncome: client?.annualIncome ? String(client.annualIncome) : "", spouseName: client?.spouseFirstName ? `${client.spouseFirstName} ${client.spouseLastName ?? ""}`.trim() : "", spouseAge: client?.spouseDateOfBirth ? String(new Date().getFullYear() - new Date(client.spouseDateOfBirth).getFullYear()) : "", spouseAnnualIncome: client?.spouseFirstName && client?.spouseAnnualIncome ? String(client.spouseAnnualIncome) : "" }); setViewingId(null); setShowWorksheet(true); }}
           data-testid="button-fp-add-insurance"
           className="flex items-center space-x-2 px-4 py-2 bg-secondary text-secondary-foreground font-semibold rounded-xl hover:bg-secondary/90 transition-colors shadow-sm">
@@ -681,13 +681,13 @@ function buildDefaultFromNW() {
         <div key={a.id} className="border border-border rounded-2xl p-6" data-testid={`card-fp-insurance-${a.id}`}>
           <div className="flex justify-between items-center mb-3">
             <div>
-              <h3 className="text-base font-bold">{a.primaryName || "Family Needs Analysis"}</h3>
+              <h3 className="text-base font-bold">{a.primaryName || t.insurance.familyNeedsAnalysis}</h3>
               <p className="text-xs text-muted-foreground">Created {a.createdAt ? new Date(a.createdAt).toLocaleDateString() : "-"}</p>
             </div>
             <div className="flex items-center gap-1">
               <button onClick={() => { if (a.worksheetData) { setForm({ ...defaultWs, ...a.worksheetData }); } else { setForm({ ...defaultWs, primaryName: a.primaryName ?? "", primaryAge: a.primaryAge ? String(a.primaryAge) : "", spouseName: a.spouseName ?? "", spouseAge: a.spouseAge ? String(a.spouseAge) : "" }); } setViewingId(a.id); setShowWorksheet(true); }} className="p-1.5 text-primary hover:bg-primary/10 rounded-lg" title={t.common.edit}><Eye className="w-4 h-4" /></button>
               <button onClick={async () => { const token = localStorage.getItem("fp_token"); const res = await fetch(`/api/reports/${clientId}/fna/${a.id}`, { headers: { Authorization: `Bearer ${token}` } }); const html = await res.text(); const blob = new Blob([html], { type: "text/html" }); window.open(URL.createObjectURL(blob), "_blank"); }} className="p-1.5 text-gray-500 hover:bg-gray-100 rounded-lg" title={t.report.summaryLabel}><Printer className="w-4 h-4" /></button>
-              <button onClick={() => { if (confirm("Delete this analysis?")) deleteAnalysis.mutate(a.id); }} className="p-1.5 text-red-400 hover:bg-red-50 rounded-lg" title={t.common.delete}><Trash2 className="w-4 h-4" /></button>
+              <button onClick={() => { if (confirm(t.plan.deleteAnalysis)) deleteAnalysis.mutate(a.id); }} className="p-1.5 text-red-400 hover:bg-red-50 rounded-lg" title={t.common.delete}><Trash2 className="w-4 h-4" /></button>
             </div>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
@@ -698,7 +698,7 @@ function buildDefaultFromNW() {
                 const pNet = Math.max(0, parseFloat(calc.primaryNet ?? ws.primaryNeed ?? "0"));
                 const sNet = Math.max(0, parseFloat(calc.spouseNet ?? ws.spouseNeed ?? "0"));
                 const items = [
-                  { label: `${a.primaryName || "Primary"} - Life Need`, val: pNet },
+                  { label: `${a.primaryName || t.common.primary} - Life Need`, val: pNet },
                   ...(a.spouseName ? [{ label: `${a.spouseName} - Life Need`, val: sNet }] : []),
                   { label: t.insurance.diNeed, val: parseFloat(a.recommendedDisabilityCoverage || "0") },
                   { label: t.insurance.ltcNeed, val: parseFloat(a.criticalIllnessLumpSum || "0") },
@@ -734,7 +734,7 @@ function buildDefaultFromNW() {
                   <TranscriptRecorderTrigger
                     endpoint="/api/ai/needs-analysis-transcript"
                     label={t.insurance.recordNeedsAnalysis}
-                    processingLabel="Extracting needs analysis data…"
+                    processingLabel={t.plan.extracting}
                     onComplete={(data) => {
                       setForm(f => ({
                         ...f,
@@ -783,7 +783,7 @@ function buildDefaultFromNW() {
                           rrsps:         data.spouseRrsps         || f.spouseAssets.rrsps,
                         },
                       }));
-                      toast({ title: "Fields pre-filled", description: "Review and adjust before saving." });
+                      toast({ title: t.plan.fieldsPreFilled, description: t.plan.reviewAndAdjust });
                     }}
                   />
                 </div>
@@ -807,7 +807,7 @@ function buildDefaultFromNW() {
                     <p className="text-sm font-semibold text-primary">Primary Insured</p>
                     <div><label className="text-xs font-medium text-muted-foreground">Full Name</label><input type="text" required value={form.primaryName} onChange={e => setForm(f => ({ ...f, primaryName: e.target.value }))} data-testid="input-ws-primary-name" className="w-full px-3 py-2 rounded-lg border text-sm mt-1 bg-background" /></div>
                     <div className="grid grid-cols-2 gap-3">
-                      <WorksheetFieldImpl label="Age" value={form.primaryAge} onChange={v => setForm(f => ({ ...f, primaryAge: v }))} testId="input-ws-primary-age" prefix="" />
+                      <WorksheetFieldImpl label={t.plan.ageCol} value={form.primaryAge} onChange={v => setForm(f => ({ ...f, primaryAge: v }))} testId="input-ws-primary-age" prefix="" />
                       <WorksheetFieldImpl label={t.insurance.annualIncome} value={form.primaryAnnualIncome} onChange={v => setForm(f => ({ ...f, primaryAnnualIncome: v }))} testId="input-ws-primary-income" />
                     </div>
                   </div>
@@ -815,7 +815,7 @@ function buildDefaultFromNW() {
                     <p className="text-sm font-semibold text-purple-600">{t.common.spouse}</p>
                     <div><label className="text-xs font-medium text-muted-foreground">Full Name</label><input type="text" value={form.spouseName} onChange={e => setForm(f => ({ ...f, spouseName: e.target.value }))} data-testid="input-ws-spouse-name" className="w-full px-3 py-2 rounded-lg border text-sm mt-1 bg-background" /></div>
                     <div className="grid grid-cols-2 gap-3">
-                      <WorksheetFieldImpl label="Age" value={form.spouseAge} onChange={v => setForm(f => ({ ...f, spouseAge: v }))} testId="input-ws-spouse-age" prefix="" />
+                      <WorksheetFieldImpl label={t.plan.ageCol} value={form.spouseAge} onChange={v => setForm(f => ({ ...f, spouseAge: v }))} testId="input-ws-spouse-age" prefix="" />
                       <WorksheetFieldImpl label={t.insurance.annualIncome} value={form.spouseAnnualIncome} onChange={v => setForm(f => ({ ...f, spouseAnnualIncome: v }))} testId="input-ws-spouse-income" />
                     </div>
                   </div>
@@ -875,16 +875,16 @@ function buildDefaultFromNW() {
                   <div className="space-y-3 p-4 border border-border rounded-xl">
                     <div className="flex justify-between"><p className="text-sm font-semibold text-primary">Primary (E)</p><p className="font-bold text-green-600">{fmt$(calc.subtotalE)}</p></div>
                     <WorksheetFieldImpl label={t.insurance.liquidSavings} value={form.primaryAssets.liquidSavings} onChange={v => setForm(f => ({ ...f, primaryAssets: { ...f.primaryAssets, liquidSavings: v } }))} testId="input-ws-primary-liquid" />
-                    <AssetRowImpl label="RRSPs" value={form.primaryAssets.rrsps} onValueChange={v => setForm(f => ({ ...f, primaryAssets: { ...f.primaryAssets, rrsps: v } }))} useIt={form.primaryAssets.rrspsUse} onToggle={() => setForm(f => ({ ...f, primaryAssets: { ...f.primaryAssets, rrspsUse: !f.primaryAssets.rrspsUse } }))} testId="primary-rrsp" />
-                    <AssetRowImpl label="Non-Registered" value={form.primaryAssets.nonRegistered} onValueChange={v => setForm(f => ({ ...f, primaryAssets: { ...f.primaryAssets, nonRegistered: v } }))} useIt={form.primaryAssets.nonRegisteredUse} onToggle={() => setForm(f => ({ ...f, primaryAssets: { ...f.primaryAssets, nonRegisteredUse: !f.primaryAssets.nonRegisteredUse } }))} testId="primary-nonreg" />
+                    <AssetRowImpl label={t.plan.rrspLabel} value={form.primaryAssets.rrsps} onValueChange={v => setForm(f => ({ ...f, primaryAssets: { ...f.primaryAssets, rrsps: v } }))} useIt={form.primaryAssets.rrspsUse} onToggle={() => setForm(f => ({ ...f, primaryAssets: { ...f.primaryAssets, rrspsUse: !f.primaryAssets.rrspsUse } }))} testId="primary-rrsp" />
+                    <AssetRowImpl label={t.netWorth.nonRegistered} value={form.primaryAssets.nonRegistered} onValueChange={v => setForm(f => ({ ...f, primaryAssets: { ...f.primaryAssets, nonRegistered: v } }))} useIt={form.primaryAssets.nonRegisteredUse} onToggle={() => setForm(f => ({ ...f, primaryAssets: { ...f.primaryAssets, nonRegisteredUse: !f.primaryAssets.nonRegisteredUse } }))} testId="primary-nonreg" />
                     <AssetRowImpl label="TFSA" value={form.primaryAssets.tfsa} onValueChange={v => setForm(f => ({ ...f, primaryAssets: { ...f.primaryAssets, tfsa: v } }))} useIt={form.primaryAssets.tfsaUse} onToggle={() => setForm(f => ({ ...f, primaryAssets: { ...f.primaryAssets, tfsaUse: !f.primaryAssets.tfsaUse } }))} testId="primary-tfsa" />
                     <WorksheetFieldImpl label={t.common.other} value={form.primaryAssets.other} onChange={v => setForm(f => ({ ...f, primaryAssets: { ...f.primaryAssets, other: v } }))} testId="input-ws-primary-other-asset" />
                   </div>
                   <div className="space-y-3 p-4 border border-border rounded-xl">
                     <div className="flex justify-between"><p className="text-sm font-semibold text-purple-600">Spouse (F)</p><p className="font-bold text-green-600">{fmt$(calc.subtotalF)}</p></div>
                     <WorksheetFieldImpl label={t.insurance.liquidSavings} value={form.spouseAssets.liquidSavings} onChange={v => setForm(f => ({ ...f, spouseAssets: { ...f.spouseAssets, liquidSavings: v } }))} testId="input-ws-spouse-liquid" />
-                    <AssetRowImpl label="RRSPs" value={form.spouseAssets.rrsps} onValueChange={v => setForm(f => ({ ...f, spouseAssets: { ...f.spouseAssets, rrsps: v } }))} useIt={form.spouseAssets.rrspsUse} onToggle={() => setForm(f => ({ ...f, spouseAssets: { ...f.spouseAssets, rrspsUse: !f.spouseAssets.rrspsUse } }))} testId="spouse-rrsp" />
-                    <AssetRowImpl label="Non-Registered" value={form.spouseAssets.nonRegistered} onValueChange={v => setForm(f => ({ ...f, spouseAssets: { ...f.spouseAssets, nonRegistered: v } }))} useIt={form.spouseAssets.nonRegisteredUse} onToggle={() => setForm(f => ({ ...f, spouseAssets: { ...f.spouseAssets, nonRegisteredUse: !f.spouseAssets.nonRegisteredUse } }))} testId="spouse-nonreg" />
+                    <AssetRowImpl label={t.plan.rrspLabel} value={form.spouseAssets.rrsps} onValueChange={v => setForm(f => ({ ...f, spouseAssets: { ...f.spouseAssets, rrsps: v } }))} useIt={form.spouseAssets.rrspsUse} onToggle={() => setForm(f => ({ ...f, spouseAssets: { ...f.spouseAssets, rrspsUse: !f.spouseAssets.rrspsUse } }))} testId="spouse-rrsp" />
+                    <AssetRowImpl label={t.netWorth.nonRegistered} value={form.spouseAssets.nonRegistered} onValueChange={v => setForm(f => ({ ...f, spouseAssets: { ...f.spouseAssets, nonRegistered: v } }))} useIt={form.spouseAssets.nonRegisteredUse} onToggle={() => setForm(f => ({ ...f, spouseAssets: { ...f.spouseAssets, nonRegisteredUse: !f.spouseAssets.nonRegisteredUse } }))} testId="spouse-nonreg" />
                     <AssetRowImpl label="TFSA" value={form.spouseAssets.tfsa} onValueChange={v => setForm(f => ({ ...f, spouseAssets: { ...f.spouseAssets, tfsaUse: !f.spouseAssets.tfsaUse } }))} useIt={form.spouseAssets.tfsaUse} onToggle={() => setForm(f => ({ ...f, spouseAssets: { ...f.spouseAssets, tfsaUse: !f.spouseAssets.tfsaUse } }))} testId="spouse-tfsa" />
                     <WorksheetFieldImpl label={t.common.other} value={form.spouseAssets.other} onChange={v => setForm(f => ({ ...f, spouseAssets: { ...f.spouseAssets, other: v } }))} testId="input-ws-spouse-other-asset" />
                   </div>
@@ -949,7 +949,7 @@ function buildDefaultFromNW() {
                 <div className="flex gap-3">
                   <button type="button" onClick={() => setShowWorksheet(false)} data-testid="button-ws-cancel" className="px-6 py-3 rounded-xl font-semibold text-muted-foreground hover:bg-muted">{t.common.cancel}</button>
                   <button type="submit" disabled={createWorksheet.isPending} data-testid="button-ws-save" className="px-8 py-3 rounded-xl font-semibold bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">
-                    {createWorksheet.isPending ? <><Loader2 className="w-4 h-4 animate-spin inline mr-2" />{t.common.saving2}</> : viewingId ? "Update Analysis" : t.common.saveAnalysis2}
+                    {createWorksheet.isPending ? <><Loader2 className="w-4 h-4 animate-spin inline mr-2" />{t.common.saving2}</> : viewingId ? t.common.updateAnalysis2 : t.common.saveAnalysis2}
                   </button>
                 </div>
               </div>
@@ -998,7 +998,7 @@ function RESPTab({ clientId, planId }: { clientId: number; planId: number | null
             <div key={s.id} className="border border-border rounded-2xl p-6" data-testid={`card-fp-resp-${s.id}`}>
               <div className="flex justify-between items-start">
                 <div><h3 className="text-lg font-bold">{s.childName}</h3><p className="text-sm text-muted-foreground">Age {s.childAge} | {s.accountType} | Target: Age {s.targetAge}</p></div>
-                <button onClick={() => { if (confirm("Delete?")) deleteSaving.mutate(s.id); }} data-testid={`button-fp-del-resp-${s.id}`} className="p-2 hover:bg-red-50 rounded-lg"><Trash2 className="w-4 h-4 text-red-400" /></button>
+                <button onClick={() => { if (confirm(t.common.deleteConfirm)) deleteSaving.mutate(s.id); }} data-testid={`button-fp-del-resp-${s.id}`} className="p-2 hover:bg-red-50 rounded-lg"><Trash2 className="w-4 h-4 text-red-400" /></button>
               </div>
               <div className="grid grid-cols-2 gap-4 mt-4">
                 <div><p className="text-xs text-muted-foreground uppercase">Current Balance</p><p className="text-lg font-bold text-primary">{fmt$(bal)}</p></div>
@@ -1054,7 +1054,7 @@ function DebtTab({ clientId, planId }: { clientId: number; planId: number | null
   const deleteDebt = useDeleteDebtEntry(clientId);
   const [showAdd, setShowAdd] = useState(false);
   const [form, setForm] = useState({ name: "", category: t.netWorth.creditCard2, balance: "", interestRate: "", minimumPayment: "", term: "", notes: "" });
-  const categories = ["Mortgage", "Car Loan", "Student Loan", "Credit Card", "Personal Loan", "Line of Credit", "Other"];
+  const categories = ["Mortgage", "Car Loan", "Student Loan", "Credit Card", "Personal Loan", "Line of Credit", t.common.other];
   const totalDebt = (debts as any[]).reduce((s, d) => s + parseFloat(d.balance || "0"), 0);
   const avgRate = debts.length > 0 ? (debts as any[]).reduce((s, d) => s + parseFloat(d.interestRate || "0"), 0) / debts.length : 0;
 
@@ -1096,7 +1096,7 @@ function DebtTab({ clientId, planId }: { clientId: number; planId: number | null
                 <td className="px-4 py-3 text-right">{parseFloat(d.interestRate).toFixed(1)}%</td>
                 <td className="px-4 py-3 text-right">{fmt$(parseFloat(d.minimumPayment))}</td>
                 <td className="px-4 py-3 text-center">
-                  <button onClick={() => { if (confirm("Delete?")) deleteDebt.mutate(d.id); }} data-testid={`button-fp-del-debt-${d.id}`} className="p-1 hover:bg-red-50 rounded"><Trash2 className="w-4 h-4 text-red-400" /></button>
+                  <button onClick={() => { if (confirm(t.common.deleteConfirm)) deleteDebt.mutate(d.id); }} data-testid={`button-fp-del-debt-${d.id}`} className="p-1 hover:bg-red-50 rounded"><Trash2 className="w-4 h-4 text-red-400" /></button>
                 </td>
               </tr>
             ))}
@@ -1180,15 +1180,15 @@ function TaxNotesPanel({ clientId }: { clientId: number }) {
   });
 
   const categories = [
-    "General",
+    t.common.general,
     "RRSP Optimization",
     "TFSA Strategy",
-    "Income Splitting",
+    t.plan.incomeSplitting,
     "Capital Gains",
     "Tax Loss Harvesting",
     "Charitable Donations",
     "Corporate Tax",
-    "Other",
+    t.common.other,
   ];
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -1308,7 +1308,7 @@ function TaxNotesPanel({ clientId }: { clientId: number }) {
                       </span>
                       <button
                         onClick={() => {
-                          if (confirm("Delete this note?")) deleteNote.mutate(note.id);
+                          if (confirm(t.plan.deleteNote)) deleteNote.mutate(note.id);
                         }}
                         className="text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
                       >
@@ -1335,7 +1335,7 @@ function TaxNotesPanel({ clientId }: { clientId: number }) {
 // PANEL: RRSP Room Calculator
 // ============================================================================
 
-function RrspRoomPanel({ clientId, prefill, person = "primary", primaryLabel = "Primary", spouseLabel = "Spouse" }: {
+function RrspRoomPanel({ clientId, prefill, person = "primary", primaryLabel = t.common.primary, spouseLabel = t.common.spouse }: {
   clientId: number; prefill?: any; person?: string; primaryLabel?: string; spouseLabel?: string;
 }) {
   const owner = person === "spouse" ? "spouse" : "primary";
@@ -1398,7 +1398,7 @@ function RrspRoomPanel({ clientId, prefill, person = "primary", primaryLabel = "
   };
 
   const del = async (id: number) => {
-    if (!confirm("Delete this analysis?")) return;
+    if (!confirm(t.plan.deleteAnalysis)) return;
     await api.delete(`/api/tax/tax-analyses/${id}`);
     await load();
   };
@@ -1419,7 +1419,7 @@ function RrspRoomPanel({ clientId, prefill, person = "primary", primaryLabel = "
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg">
             <div className="flex items-center justify-between p-5 border-b border-gray-100">
-              <h3 className="text-lg font-bold text-gray-900">{editingId ? "Edit" : "New"} RRSP Analysis — {personLabel}</h3>
+              <h3 className="text-lg font-bold text-gray-900">{editingId ? t.common.edit : t.goals.newGoal} RRSP Analysis — {personLabel}</h3>
               <button onClick={() => setShowForm(false)} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
             </div>
             <div className="p-5 space-y-4">
@@ -1471,7 +1471,7 @@ function RrspRoomPanel({ clientId, prefill, person = "primary", primaryLabel = "
               <div key={a.id} className="bg-white border border-gray-200 rounded-xl p-5">
                 <div className="flex items-center justify-between mb-4">
                   <div>
-                    <h3 className="font-bold text-gray-900">{a.label || "RRSP Analysis"}</h3>
+                    <h3 className="font-bold text-gray-900">{a.label || t.plan.rrspAnalysis}</h3>
                     <p className="text-xs text-gray-400 mt-0.5">{new Date(a.createdAt).toLocaleDateString("en-CA")}</p>
                   </div>
                   <div className="flex gap-1">
@@ -1507,7 +1507,7 @@ function RrspRoomPanel({ clientId, prefill, person = "primary", primaryLabel = "
 // PANEL: TFSA Room Calculator
 // ============================================================================
 
-function TfsaRoomPanel({ clientId, prefill, person = "primary", primaryLabel = "Primary", spouseLabel = "Spouse" }: {
+function TfsaRoomPanel({ clientId, prefill, person = "primary", primaryLabel = t.common.primary, spouseLabel = t.common.spouse }: {
   clientId: number; prefill?: any; person?: string; primaryLabel?: string; spouseLabel?: string;
 }) {
   const owner = person === "spouse" ? "spouse" : "primary";
@@ -1571,7 +1571,7 @@ function TfsaRoomPanel({ clientId, prefill, person = "primary", primaryLabel = "
   };
 
   const del = async (id: number) => {
-    if (!confirm("Delete this analysis?")) return;
+    if (!confirm(t.plan.deleteAnalysis)) return;
     await api.delete(`/api/tax/tax-analyses/${id}`);
     await load();
   };
@@ -1592,7 +1592,7 @@ function TfsaRoomPanel({ clientId, prefill, person = "primary", primaryLabel = "
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg">
             <div className="flex items-center justify-between p-5 border-b border-gray-100">
-              <h3 className="text-lg font-bold text-gray-900">{editingId ? "Edit" : "New"} TFSA Analysis — {personLabel}</h3>
+              <h3 className="text-lg font-bold text-gray-900">{editingId ? t.common.edit : t.goals.newGoal} TFSA Analysis — {personLabel}</h3>
               <button onClick={() => setShowForm(false)} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
             </div>
             <div className="p-5 space-y-4">
@@ -1645,7 +1645,7 @@ function TfsaRoomPanel({ clientId, prefill, person = "primary", primaryLabel = "
               <div key={a.id} className="bg-white border border-gray-200 rounded-xl p-5">
                 <div className="flex items-center justify-between mb-4">
                   <div>
-                    <h3 className="font-bold text-gray-900">{a.label || "TFSA Analysis"}</h3>
+                    <h3 className="font-bold text-gray-900">{a.label || t.plan.tfsaAnalysis}</h3>
                     <p className="text-xs text-gray-400 mt-0.5">{new Date(a.createdAt).toLocaleDateString("en-CA")}</p>
                   </div>
                   <div className="flex gap-1">
@@ -1657,7 +1657,7 @@ function TfsaRoomPanel({ clientId, prefill, person = "primary", primaryLabel = "
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                     {[
                       { label: t.plan.availableRoom, value: r.summary?.totalAvailableRoom, color: "teal" },
-                      { label: "30yr TFSA Value", value: r.thirtyYearProjection?.tfsaBalanceFinal, color: "green" },
+                      { label: t.retirement.thirtyYrTfsa, value: r.thirtyYearProjection?.tfsaBalanceFinal, color: "green" },
                       { label: t.plan.tfsaAdvantage, value: r.thirtyYearProjection?.tfsaAdvantage, color: "blue" },
                     ].map(c => (
                       <div key={c.label} className={`bg-${c.color}-50 rounded-xl p-3`}>
@@ -1688,7 +1688,7 @@ function ScenarioCard({ scenario, active, onSelect }: { scenario: any; active: b
         active ? "border-blue-500 bg-blue-50 shadow-sm" : "border-slate-200 bg-white hover:border-blue-300 hover:bg-slate-50"
       }`}
     >
-      <p className="font-semibold text-sm text-slate-900 truncate">{scenario.label || "Unnamed Scenario"}</p>
+      <p className="font-semibold text-sm text-slate-900 truncate">{scenario.label || t.plan.unnamedScenario}</p>
       {scenario.resultData?.summary && (
         <p className="text-xs text-slate-500 mt-1">
           Tax: {`$${Math.round(scenario.resultData.summary.totalLifetimeTax / 1000)}K`}
@@ -1756,12 +1756,12 @@ function AdjustPanel({ open, onClose, form, setForm, t = translations.en }: { op
   );
 }
 
-function TaxProjectionPanel({ clientId, prefillPrimary, prefillSpouse, person = "primary", primaryLabel = "Primary", spouseLabel = "Spouse", t = translations.en }: {
+function TaxProjectionPanel({ clientId, prefillPrimary, prefillSpouse, person = "primary", primaryLabel = t.common.primary, spouseLabel = t.common.spouse, t = translations.en }: {
   clientId: number; prefillPrimary?: any; prefillSpouse?: any;
   person?: string; primaryLabel?: string; spouseLabel?: string; t?: T;
 }) {
   const owner = person === "spouse" ? "spouse" : person === "both" ? "joint" : "primary";
-  const personLabel = person === "spouse" ? spouseLabel : person === "both" ? "Combined" : primaryLabel;
+  const personLabel = person === "spouse" ? spouseLabel : person === "both" ? t.common.combined : primaryLabel;
   const activePrefill = person === "spouse" ? prefillSpouse : prefillPrimary;
   const [analyses, setAnalyses] = useState<any[]>([]);
   const [loading, setLoading]   = useState(true);
@@ -1838,7 +1838,7 @@ function TaxProjectionPanel({ clientId, prefillPrimary, prefillSpouse, person = 
   };
 
   const del = async (id: number) => {
-    if (!confirm("Delete this projection?")) return;
+    if (!confirm(t.common.deleteThisProjection)) return;
     await api.delete(`/api/tax/tax-analyses/${id}`);
     await load();
   };
@@ -1873,7 +1873,7 @@ function TaxProjectionPanel({ clientId, prefillPrimary, prefillSpouse, person = 
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between p-5 border-b border-gray-100">
-              <h3 className="text-lg font-bold text-gray-900">{editingId ? "Edit" : "New"} Scenario — {personLabel}</h3>
+              <h3 className="text-lg font-bold text-gray-900">{editingId ? t.common.edit : t.goals.newGoal} Scenario — {personLabel}</h3>
               <button onClick={() => setShowForm(false)} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
             </div>
             <div className="p-5 space-y-4">
@@ -1994,14 +1994,14 @@ function TaxProjectionPanel({ clientId, prefillPrimary, prefillSpouse, person = 
                 <>
                   <button onClick={() => setShowTable(showTable === activeAnalysis.id ? null : activeAnalysis.id)}
                     className="text-xs font-semibold text-blue-600 hover:underline flex items-center gap-1">
-                    {showTable === activeAnalysis.id ? "▲ Hide" : "▼ Show"} Year-by-Year Table
+                    {showTable === activeAnalysis.id ? t.common.hideShow : t.common.show} Year-by-Year Table
                   </button>
                   {showTable === activeAnalysis.id && (
                     <div className="mt-3 overflow-x-auto border border-gray-200 rounded-xl">
                       <table className="w-full text-xs">
                         <thead className="bg-gray-50">
                           <tr>
-                            {["Year","Age","Phase","Total Income","Fed Tax","Prov Tax","Total Tax","After-Tax","Total Wealth"].map(h => (
+                            {[t.common.year,"Age",t.common.phase,t.dashboard.totalIncome,t.dashboard.fedTax,t.dashboard.provTax,t.dashboard.totalTax,t.common.afterTax,t.dashboard.totalWealth].map(h => (
                               <th key={h} className="px-3 py-2 text-left font-semibold text-gray-500">{h}</th>
                             ))}
                           </tr>
@@ -2052,7 +2052,7 @@ function CapitalGainsPanel({ clientId, client, person = "primary" }: {
 }) {
   const capGains = useCapitalGains(clientId);
   const owner = person === "combined" ? "joint" : person === "spouse" ? "spouse" : "primary";
-  const personLabel = person === "combined" ? "Joint" : person === "spouse" ? (client?.spouseFirstName ?? "Spouse") : (client?.firstName ?? "Primary");
+  const personLabel = person === "combined" ? t.common.joint : person === "spouse" ? (client?.spouseFirstName ?? t.common.spouse) : (client?.firstName ?? t.common.primary);
   const [analyses, setAnalyses] = useState<any[]>([]);
   const [loading, setLoading]   = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -2164,7 +2164,7 @@ function CapitalGainsPanel({ clientId, client, person = "primary" }: {
   };
 
   const del = async (id: number) => {
-    if (!confirm("Delete this analysis?")) return;
+    if (!confirm(t.plan.deleteAnalysis)) return;
     await api.delete(`/api/tax/tax-analyses/${id}`);
     await load();
   };
@@ -2188,7 +2188,7 @@ function CapitalGainsPanel({ clientId, client, person = "primary" }: {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between p-5 border-b border-gray-100">
-              <h3 className="text-lg font-bold text-gray-900">{editingId ? "Edit" : "New"} Capital Gains Analysis — {personLabel}</h3>
+              <h3 className="text-lg font-bold text-gray-900">{editingId ? t.common.edit : t.goals.newGoal} Capital Gains Analysis — {personLabel}</h3>
               <button onClick={() => setShowForm(false)} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
             </div>
             <div className="p-5 space-y-4">
@@ -2295,7 +2295,7 @@ function CapitalGainsPanel({ clientId, client, person = "primary" }: {
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                   {[
                     { label: t.plan.grossGains,        value: totalGain,    color: "text-green-700",  bg: "bg-green-50" },
-                    { label: "Losses + Carry-Fwd", value: totalLoss + Number(form.carryForwardLoss || 0), color: "text-red-600", bg: "bg-red-50" },
+                    { label: t.plan.lossesCarryFwd, value: totalLoss + Number(form.carryForwardLoss || 0), color: "text-red-600", bg: "bg-red-50" },
                     { label: t.plan.lcgeSheltered,     value: lcgeSheltered, color: "text-blue-700",  bg: "bg-blue-50" },
                     { label: t.plan.estTaxOwing,     value: estTax,       color: "text-orange-700", bg: "bg-orange-50" },
                   ].map(c => (
@@ -2339,7 +2339,7 @@ function CapitalGainsPanel({ clientId, client, person = "primary" }: {
               <div key={a.id} className="bg-white border border-gray-200 rounded-xl p-5">
                 <div className="flex items-center justify-between mb-4">
                   <div>
-                    <h3 className="font-bold text-gray-900">{a.label || "Capital Gains Analysis"}</h3>
+                    <h3 className="font-bold text-gray-900">{a.label || t.plan.capitalGainsAnalysis}</h3>
                     <p className="text-xs text-gray-400 mt-0.5">{positions.length} position{positions.length !== 1 ? "s" : ""} · {inp?.province ?? "ON"} · {new Date(a.createdAt).toLocaleDateString("en-CA")}</p>
                   </div>
                   <div className="flex gap-1">
@@ -2352,7 +2352,7 @@ function CapitalGainsPanel({ clientId, client, person = "primary" }: {
                     { label: t.plan.grossGains,    value: gains, color: "text-green-700",  bg: "bg-green-50" },
                     { label: t.plan.netLosses,     value: losses, color: "text-red-600",   bg: "bg-red-50" },
                     { label: t.plan.lcgeSheltered, value: lcge,  color: "text-blue-700",   bg: "bg-blue-50" },
-                    { label: "Est. Tax",       value: tax,   color: "text-orange-700", bg: "bg-orange-50" },
+                    { label: t.plan.estTax,       value: tax,   color: "text-orange-700", bg: "bg-orange-50" },
                   ].map(c => (
                     <div key={c.label} className={`${c.bg} rounded-xl p-3`}>
                       <p className="text-[10px] font-bold text-gray-500 uppercase">{c.label}</p>
@@ -2373,7 +2373,7 @@ function CapitalGainsPanel({ clientId, client, person = "primary" }: {
 // PANEL: Income Splitting Optimizer
 // ============================================================================
 
-function IncomeSplittingPanel({ clientId, prefill, person = "primary", primaryLabel = "Primary", spouseLabel = "Spouse" }: {
+function IncomeSplittingPanel({ clientId, prefill, person = "primary", primaryLabel = t.common.primary, spouseLabel = t.common.spouse }: {
   clientId: number; prefill?: any; person?: string; primaryLabel?: string; spouseLabel?: string;
 }) {
   const [analyses, setAnalyses] = useState<any[]>([]);
@@ -2436,7 +2436,7 @@ function IncomeSplittingPanel({ clientId, prefill, person = "primary", primaryLa
   };
 
   const del = async (id: number) => {
-    if (!confirm("Delete this analysis?")) return;
+    if (!confirm(t.plan.deleteAnalysis)) return;
     await api.delete(`/api/tax/tax-analyses/${id}`);
     await load();
   };
@@ -2459,7 +2459,7 @@ function IncomeSplittingPanel({ clientId, prefill, person = "primary", primaryLa
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg">
             <div className="flex items-center justify-between p-5 border-b border-gray-100">
-              <h3 className="text-lg font-bold text-gray-900">{editingId ? "Edit" : "New"} Income Splitting Analysis</h3>
+              <h3 className="text-lg font-bold text-gray-900">{editingId ? t.common.edit : t.goals.newGoal} Income Splitting Analysis</h3>
               <button onClick={() => setShowForm(false)} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
             </div>
             <div className="p-5 space-y-4">
@@ -2527,7 +2527,7 @@ function IncomeSplittingPanel({ clientId, prefill, person = "primary", primaryLa
               <div key={a.id} className="bg-white border border-gray-200 rounded-xl p-5">
                 <div className="flex items-center justify-between mb-4">
                   <div>
-                    <h3 className="font-bold text-gray-900">{a.label || "Income Splitting"}</h3>
+                    <h3 className="font-bold text-gray-900">{a.label || t.plan.incomeSplitting}</h3>
                     <p className="text-xs text-gray-400 mt-0.5">{new Date(a.createdAt).toLocaleDateString("en-CA")}</p>
                   </div>
                   <div className="flex gap-1">
@@ -2581,8 +2581,8 @@ export function TaxTab({ clientId, client, person: personProp = "primary", t = t
   const ret = (projections as any[])[0] ?? null;
 
   const hasSpouse = !!client?.spouseFirstName;
-  const primaryLabel = client?.firstName ?? "Primary";
-  const spouseLabel  = client?.spouseFirstName ?? "Spouse";
+  const primaryLabel = client?.firstName ?? t.common.primary;
+  const spouseLabel  = client?.spouseFirstName ?? t.common.spouse;
   const { data: taxNwEntries = [] } = useNetWorthEntries(clientId);
 
   function buildPrefill(isPrimary: boolean) {
@@ -2669,7 +2669,7 @@ export function EstateNotesTab({ clientId, planId, client }: { clientId: number;
   const deleteNote = useDeleteEstatePlanningNote(clientId);
   const [showAdd, setShowAdd] = useState(false);
   const [form, setForm] = useState({ category: t.plan.will, title: "", content: "" });
-  const categories = ["Will", "Power of Attorney", "Trust", "Beneficiary Designations", "Estate Tax", "Succession Planning", "Charitable Giving", "Other"];
+  const categories = ["Will", "Power of Attorney", "Trust", "Beneficiary Designations", "Estate Tax", "Succession Planning", "Charitable Giving", t.common.other];
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -2690,7 +2690,7 @@ export function EstateNotesTab({ clientId, planId, client }: { clientId: number;
           <div key={n.id} className="border border-border rounded-2xl p-6 hover:shadow-md transition-shadow group" data-testid={`card-fp-estate-${n.id}`}>
             <div className="flex justify-between items-start">
               <span className="text-xs font-semibold text-indigo-600 uppercase bg-indigo-50 px-2 py-1 rounded-lg">{n.category}</span>
-              <button onClick={() => { if (confirm("Delete?")) deleteNote.mutate(n.id); }} data-testid={`button-fp-del-estate-${n.id}`} className="opacity-0 group-hover:opacity-100 p-2 hover:bg-red-50 rounded-lg"><Trash2 className="w-4 h-4 text-red-400" /></button>
+              <button onClick={() => { if (confirm(t.common.deleteConfirm)) deleteNote.mutate(n.id); }} data-testid={`button-fp-del-estate-${n.id}`} className="opacity-0 group-hover:opacity-100 p-2 hover:bg-red-50 rounded-lg"><Trash2 className="w-4 h-4 text-red-400" /></button>
             </div>
             <h3 className="text-lg font-bold mt-3">{n.title}</h3>
             <p className="text-sm text-muted-foreground mt-2 whitespace-pre-wrap">{n.content}</p>
@@ -2764,7 +2764,7 @@ export function AITab({ clientId, t = translations.en }: { clientId: number; t?:
     });
 
 const deleteSession = async (runId: string) => {
-  if (!confirm("Delete all recommendations in this session?")) return;
+  if (!confirm(t.plan.deleteRecsSession)) return;
   try {
     if (runId === "legacy") {
       const legacyRecs = (recommendations as any[]).filter((r: any) => !r.runId);
@@ -2844,7 +2844,7 @@ const deleteSession = async (runId: string) => {
         const sorted  = [...recs].sort((a, b) => (priorityOrder[a.priority] ?? 1) - (priorityOrder[b.priority] ?? 1));
         const isLegacy = runId === "legacy" || !recs[0]?.runId;
         const dateStr = isLegacy || !date
-          ? "Previous recommendations"
+          ? t.plan.previousRecs
           : date.toLocaleDateString("en-CA", { weekday: "short", year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
 
         return (
@@ -2913,7 +2913,7 @@ const deleteSession = async (runId: string) => {
                         {rec.status === "completed" && (
                           <button onClick={() => updateRec.mutate({ id: rec.id, data: { status: "pending" } })} className="text-xs px-2.5 py-1 rounded-lg bg-muted text-muted-foreground font-medium hover:bg-muted/80">Reopen</button>
                         )}
-                        <button onClick={() => { if (confirm("Delete this recommendation?")) deleteRec.mutate(rec.id); }} data-testid={`button-fp-del-ai-${rec.id}`} className="p-1 hover:bg-red-50 rounded ml-1"><Trash2 className="w-3 h-3 text-red-400" /></button>
+                        <button onClick={() => { if (confirm(t.plan.deleteRec)) deleteRec.mutate(rec.id); }} data-testid={`button-fp-del-ai-${rec.id}`} className="p-1 hover:bg-red-50 rounded ml-1"><Trash2 className="w-3 h-3 text-red-400" /></button>
                       </div>
                     </div>
                   </div>
@@ -2991,10 +2991,10 @@ const { data: plans = [] } = useClientPlans(selectedClientId ?? 0);
               <t.icon className="w-4 h-4 flex-shrink-0" />
               <span className="truncate">{t.label}</span>
               {staleTabKeys.has(t.key) && (
-                <span className="ml-auto flex-shrink-0 w-2 h-2 rounded-full bg-amber-500 animate-pulse" title="Data has changed — review needed" data-testid={`stale-indicator-${t.key}`} />
+                <span className="ml-auto flex-shrink-0 w-2 h-2 rounded-full bg-amber-500 animate-pulse" title={t.common.dataChanged} data-testid={`stale-indicator-${t.key}`} />
               )}
               {!staleTabKeys.has(t.key) && recalculatedTabKeys.has(t.key) && (
-                <span className="ml-auto flex-shrink-0 w-2 h-2 rounded-full bg-blue-500" title="Recently recalculated" data-testid={`recalculated-indicator-${t.key}`} />
+                <span className="ml-auto flex-shrink-0 w-2 h-2 rounded-full bg-blue-500" title={t.common.recentlyRecalc} data-testid={`recalculated-indicator-${t.key}`} />
               )}
             </button>
           ))}
@@ -3024,7 +3024,7 @@ const { data: plans = [] } = useClientPlans(selectedClientId ?? 0);
               <div className="flex gap-1 mb-5 bg-muted/40 rounded-xl p-1 border border-border w-fit">
                 <button onClick={() => setPerson("primary")}
                   className={`px-4 py-1.5 rounded-lg text-sm font-semibold transition-colors ${person === "primary" ? "bg-white shadow text-[#0c1e3a] border border-border" : "text-muted-foreground hover:text-foreground"}`}>
-                  {(selectedClient as any).firstName ?? "Client"}
+                  {(selectedClient as any).firstName ?? t.common.primary}
                 </button>
                 {(selectedClient as any).spouseFirstName && (
                   <button onClick={() => setPerson("spouse")}

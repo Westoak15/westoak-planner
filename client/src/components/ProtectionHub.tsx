@@ -32,7 +32,7 @@ const fmt$ = (n: number) =>
 
 function annualPremium(p: Policy): number {
   const v = parseFloat(p.premium || "0");
-  const mult: Record<string, number> = { Monthly: 12, Quarterly: 4, "Semi-Annual": 2, Annual: 1 };
+  const mult: Record<string, number> = { Monthly: 12, Quarterly: 4, t.insurance.freqSemiAnnual: 2, Annual: 1 };
   return v * (mult[p.premiumFrequency] ?? 12);
 }
 
@@ -99,7 +99,7 @@ export function ProtectionHub({ clientId, client, person, onPersonChange, t = tr
         personToggle={{
           person,
           onPersonChange,
-          primaryLabel: client?.firstName ?? "Primary",
+          primaryLabel: client?.firstName ?? t.common.primary,
           spouseLabel,
           showCombined: false,
         }}

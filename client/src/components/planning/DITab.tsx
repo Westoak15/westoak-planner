@@ -271,7 +271,7 @@ export function DITab({ clientId, client, t = translations.en }: Props) {
   }
 
   async function handleDelete(id: number) {
-    if (!confirm("Delete this DI analysis?")) return;
+    if (!confirm(t.di.deleteAnalysis)) return;
     await fetch(`/api/clients/${clientId}/di-analyses/${id}`, { ...opts, method: "DELETE" });
     setAnalyses(prev => prev.filter(a => a.id !== id));
   }
@@ -398,7 +398,7 @@ export function DITab({ clientId, client, t = translations.en }: Props) {
             <button onClick={handleSave} disabled={saving}
               className="w-full flex items-center justify-center gap-2 py-2.5 bg-[#0c1e3a] hover:bg-[#0e2a4a] text-white text-sm font-semibold rounded-xl disabled:opacity-50 transition-colors">
               <Save className="w-4 h-4" />
-              {saving ? "Saving…" : editing ? t.di.updateAnalysis : t.di.saveAnalysis}
+              {saving ? t.common.savingEllipsis : editing ? t.di.updateAnalysis : t.di.saveAnalysis}
             </button>
           </div>
 
@@ -449,7 +449,7 @@ export function DITab({ clientId, client, t = translations.en }: Props) {
                   { label: t.di.groupDiGross,             value: fmt$(r.existing.groupGross) + "/mo" },
                   { label: `Group DI (after ${Math.round(r.taxTreatment.groupEffectiveRate * 100)}% tax)`,
                     value: fmt$(r.existing.groupAfterTax) + "/mo",
-                    note: r.taxTreatment.groupTaxable ? t.di.taxable : "tax-free — employee-paid" },
+                    note: r.taxTreatment.groupTaxable ? t.di.taxable : t.common.taxFreeEmployeePaid },
                   { label: t.di.individualDi2,                value: fmt$(r.existing.individual) + "/mo", note: t.di.taxFree },
                   { label: t.di.cppDisAfterTax,   value: fmt$(r.existing.cppDisability) + "/mo" },
                   { label: t.di.totalExisting,      value: fmt$(r.existing.totalAfterTax) + "/mo", bold: true, color: r.isAdequate ? "#16a34a" : "#dc2626" },

@@ -169,7 +169,7 @@ function SelfInsureChart({ result, currentAge }: { result: LTCResult; currentAge
       <BarChart data={data} margin={{ top: 4, right: 8, left: 0, bottom: 4 }}>
         <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
         <XAxis dataKey="age" tick={{ fontSize: 10, fill: "#94A3B8" }}
-          label={{ value: "Age", position: "insideBottom", offset: -2, fontSize: 10, fill: "#94A3B8" }} />
+          label={{ value: t.ltc.ageLabel, position: "insideBottom", offset: -2, fontSize: 10, fill: "#94A3B8" }} />
         <YAxis tickFormatter={v => "$" + Math.round(v / 1000) + "K"} tick={{ fontSize: 10, fill: "#94A3B8" }} width={52} />
         <Tooltip formatter={(v: any) => "$" + Math.round(v).toLocaleString()} />
         <Bar dataKey="premiums"  name={t.ltc.cumulativePremiums2} fill="#0891b2" radius={[2,2,0,0]} />
@@ -326,7 +326,7 @@ export function LTCTab({ clientId, client, t = translations.en }: Props) {
   }
 
   async function handleDelete(id: number) {
-    if (!confirm("Delete this LTC analysis?")) return;
+    if (!confirm(t.ltc.deleteAnalysis)) return;
     await fetch(`/api/clients/${clientId}/ltc-analyses/${id}`, { ...opts, method: "DELETE" });
     setAnalyses(prev => prev.filter(a => a.id !== id));
   }
@@ -448,7 +448,7 @@ export function LTCTab({ clientId, client, t = translations.en }: Props) {
             <div className="grid grid-cols-2 gap-3">
               <Field label={t.ltc.annualPremium}>
                 <Input type="number" value={form.estAnnualPremium} onChange={set("estAnnualPremium")} prefix="$"
-                  placeholder="0 = estimate" />
+                  placeholder={t.ltc.estimatePlaceholder} />
               </Field>
               <Field label={t.ltc.careCostInflation}>
                 <Input type="number" value={form.careCostInflation} onChange={set("careCostInflation")} min={0} max={10} step={0.5} prefix="%" />
@@ -481,7 +481,7 @@ export function LTCTab({ clientId, client, t = translations.en }: Props) {
             <button onClick={handleSave} disabled={saving}
               className="w-full flex items-center justify-center gap-2 py-2.5 bg-[#0c1e3a] hover:bg-[#0e2a4a] text-white text-sm font-semibold rounded-xl disabled:opacity-50 transition-colors">
               <Save className="w-4 h-4" />
-              {saving ? "Saving…" : editing ? t.ltc.updateAnalysis : t.ltc.saveAnalysis}
+              {saving ? t.common.savingEllipsis : editing ? t.ltc.updateAnalysis : t.ltc.saveAnalysis}
             </button>
           </div>
 
@@ -515,7 +515,7 @@ export function LTCTab({ clientId, client, t = translations.en }: Props) {
                     sub={`~${r.poolDuration.at80pctRate.toFixed(1)} yrs at 80% use`} />
                   <StatCard label={t.ltc.breakEvenAge}
                     value={r.breakEvenAge < 95 ? `Age ${r.breakEvenAge}` : t.ltc.beyond95}
-                    sub={r.breakEvenAge < 95 ? `${r.breakEvenYears} yrs from now` : "Premiums < care cost"}
+                    sub={r.breakEvenAge < 95 ? `${r.breakEvenYears} yrs from now` : t.ltc.premiumsLessThanCare}
                     color={r.breakEvenAge < form.estClaimAge ? "#16a34a" : "#d97706"} />
                 </div>
 

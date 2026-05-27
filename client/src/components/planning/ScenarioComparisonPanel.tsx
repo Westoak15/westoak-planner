@@ -280,7 +280,7 @@ function buildRows(years: YearData[][], projections: Projection[], engineData: R
       fmt: fmt$, higher: true,
     },
     {
-      key: "gov",        label: "Guaranteed Income at Retirement (CPP+OAS+Pension, $/yr)",
+      key: "gov",        label: t.scenarioComparison.guaranteedIncome,
       get: (p: Projection, i: number) => {
         const eng = engineData[p.id!]?.summary;
         return eng?.guaranteedIncomeAtRet ?? years[i]?.find(y => y.isRetired)?.govIncome ?? 0;
@@ -471,7 +471,7 @@ export function ScenarioComparisonPanel({ clientId, onClose, t = translations.en
     setSaving(true);
     try {
       await api.post(`/api/clients/${clientId}/scenario-comparisons`, {
-        label: savedLabel || "Scenario Comparison",
+        label: savedLabel || t.scenarioComparison.title,
         scenarioIds: selected,
       });
       setSaved(true);
@@ -553,7 +553,7 @@ export function ScenarioComparisonPanel({ clientId, onClose, t = translations.en
           <div className="flex items-center justify-between px-6 py-4 border-t border-gray-100">
             <p className="text-sm text-gray-400">
               {selected.length === 0 ? t.scenarioComparison.selectTwo :
-               selected.length === 1 ? "Select 1 more to compare" :
+               selected.length === 1 ? t.scenarioComparison.selectMore2 :
                `${selected.length} selected — ready`}
             </p>
             <div className="flex gap-3">
@@ -724,7 +724,7 @@ export function ScenarioComparisonPanel({ clientId, onClose, t = translations.en
                   <table className="text-xs w-full min-w-[700px]">
                     <thead>
                       <tr className="bg-gray-100">
-                        <th className="px-3 py-2 text-left font-semibold text-gray-500">Age</th>
+                        <th className="px-3 py-2 text-left font-semibold text-gray-500">{t.ltc.ageLabel}</th>
                         {compared.map((p, i) => (
                           <th key={i} colSpan={4} className="px-3 py-2 text-center font-bold border-l border-gray-200"
                             style={{ color: COLORS[i] }}>

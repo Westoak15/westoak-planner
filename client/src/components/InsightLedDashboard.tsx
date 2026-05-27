@@ -253,7 +253,7 @@ export function InsightLedDashboard({ clientId, client, onNavigate, t = translat
       })
       .catch((err) => {
         if (!alive) return;
-        setErrMsg(err?.message || "Failed to load dashboard data");
+        setErrMsg(err?.message || t.dashboard.failedLoad);
         setStatus("error");
       });
     return () => { alive = false; };
@@ -262,11 +262,11 @@ export function InsightLedDashboard({ clientId, client, onNavigate, t = translat
   const headerInfo = useMemo(() => {
     const a1 = ageFromDob(client.dateOfBirth);
     const a2 = ageFromDob(client.spouseDateOfBirth);
-    const ages = a1 != null && a2 != null ? `Ages ${a1} & ${a2}` : a1 != null ? `Age ${a1}` : "Ages —";
+    const ages = a1 != null && a2 != null ? `Ages ${a1} & ${a2}` : a1 != null ? `Age ${a1}` : t.common.ageShort;
     const inc1 = Number(client.annualIncome ?? 0);
     const inc2 = Number(client.spouseAnnualIncome ?? 0);
     const totalIncome = inc1 + inc2;
-    const incomeStr = totalIncome > 0 ? `Income ${formatCompact(totalIncome)}/yr` : "Income —";
+    const incomeStr = totalIncome > 0 ? `Income ${formatCompact(totalIncome)}/yr` : t.common.incomeShort;
     const fullName = client.spouseFirstName
       ? `${client.firstName} & ${client.spouseFirstName} ${client.lastName}`
       : `${client.firstName} ${client.lastName}`;
@@ -276,7 +276,7 @@ export function InsightLedDashboard({ clientId, client, onNavigate, t = translat
   const trendData = useMemo(() => {
     if (!ov) return [];
     const current = ov.netWorth || 0;
-    const years = ["2020", "2021", "2022", "2023", "2024", "Current"];
+    const years = ["2020", "2021", "2022", "2023", "2024", t.dashboard.currentLabel];
     return years.map((label, i) => ({
       year: label,
       value: Math.round(current * (0.6 + (i / (years.length - 1)) * 0.4)),
@@ -300,7 +300,7 @@ export function InsightLedDashboard({ clientId, client, onNavigate, t = translat
     const totalAssets = safeNum(ov?.totalAssets);
     if (totalAssets <= 0) return 0;
     const investable = nw
-      .filter(e => e.type === "asset" && ["RRSP", "TFSA", "Non-Registered"].includes(e.category))
+      .filter(e => e.type === "asset" && ["RRSP", "TFSA", t.dashboard.nonRegistered].includes(e.category))
       .reduce((s, e) => s + safeNum(e.value), 0);
     const pct = Math.round((investable / totalAssets) * 100);
     return Number.isFinite(pct) ? pct : 0;
@@ -333,7 +333,7 @@ export function InsightLedDashboard({ clientId, client, onNavigate, t = translat
       <div className="fp-insightled flex items-center justify-center h-full">
         <div className="fp-insightled-card p-6 max-w-md text-center">
           <div className="text-[var(--accent-rose)] text-sm font-bold mb-2">{t.dashboard.couldNotLoad}</div>
-          <div className="text-[var(--text-secondary)] text-xs">{errMsg || "Please retry or check the network connection."}</div>
+          <div className="text-[var(--text-secondary)] text-xs">{errMsg || t.dashboard.pleaseRetry}</div>
         </div>
       </div>
     );

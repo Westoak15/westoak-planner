@@ -178,7 +178,7 @@ function OverviewTab({ clientId, onTabChange }: { clientId: number; onTabChange?
 const NW_CAT_COLORS: Record<string, string> = {
   "Liquid Assets": "#3b82f6", "Registered Investments (RRSP/TFSA)": "#10b981",
   "Non-Registered Investments": "#8b5cf6", "Real Estate": "#f59e0b",
-  "Business Assets": "#ef4444", "Personal Property": "#06b6d4", t.common.other: "#94a3b8",
+  "Business Assets": "#ef4444", "Personal Property": "#06b6d4", "Other": "#94a3b8",
   "Mortgages": "#dc2626", "Car Loans": "#f97316", "Student Loans": "#a78bfa",
   "Credit Cards": "#fb7185", "Lines of Credit": "#fbbf24", "Business Loans": "#64748b",
   "Other Liabilities": "#94a3b8",

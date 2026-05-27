@@ -252,7 +252,7 @@ function buildNarrative(
 
 // ── Summary row config ────────────────────────────────────────────────────────
 
-function buildRows(years: YearData[][], projections: Projection[], engineData: Record<number, any>, t: T, t) {
+function buildRows(years: YearData[][], projections: Projection[], engineData: Record<number, any>, t: T) {
   return [
     {
       key: "retAge",     label: t.scenarioComparison.retirementAge,

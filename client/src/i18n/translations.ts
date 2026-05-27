@@ -2103,7 +2103,7 @@ export const translations = {
       monthlyVsExpenses:  "Revenus mensuels vs dépenses",
       monthlyAmountLbl:   "Montant mensuel ($)",
       descriptionOptional: "Description (optionnel)",
-      morcaire...",
+      mortgagePlaceholder: "ex. Paiement hypothécaire...",
       retirementPlanning: "Planification retraite",
       essentialExpense:   "Dépense essentielle",
       includeInRetirement: "Inclure dans les besoins de revenu de retraite",

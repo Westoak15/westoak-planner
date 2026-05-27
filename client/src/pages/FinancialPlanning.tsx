@@ -1,3 +1,4 @@
+import { useLocale } from '../hooks/useLocale';
 import { toast } from "@/hooks/use-toast";
 import { translations, type T } from "../i18n/translations";
 import { TranscriptRecorderTrigger } from "../components/MeetingRecorder";
@@ -1150,7 +1151,6 @@ function DebtTab({ clientId, planId }: { clientId: number; planId: number | null
 // ============================================================================
 
 import type {
-import { useLocale } from '../hooks/useLocale';
   TaxProjectionResult,
   RrspRoomResult,
   TfsaRoomResult,

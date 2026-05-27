@@ -1,3 +1,4 @@
+import { useLocale } from '../hooks/useLocale';
 /**
  * MultiEntryTabs.tsx
  * Net Worth, Retirement, Insurance, RESP, Debt tabs

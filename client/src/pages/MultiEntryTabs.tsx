@@ -157,7 +157,7 @@ type NWDraft = {
   includeInDebt: boolean;
 };
 
-function emptyDraft(type: "asset"|"liability"): NWDraft {
+function emptyDraft(type: "asset"|"liability", t = translations.en as T): NWDraft {
   return {
     type, category: type === "asset" ? "Principal Residence" : t.netWorth.mortgage,
     name: "", owner: "primary", value: "", notes: "",
@@ -362,6 +362,8 @@ function AssetRow({
   entry: NWEntry; onEdit: () => void; onDelete: () => void;
   ownerLabel: string; metaBadge: React.ReactNode; isAsset: boolean;
 }) {
+  const { locale } = useLocale();
+  const t = translations[locale as "en"|"fr"] ?? translations.en;
   return (
     <div className="group flex justify-between items-center px-5 py-3 hover:bg-slate-50 transition-colors border-b border-slate-50 last:border-0">
       <div>
@@ -389,7 +391,7 @@ function AssetRow({
 }
 
 // ── normalizeCat — remap legacy category names ────────────────────────────────
-function normalizeCat(e: NWEntry): NWEntry {
+function normalizeCat(e: NWEntry, t = translations.en as T): NWEntry {
   if (e.category === "ESU" || e.category === "RSU")
     return { ...e, category: t.netWorth.employerStockOptions, metadata: { ...(e.metadata ?? {}), stockOptionType: e.category } };
   if (e.category === t.netWorth.realEstate2)
@@ -1005,6 +1007,8 @@ type RetDraft = {
 };
 
 export function RetirementTab({ clientId, client, person = "primary" }: { clientId: number; client?: any; person?: string }) {
+  const { locale } = useLocale();
+  const t = translations[locale as "en"|"fr"] ?? translations.en;
   const calcAge = useCallback((dob: string | null) => 
   dob ? Math.floor((Date.now() - new Date(dob).getTime()) / (365.25 * 24 * 60 * 60 * 1000)) : null
 , []);
@@ -1456,6 +1460,8 @@ type InsDraft = { method: string; annualIncome: string; yearsToReplace: string; 
 const emptyIns = (): InsDraft => ({ method:"dime", annualIncome:"", yearsToReplace:"20", existingLifeCoverage:"", existingDisability:"", existingCriticalIllness:"", notes:"" });
 
 export function InsuranceTab({ clientId }: { clientId: number }) {
+  const { locale } = useLocale();
+  const t = translations[locale as "en"|"fr"] ?? translations.en;
   const [rows, setRows]     = useState<InsuranceRec[]>([]);
   const [drafts, setDrafts] = useState<InsDraft[]>([]);
   const [saving, setSaving] = useState(false);

@@ -1,3 +1,4 @@
+import { useLocale } from "../hooks/useLocale";
 import { useState, useEffect, useMemo } from "react";
 import React from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -208,6 +209,8 @@ function EditableField({ label, value, onSave, type = "text", format, placeholde
   onSave: (v: string) => void;
   type?: "text" | "number";
   format?: (v: string) => string;
+  const { locale } = useLocale();
+  const t = translations[locale as "en"|"fr"] ?? translations.en;
   placeholder?: string;
 }) {
   const [editing, setEditing] = useState(false);

@@ -16,6 +16,7 @@ import {
   ArrowRight, Zap, Eye, EyeOff,
 } from "lucide-react";
 import { api } from "../lib/api";
+import { useLocale } from '../hooks/useLocale';
 import { translations, type T } from "../i18n/translations";
 import { toast } from "@/hooks/use-toast";
 import { PolicyImporter } from "../components/PolicyImporter";
@@ -98,7 +99,7 @@ function annualPremium(p: Policy): number {
   return v * (FREQ_MULT[p.premiumFrequency] ?? 12);
 }
 
-function policyRiskLevel(p: Policy): "low" | "medium" | "high" {
+function policyRiskLevel(p: Policy, t = translations.en as T): "low" | "medium" | "high" {
   const cov = parseFloat(p.coverageAmount || "0");
   if (p.type.includes(t.insurance.disability) || p.type.includes(t.insurance.criticalIllness)) {
     return cov > 0 ? "low" : "high";
@@ -180,6 +181,8 @@ function PolicyRow({
   onDelete: (id: number) => Promise<void>;
   defaultExpanded?: boolean;
 }) {
+  const { locale } = useLocale();
+  const t = translations[locale as "en"|"fr"] ?? translations.en;
   const [expanded, setExpanded]   = useState(defaultExpanded);
   const [editing,  setEditing]    = useState(false);
   const [form,     setForm]       = useState({ ...policy });
@@ -415,6 +418,8 @@ function GroupedPolicies({ policies, onSave, onDelete }: {
   onSave: (p: Policy) => Promise<void>;
   onDelete: (id: number) => Promise<void>;
 }) {
+  const { locale } = useLocale();
+  const t = translations[locale as "en"|"fr"] ?? translations.en;
   // Group by carrier, then by type within each carrier
   const groups = policies.reduce<Record<string, Record<string, Policy[]>>>((acc, p) => {
     const carrier = p.carrier?.trim() || t.insurance.noCarrier;

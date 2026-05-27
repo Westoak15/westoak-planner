@@ -252,7 +252,7 @@ function buildNarrative(
 
 // ── Summary row config ────────────────────────────────────────────────────────
 
-function buildRows(years: YearData[][], projections: Projection[], engineData: Record<number, any>) {
+function buildRows(years: YearData[][], projections: Projection[], engineData: Record<number, any>, t: T, t) {
   return [
     {
       key: "retAge",     label: t.scenarioComparison.retirementAge,
@@ -446,7 +446,7 @@ export function ScenarioComparisonPanel({ clientId, onClose, t = translations.en
     [compared, yearlyData, bestIdx]
   );
 
-  const rows = useMemo(() => buildRows(yearlyData, compared, engineData), [yearlyData, compared, engineData]);
+  const rows = useMemo(() => buildRows(yearlyData, compared, engineData, t), [yearlyData, compared, engineData]);
 
   // Chart data — net worth by age across all scenarios
   const chartData = useMemo(() => {

@@ -144,7 +144,8 @@ export const translations = {
        saved:                 "Saved",
        removed:               "Removed",
        currentAge:            "Current Age",
-       lifeExpectancy:        "Life Expectancy",},
+       lifeExpectancy:        "Life Expectancy",
+       province:              "Province",},
 
     // ── Net Worth ──────────────────────────────────────────────────────────────
     netWorth: {
@@ -1534,7 +1535,8 @@ export const translations = {
        saved:                 "Sauvegardé",
        removed:               "Retiré",
        currentAge:            "Âge actuel",
-       lifeExpectancy:        "Espérance de vie",},
+       lifeExpectancy:        "Espérance de vie",
+       province:              "Province",},
 
     // ── Net Worth ──────────────────────────────────────────────────────────────
     netWorth: {

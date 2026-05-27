@@ -99,6 +99,7 @@ async function openReport(clientId: number, type: "comprehensive" | "retirement"
 // ── Overview Tab ──────────────────────────────────────────────────────────────
 
 function OverviewTab({ clientId, onTabChange }: { clientId: number; onTabChange?: (t: TabKey) => void }) {
+  const t = translations[useLocale().locale as "en"|"fr"] ?? translations.en;
   const { data: overview, isLoading } = useFinancialPlanningOverview(clientId);
   const { data: reports } = useAvailableReports(clientId);
   const [generatingReport, setGeneratingReport] = useState<string | null>(null);
@@ -185,6 +186,7 @@ const NW_CAT_COLORS: Record<string, string> = {
 };
 
 function NetWorthItem({ item, onUpdate, onDelete }: { item: any; onUpdate: (id: number, data: any) => void; onDelete: (id: number) => void }) {
+  const t = translations[useLocale().locale as "en"|"fr"] ?? translations.en;
   const isAsset = item.type === "asset";
   const val = parseFloat(item.value || "0");
   const fmtVal = (n: number) => `$${Math.round(n).toLocaleString("en-CA")}`;
@@ -222,6 +224,7 @@ function NetWorthItem({ item, onUpdate, onDelete }: { item: any; onUpdate: (id: 
 function NetWorthSection({ title, total, color, isAsset, children, onAdd }: {
   title: string; total: number; color: string; isAsset: boolean; children: React.ReactNode; onAdd: () => void;
 }) {
+  const t = translations[useLocale().locale as "en"|"fr"] ?? translations.en;
   const [open, setOpen] = useState(true);
   const fmtVal = (n: number) => `$${Math.round(n).toLocaleString("en-CA")}`;
   return (
@@ -252,6 +255,7 @@ function NetWorthSection({ title, total, color, isAsset, children, onAdd }: {
 }
 
 export function NetWorthTab({ clientId }: { clientId: number }) {
+  const t = translations[useLocale().locale as "en"|"fr"] ?? translations.en;
   const { sub } = useContext(NWSubtabCtx);
   const { data: rawEntries = [] } = useNetWorthEntries(clientId);
   const entries = rawEntries as any[];
@@ -468,6 +472,7 @@ export function NetWorthTab({ clientId }: { clientId: number }) {
 // ── Scenario preview for module tabs ─────────────────────────────────────────
 
 function ModuleScenarioPreview({ planId, module }: { planId: number | null; module: string }) {
+  const t = translations[useLocale().locale as "en"|"fr"] ?? translations.en;
   const { data: simResults = [] } = useSimulationResults(planId);
   const moduleResults = simResults.filter(r => r.module === module);
   if (moduleResults.length === 0) return null;
@@ -548,6 +553,7 @@ function AssetRowImpl({ label, value, onValueChange, useIt, onToggle, testId }: 
 }
 
 export function InsuranceTab({ clientId, planId, client }: { clientId: number; planId: number | null; client?: any }) {
+  const t = translations[useLocale().locale as "en"|"fr"] ?? translations.en;
   const { data: analyses = [] } = useInsuranceAnalyses(clientId);
   const { data: nwEntries = [] } = useNetWorthEntries(clientId);
   const [policies, setPolicies] = useState<any[]>([]);
@@ -580,7 +586,7 @@ function buildDefaultFromNW() {
     nwEntries.filter((e: any) => e.type === type && e.category === category && (!owner || e.owner === owner))
              .reduce((s: number, e: any) => s + parseFloat(e.value || "0"), 0);
   const policySum = (insured: string) =>
-    policies.filter((p: any) => p.insured === insured && [t.plan.insurance2,"Term Life","Whole Life","Universal Life"].includes(p.type))
+    policies.filter((p: any) => p.insured === insured && ["Life","Term Life","Whole Life","Universal Life"].includes(p.type))
             .reduce((s: number, p: any) => s + parseFloat(p.coverageAmount || "0"), 0);
   return {
     liabilities: {
@@ -592,7 +598,7 @@ function buildDefaultFromNW() {
       emergencyFund:   "0",
     },
     primaryAssets: {
-      liquidSavings:      String(sum("asset", t.dashboard.cashBank, "primary")),
+      liquidSavings:      String(sum("asset", "Cash/Bank", "primary")),
       rrsps:              String(sum("asset", "RRSP", "primary")),
       rrspsUse:           true,
       nonRegistered:      String(sum("asset", "Non-Registered", "primary")),
@@ -602,7 +608,7 @@ function buildDefaultFromNW() {
       other:              "0",
     },
     spouseAssets: {
-      liquidSavings:      String(sum("asset", t.dashboard.cashBank, "spouse")),
+      liquidSavings:      String(sum("asset", "Cash/Bank", "spouse")),
       rrsps:              String(sum("asset", "RRSP", "spouse")),
       rrspsUse:           true,
       nonRegistered:      String(sum("asset", "Non-Registered", "spouse")),
@@ -669,7 +675,7 @@ function buildDefaultFromNW() {
       <div className="flex justify-between items-center">
         <h2 className="text-xl font-display font-bold">Insurance Needs Analysis</h2>
         <button onClick={() => { 
-           console.log("policies at click:", policies.length, "sum:", policies.filter((p:any) => [t.plan.insurance2,"Term Life","Whole Life","Universal Life"].includes(p.type) && p.insured==="primary").reduce((s:number,p:any)=>s+parseFloat(p.coverageAmount||"0"),0));
+           console.log("policies at click:", policies.length, "sum:", policies.filter((p:any) => ["Life","Term Life","Whole Life","Universal Life"].includes(p.type) && p.insured==="primary").reduce((s:number,p:any)=>s+parseFloat(p.coverageAmount||"0"),0));
            setForm({ ...defaultWs, ...buildDefaultFromNW(), primaryName: client ? `${client.firstName} ${client.lastName}` : "", primaryAge: client?.dateOfBirth ? String(new Date().getFullYear() - new Date(client.dateOfBirth).getFullYear()) : "", primaryAnnualIncome: client?.annualIncome ? String(client.annualIncome) : "", spouseName: client?.spouseFirstName ? `${client.spouseFirstName} ${client.spouseLastName ?? ""}`.trim() : "", spouseAge: client?.spouseDateOfBirth ? String(new Date().getFullYear() - new Date(client.spouseDateOfBirth).getFullYear()) : "", spouseAnnualIncome: client?.spouseFirstName && client?.spouseAnnualIncome ? String(client.spouseAnnualIncome) : "" }); setViewingId(null); setShowWorksheet(true); }}
           data-testid="button-fp-add-insurance"
           className="flex items-center space-x-2 px-4 py-2 bg-secondary text-secondary-foreground font-semibold rounded-xl hover:bg-secondary/90 transition-colors shadow-sm">
@@ -964,6 +970,7 @@ function buildDefaultFromNW() {
 // ── RESP Tab ──────────────────────────────────────────────────────────────────
 
 function RESPTab({ clientId, planId }: { clientId: number; planId: number | null }) {
+  const t = translations[useLocale().locale as "en"|"fr"] ?? translations.en;
   const { data: savings = [] } = useEducationSavings(clientId);
   const { data: simResults = [] } = useSimulationResults(planId);
   const createSaving = useCreateEducationSaving();
@@ -1049,6 +1056,7 @@ function RESPTab({ clientId, planId }: { clientId: number; planId: number | null
 // ── Debt Tab ──────────────────────────────────────────────────────────────────
 
 function DebtTab({ clientId, planId }: { clientId: number; planId: number | null }) {
+  const t = translations[useLocale().locale as "en"|"fr"] ?? translations.en;
   const { data: debts = [] } = useDebtEntries(clientId);
   const createDebt = useCreateDebtEntry();
   const deleteDebt = useDeleteDebtEntry(clientId);
@@ -1142,6 +1150,7 @@ function DebtTab({ clientId, planId }: { clientId: number; planId: number | null
 // ============================================================================
 
 import type {
+import { useLocale } from '../hooks/useLocale';
   TaxProjectionResult,
   RrspRoomResult,
   TfsaRoomResult,
@@ -1168,6 +1177,7 @@ function makeTaxSubTabs(t: T): Array<{ key: TaxSubTab; label: string }> {
 // ============================================================================
 
 function TaxNotesPanel({ clientId }: { clientId: number }) {
+  const t = translations[useLocale().locale as "en"|"fr"] ?? translations.en;
   const { data: notes = [] } = useTaxPlanningNotes(clientId);
   const createNote = useCreateTaxPlanningNote();
   const deleteNote = useDeleteTaxPlanningNote(clientId);
@@ -1681,6 +1691,7 @@ function TfsaRoomPanel({ clientId, prefill, person = "primary", primaryLabel = t
 // ============================================================================
 
 function ScenarioCard({ scenario, active, onSelect }: { scenario: any; active: boolean; onSelect: () => void }) {
+  const t = translations[useLocale().locale as "en"|"fr"] ?? translations.en;
   return (
     <div
       onClick={onSelect}
@@ -2050,6 +2061,7 @@ const PROVINCE_RATES: Record<string, number> = {
 function CapitalGainsPanel({ clientId, client, person = "primary" }: {
   clientId: number; client?: any; person?: string;
 }) {
+  const t = translations[useLocale().locale as "en"|"fr"] ?? translations.en;
   const capGains = useCapitalGains(clientId);
   const owner = person === "combined" ? "joint" : person === "spouse" ? "spouse" : "primary";
   const personLabel = person === "combined" ? t.common.joint : person === "spouse" ? (client?.spouseFirstName ?? t.common.spouse) : (client?.firstName ?? t.common.primary);
@@ -2663,6 +2675,7 @@ export function TaxTab({ clientId, client, person: personProp = "primary", t = t
 // ── Estate Tab ────────────────────────────────────────────────────────────────
 
 export function EstateNotesTab({ clientId, planId, client }: { clientId: number; planId: number | null; client?: any }) {
+  const t = translations[useLocale().locale as "en"|"fr"] ?? translations.en;
   const { data: notes = [] } = useEstatePlanningNotes(clientId);
   const { data: assumptions = [] } = usePlanAssumptions(planId);
   const createNote = useCreateEstatePlanningNote();
@@ -2928,6 +2941,7 @@ const deleteSession = async (runId: string) => {
 }
 
 export function FinancialPlanningContent({ initialClientId }: { initialClientId?: number }) {
+  const t = translations[useLocale().locale as "en"|"fr"] ?? translations.en;
   const [activeTab, setActiveTab] = useState<TabKey>("overview");
   const [person, setPerson] = useState<"primary"|"spouse"|"combined">("primary");
   const [selectedClientId, setSelectedClientId] = useState<number | null>(initialClientId ?? null);

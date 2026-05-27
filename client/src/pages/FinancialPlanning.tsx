@@ -123,7 +123,7 @@ function OverviewTab({ clientId, onTabChange }: { clientId: number; onTabChange?
     { label: t.plan.insuranceAnalyses,   value: overview.insuranceAnalyses,        icon: Shield,        color: "text-purple-600", bg: "bg-purple-50",   tab: "insurance" },
     { label: t.plan.educationPlans,      value: overview.educationPlans,           icon: GraduationCap, color: "text-teal-600",   bg: "bg-teal-50",     tab: "resp" },
     { label: t.plan.taxNotes,            value: overview.taxNotes,                 icon: Receipt,       color: "text-amber-600",  bg: "bg-amber-50",    tab: "tax" },
-    { label: "Estate"Notes,         value: overview.estateNotes,              icon: ScrollText,    color: "text-indigo-600", bg: "bg-indigo-50",   tab: "estate" },
+    { label: t.plan.estateNotes,         value: overview.estateNotes,              icon: ScrollText,    color: "text-indigo-600", bg: "bg-indigo-50",   tab: "estate" },
     { label: t.plan.aiRecommendations,   value: overview.aiRecommendations,        icon: Brain,         color: "text-pink-600",   bg: "bg-pink-50",     tab: "ai" },
     { label: t.plan.pendingActions,      value: overview.pendingRecommendations,   icon: Clock,         color: "text-yellow-600", bg: "bg-yellow-50",   tab: "ai" },
   ];
@@ -138,7 +138,7 @@ function OverviewTab({ clientId, onTabChange }: { clientId: number; onTabChange?
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
       <div className="flex items-center justify-between flex-wrap gap-3">
-        <h2 className="text-xl font-display font-bold">{"Financial Plan"ningOverview}</h2>
+        <h2 className="text-xl font-display font-bold">{t.plan.financialPlanOverview}</h2>
         <div className="flex items-center gap-2 flex-wrap">
           {reportButtons.map(btn => (
             <button

@@ -441,7 +441,7 @@ export function NetWorthTab({ clientId }: { clientId: number }) {
               </div>
               <div>
                 <label className="text-sm font-semibold text-slate-600 block mb-1">{t.common.category}</label>
-                <select value={form.category} onChange={e => setForm({ ...form, category: e.target.value })} data-testid="select-fp-nw-cat" className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400">
+                <select value={form.category} onChange={e => setForm({ ...form, category: e.target.value as any })} data-testid="select-fp-nw-cat" className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400">
                   <option value="">-- Select --</option>
                   {(addType === "asset" ? assetCats : liabilityCats).map(c => <option key={c} value={c}>{c}</option>)}
                 </select>
@@ -1121,7 +1121,7 @@ function DebtTab({ clientId, planId }: { clientId: number; planId: number | null
             <h2 className="text-2xl font-display font-bold mb-6">{t.debt.addDebt}</h2>
             <form onSubmit={handleSubmit} className="space-y-4" data-testid="form-fp-debt">
               <div><label className="text-sm font-semibold">{t.common.name}</label><input required value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} data-testid="input-fp-debt-name" className="w-full px-3 py-2 rounded-xl border mt-1" placeholder="e.g. TD Visa" /></div>
-              <div><label className="text-sm font-semibold">{t.common.category}</label><select value={form.category} onChange={e => setForm({ ...form, category: e.target.value })} data-testid="select-fp-debt-cat" className="w-full px-3 py-2 rounded-xl border mt-1">{categories.map(c => <option key={c} value={c}>{c}</option>)}</select></div>
+              <div><label className="text-sm font-semibold">{t.common.category}</label><select value={form.category} onChange={e => setForm({ ...form, category: e.target.value as any })} data-testid="select-fp-debt-cat" className="w-full px-3 py-2 rounded-xl border mt-1">{categories.map(c => <option key={c} value={c}>{c}</option>)}</select></div>
               <div className="grid grid-cols-3 gap-4">
                 <div><label className="text-sm font-semibold">Balance ($)</label><input type="number" step="0.01" required value={form.balance} onChange={e => setForm({ ...form, balance: e.target.value })} data-testid="input-fp-debt-balance" className="w-full px-3 py-2 rounded-xl border mt-1" /></div>
                 <div><label className="text-sm font-semibold">Rate (%)</label><input type="number" step="0.01" required value={form.interestRate} onChange={e => setForm({ ...form, interestRate: e.target.value })} data-testid="input-fp-debt-rate" className="w-full px-3 py-2 rounded-xl border mt-1" /></div>
@@ -1257,7 +1257,7 @@ function TaxNotesPanel({ clientId }: { clientId: number }) {
               <label className="text-sm font-semibold">{t.common.category}</label>
               <select
                 value={form.category}
-                onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))}
+                onChange={(e) => setForm((f) => ({ ...f, category: e.target.value as any }))}
                 className="w-full px-3 py-2 rounded-xl border mt-1 text-sm"
               >
                 {categories.map((c) => (
@@ -1345,9 +1345,10 @@ function TaxNotesPanel({ clientId }: { clientId: number }) {
 // PANEL: RRSP Room Calculator
 // ============================================================================
 
-function RrspRoomPanel({ clientId, prefill, person = "primary", primaryLabel = t.common.primary, spouseLabel = t.common.spouse }: {
+function RrspRoomPanel({ clientId, prefill, person = "primary", primaryLabel = "Primary", spouseLabel = "Spouse" }: {
   clientId: number; prefill?: any; person?: string; primaryLabel?: string; spouseLabel?: string;
 }) {
+  const t = translations[useLocale().locale as "en"|"fr"] ?? translations.en;
   const owner = person === "spouse" ? "spouse" : "primary";
   const personLabel = person === "spouse" ? spouseLabel : primaryLabel;
   const [analyses, setAnalyses] = useState<any[]>([]);
@@ -1517,9 +1518,10 @@ function RrspRoomPanel({ clientId, prefill, person = "primary", primaryLabel = t
 // PANEL: TFSA Room Calculator
 // ============================================================================
 
-function TfsaRoomPanel({ clientId, prefill, person = "primary", primaryLabel = t.common.primary, spouseLabel = t.common.spouse }: {
+function TfsaRoomPanel({ clientId, prefill, person = "primary", primaryLabel = "Primary", spouseLabel = "Spouse" }: {
   clientId: number; prefill?: any; person?: string; primaryLabel?: string; spouseLabel?: string;
 }) {
+  const t = translations[useLocale().locale as "en"|"fr"] ?? translations.en;
   const owner = person === "spouse" ? "spouse" : "primary";
   const personLabel = person === "spouse" ? spouseLabel : primaryLabel;
   const [analyses, setAnalyses] = useState<any[]>([]);
@@ -1767,7 +1769,7 @@ function AdjustPanel({ open, onClose, form, setForm, t = translations.en }: { op
   );
 }
 
-function TaxProjectionPanel({ clientId, prefillPrimary, prefillSpouse, person = "primary", primaryLabel = t.common.primary, spouseLabel = t.common.spouse, t = translations.en }: {
+function TaxProjectionPanel({ clientId, prefillPrimary, prefillSpouse, person = "primary", primaryLabel = "Primary", spouseLabel = "Spouse", t = translations.en }: {
   clientId: number; prefillPrimary?: any; prefillSpouse?: any;
   person?: string; primaryLabel?: string; spouseLabel?: string; t?: T;
 }) {
@@ -2385,9 +2387,10 @@ function CapitalGainsPanel({ clientId, client, person = "primary" }: {
 // PANEL: Income Splitting Optimizer
 // ============================================================================
 
-function IncomeSplittingPanel({ clientId, prefill, person = "primary", primaryLabel = t.common.primary, spouseLabel = t.common.spouse }: {
+function IncomeSplittingPanel({ clientId, prefill, person = "primary", primaryLabel = "Primary", spouseLabel = "Spouse" }: {
   clientId: number; prefill?: any; person?: string; primaryLabel?: string; spouseLabel?: string;
 }) {
+  const t = translations[useLocale().locale as "en"|"fr"] ?? translations.en;
   const [analyses, setAnalyses] = useState<any[]>([]);
   const [loading, setLoading]   = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -2718,7 +2721,7 @@ export function EstateNotesTab({ clientId, planId, client }: { clientId: number;
             <h2 className="text-2xl font-display font-bold mb-6">Add Estate Planning Note</h2>
             <form onSubmit={handleSubmit} className="space-y-4" data-testid="form-fp-estate">
               <div><label className="text-sm font-semibold">{t.common.category}</label>
-                <select value={form.category} onChange={e => setForm({ ...form, category: e.target.value })} data-testid="select-fp-estate-cat" className="w-full px-3 py-2 rounded-xl border mt-1">
+                <select value={form.category} onChange={e => setForm({ ...form, category: e.target.value as any })} data-testid="select-fp-estate-cat" className="w-full px-3 py-2 rounded-xl border mt-1">
                   {categories.map(c => <option key={c} value={c}>{c}</option>)}
                 </select>
               </div>
@@ -2988,27 +2991,27 @@ const { data: plans = [] } = useClientPlans(selectedClientId ?? 0);
           </select>
         </div>
         <nav className="flex-1 p-2 space-y-0.5 overflow-y-auto" data-testid="fp-sidebar-nav">
-          {tabs.map(t => (
+          {tabs.map(tab => (
             <button
-              key={t.key}
-              onClick={() => setActiveTab(t.key)}
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key)}
               disabled={!selectedClientId}
-              data-testid={`tab-fp-${t.key}`}
+              data-testid={`tab-fp-${tab.key}`}
               className={`flex items-center space-x-2.5 w-full px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                activeTab === t.key && selectedClientId
+                activeTab === tab.key && selectedClientId
                   ? "bg-primary text-primary-foreground shadow-sm"
                   : selectedClientId
                     ? "text-muted-foreground hover:bg-muted hover:text-foreground"
                     : "text-muted-foreground/50 cursor-not-allowed"
               }`}
             >
-              <t.icon className="w-4 h-4 flex-shrink-0" />
-              <span className="truncate">{t.label}</span>
-              {staleTabKeys.has(t.key) && (
-                <span className="ml-auto flex-shrink-0 w-2 h-2 rounded-full bg-amber-500 animate-pulse" title={t.common.dataChanged} data-testid={`stale-indicator-${t.key}`} />
+              <tab.icon className="w-4 h-4 flex-shrink-0" />
+              <span className="truncate">{tab.label}</span>
+              {staleTabKeys.has(tab.key) && (
+                <span className="ml-auto flex-shrink-0 w-2 h-2 rounded-full bg-amber-500 animate-pulse" title={t.common.dataChanged} data-testid={`stale-indicator-${tab.key}`} />
               )}
-              {!staleTabKeys.has(t.key) && recalculatedTabKeys.has(t.key) && (
-                <span className="ml-auto flex-shrink-0 w-2 h-2 rounded-full bg-blue-500" title={t.common.recentlyRecalc} data-testid={`recalculated-indicator-${t.key}`} />
+              {!staleTabKeys.has(tab.key) && recalculatedTabKeys.has(tab.key) && (
+                <span className="ml-auto flex-shrink-0 w-2 h-2 rounded-full bg-blue-500" title={t.common.recentlyRecalc} data-testid={`recalculated-indicator-${tab.key}`} />
               )}
             </button>
           ))}

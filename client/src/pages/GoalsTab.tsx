@@ -889,11 +889,11 @@ export function GoalsTab({ clientId, client, t = translations.en }: { clientId: 
           moduleId="goal"
           prompt={`Try: "Retire at 60 with 1.5 million, target 2045"`}
           fieldSchema={[
-            { key: "title",        label: t.common.name, description: t.goals.shortGoalTitle (e.g. 'Retire at 60')" },
-            { key: "goalType",     label: "Type", description: "Category of goal",
+            { key: "title",        label: t.common.name, description: t.goals.shortGoalTitle },
+            { key: "goalType",     label: t.common.type, description: t.goals.categoryOfGoal,
               enum: ["retirement", "savings", "debt", "education", "home", "travel", "other"] },
             { key: "targetAmount", label: t.goals.targetAmountLabel, description: t.goals.targetAmountHint },
-            { key: "targetDate",   label: "Target Date", description: t.goals.targetDateHint },
+            { key: "targetDate",   label: t.goals.targetDate, description: t.goals.targetDateHint },
             { key: "notes",        label: t.common.notes, description: t.common.notes },
           ]}
           onConfirm={addVoiceGoal}

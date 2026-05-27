@@ -680,7 +680,7 @@ function GoalForm({
               </p>
               <p className="text-[10px] text-[var(--text-tertiary)]">
                 {form.projectionImpact
-                  ? t.goals.injectedAsCashflow as a cashflow event in the retirement simulation"
+                  ? t.goals.injectedAsCashflow
                   : t.goals.enableRetirement}
               </p>
             </div>

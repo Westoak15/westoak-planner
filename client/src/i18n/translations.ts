@@ -142,7 +142,9 @@ export const translations = {
        show:                  "▼ Show",
        taxFreeEmployeePaid:   "tax-free — employee-paid",
        saved:                 "Saved",
-       removed:               "Removed",},
+       removed:               "Removed",
+       currentAge:            "Current Age",
+       lifeExpectancy:        "Life Expectancy",},
 
     // ── Net Worth ──────────────────────────────────────────────────────────────
     netWorth: {
@@ -434,7 +436,8 @@ export const translations = {
        shortGoalTitle:        "Short goal title (e.g. 'Retire at 60')",
        targetAmountLabel:     "Target $",
        targetAmountHint:      "Target amount, number only",
-       targetDateHint:        "Target date YYYY-MM-DD",},
+       targetDateHint:        "Target date YYYY-MM-DD",
+       timeline:              "Goal Timeline",},
 
     // ── Insurance / Protection ─────────────────────────────────────────────────
     insurance: {
@@ -564,7 +567,8 @@ export const translations = {
        adequate2:             "Adequate",
        policyHash:            "Policy #",
        someGaps:              "Some gaps detected — review recommended",
-       lifeInsGap:            "Life insurance gap — review coverage",},
+       lifeInsGap:            "Life insurance gap — review coverage",
+       required:              "Insured name and coverage amount are required",},
 
     // ── Retirement ────────────────────────────────────────────────────────────
     retirement: {
@@ -760,7 +764,8 @@ export const translations = {
        editExpense:           "Edit Expense",
        editExpense2:          "Edit Expense",
        saveChanges2:          "Save Changes",
-       essential2:            "Essential",},
+       essential2:            "Essential",
+       category:              "Category",},
 
     // ── Tax & Estate ──────────────────────────────────────────────────────────
     taxEstate: {
@@ -949,7 +954,8 @@ export const translations = {
        extracting:            "Extracting needs analysis data…",
        rrspLabel:             "RRSPs",
        nonRegLabel:           "Non-Registered",
-       financialPlanOverview: "Financial Planning Overview",},
+       financialPlanOverview: "Financial Planning Overview",
+       addPlan:               "Add Plan",},
 
     // ── Reports ───────────────────────────────────────────────────────────────
     report: {
@@ -1078,7 +1084,8 @@ export const translations = {
        provTax:               "Prov Tax",
        totalWealth:           "Total Wealth",
        nonRegistered:         "Non-Registered",
-       failedLoad:            "Failed to load dashboard data",},
+       failedLoad:            "Failed to load dashboard data",
+       totalTax:              "Total Tax",},
 
     // ── Meeting recorder ──────────────────────────────────────────────────────
     meeting: {
@@ -1525,7 +1532,9 @@ export const translations = {
        show:                  "▼ Afficher",
        taxFreeEmployeePaid:   "non imposable — cotisé par l'employé",
        saved:                 "Sauvegardé",
-       removed:               "Retiré",},
+       removed:               "Retiré",
+       currentAge:            "Âge actuel",
+       lifeExpectancy:        "Espérance de vie",},
 
     // ── Net Worth ──────────────────────────────────────────────────────────────
     netWorth: {
@@ -1809,7 +1818,8 @@ export const translations = {
        shortGoalTitle:        "Titre court de l'objectif (ex. 'Retraite à 60 ans')",
        targetAmountLabel:     "Cible $",
        targetAmountHint:      "Montant cible, chiffres seulement",
-       targetDateHint:        "Date cible AAAA-MM-JJ",},
+       targetDateHint:        "Date cible AAAA-MM-JJ",
+       timeline:              "Chronologie des objectifs",},
 
     // ── Insurance / Protection ─────────────────────────────────────────────────
     insurance: {
@@ -1939,7 +1949,8 @@ export const translations = {
        adequate2:             "Adéquat",
        policyHash:            "Police n°",
        someGaps:              "Certains écarts détectés — révision recommandée",
-       lifeInsGap:            "Écart d'assurance vie — réviser la couverture",},
+       lifeInsGap:            "Écart d'assurance vie — réviser la couverture",
+       required:              "Le nom de l'assuré et le montant de couverture sont requis",},
 
     // ── Retirement ────────────────────────────────────────────────────────────
     retirement: {
@@ -2130,7 +2141,8 @@ export const translations = {
        editExpense:           "Modifier la dépense",
        editExpense2:          "Modifier la dépense",
        saveChanges2:          "Enregistrer les modifications",
-       essential2:            "Essentiel",},
+       essential2:            "Essentiel",
+       category:              "Catégorie",},
 
     // ── Tax & Estate ──────────────────────────────────────────────────────────
     taxEstate: {
@@ -2320,7 +2332,8 @@ export const translations = {
        extracting:            "Extraction des données d'analyse des besoins…",
        rrspLabel:             "REER",
        nonRegLabel:           "Non immatriculé",
-       financialPlanOverview: "Vue d'ensemble — plan financier",},
+       financialPlanOverview: "Vue d'ensemble — plan financier",
+       addPlan:               "Ajouter un plan",},
 
     // ── Reports ───────────────────────────────────────────────────────────────
     report: {
@@ -2447,7 +2460,8 @@ export const translations = {
        provTax:               "Impôt provincial",
        totalWealth:           "Patrimoine total",
        nonRegistered:         "Non immatriculé",
-       failedLoad:            "Échec du chargement des données",},
+       failedLoad:            "Échec du chargement des données",
+       totalTax:              "Impôt total",},
 
     // ── Meeting recorder ──────────────────────────────────────────────────────
     meeting: {

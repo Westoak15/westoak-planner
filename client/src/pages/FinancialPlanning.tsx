@@ -1885,7 +1885,7 @@ function TaxProjectionPanel({ clientId, prefillPrimary, prefillSpouse, person = 
               <div className="grid grid-cols-4 gap-3">
                 {[
                   { key: "currentAge", label: t.taxEstate.currentAge }, { key: "retirementAge", label: t.retirement.retirementAge },
-                  { key: "planToAge", label: t.taxEstate.planToAge }, { key: "province", label: t.client.province ?? "Province", select: provinces },
+                  { key: "planToAge", label: t.taxEstate.planToAge }, { key: "province", label: t.common.province ?? "Province", select: provinces },
                   { key: "employmentIncome", label: t.taxEstate.employmentIncome }, { key: "rrspBalance", label: t.taxEstate.rrspBalance },
                   { key: "tfsaBalance", label: t.taxEstate.tfsaBalance }, { key: "nonRegBalance", label: t.taxEstate.nonRegBalance },
                   { key: "rrspAnnualContribution", label: t.taxEstate.rrspAnnualContrib }, { key: "tfsaAnnualContribution", label: t.taxEstate.tfsaAnnualContrib },

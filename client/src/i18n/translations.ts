@@ -145,7 +145,8 @@ export const translations = {
        removed:               "Removed",
        currentAge:            "Current Age",
        lifeExpectancy:        "Life Expectancy",
-       province:              "Province",},
+       province:              "Province",
+    },
 
     // ── Net Worth ──────────────────────────────────────────────────────────────
     netWorth: {
@@ -278,7 +279,8 @@ export const translations = {
        targetAmount2:         "Target",
        nonRegistered:         "Non-Registered",
        selfDirected:          "Self-Directed",
-       nonRegInvestments:     "Non-Registered Investments",},
+       nonRegInvestments:     "Non-Registered Investments",
+    },
 
     // ── Debt ──────────────────────────────────────────────────────────────────
     debt: {
@@ -320,7 +322,8 @@ export const translations = {
       stratAvalanche:     "Avalanche",
       stratSnowball:      "Snowball",
     
-       typePersonalLoan:      "Personal Loan",},
+       typePersonalLoan:      "Personal Loan",
+    },
 
     // ── Goals ─────────────────────────────────────────────────────────────────
     goals: {
@@ -438,7 +441,8 @@ export const translations = {
        targetAmountLabel:     "Target $",
        targetAmountHint:      "Target amount, number only",
        targetDateHint:        "Target date YYYY-MM-DD",
-       timeline:              "Goal Timeline",},
+       timeline:              "Goal Timeline",
+    },
 
     // ── Insurance / Protection ─────────────────────────────────────────────────
     insurance: {
@@ -569,7 +573,8 @@ export const translations = {
        policyHash:            "Policy #",
        someGaps:              "Some gaps detected — review recommended",
        lifeInsGap:            "Life insurance gap — review coverage",
-       required:              "Insured name and coverage amount are required",},
+       required:              "Insured name and coverage amount are required",
+    },
 
     // ── Retirement ────────────────────────────────────────────────────────────
     retirement: {
@@ -705,7 +710,8 @@ export const translations = {
        perYear:               "per year",
        tfsaContribMade2:      "TFSA contributions made to date",
        nonReg:                "Non-Registered",
-       thirtyYrTfsa:          "30yr TFSA Value",},
+       thirtyYrTfsa:          "30yr TFSA Value",
+    },
 
     // ── Cash Flow / Expenses ──────────────────────────────────────────────────
     cashFlow: {
@@ -766,7 +772,8 @@ export const translations = {
        editExpense2:          "Edit Expense",
        saveChanges2:          "Save Changes",
        essential2:            "Essential",
-       category:              "Category",},
+       category:              "Category",
+    },
 
     // ── Tax & Estate ──────────────────────────────────────────────────────────
     taxEstate: {
@@ -956,7 +963,8 @@ export const translations = {
        rrspLabel:             "RRSPs",
        nonRegLabel:           "Non-Registered",
        financialPlanOverview: "Financial Planning Overview",
-       addPlan:               "Add Plan",},
+       addPlan:               "Add Plan",
+    },
 
     // ── Reports ───────────────────────────────────────────────────────────────
     report: {
@@ -1017,7 +1025,8 @@ export const translations = {
     
        summaryLabel:          "Summary",
        goalsReport:           "Goals",
-       taxEstate:             "Tax & Estate",},
+       taxEstate:             "Tax & Estate",
+    },
 
     // ── AI Insights ───────────────────────────────────────────────────────────
     ai: {
@@ -1086,7 +1095,8 @@ export const translations = {
        totalWealth:           "Total Wealth",
        nonRegistered:         "Non-Registered",
        failedLoad:            "Failed to load dashboard data",
-       totalTax:              "Total Tax",},
+       totalTax:              "Total Tax",
+    },
 
     // ── Meeting recorder ──────────────────────────────────────────────────────
     meeting: {
@@ -1193,7 +1203,8 @@ export const translations = {
        reviewCoverageAnnually:"Review coverage annually",
        educationResp:         "Education / RESP",
        reviewContribRoom:     "Review contribution room and grants",
-       reviewAiRecs:          "Review AI-generated recommendations",},
+       reviewAiRecs:          "Review AI-generated recommendations",
+    },
 
     ltc: {
       title:              "Long-Term Care Planning",
@@ -1276,7 +1287,8 @@ export const translations = {
       inflationAdj:          "(inflation adj.)",
       premiumsLessThanCare:  "Premiums < care cost",
       ageLabel:              "Age",
-      estimatePlaceholder:   "0 = estimate",},,
+      estimatePlaceholder:   "0 = estimate",
+    },
     di: {
       title:              "Disability Income Planning",
       analysisInputs:     "DI Analysis Inputs",
@@ -1349,7 +1361,8 @@ export const translations = {
       cppDisAfterTax:      "CPP Disability (after tax)",
       deleteAnalysis:        "Delete this DI analysis?",
       adequateLabel:         "· ✓ Adequate",
-      gapExistsLabel:        "· ⚠ Gap exists",},,
+      gapExistsLabel:        "· ⚠ Gap exists",
+    },
     scenarioComparison: {
       title:             "Compare Scenarios",
       selectPrompt:      "Select 2–3 projections to compare side by side",
@@ -1397,8 +1410,9 @@ export const translations = {
       selectMore2:           "Select 1 more to compare",
       retLabel:              "Ret.",
       estateValue2:          "Estate Value at Life Expectancy",
-      scenarioComp:          "Scenario Comparison",},,
-  },
+      scenarioComp:          "Scenario Comparison",
+    },
+    },
 
   // ────────────────────────────────────────────────────────────────────────────
   fr: {
@@ -1529,7 +1543,8 @@ export const translations = {
        removed:               "Retiré",
        currentAge:            "Âge actuel",
        lifeExpectancy:        "Espérance de vie",
-       province:              "Province",},
+       province:              "Province",
+    },
 
     // ── Net Worth ──────────────────────────────────────────────────────────────
     netWorth: {
@@ -1659,7 +1674,8 @@ export const translations = {
        targetAmount2:         "Cible",
        nonRegistered:         "Non immatriculé",
        selfDirected:          "Autogéré",
-       nonRegInvestments:     "Placements non immatriculés",},
+       nonRegInvestments:     "Placements non immatriculés",
+    },
 
     // ── Debt ──────────────────────────────────────────────────────────────────
     debt: {
@@ -1698,7 +1714,8 @@ export const translations = {
       stratAvalanche:     "Avalanche",
       stratSnowball:      "Boule de neige",
     
-       typePersonalLoan:      "Prêt personnel",},
+       typePersonalLoan:      "Prêt personnel",
+    },
 
     // ── Goals ─────────────────────────────────────────────────────────────────
     goals: {
@@ -1814,7 +1831,8 @@ export const translations = {
        targetAmountLabel:     "Cible $",
        targetAmountHint:      "Montant cible, chiffres seulement",
        targetDateHint:        "Date cible AAAA-MM-JJ",
-       timeline:              "Chronologie des objectifs",},
+       timeline:              "Chronologie des objectifs",
+    },
 
     // ── Insurance / Protection ─────────────────────────────────────────────────
     insurance: {
@@ -1945,7 +1963,8 @@ export const translations = {
        policyHash:            "Police n°",
        someGaps:              "Certains écarts détectés — révision recommandée",
        lifeInsGap:            "Écart d'assurance vie — réviser la couverture",
-       required:              "Le nom de l'assuré et le montant de couverture sont requis",},
+       required:              "Le nom de l'assuré et le montant de couverture sont requis",
+    },
 
     // ── Retirement ────────────────────────────────────────────────────────────
     retirement: {
@@ -2077,7 +2096,8 @@ export const translations = {
        perYear:               "par année",
        tfsaContribMade2:      "Cotisations CELI versées à ce jour",
        nonReg:                "Non immatriculé",
-       thirtyYrTfsa:          "Valeur CELI 30 ans",},
+       thirtyYrTfsa:          "Valeur CELI 30 ans",
+    },
 
     // ── Cash Flow / Expenses ──────────────────────────────────────────────────
     cashFlow: {
@@ -2137,7 +2157,8 @@ export const translations = {
        editExpense2:          "Modifier la dépense",
        saveChanges2:          "Enregistrer les modifications",
        essential2:            "Essentiel",
-       category:              "Catégorie",},
+       category:              "Catégorie",
+    },
 
     // ── Tax & Estate ──────────────────────────────────────────────────────────
     taxEstate: {
@@ -2328,7 +2349,8 @@ export const translations = {
        rrspLabel:             "REER",
        nonRegLabel:           "Non immatriculé",
        financialPlanOverview: "Vue d'ensemble — plan financier",
-       addPlan:               "Ajouter un plan",},
+       addPlan:               "Ajouter un plan",
+    },
 
     // ── Reports ───────────────────────────────────────────────────────────────
     report: {
@@ -2387,7 +2409,8 @@ export const translations = {
     
        summaryLabel:          "Résumé",
        goalsReport:           "Objectifs",
-       taxEstate:             "Impôt et succession",},
+       taxEstate:             "Impôt et succession",
+    },
 
     // ── AI Insights ───────────────────────────────────────────────────────────
     ai: {
@@ -2456,7 +2479,8 @@ export const translations = {
        totalWealth:           "Patrimoine total",
        nonRegistered:         "Non immatriculé",
        failedLoad:            "Échec du chargement des données",
-       totalTax:              "Impôt total",},
+       totalTax:              "Impôt total",
+    },
 
     // ── Meeting recorder ──────────────────────────────────────────────────────
     meeting: {
@@ -2563,7 +2587,8 @@ export const translations = {
        reviewCoverageAnnually:"Réviser la couverture annuellement",
        educationResp:         "Éducation / REEE",
        reviewContribRoom:     "Réviser les droits de cotisation et les subventions",
-       reviewAiRecs:          "Réviser les recommandations générées par l'IA",},
+       reviewAiRecs:          "Réviser les recommandations générées par l'IA",
+    },
 
     ltc: {
       title:              "Planification des soins de longue durée",
@@ -2646,7 +2671,8 @@ export const translations = {
       inflationAdj:          "(ajusté pour l'inflation)",
       premiumsLessThanCare:  "Primes < coût des soins",
       ageLabel:              "Âge",
-      estimatePlaceholder:   "0 = estimation",},,
+      estimatePlaceholder:   "0 = estimation",
+    },
     di: {
       title:              "Planification du revenu d'invalidité",
       analysisInputs:     "Paramètres d'analyse RI",
@@ -2719,7 +2745,8 @@ export const translations = {
       cppDisAfterTax:      "RPC Invalidité (après impôt)",
       deleteAnalysis:        "Supprimer cette analyse RI?",
       adequateLabel:         "· ✓ Adéquat",
-      gapExistsLabel:        "· ⚠ Écart détecté",},,
+      gapExistsLabel:        "· ⚠ Écart détecté",
+    },
     scenarioComparison: {
       title:             "Comparer les scénarios",
       selectPrompt:      "Sélectionnez 2 à 3 projections à comparer",
@@ -2767,8 +2794,9 @@ export const translations = {
       selectMore2:           "Sélectionnez 1 de plus",
       retLabel:              "Ret.",
       estateValue2:          "Valeur successorale à l'espérance de vie",
-      scenarioComp:          "Comparaison de scénarios",},,
-  },
+      scenarioComp:          "Comparaison de scénarios",
+    },
+    },
 
 } as const;
 

@@ -1062,7 +1062,7 @@ function DebtTab({ clientId, planId }: { clientId: number; planId: number | null
   const createDebt = useCreateDebtEntry();
   const deleteDebt = useDeleteDebtEntry(clientId);
   const [showAdd, setShowAdd] = useState(false);
-  const [form, setForm] = useState({ name: "", category: t.netWorth.creditCard2, balance: "", interestRate: "", minimumPayment: "", term: "", notes: "" });
+  const [form, setForm] = useState({ name: "", category: "Credit Card", balance: "", interestRate: "", minimumPayment: "", term: "", notes: "" });
   const categories = ["Mortgage", "Car Loan", "Student Loan", "Credit Card", "Personal Loan", "Line of Credit", t.common.other];
   const totalDebt = (debts as any[]).reduce((s, d) => s + parseFloat(d.balance || "0"), 0);
   const avgRate = debts.length > 0 ? (debts as any[]).reduce((s, d) => s + parseFloat(d.interestRate || "0"), 0) / debts.length : 0;
@@ -1070,7 +1070,7 @@ function DebtTab({ clientId, planId }: { clientId: number; planId: number | null
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     createDebt.mutate({ clientId, data: { name: form.name, category: form.category, balance: form.balance, interestRate: form.interestRate, minimumPayment: form.minimumPayment || "0", term: form.term || undefined, notes: form.notes || undefined } },
-      { onSuccess: () => { setShowAdd(false); setForm({ name: "", category: t.netWorth.creditCard2, balance: "", interestRate: "", minimumPayment: "", term: "", notes: "" }); } });
+      { onSuccess: () => { setShowAdd(false); setForm({ name: "", category: "Credit Card", balance: "", interestRate: "", minimumPayment: "", term: "", notes: "" }); } });
   };
 
   return (
@@ -1184,7 +1184,7 @@ function TaxNotesPanel({ clientId }: { clientId: number }) {
   const [showAdd, setShowAdd] = useState(false);
   const [form, setForm] = useState({
     taxYear: String(new Date().getFullYear()),
-    category: t.common.general,
+    category: "General",
     title: "",
     content: "",
   });
@@ -1216,7 +1216,7 @@ function TaxNotesPanel({ clientId }: { clientId: number }) {
       {
         onSuccess: () => {
           setShowAdd(false);
-          setForm({ taxYear: String(new Date().getFullYear()), category: t.common.general, title: "", content: "" });
+          setForm({ taxYear: String(new Date().getFullYear()), category: "General", title: "", content: "" });
         },
       }
     );
@@ -2684,13 +2684,13 @@ export function EstateNotesTab({ clientId, planId, client }: { clientId: number;
   const createNote = useCreateEstatePlanningNote();
   const deleteNote = useDeleteEstatePlanningNote(clientId);
   const [showAdd, setShowAdd] = useState(false);
-  const [form, setForm] = useState({ category: t.plan.will, title: "", content: "" });
+  const [form, setForm] = useState({ category: "Will", title: "", content: "" });
   const categories = ["Will", "Power of Attorney", "Trust", "Beneficiary Designations", "Estate Tax", "Succession Planning", "Charitable Giving", t.common.other];
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     createNote.mutate({ clientId, data: { category: form.category, title: form.title, content: form.content } },
-      { onSuccess: () => { setShowAdd(false); setForm({ category: t.plan.will, title: "", content: "" }); } });
+      { onSuccess: () => { setShowAdd(false); setForm({ category: "Will", title: "", content: "" }); } });
   };
 
   return (

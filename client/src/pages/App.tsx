@@ -1279,7 +1279,7 @@ export default function App() {
         {/* Content — wrap in fp-insightled so EVERY tab gets the
             light-grey page + dark-card treatment (sidebar/header are outside) */}
         <div key={tab} className={`flex-1 fp-insightled animate-in fade-in duration-300 ${
-            tab === "networth" ? "overflow-hidden" : "overflow-y-auto"
+            (tab === "networth" || tab === "clients") ? "overflow-hidden" : "overflow-y-auto"
         }`}>
           <Suspense fallback={<TabLoader />}>
           {/* Global context bar — shown when a client is selected and not on overview/clients */}

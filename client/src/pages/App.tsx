@@ -77,7 +77,7 @@ function householdScore(ov: Overview | null): number {
 }
 
 function scoreLabel(s: number): { label: string; cls: string; dot: string } {
-  if (s >= 85) return { label: "Optimized",     cls: "text-emerald-600 bg-emerald-50 border-emerald-100", dot: "bg-emerald-400" };
+  if (s >= 85) return { label: tAdv.dashboard.statusOptimized,  cls: "text-emerald-600 bg-emerald-50 border-emerald-100", dot: "bg-emerald-400" };
   if (s >= 70) return { label: "Review Needed", cls: "text-blue-600    bg-blue-50    border-blue-100",    dot: "bg-blue-400" };
   if (s >= 50) return { label: "Planning Gaps", cls: "text-amber-600   bg-amber-50   border-amber-100",   dot: "bg-amber-400" };
   return               { label: "Critical",      cls: "text-red-600    bg-red-50     border-red-100",      dot: "bg-red-400" };
@@ -119,11 +119,11 @@ function HouseholdRow({
     : 0;
 
   const gaps: string[] = [];
-  if (ov?.retirementProjections === 0) gaps.push("No retirement plan");
-  if (ov?.insuranceAnalyses     === 0) gaps.push("No insurance analysis");
+  if (ov?.retirementProjections === 0) gaps.push(tAdv.dashboard.noRetirementPlan);
+  if (ov?.insuranceAnalyses     === 0) gaps.push(tAdv.dashboard.noInsuranceAnalysis);
   if ((ov?.pendingAi ?? 0) > 0)        gaps.push(`${ov!.pendingAi} AI action${ov!.pendingAi > 1 ? "s" : ""} pending`);
 
-  const nextAction = gaps[0] ?? "Review complete";
+  const nextAction = gaps[0] ?? tAdv.dashboard.reviewComplete;
 
   const scoreColor = score >= 85 ? "#10b981" : score >= 70 ? "#3b82f6" : score >= 50 ? "#f59e0b" : "#ef4444";
 
@@ -228,9 +228,9 @@ function HouseholdRow({
               <div className="text-[9px] font-semibold uppercase tracking-widest text-slate-400 mb-2">Planning Status</div>
               <div className="space-y-1.5">
                 {[
-                  { label: "Retirement Plan", ok: (ov?.retirementProjections ?? 0) > 0, value: `${ov?.retirementProjections ?? 0} plan${(ov?.retirementProjections ?? 0) !== 1 ? "s" : ""}` },
-                  { label: "Insurance Analysis", ok: (ov?.insuranceAnalyses ?? 0) > 0, value: `${ov?.insuranceAnalyses ?? 0} analysis` },
-                  { label: "AI Insights", ok: (ov?.pendingAi ?? 0) === 0, value: (ov?.pendingAi ?? 0) > 0 ? `${ov!.pendingAi} pending` : "Clear" },
+                  { label: tAdv.client.retirementPlan, ok: (ov?.retirementProjections ?? 0) > 0, value: `${ov?.retirementProjections ?? 0} plan${(ov?.retirementProjections ?? 0) !== 1 ? "s" : ""}` },
+                  { label: tAdv.client.insuranceAnalysis, ok: (ov?.insuranceAnalyses ?? 0) > 0, value: `${ov?.insuranceAnalyses ?? 0} analysis` },
+                  { label: tAdv.client.aiInsights, ok: (ov?.pendingAi ?? 0) === 0, value: (ov?.pendingAi ?? 0) > 0 ? `${ov!.pendingAi} pending` : "Clear" },
                 ].map(item => (
                   <div key={item.label} className="flex items-center justify-between">
                     <div className="flex items-center gap-1.5">
@@ -248,9 +248,9 @@ function HouseholdRow({
               <div className="text-[9px] font-semibold uppercase tracking-widest text-slate-400 mb-2">Financial Snapshot</div>
               <div className="space-y-1.5">
                 {[
-                  { label: "Net Worth",    value: fmtNw(nw) },
-                  { label: "Region",       value: c.province ?? "—" },
-                  { label: "Plans", value: `${ov?.retirementProjections ?? 0} on file` },
+                  { label: tAdv.client.netWorthLabel,    value: fmtNw(nw) },
+                  { label: tAdv.client.regionLabel,       value: c.province ?? "—" },
+                  { label: tAdv.client.plans2, value: `${ov?.retirementProjections ?? 0} ${tAdv.client.plansOnFile}` },
                 ].map(item => (
                   <div key={item.label} className="flex items-center justify-between">
                     <span className="text-[10px] text-slate-500">{item.label}</span>
@@ -314,7 +314,7 @@ function ClientsTab({ onSelect, tAdv = translations.en }: { onSelect: (c: Client
   const regions       = jurisdiction === "US"
     ? ["AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA","HI","ID","IL","IN","IA","KS","KY","LA","ME","MD","MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ","NM","NY","NC","ND","OH","OK","OR","PA","RI","SC","SD","TN","TX","UT","VT","VA","WA","WV","WI","WY"]
     : PROVINCES;
-  const regionLabel   = jurisdiction === "US" ? "State" : "Province";
+  const regionLabel   = jurisdiction === "US" ? tAdv.client.stateLabel : tAdv.client.provinceLabel;
   const defaultRegion = jurisdiction === "US" ? "CA" : "ON";
 
   const [clients,  setClients]  = useState<Client[]>([]);
@@ -354,9 +354,9 @@ function ClientsTab({ onSelect, tAdv = translations.en }: { onSelect: (c: Client
       setClients(p => [c, ...p]);
       setShowNew(false);
       setForm({ firstName: "", lastName: "", email: "", phone: "", province: defaultRegion });
-      toast({ title: "Client added", description: `${form.firstName} ${form.lastName} added successfully` });
+      toast({ title: tAdv.client.clientAdded, description: `${form.firstName} ${form.lastName} added successfully` });
     } catch (e: any) {
-      toast({ title: "Error", description: e.message, variant: "destructive" });
+      toast({ title: tAdv.common.error, description: e.message, variant: "destructive" });
     } finally { setBusy(false); }
   }
 
@@ -440,13 +440,13 @@ function ClientsTab({ onSelect, tAdv = translations.en }: { onSelect: (c: Client
           <div className="flex-shrink-0 border-b border-blue-100 bg-blue-50/40 px-5 py-3">
             <div className="text-[10px] font-semibold text-blue-700 uppercase tracking-widest mb-2">New Household</div>
             <div className="grid grid-cols-2 md:grid-cols-5 gap-2 mb-2">
-              <input placeholder="First name" value={form.firstName} onChange={e => setForm(f => ({ ...f, firstName: e.target.value }))}
+              <input placeholder={tAdv.client.firstNamePlaceholder} value={form.firstName} onChange={e => setForm(f => ({ ...f, firstName: e.target.value }))}
                 className="bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-blue-400/40 focus:border-blue-400" />
-              <input placeholder="Last name" value={form.lastName} onChange={e => setForm(f => ({ ...f, lastName: e.target.value }))}
+              <input placeholder={tAdv.client.lastNamePlaceholder} value={form.lastName} onChange={e => setForm(f => ({ ...f, lastName: e.target.value }))}
                 className="bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-blue-400/40 focus:border-blue-400" />
-              <input placeholder="Email" type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
+              <input placeholder={tAdv.client.emailPlaceholder} type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
                 className="bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-blue-400/40 focus:border-blue-400" />
-              <input placeholder="Phone" value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))}
+              <input placeholder={tAdv.client.phonePlaceholder} value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))}
                 className="bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-blue-400/40 focus:border-blue-400" />
               <select value={form.province} onChange={e => setForm(f => ({ ...f, province: e.target.value }))}
                 className="bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-blue-400/40 focus:border-blue-400">
@@ -496,7 +496,7 @@ function ClientsTab({ onSelect, tAdv = translations.en }: { onSelect: (c: Client
                 <Users className="w-5 h-5 text-slate-400" />
               </div>
               <p className="text-sm font-semibold text-slate-700 mb-1">
-                {search ? "No households match" : "No households yet"}
+                {search ? tAdv.dashboard.noHouseholdsMatch + "" : tAdv.dashboard.noHouseholdsYet}
               </p>
               {!search && (
                 <button onClick={() => setShowNew(true)}
@@ -520,17 +520,17 @@ function ClientsTab({ onSelect, tAdv = translations.en }: { onSelect: (c: Client
       </div>
 
       {/* ══ RIGHT — Intelligence Rail (25%) ════════════════════════════════════ */}
-      <div className="w-64 flex-shrink-0 border-l border-slate-200 bg-white flex flex-col overflow-y-auto">
+      <div className="w-64 flex-shrink-0 border-l border-slate-200 bg-white flex flex-col overflow-y-auto pb-20">
 
         {/* AUM Summary */}
         <div className="px-4 py-3 border-b border-slate-100">
-          <div className="text-[9px] font-semibold uppercase tracking-widest text-slate-400 mb-2">Book Summary</div>
+          <div className="text-[9px] font-semibold uppercase tracking-widest text-slate-400 mb-2">{tAdv.dashboard.bookSummary}</div>
           <div className="grid grid-cols-2 gap-2">
             {[
-              { label: "Total AUM",      value: fmtAum(totalAum),        hi: true },
-              { label: "Avg Score",      value: `${avgScore}/100`,        hi: avgScore >= 70 },
-              { label: "Households",     value: String(clients.length),   hi: true },
-              { label: "Pending Actions",value: String(totalPending),     hi: totalPending === 0 },
+              { label: tAdv.dashboard.totalAum,      value: fmtAum(totalAum),        hi: true },
+              { label: tAdv.dashboard.avgScore,      value: `${avgScore}/100`,        hi: avgScore >= 70 },
+              { label: tAdv.dashboard.households,     value: String(clients.length),   hi: true },
+              { label: tAdv.dashboard.pendingActions,value: String(totalPending),     hi: totalPending === 0 },
             ].map(s => (
               <div key={s.label} className="bg-slate-50 rounded-lg p-2.5">
                 <div className="text-[9px] text-slate-400 mb-0.5">{s.label}</div>
@@ -542,13 +542,13 @@ function ClientsTab({ onSelect, tAdv = translations.en }: { onSelect: (c: Client
 
         {/* Today's Priorities */}
         <div className="px-4 py-3 border-b border-slate-100 flex-1">
-          <div className="text-[9px] font-semibold uppercase tracking-widest text-slate-400 mb-2">Today's Priorities</div>
+          <div className="text-[9px] font-semibold uppercase tracking-widest text-slate-400 mb-2">{tAdv.dashboard.todaysPriorities}</div>
           <div className="space-y-2">
             {noRetirement > 0 && (
               <div className="flex items-start gap-2 p-2 bg-amber-50 border border-amber-100 rounded-lg">
                 <span className="text-amber-500 text-xs mt-0.5">⚠</span>
                 <p className="text-[10px] text-amber-700 font-medium leading-relaxed">
-                  {noRetirement} household{noRetirement > 1 ? "s" : ""} missing retirement plan{noRetirement > 1 ? "s" : ""}
+                  {noRetirement} household{noRetirement > 1 ? "s" : ""} {noRetirement > 1 ? tAdv.dashboard.householdsMissingRetPlural : tAdv.dashboard.householdsMissingRet}
                 </p>
               </div>
             )}
@@ -556,7 +556,7 @@ function ClientsTab({ onSelect, tAdv = translations.en }: { onSelect: (c: Client
               <div className="flex items-start gap-2 p-2 bg-amber-50 border border-amber-100 rounded-lg">
                 <span className="text-amber-500 text-xs mt-0.5">⚠</span>
                 <p className="text-[10px] text-amber-700 font-medium leading-relaxed">
-                  {noInsurance} insurance gap{noInsurance > 1 ? "s" : ""} detected
+                  {noInsurance} {noInsurance > 1 ? tAdv.dashboard.insuranceGaps : tAdv.dashboard.insuranceGap}
                 </p>
               </div>
             )}
@@ -564,14 +564,14 @@ function ClientsTab({ onSelect, tAdv = translations.en }: { onSelect: (c: Client
               <div className="flex items-start gap-2 p-2 bg-blue-50 border border-blue-100 rounded-lg">
                 <span className="text-blue-500 text-xs mt-0.5">↻</span>
                 <p className="text-[10px] text-blue-700 font-medium leading-relaxed">
-                  {totalPending} AI recommendation{totalPending > 1 ? "s" : ""} awaiting review
+                  {totalPending} {totalPending > 1 ? tAdv.dashboard.aiRecs : tAdv.dashboard.aiRec}
                 </p>
               </div>
             )}
             {noRetirement === 0 && noInsurance === 0 && totalPending === 0 && clients.length > 0 && (
               <div className="flex items-start gap-2 p-2 bg-emerald-50 border border-emerald-100 rounded-lg">
                 <span className="text-emerald-500 text-xs mt-0.5">✓</span>
-                <p className="text-[10px] text-emerald-700 font-medium">All households up to date</p>
+                <p className="text-[10px] text-emerald-700 font-medium">{tAdv.dashboard.allUpToDate}</p>
               </div>
             )}
           </div>
@@ -580,22 +580,22 @@ function ClientsTab({ onSelect, tAdv = translations.en }: { onSelect: (c: Client
         {/* Opportunities */}
         {clients.length > 0 && (
           <div className="px-4 py-3 border-b border-slate-100">
-            <div className="text-[9px] font-semibold uppercase tracking-widest text-slate-400 mb-2">Opportunities</div>
+            <div className="text-[9px] font-semibold uppercase tracking-widest text-slate-400 mb-2">{tAdv.dashboard.opportunities}</div>
             <div className="space-y-1.5">
               {noRetirement > 0 && (
                 <div className="flex items-center justify-between py-1 border-b border-slate-50">
-                  <span className="text-[10px] text-slate-600">Retirement projections</span>
-                  <span className="text-[10px] font-semibold text-blue-600">{noRetirement} open</span>
+                  <span className="text-[10px] text-slate-600">{tAdv.dashboard.retirementProjections}</span>
+                  <span className="text-[10px] font-semibold text-blue-600">{noRetirement} {tAdv.dashboard.openCount}</span>
                 </div>
               )}
               {noInsurance > 0 && (
                 <div className="flex items-center justify-between py-1 border-b border-slate-50">
-                  <span className="text-[10px] text-slate-600">Insurance analysis</span>
-                  <span className="text-[10px] font-semibold text-amber-600">{noInsurance} gap{noInsurance > 1 ? "s" : ""}</span>
+                  <span className="text-[10px] text-slate-600">{tAdv.dashboard.insuranceAnalysis2}</span>
+                  <span className="text-[10px] font-semibold text-amber-600">{noInsurance} {tAdv.dashboard.gapsCount}{noInsurance > 1 ? "s" : ""}</span>
                 </div>
               )}
               <div className="flex items-center justify-between py-1">
-                <span className="text-[10px] text-slate-600">Households needing review</span>
+                <span className="text-[10px] text-slate-600">{tAdv.dashboard.householdsNeedReview}</span>
                 <span className="text-[10px] font-semibold text-slate-700">
                   {clients.filter(c => householdScore(ovData[c.id] ?? null) < 70).length}
                 </span>
@@ -607,12 +607,12 @@ function ClientsTab({ onSelect, tAdv = translations.en }: { onSelect: (c: Client
         {/* Score distribution */}
         {clients.length > 0 && (
           <div className="px-4 py-3">
-            <div className="text-[9px] font-semibold uppercase tracking-widest text-slate-400 mb-2">Score Distribution</div>
+            <div className="text-[9px] font-semibold uppercase tracking-widest text-slate-400 mb-2">{tAdv.dashboard.scoreDistribution}</div>
             {[
-              { label: "Optimized (85+)",   count: clients.filter(c => householdScore(ovData[c.id] ?? null) >= 85).length, color: "bg-emerald-400" },
-              { label: "Review (70-84)",    count: clients.filter(c => { const s = householdScore(ovData[c.id] ?? null); return s >= 70 && s < 85; }).length, color: "bg-blue-400" },
-              { label: "Gaps (50-69)",      count: clients.filter(c => { const s = householdScore(ovData[c.id] ?? null); return s >= 50 && s < 70; }).length, color: "bg-amber-400" },
-              { label: "Critical (<50)",    count: clients.filter(c => householdScore(ovData[c.id] ?? null) < 50).length, color: "bg-red-400" },
+              { label: tAdv.dashboard.optimizedLabel,   count: clients.filter(c => householdScore(ovData[c.id] ?? null) >= 85).length, color: "bg-emerald-400" },
+              { label: tAdv.dashboard.reviewLabel,    count: clients.filter(c => { const s = householdScore(ovData[c.id] ?? null); return s >= 70 && s < 85; }).length, color: "bg-blue-400" },
+              { label: tAdv.dashboard.gapsLabel,      count: clients.filter(c => { const s = householdScore(ovData[c.id] ?? null); return s >= 50 && s < 70; }).length, color: "bg-amber-400" },
+              { label: tAdv.dashboard.criticalLabel,    count: clients.filter(c => householdScore(ovData[c.id] ?? null) < 50).length, color: "bg-red-400" },
             ].map(s => (
               <div key={s.label} className="flex items-center gap-2 mb-1.5">
                 <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${s.color}`} />
@@ -636,7 +636,7 @@ function ClientDetail({ client, onBack, onPlanSelect, onUpdate, onLocaleChange, 
   const [editing, setEditing]   = useState(false);
   const [form, setForm]         = useState<Partial<Client>>({ ...client });
   const [busy, setBusy]         = useState(false);
-  const [newPlanName, setNewPlanName] = useState("Financial Plan");
+  const [newPlanName, setNewPlanName] = useState(tAdv.client.financialPlanName);
   const u = (k: keyof Client, v: any) => setForm(f => ({ ...f, [k]: v }));
 
   // Jurisdiction-aware region list
@@ -645,7 +645,7 @@ function ClientDetail({ client, onBack, onPlanSelect, onUpdate, onLocaleChange, 
   const regions = jurisdiction === "US"
     ? ["AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA","HI","ID","IL","IN","IA","KS","KY","LA","ME","MD","MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ","NM","NY","NC","ND","OH","OK","OR","PA","RI","SC","SD","TN","TX","UT","VT","VA","WA","WV","WI","WY"]
     : PROVINCES;
-  const regionLabel = jurisdiction === "US" ? "State" : "Province";
+  const regionLabel = jurisdiction === "US" ? tAdv.client.stateLabel : tAdv.client.provinceLabel;
   const defaultRegion = jurisdiction === "US" ? "CA" : "ON";
 
   useEffect(() => {
@@ -655,7 +655,7 @@ function ClientDetail({ client, onBack, onPlanSelect, onUpdate, onLocaleChange, 
   async function save() {
     setBusy(true);
     try { const updated = await api.patch<Client>(`/api/clients/${client.id}`, form); setEditing(false); onUpdate(updated); }
-    catch (e: any) {toast({ title: "Error", description: e.message, variant: "destructive" }) }
+    catch (e: any) {toast({ title: tAdv.common.error, description: e.message, variant: "destructive" }) }
     finally { setBusy(false); }
   }
 
@@ -663,7 +663,7 @@ function ClientDetail({ client, onBack, onPlanSelect, onUpdate, onLocaleChange, 
     try {
       const updated = await api.patch<Client>(`/api/clients/${client.id}`, data);
       onUpdate(updated);
-    } catch (e: any) { toast({ title: "Error", description: e.message, variant: "destructive" }); }
+    } catch (e: any) { toast({ title: tAdv.common.error, description: e.message, variant: "destructive" }); }
   }
 
   async function deletePlan(planId: number) {

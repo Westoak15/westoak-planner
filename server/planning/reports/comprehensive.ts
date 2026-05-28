@@ -450,9 +450,26 @@ function insuranceSection(inputs: ComprehensiveReportInputs, r: InsuranceAnalysi
 
 function educationSection(inputs: ComprehensiveReportInputs, r: EducationAnalysis): string {
   const L = getL(inputs.meta.locale);
+  const childBlocks = r.children.map((child: any) => {
+    const childRows = child.yearByYear.filter((_: any, i: number) => i % 2 === 0).slice(0, 10)
+      .map((row: any) => [row.year.toString(), row.childAge.toString(),
+        fmt.dollar(row.contribution), fmt.dollar(row.cesg + row.additionalCesg),
+        fmt.dollar(row.growth), fmt.dollar(row.closingBalance)]);
+    return '<div class="section-title mb-8">' + L.respAge(child.name, child.age) + '</div>'
+      + metricGrid([
+          { label: L.projRespC, value: fmt.dollar(child.projectedRespBalance), variant: "blue" },
+          { label: L.educCost,  value: fmt.dollar(child.estimatedEducationCost) },
+          { label: L.totalCesgC,value: fmt.dollar(child.totalCesgForChild), variant: "green" },
+          { label: L.surpShort, value: fmt.dollar(child.shortfallOrSurplus), variant: child.shortfallOrSurplus >= 0 ? "green" : "red" },
+        ], 4)
+      + dataTable(L.respTable(child.name),
+          [{ label: L.colYear }, { label: L.colAge }, { label: L.colContrib, right: true },
+           { label: L.colCesg, right: true }, { label: L.colGrowth, right: true }, { label: L.colBalance, right: true }],
+          childRows);
+  }).join("");
   return `<div class="page">${pageHeader(inputs.meta,L.ph8)}${sectionHeader("Section 8",L.s8Title,L.s8Sub)}
   ${metricGrid([{label:L.totalCesg,value:fmt.dollar(r.totalCesgReceived),variant:"green"},{label:L.projResp,value:fmt.dollar(r.totalProjectedRespValue),variant:"navy"},{label:L.estEdCost,value:fmt.dollar(r.totalEstimatedEducationCost)},{label:L.surpShort,value:fmt.dollar(r.shortfallOrSurplus),variant:r.shortfallOrSurplus>=0?"green":"red"}])}
-  ${r.children.map(child=>`<div class="section-title mb-8">${L.respAge(child.name,child.age)}</div>${metricGrid([{label:L.projRespC,value:fmt.dollar(child.projectedRespBalance),variant:"blue"},{label:L.educCost,value:fmt.dollar(child.estimatedEducationCost)},{label:L.totalCesgC,value:fmt.dollar(child.totalCesgForChild),variant:"green"},{label:L.surpShort,value:fmt.dollar(child.shortfallOrSurplus),variant:child.shortfallOrSurplus>=0?"green":"red"}],4)}${dataTable(L.respTable(child.name),[{label:L.colYear},{label:L.colAge},{label:L.colContrib,right:true},{label:L.colCesg,right:true},{label:L.colGrowth,right:true},{label:L.colBalance,right:true}],child.yearByYear.filter((_,i)=>i%2===0).slice(0,10).map(row=>[row.year.toString(),row.childAge.toString(),fmt.dollar(row.contribution),fmt.dollar(row.cesg+row.additionalCesg),fmt.dollar(row.growth),fmt.dollar(row.closingBalance)]))`).join("")}
+  ${childBlocks}
   ${pageFooter(8,10,inputs.meta.advisor.companyName,inputs.meta.locale)}</div>`;
 }
 

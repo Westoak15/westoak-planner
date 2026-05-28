@@ -160,7 +160,7 @@ type NWDraft = {
 
 function emptyDraft(type: "asset"|"liability", t = translations.en as T): NWDraft {
   return {
-    type, category: type === "asset" ? "Principal Residence" : t.netWorth.mortgage,
+    type, category: type === "asset" ? "Principal Residence" : "Mortgage",
     name: "", owner: "primary", value: "", notes: "",
     isSpousal: false, rrspContributor: "",
     pensionType: "DBPP", matchPct: "",
@@ -169,7 +169,7 @@ function emptyDraft(type: "asset"|"liability", t = translations.en as T): NWDraf
     holdingType: "",
     jointWithSpouse: false,
     stockOptionType: "RSU",
-    propertyType: t.netWorth.familyOccupied,
+    propertyType: "Family Occupied",
     purchasePrice: "",
     rentalIncome: "",
     rentalExpenses: "",
@@ -394,10 +394,10 @@ function AssetRow({
 // ── normalizeCat — remap legacy category names ────────────────────────────────
 function normalizeCat(e: NWEntry, t = translations.en as T): NWEntry {
   if (e.category === "ESU" || e.category === "RSU")
-    return { ...e, category: t.netWorth.employerStockOptions, metadata: { ...(e.metadata ?? {}), stockOptionType: e.category } };
-  if (e.category === t.netWorth.realEstate2)
-    return { ...e, category: t.netWorth.realEstateOther };
-  if (e.category === "RRSP/TFSA" || e.category === t.netWorth.registeredInv)
+    return { ...e, category: "Employer Stock Options", metadata: { ...(e.metadata ?? {}), stockOptionType: e.category } };
+  if (e.category === "Real Estate")
+    return { ...e, category: "Real Estate (other)" };
+  if (e.category === "RRSP/TFSA" || e.category === "Registered Investments (RRSP/TFSA)")
     return { ...e, category: "RRSP" };
   return e;
 }
@@ -547,7 +547,7 @@ export function NetWorthTab({ clientId, client, t }: { clientId: number; t: T; c
           const mortgageMeta: any = { linkedAssetName: propName };
           if (d.mortgageMonthlyPayment) mortgageMeta.monthlyPayment = d.mortgageMonthlyPayment;
           await api.post(`/api/clients/${clientId}/net-worth`, {
-            type: "liability", category: t.netWorth.mortgage,
+            type: "liability", category: "Mortgage",
             name: `Mortgage — ${propName}`, owner,
             value: String(mortgageVal), notes: `Linked to ${propName}`,
             metadata: mortgageMeta,

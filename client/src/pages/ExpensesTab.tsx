@@ -119,7 +119,7 @@ export function ExpensesTab({ clientId, addTrigger = 0, t = translations.en }: {
   const [selected, setSelected] = useState<string | null>(null);
   const [hovered, setHovered] = useState<string | null>(null);
   const [kbIndex, setKbIndex] = useState(0);
-  const [form, setForm] = useState({ category: t.cashFlow.housing, description: "", monthlyAmount: "", isEssential: true, includeInRetirement: true, retirementAdjustmentPct: "100", notes: "" });
+  const [form, setForm] = useState({ category: "Housing", description: "", monthlyAmount: "", isEssential: true, includeInRetirement: true, retirementAdjustmentPct: "100", notes: "" });
 
   // Global A key trigger
   useEffect(() => {
@@ -175,7 +175,7 @@ export function ExpensesTab({ clientId, addTrigger = 0, t = translations.en }: {
   const biggestSaving = biggestCat ? biggestCat.total * 0.10 * 12 / 0.04 : 0;
 
   function resetForm() {
-    setForm({ category: t.cashFlow.housing, description: "", monthlyAmount: "", isEssential: true, includeInRetirement: true, retirementAdjustmentPct: "100", notes: "" });
+    setForm({ category: "Housing", description: "", monthlyAmount: "", isEssential: true, includeInRetirement: true, retirementAdjustmentPct: "100", notes: "" });
     setEditing(null); setShowForm(false);
   }
 

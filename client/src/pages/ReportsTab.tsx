@@ -12,17 +12,17 @@ interface ReportSection {
 
 function makeReportSections(t: T): ReportSection[] {
   return [
-    { id: "comprehensive",        label: t.report.comprehensivePlan,   description: t.report.comprehensiveDesc,          category: t.report.catSummary,    sections: ["all"] },
-    { id: "one-page",             label: t.report.onePageSummary,      description: t.report.onePageDesc,                category: t.report.catSummary,    sections: ["retirement","tax","insurance"] },
-    { id: "net-worth",            label: t.report.netWorthStatement,   description: t.report.netWorthStatementDesc,      category: t.report.catNetWorth,   sections: ["networth"] },
-    { id: "asset-allocation",     label: t.report.assetAllocation,     description: t.report.assetAllocationDesc,        category: t.report.catNetWorth,   sections: ["networth"] },
-    { id: "retirement",           label: t.report.retirementProjection,description: t.report.retirementProjectionDesc,   category: t.report.catRetirement, sections: ["retirement","rrsp","tfsa"] },
-    { id: "retirement-readiness", label: t.report.retirementReadiness, description: t.report.retirementReadinessDesc,    category: t.report.catRetirement, sections: ["retirement"] },
-    { id: "insurance",            label: t.report.insuranceAnalysis,   description: t.report.insuranceAnalysisDesc,      category: t.report.catInsurance,  sections: ["insurance"] },
-    { id: "cash-flow",            label: t.report.cashFlowReport,      description: t.report.cashFlowReportDesc,         category: t.report.catCashFlow,   sections: ["cashflow","debt"] },
-    { id: "goal-status",          label: t.report.goalStatus,          description: t.report.goalStatusDesc,             category: t.report.catGoals,      sections: ["goals"] },
-    { id: "tax-strategy",         label: t.report.taxStrategy,         description: t.report.taxStrategyDesc,            category: t.report.catTaxEstate,  sections: ["tax","rrsp","tfsa","capitalGains","incomeSplitting"] },
-    { id: "estate-summary",       label: t.report.estateSummary,       description: t.report.estateSummaryDesc,          category: t.report.catTaxEstate,  sections: ["estate"] },
+    { id: "comprehensive",        label: t.report.comprehensivePlan,   description: t.report.comprehensiveDesc,          category: "summary",    sections: ["all"] },
+    { id: "one-page",             label: t.report.onePageSummary,      description: t.report.onePageDesc,                category: "summary",    sections: ["retirement","tax","insurance"] },
+    { id: "net-worth",            label: t.report.netWorthStatement,   description: t.report.netWorthStatementDesc,      category: "networth",   sections: ["networth"] },
+    { id: "asset-allocation",     label: t.report.assetAllocation,     description: t.report.assetAllocationDesc,        category: "networth",   sections: ["networth"] },
+    { id: "retirement",           label: t.report.retirementProjection,description: t.report.retirementProjectionDesc,   category: "retirement", sections: ["retirement","rrsp","tfsa"] },
+    { id: "retirement-readiness", label: t.report.retirementReadiness, description: t.report.retirementReadinessDesc,    category: "retirement", sections: ["retirement"] },
+    { id: "insurance",            label: t.report.insuranceAnalysis,   description: t.report.insuranceAnalysisDesc,      category: "insurance",  sections: ["insurance"] },
+    { id: "cash-flow",            label: t.report.cashFlowReport,      description: t.report.cashFlowReportDesc,         category: "cashflow",   sections: ["cashflow","debt"] },
+    { id: "goal-status",          label: t.report.goalStatus,          description: t.report.goalStatusDesc,             category: "goals",      sections: ["goals"] },
+    { id: "tax-strategy",         label: t.report.taxStrategy,         description: t.report.taxStrategyDesc,            category: "taxestate",  sections: ["tax","rrsp","tfsa","capitalGains","incomeSplitting"] },
+    { id: "estate-summary",       label: t.report.estateSummary,       description: t.report.estateSummaryDesc,          category: "taxestate",  sections: ["estate"] },
   ];
 }
 

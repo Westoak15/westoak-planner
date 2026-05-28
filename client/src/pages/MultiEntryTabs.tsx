@@ -1,4 +1,5 @@
 import { useLocale } from '../hooks/useLocale';
+import { translations, type T } from '../i18n/translations';
 /**
  * MultiEntryTabs.tsx
  * Net Worth, Retirement, Insurance, RESP, Debt tabs
@@ -446,7 +447,7 @@ export function NetWorthTab({ clientId, client, t }: { clientId: number; t: T; c
   function addVoiceDraft(type: "asset" | "liability", parsed: Record<string, string>) {
     const base = emptyDraft(type);
     const cats = type === "asset" ? NW_ASSET_CATS : NW_LIAB_CATS;
-    const safeFallback = type === "asset" ? "Other Asset" : t.netWorth.otherLiability2;
+    const safeFallback = type === "asset" ? "Other Asset" : "Other Liability";
     let category = base.category || safeFallback;
     if (parsed.category) {
       const match = cats.find(c => c.toLowerCase() === parsed.category.toLowerCase());

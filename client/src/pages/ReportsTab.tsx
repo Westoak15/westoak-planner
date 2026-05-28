@@ -359,5 +359,6 @@ ${bodies.join('\n<div class="report-divider"></div>\n')}
     </div>
     </>
     }
+  </div>
   );
 }

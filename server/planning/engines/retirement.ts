@@ -2,7 +2,7 @@
 import type { RetirementInputs, RetirementProjection, RetirementYearRow } from "../types.js";
 import { calculateFederalTax, calculateProvincialTax, calculateCPP, getCppMonthlyBenefit, getOasMonthlyBenefit, getRrifMinimumFactor, getMarginalRate } from "../data/taxData2024.js";
 
-export function projectRetirement(inputs: RetirementInputs): RetirementProjection {
+export function projectRetirement(inputs: RetirementInputs, locale = "en"): RetirementProjection {
   const { currentAge, retirementAge, planToAge, province, rrspBalance, tfsaBalance, nonRegBalance, annualRrspContribution, annualTfsaContribution, annualNonRegContribution, employmentIncome, desiredRetirementIncome, cppStartAge, oasStartAge, yearsInCanada, equityReturn, bondReturn, inflationRate, equityAllocation, pensionMonthly, rrifConversionAge } = inputs;
   const portfolioReturn = equityReturn * equityAllocation + bondReturn * (1 - equityAllocation);
   let rrsp = rrspBalance, tfsa = tfsaBalance, nonReg = nonRegBalance;
@@ -56,8 +56,14 @@ export function projectRetirement(inputs: RetirementInputs): RetirementProjectio
   const totalAnnualGovt = cppAnnual + oasAnnual + pensionAnnual;
   const marginalNow = getMarginalRate(employmentIncome, province), marginalRet = getMarginalRate(desiredRetirementIncome, province);
   let rrspVsTfsaRecommendation: "rrsp" | "tfsa" | "split" = "split", rrspVsTfsaRationale = "";
-  if (marginalNow > marginalRet + 0.05) { rrspVsTfsaRecommendation = "rrsp"; rrspVsTfsaRationale = `Current marginal rate (${(marginalNow*100).toFixed(1)}%) is significantly higher than projected retirement rate (${(marginalRet*100).toFixed(1)}%). Maximizing RRSP contributions provides the largest tax deferral benefit.`; }
-  else if (marginalRet > marginalNow + 0.05) { rrspVsTfsaRecommendation = "tfsa"; rrspVsTfsaRationale = `Projected retirement rate (${(marginalRet*100).toFixed(1)}%) exceeds current rate (${(marginalNow*100).toFixed(1)}%). TFSA withdrawals are not taxable income and will not trigger OAS clawback.`; }
-  else { rrspVsTfsaRecommendation = "split"; rrspVsTfsaRationale = `Current (${(marginalNow*100).toFixed(1)}%) and projected retirement (${(marginalRet*100).toFixed(1)}%) marginal rates are similar. A split strategy provides flexibility and income-splitting opportunities in retirement.`; }
+  if (marginalNow > marginalRet + 0.05) { rrspVsTfsaRecommendation = "rrsp"; rrspVsTfsaRationale = locale==="fr"
+    ? `Le taux marginal actuel (${(marginalNow*100).toFixed(1)}%) est nettement supérieur au taux de retraite projeté (${(marginalRet*100).toFixed(1)}%). Maximiser les cotisations REER offre le plus grand avantage de report d'impôt.`
+    : `Current marginal rate (${(marginalNow*100).toFixed(1)}%) is significantly higher than projected retirement rate (${(marginalRet*100).toFixed(1)}%). Maximizing RRSP contributions provides the largest tax deferral benefit.`; }
+  else if (marginalRet > marginalNow + 0.05) { rrspVsTfsaRecommendation = "tfsa"; rrspVsTfsaRationale = locale==="fr"
+    ? `Le taux de retraite projeté (${(marginalRet*100).toFixed(1)}%) dépasse le taux actuel (${(marginalNow*100).toFixed(1)}%). Les retraits CELI ne sont pas imposables et ne déclencheront pas de récupération de la SV.`
+    : `Projected retirement rate (${(marginalRet*100).toFixed(1)}%) exceeds current rate (${(marginalNow*100).toFixed(1)}%). TFSA withdrawals are not taxable income and will not trigger OAS clawback.`; }
+  else { rrspVsTfsaRecommendation = "split"; rrspVsTfsaRationale = locale==="fr"
+    ? `Les taux marginaux actuel (${(marginalNow*100).toFixed(1)}%) et à la retraite (${(marginalRet*100).toFixed(1)}%) sont similaires. Une stratégie mixte offre flexibilité et opportunités de fractionnement du revenu à la retraite.`
+    : `Current (${(marginalNow*100).toFixed(1)}%) and projected retirement (${(marginalRet*100).toFixed(1)}%) marginal rates are similar. A split strategy provides flexibility and income-splitting opportunities in retirement.`; }
   return { yearsToRetirement: retirementAge - currentAge, retirementSavingsAtRetirement: totalAtRetirement, rrspAtRetirement, tfsaAtRetirement, nonRegAtRetirement, annualIncomeAtRetirement: desiredRetirementIncome, incomeFromRrsp: Math.round(Math.min(rrspAtRetirement * 0.04, Math.max(0, desiredRetirementIncome - totalAnnualGovt))), incomeFromTfsa: Math.round(Math.max(0, desiredRetirementIncome - totalAnnualGovt - rrspAtRetirement * 0.04)), incomeFromNonReg: 0, incomeFromCpp: Math.round(cppAnnual), incomeFromOas: Math.round(oasAnnual), incomeFromPension: Math.round(pensionAnnual), cppMonthlyBenefit: Math.round(cppMonthly * 100) / 100, oasMonthlyBenefit: Math.round(oasMonthly * 100) / 100, cppBreakevenAge, oasBreakevenAge, shortfallOrSurplus: Math.round(sustainableW + totalAnnualGovt - desiredRetirementIncome), fundingRatio: Math.round(((sustainableW + totalAnnualGovt) / Math.max(desiredRetirementIncome, 1)) * 100) / 100, portfolioDepletionAge, successProbability: Math.min(100, Math.max(0, successProbability)), yearByYear, rrspVsTfsaRecommendation, rrspVsTfsaRationale };
 }

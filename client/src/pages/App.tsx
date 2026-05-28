@@ -728,33 +728,6 @@ function ClientDetail({ client, onBack, onPlanSelect, onUpdate, onLocaleChange, 
           </div>
         </div>
         <div className="ml-auto flex items-center gap-3">
-          {/* Client language toggle — hidden for QC advisors (all screens enforced FR) */}
-          <div className="flex items-center gap-1.5">
-            <div className="flex items-center gap-1 border border-gray-200 rounded-lg p-0.5" title="Report language">
-              <Globe className="w-3.5 h-3.5 text-gray-400 ml-1.5" />
-              {(["en", "fr"] as const).map(lang => {
-                const activeLang = client.preferredLanguage ?? (client.province === "QC" ? "fr" : "en");
-                return (
-                  <button
-                    key={lang}
-                    onClick={async () => {
-                      try {
-                        const updated = await api.patch<Client>(`/api/clients/${client.id}`, { preferredLanguage: lang });
-                        onUpdate(updated);
-                        onLocaleChange(lang as ClientLocale);
-                      } catch {}
-                    }}
-                    className={`text-xs font-semibold px-2 py-1 rounded transition-colors ${
-                      activeLang === lang
-                        ? "bg-[#0c1e3a] text-white"
-                        : "text-gray-400 hover:text-gray-700"
-                    }`}
-                  >{lang.toUpperCase()}</button>
-                );
-              })}
-            </div>
-            <span className="text-[10px] text-gray-400">Report lang</span>
-          </div>
           
           <div className="flex gap-2">
           {editing ? (

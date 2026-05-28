@@ -2,7 +2,7 @@
 import type { TfsaInputs, TfsaAnalysis, TfsaYearRow, TfsaVsTaxableRow } from "../types.js";
 import { TFSA_ANNUAL_LIMITS, getTfsaCumulativeRoom, getMarginalRate } from "../data/taxData2024.js";
 
-export function analyzeTfsa(inputs: TfsaInputs): TfsaAnalysis {
+export function analyzeTfsa(inputs: TfsaInputs, locale = "en"): TfsaAnalysis {
   const { currentAge, birthYear, currentBalance, withdrawalsThisYear, annualContribution, expectedReturnRate, province } = inputs;
   const currentYear = new Date().getFullYear();
   const lifetimeRoomToDate = getTfsaCumulativeRoom(birthYear, currentYear);
@@ -24,5 +24,11 @@ export function analyzeTfsa(inputs: TfsaInputs): TfsaAnalysis {
     tfsaBal = newBal;
   }
   const retIdx = Math.min(29, Math.max(0, 65 - currentAge));
-  return { lifetimeRoomToDate, contributionsMadeToDate:currentBalance, withdrawalRoomRecovered:withdrawalsThisYear, currentAvailableRoom, new2024Room, projectedBalance10Years:yearByYear[Math.min(9,yearByYear.length-1)]?.closingBalance??0, projectedBalance20Years:yearByYear[Math.min(19,yearByYear.length-1)]?.closingBalance??0, projectedBalanceAtRetirement:yearByYear[retIdx]?.closingBalance??0, taxFreeSavingsVsTaxable:taxableVsComparison, yearByYear, withdrawalStrategy:currentAge>=55?"Prioritize TFSA withdrawals to supplement RRIF income and minimize OAS clawback. TFSA withdrawals do not increase net income.":"Continue maximizing annual contributions. TFSA withdrawals create equivalent room the following calendar year.", optimalWithdrawalAge:65 };
+  return { lifetimeRoomToDate, contributionsMadeToDate:currentBalance, withdrawalRoomRecovered:withdrawalsThisYear, currentAvailableRoom, new2024Room, projectedBalance10Years:yearByYear[Math.min(9,yearByYear.length-1)]?.closingBalance??0, projectedBalance20Years:yearByYear[Math.min(19,yearByYear.length-1)]?.closingBalance??0, projectedBalanceAtRetirement:yearByYear[retIdx]?.closingBalance??0, taxFreeSavingsVsTaxable:taxableVsComparison, yearByYear, withdrawalStrategy: locale === "fr"
+    ? (currentAge >= 55
+        ? "Priorisez les retraits CELI pour compléter le revenu FERR et minimiser la récupération de la SV. Les retraits CELI n'augmentent pas le revenu net."
+        : "Continuez à maximiser vos cotisations annuelles. Les retraits CELI créent des droits équivalents l'année civile suivante.")
+    : (currentAge >= 55
+        ? "Prioritize TFSA withdrawals to supplement RRIF income and minimize OAS clawback. TFSA withdrawals do not increase net income."
+        : "Continue maximizing annual contributions. TFSA withdrawals create equivalent room the following calendar year."), optimalWithdrawalAge:65 };
 }

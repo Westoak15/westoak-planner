@@ -443,18 +443,18 @@ planningRouter.post("/report/:clientId", async (req: AuthRequest, res: Response)
     // ── Run engines ───────────────────────────────────────────────────────────
     const engineResults: Parameters<typeof generateComprehensiveReport>[1] = {};
 
-    if (wanted.includes("retirement"))      engineResults.retirement      = projectRetirement(retInputs);
-    if (wanted.includes("tax"))             engineResults.tax             = projectTax(taxInputs);
-    if (wanted.includes("rrsp"))            engineResults.rrsp            = analyzeRrsp(rrspInputs);
-    if (wanted.includes("tfsa"))            engineResults.tfsa            = analyzeTfsa(tfsaInputs);
+    if (wanted.includes("retirement"))      engineResults.retirement      = projectRetirement(retInputs, locale);
+    if (wanted.includes("tax"))             engineResults.tax             = projectTax(taxInputs, locale);
+    if (wanted.includes("rrsp"))            engineResults.rrsp            = analyzeRrsp(rrspInputs, locale);
+    if (wanted.includes("tfsa"))            engineResults.tfsa            = analyzeTfsa(tfsaInputs, locale);
     if (wanted.includes("capitalGains"))    engineResults.capitalGains    = analyzeCapitalGains(cgInputs);
-    if (wanted.includes("incomeSplitting")) engineResults.incomeSplitting = analyzeIncomeSplitting(isInputs);
-    if (wanted.includes("insurance"))       engineResults.insurance       = analyzeInsurance(insInputs);
+    if (wanted.includes("incomeSplitting")) engineResults.incomeSplitting = analyzeIncomeSplitting(isInputs, locale);
+    if (wanted.includes("insurance"))       engineResults.insurance       = analyzeInsurance(insInputs, locale);
     if (wanted.includes("education") && eduInputs.children.length > 0)
                                             engineResults.education       = analyzeEducation(eduInputs);
-    if (wanted.includes("estate"))          engineResults.estate          = analyzeEstate(estInputs);
+    if (wanted.includes("estate"))          engineResults.estate          = analyzeEstate(estInputs, locale);
     if (wanted.includes("debt") && debtRows.length > 0)
-                                            engineResults.debt            = analyzeDebt(debtInputs);
+                                            engineResults.debt            = analyzeDebt(debtInputs, locale);
 
     // ── Build report inputs (engine sections + raw data sections) ─────────────
     const reportInputs = {

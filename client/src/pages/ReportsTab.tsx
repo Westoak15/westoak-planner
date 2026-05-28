@@ -356,9 +356,7 @@ ${bodies.join('\n<div class="report-divider"></div>\n')}
           <button onClick={selectNone} className="text-white/50 hover:text-white transition-colors text-sm">Clear</button>
         </div>
       )}
-    </div>
-    </>
-    }
+    </>}
   </div>
   );
 }

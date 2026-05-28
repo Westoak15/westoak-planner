@@ -107,13 +107,13 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
-function Input({ value, onChange, type = "text", min, max, step, prefix }:
-  { value: any; onChange: (v: any) => void; type?: string; min?: number; max?: number; step?: number; prefix?: string }) {
+function Input({ value, onChange, type = "text", min, max, step, prefix, placeholder }:
+  { value: any; onChange: (v: any) => void; type?: string; min?: number; max?: number; step?: number; prefix?: string; placeholder?: string }) {
   return (
     <div className="relative">
       {prefix && <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">{prefix}</span>}
       <input type={type} value={value} min={min} max={max} step={step}
-        onChange={e => onChange(type === "number" ? +e.target.value : e.target.value)}
+        placeholder={placeholder} onChange={e => onChange(type === "number" ? +e.target.value : e.target.value)}
         className={`w-full border border-gray-200 rounded-lg py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0891b2]/30 ${prefix ? "pl-7 pr-3" : "px-3"}`} />
     </div>
   );
@@ -149,7 +149,7 @@ function PoolTile({ years, dailyBenefit, selected, onSelect, result }:
 
 // ── Self-Insure vs Insure Chart ───────────────────────────────────────────────
 
-function SelfInsureChart({ result, currentAge }: { result: LTCResult; currentAge: number }) {
+function SelfInsureChart({ result, currentAge, t }: { result: LTCResult; currentAge: number; t: T }) {
   const data = useMemo(() => {
     const annualPremium = result.totalPremiumsToLife / Math.max(1, 90 - currentAge);
     return Array.from({ length: Math.min(40, 90 - currentAge) }, (_, i) => {
@@ -447,7 +447,7 @@ export function LTCTab({ clientId, client, t = translations.en }: Props) {
 
             <div className="grid grid-cols-2 gap-3">
               <Field label={t.ltc.annualPremium}>
-                <Input type="number" value={form.estAnnualPremium} onChange={set("estAnnualPremium")} prefix="$"
+                <Input type="number" value={String(form.estAnnualPremium ?? "")} onChange={set("estAnnualPremium")} prefix="$"
                   placeholder={t.ltc.estimatePlaceholder} />
               </Field>
               <Field label={t.ltc.careCostInflation}>
@@ -595,7 +595,7 @@ export function LTCTab({ clientId, client, t = translations.en }: Props) {
                   <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
                     Cumulative Premiums Over Time
                   </p>
-                  <SelfInsureChart result={r} currentAge={form.currentAge} />
+                  <SelfInsureChart result={r} currentAge={form.currentAge} t={t} />
                 </div>
 
                 {/* Inflation rider value */}

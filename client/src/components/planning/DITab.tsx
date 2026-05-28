@@ -7,6 +7,8 @@ import { RadialBarChart, RadialBar, PolarAngleAxis, ResponsiveContainer, Tooltip
 import { Save, Trash2, ChevronDown, ChevronUp, AlertTriangle, CheckCircle, TrendingUp, Briefcase } from "lucide-react";
 import { translations, type T } from "../../i18n/translations";
 
+const PROVINCES = ["AB","BC","MB","NB","NL","NS","NT","NU","ON","PE","QC","SK","YT"];
+
 interface Props { clientId: number; client?: any; t?: T; }
 
 interface FormState {
@@ -101,7 +103,7 @@ function Select({ value, onChange, options }: { value: any; onChange: (v: any) =
 
 // ── Replacement Ratio Gauge ───────────────────────────────────────────────────
 
-function ReplacementGauge({ ratio }: { ratio: number }) {
+function ReplacementGauge({ ratio, t }: { ratio: number; t: T }) {
   const capped  = Math.min(100, ratio);
   const color   = ratio >= 70 ? "#16a34a" : ratio >= 50 ? "#d97706" : "#dc2626";
   const data    = [{ name: "ratio", value: capped, fill: color }];
@@ -422,7 +424,7 @@ export function DITab({ clientId, client, t = translations.en }: Props) {
             {/* Gauge + top stats */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 items-start">
               <div className="sm:col-span-1 flex justify-center">
-                <ReplacementGauge ratio={r.replacementRatio} />
+                <ReplacementGauge ratio={r.replacementRatio} t={t} />
               </div>
               {[
                 { label: t.di.coverageGap70,  value: fmt$(r.coverageGap) + "/mo",     color: r.coverageGap === 0 ? "#16a34a" : "#dc2626" },

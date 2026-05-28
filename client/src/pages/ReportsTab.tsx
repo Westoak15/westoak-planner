@@ -27,20 +27,30 @@ function makeReportSections(t: T): ReportSection[] {
 }
 
 const CATEGORY_COLORS: Record<string, string> = {
-  "Summary":      "bg-[#0c1e3a]",
-  "Net Worth":    "bg-blue-600",
-  "Retirement":   "bg-teal-600",
-  "Insurance":    "bg-purple-600",
-  "Cash Flow":    "bg-amber-500",
-  "Goals":        "bg-green-600",
-  "Tax & Estate": "bg-indigo-600",
+  "summary":    "bg-[#0c1e3a]",
+  "networth":   "bg-blue-600",
+  "retirement": "bg-teal-600",
+  "insurance":  "bg-purple-600",
+  "cashflow":   "bg-amber-500",
+  "goals":      "bg-green-600",
+  "taxestate":  "bg-indigo-600",
 };
+
+const CATEGORY_ORDER = ["summary","networth","retirement","insurance","cashflow","goals","taxestate"];
 
 export function ReportsTab({ clientId, t = translations.en }: { clientId: number; t?: T }) {
   const [selected, setSelected]   = useState<Set<string>>(new Set());
   const [generating, setGenerating] = useState(false);
   const REPORT_SECTIONS = makeReportSections(t);
-  const CATEGORIES = [t.report.catSummary, t.report.catNetWorth, t.report.catRetirement, t.report.catInsurance, t.report.catCashFlow, t.report.catGoals, t.report.catTaxEstate];
+  const CATEGORY_LABELS: Record<string, string> = {
+    "summary":    t.report.catSummary,
+    "networth":   t.report.catNetWorth,
+    "retirement": t.report.catRetirement,
+    "insurance":  t.report.catInsurance,
+    "cashflow":   t.report.catCashFlow,
+    "goals":      t.report.catGoals,
+    "taxestate":  t.report.catTaxEstate,
+  };
   const token = () => localStorage.getItem("fp_token") ?? "";
 
   // ── Fetch a report from the planning engine ─────────────────────────────────
@@ -164,7 +174,7 @@ ${bodies.join('\n<div class="report-divider"></div>\n')}
 
       {/* Report sections by category */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {CATEGORIES.map(cat => {
+        {CATEGORY_ORDER.map(cat => {
           const catSections = REPORT_SECTIONS.filter(s => s.category === cat);
           if (!catSections.length) return null;
           const dotColor = CATEGORY_COLORS[cat] ?? "bg-slate-400";
@@ -174,7 +184,7 @@ ${bodies.join('\n<div class="report-divider"></div>\n')}
               <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <span className={`w-2.5 h-2.5 rounded-full ${dotColor}`} />
-                  <span className="text-sm font-semibold text-slate-800">{cat}</span>
+                  <span className="text-sm font-semibold text-slate-800">{CATEGORY_LABELS[cat] ?? cat}</span>
                 </div>
                 <button
                   onClick={() => {
@@ -204,7 +214,7 @@ ${bodies.join('\n<div class="report-divider"></div>\n')}
                       selected.has(section.id) ? "bg-[#0c1e3a] border-[#0c1e3a]" : "border-slate-300"
                     }`}>
                       {selected.has(section.id) && (
-                        <svg className="w-2.5 h-2.5 text-white" viewBox="0 0 10 10" fill={t.report.none}>
+                        <svg className="w-2.5 h-2.5 text-white" viewBox="0 0 10 10" fill="none">
                           <path d="M1.5 5L4 7.5L8.5 2.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                         </svg>
                       )}

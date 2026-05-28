@@ -500,7 +500,7 @@ export function ScenarioComparisonPanel({ clientId, onClose, t = translations.en
             <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
           </div>
 
-          <div className="flex-1 overflow-y-auto px-6 py-4 space-y-2">
+          <div className="flex-1 overflow-y-auto px-6 py-4 pb-24 space-y-2">
             {loading && <p className="text-sm text-gray-400 text-center py-8">Loading projections…</p>}
             {!loading && projections.length === 0 && (
               <p className="text-sm text-gray-400 text-center py-8">No projections on file. Create at least 2 projections first.</p>
@@ -596,7 +596,7 @@ export function ScenarioComparisonPanel({ clientId, onClose, t = translations.en
         </div>
 
         {/* ── Scrollable body ───────────────────────────────────────────────── */}
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto pb-20">
 
           {/* ── AI Narrative ──────────────────────────────────────────────── */}
           {narrative && (

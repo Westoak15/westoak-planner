@@ -633,7 +633,7 @@ export function NetWorthTab({ clientId, client, t }: { clientId: number; t: T; c
       <div className="grid grid-cols-3 gap-6 flex-1 min-h-0 h-full">
 
         {/* ── Left 2/3 ───────────────────────────────────────────────────── */}
-        <div className="col-span-2 space-y-4 overflow-y-auto min-h-0 h-full pr-2">
+        <div className="col-span-2 space-y-4 overflow-y-auto min-h-0 h-full pr-2 pb-20">
 
           {/* Action bar */}
           <div className="flex items-center justify-between">
@@ -865,7 +865,7 @@ export function NetWorthTab({ clientId, client, t }: { clientId: number; t: T; c
         </div>
 
         {/* ── Right 1/3 ──────────────────────────────────────────────────── */}
-        <div className="space-y-4 overflow-y-auto min-h-0 h-full">
+        <div className="space-y-4 overflow-y-auto min-h-0 h-full pb-20">
 
           {/* Pie chart */}
           {totalA > 0 && (

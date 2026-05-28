@@ -414,7 +414,7 @@ function MeetingSummaryDrawer({
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto px-5 py-5 space-y-6">
+        <div className="flex-1 overflow-y-auto px-5 py-5 pb-24 space-y-6">
           <div>
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-1.5 text-[10px] font-semibold text-slate-400 uppercase tracking-[0.1em]">

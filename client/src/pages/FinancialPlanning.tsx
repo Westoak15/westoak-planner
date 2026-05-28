@@ -1744,7 +1744,7 @@ function AdjustPanel({ open, onClose, form, setForm, t = translations.en }: { op
         <h2 className="font-semibold text-slate-900">{t.taxEstate.adjustStrategy}</h2>
         <button onClick={onClose} className="text-slate-400 hover:text-slate-600"><X className="w-5 h-5" /></button>
       </div>
-      <div className="flex-1 overflow-y-auto p-5 space-y-4">
+      <div className="flex-1 overflow-y-auto p-5 pb-24 space-y-4">
         <p className="text-xs text-slate-400 uppercase font-semibold tracking-wide">Drawdown</p>
         {field("RRSP Withdrawal Start Age", "rrspStartAge", "e.g. 65")}
         {field("TFSA Drawdown %", "tfsaDrawdownPct", "e.g. 50")}
@@ -2990,7 +2990,7 @@ const { data: plans = [] } = useClientPlans(selectedClientId ?? 0);
             ))}
           </select>
         </div>
-        <nav className="flex-1 p-2 space-y-0.5 overflow-y-auto" data-testid="fp-sidebar-nav">
+        <nav className="flex-1 p-2 pb-10 space-y-0.5 overflow-y-auto" data-testid="fp-sidebar-nav">
           {tabs.map(tab => (
             <button
               key={tab.key}
@@ -3017,7 +3017,7 @@ const { data: plans = [] } = useClientPlans(selectedClientId ?? 0);
           ))}
         </nav>
       </aside>
-      <div style={{ flex: 1, minWidth: 0 }} className="overflow-y-auto p-6">
+      <div style={{ flex: 1, minWidth: 0 }} className="overflow-y-auto p-6 pb-24">
         {selectedClientId && unresolvedFlags.length > 0 && (
           <div className="mb-4 px-4 py-3 bg-amber-50 border border-amber-200 rounded-xl flex items-center gap-3" data-testid="stale-banner">
             <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0" />

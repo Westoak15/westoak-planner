@@ -483,7 +483,7 @@ function ClientsTab({ onSelect, tAdv = translations.en }: { onSelect: (c: Client
         </div>
 
         {/* Queue */}
-        <div className="flex-1 overflow-y-auto bg-white">
+        <div className="flex-1 overflow-y-auto bg-white pb-20">
           {loading ? (
             <div className="flex flex-col gap-2 p-4">
               {[1,2,3,4,5].map(i => (

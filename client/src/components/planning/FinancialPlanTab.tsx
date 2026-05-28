@@ -375,7 +375,7 @@ export function FinancialPlanTab({ clientId, clientName, t = translations.en }: 
         headers: { Authorization: `Bearer ${token()}`, "Content-Type": "application/json" },
         body: JSON.stringify({ plan }),
       });
-      if (!res.ok) throw new Error(t.plan.error);
+      if (!res.ok) { let msg = t.plan.error; try { const e = await res.json(); msg = e.message ?? msg; } catch {} throw new Error(msg); }
       const html = await res.text();
       const blob = new Blob([html], { type: "text/html" });
       const win  = window.open(URL.createObjectURL(blob), "_blank");
@@ -416,8 +416,9 @@ export function FinancialPlanTab({ clientId, clientName, t = translations.en }: 
         body: JSON.stringify({}),
       });
       if (!res.ok) {
-        const e = await res.json();
-        throw new Error(e.message ?? "Generation failed");
+        let message = `Generation failed (${res.status})`;
+        try { const e = await res.json(); message = e.message ?? message; } catch {}
+        throw new Error(message);
       }
       const data = await res.json();
       console.log("[generate-plan] response keys:", Object.keys(data));

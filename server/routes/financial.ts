@@ -44,7 +44,9 @@ r.use((req: any, res: any, next: any) => {
 
 r.get("/clients/:id/overview", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.id;
-  if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
+  let _owns = false;
+    try { _owns = await ownsClient(cid, req.userId!); } catch (e: any) { return res.status(500).json({ message: "Auth check failed: " + e.message }); }
+    if (!_owns) return res.status(404).json({ message: "Not found" });
   const [nw, ret, ins, edu, debt, tax, estate, ai, clientPlans] = await Promise.all([
     db.select().from(netWorthEntries).where(eq(netWorthEntries.clientId, cid)),
     db.select().from(retirementProjections).where(eq(retirementProjections.clientId, cid)),
@@ -70,7 +72,9 @@ r.get("/clients/:id/overview", async (req: AuthRequest, res: Response) => {
 
 r.get("/clients/:clientId/financial-planning-overview", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.clientId;
-  if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
+  let _owns = false;
+    try { _owns = await ownsClient(cid, req.userId!); } catch (e: any) { return res.status(500).json({ message: "Auth check failed: " + e.message }); }
+    if (!_owns) return res.status(404).json({ message: "Not found" });
   const [nw, ret, ins, edu, debt, tax, estate, ai, fp] = await Promise.all([
     db.select().from(netWorthEntries).where(eq(netWorthEntries.clientId, cid)),
     db.select().from(retirementProjections).where(eq(retirementProjections.clientId, cid)),
@@ -99,13 +103,17 @@ r.get("/clients/:clientId/financial-planning-overview", async (req: AuthRequest,
 
 r.get("/clients/:id/net-worth", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.id;
-  if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
+  let _owns = false;
+    try { _owns = await ownsClient(cid, req.userId!); } catch (e: any) { return res.status(500).json({ message: "Auth check failed: " + e.message }); }
+    if (!_owns) return res.status(404).json({ message: "Not found" });
   res.json(await db.select().from(netWorthEntries).where(eq(netWorthEntries.clientId, cid)));
 });
 
 r.post("/clients/:id/net-worth", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.id;
-  if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
+  let _owns = false;
+    try { _owns = await ownsClient(cid, req.userId!); } catch (e: any) { return res.status(500).json({ message: "Auth check failed: " + e.message }); }
+    if (!_owns) return res.status(404).json({ message: "Not found" });
   try {
     const payload = req.body.data ?? req.body;
     const { type, category, name, value, owner, notes, metadata } = payload;
@@ -137,7 +145,9 @@ r.delete("/net-worth/:id", async (req: AuthRequest, res: Response) => {
 
 r.get("/clients/:clientId/liabilities", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.clientId;
-  if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
+  let _owns = false;
+    try { _owns = await ownsClient(cid, req.userId!); } catch (e: any) { return res.status(500).json({ message: "Auth check failed: " + e.message }); }
+    if (!_owns) return res.status(404).json({ message: "Not found" });
   const [nwRows, debtRows] = await Promise.all([
     db.select({ id: netWorthEntries.id, name: netWorthEntries.name, category: netWorthEntries.category, value: netWorthEntries.value, metadata: netWorthEntries.metadata })
       .from(netWorthEntries).where(and(eq(netWorthEntries.clientId, cid), eq(netWorthEntries.type, "liability"))),
@@ -163,7 +173,9 @@ r.get("/clients/:clientId/liabilities", async (req: AuthRequest, res: Response) 
 
 r.get("/clients/:id/retirement", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.id;
-  if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
+  let _owns = false;
+    try { _owns = await ownsClient(cid, req.userId!); } catch (e: any) { return res.status(500).json({ message: "Auth check failed: " + e.message }); }
+    if (!_owns) return res.status(404).json({ message: "Not found" });
   const person = req.query.person as string | undefined;
   const rows = await db.select().from(retirementProjections).where(eq(retirementProjections.clientId, cid));
   const filtered = person ? rows.filter(r => (r.person ?? "primary") === person) : rows;
@@ -182,7 +194,9 @@ r.get("/clients/:id/retirement", async (req: AuthRequest, res: Response) => {
 
 r.post("/clients/:id/retirement", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.id;
-  if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
+  let _owns = false;
+    try { _owns = await ownsClient(cid, req.userId!); } catch (e: any) { return res.status(500).json({ message: "Auth check failed: " + e.message }); }
+    if (!_owns) return res.status(404).json({ message: "Not found" });
   try {
     const data = safe(req.body.data ?? req.body);
     if (data.currentSavings && !data.rrspBalance) data.rrspBalance = data.currentSavings;
@@ -196,7 +210,9 @@ r.post("/clients/:id/retirement", async (req: AuthRequest, res: Response) => {
 
 r.post("/clients/:id/retirement-projections", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.id;
-  if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
+  let _owns = false;
+    try { _owns = await ownsClient(cid, req.userId!); } catch (e: any) { return res.status(500).json({ message: "Auth check failed: " + e.message }); }
+    if (!_owns) return res.status(404).json({ message: "Not found" });
   const body = req.body;
   try {
     const plans = await db.select().from(pensionPlans).where(eq(pensionPlans.clientId, cid));
@@ -247,7 +263,9 @@ res.json(row);
 
 r.get("/clients/:id/retirement-projections", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.id;
-  if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
+  let _owns = false;
+    try { _owns = await ownsClient(cid, req.userId!); } catch (e: any) { return res.status(500).json({ message: "Auth check failed: " + e.message }); }
+    if (!_owns) return res.status(404).json({ message: "Not found" });
   res.json(await db.select().from(retirementProjections).where(eq(retirementProjections.clientId, cid)));
 });
 
@@ -281,33 +299,43 @@ r.delete("/retirement-projections/:id", async (req: AuthRequest, res: Response) 
 
 r.get("/clients/:id/insurance", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.id;
-  if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
+  let _owns = false;
+    try { _owns = await ownsClient(cid, req.userId!); } catch (e: any) { return res.status(500).json({ message: "Auth check failed: " + e.message }); }
+    if (!_owns) return res.status(404).json({ message: "Not found" });
   res.json(await db.select().from(insuranceAnalyses).where(eq(insuranceAnalyses.clientId, cid)));
 });
 
 r.get("/clients/:id/insurance-analyses", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.id;
-  if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
+  let _owns = false;
+    try { _owns = await ownsClient(cid, req.userId!); } catch (e: any) { return res.status(500).json({ message: "Auth check failed: " + e.message }); }
+    if (!_owns) return res.status(404).json({ message: "Not found" });
   res.json(await db.select().from(insuranceAnalyses).where(eq(insuranceAnalyses.clientId, cid)));
 });
 
 r.post("/clients/:id/insurance", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.id;
-  if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
+  let _owns = false;
+    try { _owns = await ownsClient(cid, req.userId!); } catch (e: any) { return res.status(500).json({ message: "Auth check failed: " + e.message }); }
+    if (!_owns) return res.status(404).json({ message: "Not found" });
   const [row] = await (db.insert(insuranceAnalyses) as any).values({ clientId: cid, ...safe(req.body) }).returning();
   res.status(201).json(row);
 });
 
 r.post("/clients/:id/insurance-analyses", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.id;
-  if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
+  let _owns = false;
+    try { _owns = await ownsClient(cid, req.userId!); } catch (e: any) { return res.status(500).json({ message: "Auth check failed: " + e.message }); }
+    if (!_owns) return res.status(404).json({ message: "Not found" });
   const [row] = await (db.insert(insuranceAnalyses) as any).values({ clientId: cid, ...safe(req.body.data ?? req.body) }).returning();
   res.status(201).json(row);
 });
 
 r.post("/clients/:clientId/insurance-worksheet", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.clientId;
-  if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
+  let _owns = false;
+    try { _owns = await ownsClient(cid, req.userId!); } catch (e: any) { return res.status(500).json({ message: "Auth check failed: " + e.message }); }
+    if (!_owns) return res.status(404).json({ message: "Not found" });
   try {
     const formData = req.body.data ?? req.body;
     const [row] = await (db.insert(insuranceAnalyses) as any).values({
@@ -351,26 +379,34 @@ r.delete("/insurance-analyses/:id", async (req: AuthRequest, res: Response) => {
 
 r.get("/clients/:id/education", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.id;
-  if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
+  let _owns = false;
+    try { _owns = await ownsClient(cid, req.userId!); } catch (e: any) { return res.status(500).json({ message: "Auth check failed: " + e.message }); }
+    if (!_owns) return res.status(404).json({ message: "Not found" });
   res.json(await db.select().from(educationPlans).where(eq(educationPlans.clientId, cid)));
 });
 
 r.get("/clients/:id/education-savings", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.id;
-  if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
+  let _owns = false;
+    try { _owns = await ownsClient(cid, req.userId!); } catch (e: any) { return res.status(500).json({ message: "Auth check failed: " + e.message }); }
+    if (!_owns) return res.status(404).json({ message: "Not found" });
   res.json(await db.select().from(educationPlans).where(eq(educationPlans.clientId, cid)));
 });
 
 r.post("/clients/:id/education", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.id;
-  if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
+  let _owns = false;
+    try { _owns = await ownsClient(cid, req.userId!); } catch (e: any) { return res.status(500).json({ message: "Auth check failed: " + e.message }); }
+    if (!_owns) return res.status(404).json({ message: "Not found" });
   const [row] = await (db.insert(educationPlans) as any).values({ clientId: cid, ...safe(req.body) }).returning();
   res.status(201).json(row);
 });
 
 r.post("/clients/:id/education-savings", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.id;
-  if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
+  let _owns = false;
+    try { _owns = await ownsClient(cid, req.userId!); } catch (e: any) { return res.status(500).json({ message: "Auth check failed: " + e.message }); }
+    if (!_owns) return res.status(404).json({ message: "Not found" });
   const data = safe(req.body.data ?? req.body) as any;
   const [row] = await (db.insert(educationPlans) as any).values({ clientId: cid, childAge: data.childAge || 0, ...data }).returning();
   res.status(201).json(row);
@@ -414,26 +450,34 @@ r.delete("/education-savings/:id", async (req: AuthRequest, res: Response) => {
 
 r.get("/clients/:id/debt", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.id;
-  if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
+  let _owns = false;
+    try { _owns = await ownsClient(cid, req.userId!); } catch (e: any) { return res.status(500).json({ message: "Auth check failed: " + e.message }); }
+    if (!_owns) return res.status(404).json({ message: "Not found" });
   res.json(await db.select().from(debtEntries).where(eq(debtEntries.clientId, cid)));
 });
 
 r.get("/clients/:id/debt-entries", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.id;
-  if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
+  let _owns = false;
+    try { _owns = await ownsClient(cid, req.userId!); } catch (e: any) { return res.status(500).json({ message: "Auth check failed: " + e.message }); }
+    if (!_owns) return res.status(404).json({ message: "Not found" });
   res.json(await db.select().from(debtEntries).where(eq(debtEntries.clientId, cid)));
 });
 
 r.post("/clients/:id/debt", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.id;
-  if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
+  let _owns = false;
+    try { _owns = await ownsClient(cid, req.userId!); } catch (e: any) { return res.status(500).json({ message: "Auth check failed: " + e.message }); }
+    if (!_owns) return res.status(404).json({ message: "Not found" });
   const [row] = await (db.insert(debtEntries) as any).values({ clientId: cid, ...safe(req.body) }).returning();
   res.status(201).json(row);
 });
 
 r.post("/clients/:id/debt-entries", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.id;
-  if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
+  let _owns = false;
+    try { _owns = await ownsClient(cid, req.userId!); } catch (e: any) { return res.status(500).json({ message: "Auth check failed: " + e.message }); }
+    if (!_owns) return res.status(404).json({ message: "Not found" });
   const [row] = await (db.insert(debtEntries) as any).values({ clientId: cid, ...safe(req.body.data ?? req.body) }).returning();
   res.status(201).json(row);
 });
@@ -476,19 +520,25 @@ r.delete("/debt-entries/:id", async (req: AuthRequest, res: Response) => {
 
 r.get("/clients/:id/tax", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.id;
-  if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
+  let _owns = false;
+    try { _owns = await ownsClient(cid, req.userId!); } catch (e: any) { return res.status(500).json({ message: "Auth check failed: " + e.message }); }
+    if (!_owns) return res.status(404).json({ message: "Not found" });
   res.json(await db.select().from(taxPlanningNotes).where(eq(taxPlanningNotes.clientId, cid)));
 });
 
 r.get("/clients/:id/tax-planning-notes", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.id;
-  if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
+  let _owns = false;
+    try { _owns = await ownsClient(cid, req.userId!); } catch (e: any) { return res.status(500).json({ message: "Auth check failed: " + e.message }); }
+    if (!_owns) return res.status(404).json({ message: "Not found" });
   res.json(await db.select().from(taxPlanningNotes).where(eq(taxPlanningNotes.clientId, cid)));
 });
 
 r.post("/clients/:id/tax", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.id;
-  if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
+  let _owns = false;
+    try { _owns = await ownsClient(cid, req.userId!); } catch (e: any) { return res.status(500).json({ message: "Auth check failed: " + e.message }); }
+    if (!_owns) return res.status(404).json({ message: "Not found" });
   const data = safe(req.body.data ?? req.body) as any;
   const [row] = await (db.insert(taxPlanningNotes) as any).values({ clientId: cid, title: data.title || "Note", content: data.content || "", taxYear: data.taxYear || new Date().getFullYear(), category: data.category || "general", ...data }).returning();
   res.status(201).json(row);
@@ -496,7 +546,9 @@ r.post("/clients/:id/tax", async (req: AuthRequest, res: Response) => {
 
 r.post("/clients/:id/tax-planning-notes", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.id;
-  if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
+  let _owns = false;
+    try { _owns = await ownsClient(cid, req.userId!); } catch (e: any) { return res.status(500).json({ message: "Auth check failed: " + e.message }); }
+    if (!_owns) return res.status(404).json({ message: "Not found" });
   const data = safe(req.body.data ?? req.body) as any;
   const [row] = await (db.insert(taxPlanningNotes) as any).values({ clientId: cid, title: data.title || "Note", content: data.content || "", taxYear: data.taxYear || new Date().getFullYear(), category: data.category || "general", ...data }).returning();
   res.status(201).json(row);
@@ -540,14 +592,18 @@ r.delete("/tax-planning-notes/:id", async (req: AuthRequest, res: Response) => {
 
 r.get("/clients/:id/estate", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.id;
-  if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
+  let _owns = false;
+    try { _owns = await ownsClient(cid, req.userId!); } catch (e: any) { return res.status(500).json({ message: "Auth check failed: " + e.message }); }
+    if (!_owns) return res.status(404).json({ message: "Not found" });
   const [row] = await db.select().from(estatePlanningNotes).where(eq(estatePlanningNotes.clientId, cid)).limit(1);
   res.json(row ?? null);
 });
 
 r.put("/clients/:id/estate", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.id;
-  if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
+  let _owns = false;
+    try { _owns = await ownsClient(cid, req.userId!); } catch (e: any) { return res.status(500).json({ message: "Auth check failed: " + e.message }); }
+    if (!_owns) return res.status(404).json({ message: "Not found" });
   const [ex] = await db.select({ id: estatePlanningNotes.id }).from(estatePlanningNotes).where(eq(estatePlanningNotes.clientId, cid)).limit(1);
   if (ex) {
     const [u] = await db.update(estatePlanningNotes).set(safe(req.body)).where(eq(estatePlanningNotes.id, ex.id)).returning();
@@ -559,13 +615,17 @@ r.put("/clients/:id/estate", async (req: AuthRequest, res: Response) => {
 
 r.get("/clients/:id/estate-planning-notes", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.id;
-  if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
+  let _owns = false;
+    try { _owns = await ownsClient(cid, req.userId!); } catch (e: any) { return res.status(500).json({ message: "Auth check failed: " + e.message }); }
+    if (!_owns) return res.status(404).json({ message: "Not found" });
   res.json(await db.select().from(estatePlanningNotes).where(eq(estatePlanningNotes.clientId, cid)));
 });
 
 r.post("/clients/:id/estate-planning-notes", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.id;
-  if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
+  let _owns = false;
+    try { _owns = await ownsClient(cid, req.userId!); } catch (e: any) { return res.status(500).json({ message: "Auth check failed: " + e.message }); }
+    if (!_owns) return res.status(404).json({ message: "Not found" });
   const data = safe(req.body.data ?? req.body) as any;
   const [row] = await (db.insert(estatePlanningNotes) as any).values({ clientId: cid, title: data.title || "Note", content: data.content || "", category: data.category || "general", ...data }).returning();
   res.status(201).json(row);
@@ -593,19 +653,25 @@ r.delete("/estate-planning-notes/:id", async (req: AuthRequest, res: Response) =
 
 r.get("/clients/:id/ai", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.id;
-  if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
+  let _owns = false;
+    try { _owns = await ownsClient(cid, req.userId!); } catch (e: any) { return res.status(500).json({ message: "Auth check failed: " + e.message }); }
+    if (!_owns) return res.status(404).json({ message: "Not found" });
   res.json(await db.select().from(aiRecommendations).where(eq(aiRecommendations.clientId, cid)));
 });
 
 r.get("/clients/:id/ai-recommendations", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.id;
-  if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
+  let _owns = false;
+    try { _owns = await ownsClient(cid, req.userId!); } catch (e: any) { return res.status(500).json({ message: "Auth check failed: " + e.message }); }
+    if (!_owns) return res.status(404).json({ message: "Not found" });
   res.json(await db.select().from(aiRecommendations).where(eq(aiRecommendations.clientId, cid)));
 });
 
 r.post("/clients/:id/ai/generate", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.id;
-  if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
+  let _owns = false;
+    try { _owns = await ownsClient(cid, req.userId!); } catch (e: any) { return res.status(500).json({ message: "Auth check failed: " + e.message }); }
+    if (!_owns) return res.status(404).json({ message: "Not found" });
   const [client] = await db.select().from(clients).where(eq(clients.id, cid));
   const [nw, debt] = await Promise.all([
     db.select().from(netWorthEntries).where(eq(netWorthEntries.clientId, cid)),
@@ -630,7 +696,9 @@ r.post("/clients/:id/ai/generate", async (req: AuthRequest, res: Response) => {
 
 r.post("/clients/:id/ai-recommendations/generate", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.id;
-  if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
+  let _owns = false;
+    try { _owns = await ownsClient(cid, req.userId!); } catch (e: any) { return res.status(500).json({ message: "Auth check failed: " + e.message }); }
+    if (!_owns) return res.status(404).json({ message: "Not found" });
 
   const runId = new Date().toISOString();
 
@@ -818,7 +886,9 @@ r.put("/ai-recommendations/:id", async (req: AuthRequest, res: Response) => {
 r.delete("/clients/:id/ai/session/*", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.id;
   try {
-    if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
+    let _owns = false;
+    try { _owns = await ownsClient(cid, req.userId!); } catch (e: any) { return res.status(500).json({ message: "Auth check failed: " + e.message }); }
+    if (!_owns) return res.status(404).json({ message: "Not found" });
   } catch (e: any) { return res.status(500).json({ message: e.message }); }
   const runId = decodeURIComponent((req.params as any)[0]);
   try {
@@ -849,13 +919,17 @@ r.delete("/ai-recommendations/:id", async (req: AuthRequest, res: Response) => {
 
 r.get("/clients/:id/policies", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.id;
-  if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
+  let _owns = false;
+    try { _owns = await ownsClient(cid, req.userId!); } catch (e: any) { return res.status(500).json({ message: "Auth check failed: " + e.message }); }
+    if (!_owns) return res.status(404).json({ message: "Not found" });
   res.json(await db.select().from(clientPolicies).where(eq(clientPolicies.clientId, cid)));
 });
 
 r.post("/clients/:id/policies", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.id;
-  if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
+  let _owns = false;
+    try { _owns = await ownsClient(cid, req.userId!); } catch (e: any) { return res.status(500).json({ message: "Auth check failed: " + e.message }); }
+    if (!_owns) return res.status(404).json({ message: "Not found" });
   try {
     const [row] = await (db.insert(clientPolicies) as any).values({ clientId: cid, ...safe(req.body) }).returning();
     res.status(201).json(row);
@@ -864,7 +938,9 @@ r.post("/clients/:id/policies", async (req: AuthRequest, res: Response) => {
 
 r.patch("/clients/:id/policies/:pid", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.id;
-  if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
+  let _owns = false;
+    try { _owns = await ownsClient(cid, req.userId!); } catch (e: any) { return res.status(500).json({ message: "Auth check failed: " + e.message }); }
+    if (!_owns) return res.status(404).json({ message: "Not found" });
   const [row] = await db.update(clientPolicies).set(safe(req.body))
     .where(and(eq(clientPolicies.id, +req.params.pid), eq(clientPolicies.clientId, cid))).returning();
   res.json(row);
@@ -872,7 +948,9 @@ r.patch("/clients/:id/policies/:pid", async (req: AuthRequest, res: Response) =>
 
 r.delete("/clients/:id/policies/:pid", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.id;
-  if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
+  let _owns = false;
+    try { _owns = await ownsClient(cid, req.userId!); } catch (e: any) { return res.status(500).json({ message: "Auth check failed: " + e.message }); }
+    if (!_owns) return res.status(404).json({ message: "Not found" });
   await db.delete(clientPolicies).where(and(eq(clientPolicies.id, +req.params.pid), eq(clientPolicies.clientId, cid)));
   res.json({ ok: true });
 });
@@ -883,13 +961,17 @@ r.delete("/clients/:id/policies/:pid", async (req: AuthRequest, res: Response) =
 
 r.get("/clients/:id/expenses", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.id;
-  if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
+  let _owns = false;
+    try { _owns = await ownsClient(cid, req.userId!); } catch (e: any) { return res.status(500).json({ message: "Auth check failed: " + e.message }); }
+    if (!_owns) return res.status(404).json({ message: "Not found" });
   res.json(await db.select().from(householdExpenses).where(eq(householdExpenses.clientId, cid)));
 });
 
 r.post("/clients/:id/expenses", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.id;
-  if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
+  let _owns = false;
+    try { _owns = await ownsClient(cid, req.userId!); } catch (e: any) { return res.status(500).json({ message: "Auth check failed: " + e.message }); }
+    if (!_owns) return res.status(404).json({ message: "Not found" });
   try {
     const [row] = await (db.insert(householdExpenses) as any).values({ clientId: cid, ...safe(req.body) }).returning();
     res.status(201).json(row);
@@ -898,7 +980,9 @@ r.post("/clients/:id/expenses", async (req: AuthRequest, res: Response) => {
 
 r.patch("/clients/:id/expenses/:eid", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.id;
-  if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
+  let _owns = false;
+    try { _owns = await ownsClient(cid, req.userId!); } catch (e: any) { return res.status(500).json({ message: "Auth check failed: " + e.message }); }
+    if (!_owns) return res.status(404).json({ message: "Not found" });
   const [row] = await db.update(householdExpenses).set(safe(req.body))
     .where(and(eq(householdExpenses.id, +req.params.eid), eq(householdExpenses.clientId, cid))).returning();
   res.json(row);
@@ -906,7 +990,9 @@ r.patch("/clients/:id/expenses/:eid", async (req: AuthRequest, res: Response) =>
 
 r.delete("/clients/:id/expenses/:eid", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.id;
-  if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
+  let _owns = false;
+    try { _owns = await ownsClient(cid, req.userId!); } catch (e: any) { return res.status(500).json({ message: "Auth check failed: " + e.message }); }
+    if (!_owns) return res.status(404).json({ message: "Not found" });
   await db.delete(householdExpenses).where(and(eq(householdExpenses.id, +req.params.eid), eq(householdExpenses.clientId, cid)));
   res.json({ ok: true });
 });
@@ -917,14 +1003,18 @@ r.delete("/clients/:id/expenses/:eid", async (req: AuthRequest, res: Response) =
 
 r.post("/clients/:clientId/drawdown", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.clientId;
-  if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
+  let _owns = false;
+    try { _owns = await ownsClient(cid, req.userId!); } catch (e: any) { return res.status(500).json({ message: "Auth check failed: " + e.message }); }
+    if (!_owns) return res.status(404).json({ message: "Not found" });
   try { res.json(runDrawdownStrategies(req.body as DrawdownInput)); }
   catch (e: any) { res.status(500).json({ message: e.message }); }
 });
 
 r.get("/clients/:clientId/drawdown", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.clientId;
-  if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
+  let _owns = false;
+    try { _owns = await ownsClient(cid, req.userId!); } catch (e: any) { return res.status(500).json({ message: "Auth check failed: " + e.message }); }
+    if (!_owns) return res.status(404).json({ message: "Not found" });
   try {
     const { pensionPlans } = await import("../../shared/schema.js");
     const [[client], projRows, pensions] = await Promise.all([
@@ -973,13 +1063,17 @@ r.get("/clients/:clientId/drawdown", async (req: AuthRequest, res: Response) => 
 
 r.get("/clients/:clientId/plans", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.clientId;
-  if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
+  let _owns = false;
+    try { _owns = await ownsClient(cid, req.userId!); } catch (e: any) { return res.status(500).json({ message: "Auth check failed: " + e.message }); }
+    if (!_owns) return res.status(404).json({ message: "Not found" });
   res.json(await db.select().from(financialPlans).where(eq(financialPlans.clientId, cid)));
 });
 
 r.post("/clients/:clientId/plans", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.clientId;
-  if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
+  let _owns = false;
+    try { _owns = await ownsClient(cid, req.userId!); } catch (e: any) { return res.status(500).json({ message: "Auth check failed: " + e.message }); }
+    if (!_owns) return res.status(404).json({ message: "Not found" });
   const [p] = await (db.insert(financialPlans) as any).values({ clientId: cid, userId: req.userId!, title: req.body.name ?? req.body.title ?? "Financial Plan", ...safe(req.body) }).returning();
   res.status(201).json(p);
 });
@@ -1085,7 +1179,9 @@ r.delete("/action-items/:id",                async (req: AuthRequest, res: Respo
 
 r.get("/reports/:clientId/available", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.clientId;
-  if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
+  let _owns = false;
+    try { _owns = await ownsClient(cid, req.userId!); } catch (e: any) { return res.status(500).json({ message: "Auth check failed: " + e.message }); }
+    if (!_owns) return res.status(404).json({ message: "Not found" });
   const [ret] = await db.select({ id: retirementProjections.id }).from(retirementProjections).where(eq(retirementProjections.clientId, cid));
   const [ins] = await db.select({ id: insuranceAnalyses.id }).from(insuranceAnalyses).where(eq(insuranceAnalyses.clientId, cid));
   res.json({ retirement: !!ret, insurance: !!ins, netWorth: true });
@@ -1093,7 +1189,9 @@ r.get("/reports/:clientId/available", async (req: AuthRequest, res: Response) =>
 
 r.get("/clients/:clientId/financial-planning-report", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.clientId;
-  if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
+  let _owns = false;
+    try { _owns = await ownsClient(cid, req.userId!); } catch (e: any) { return res.status(500).json({ message: "Auth check failed: " + e.message }); }
+    if (!_owns) return res.status(404).json({ message: "Not found" });
   try {
     const [plan] = await db.select().from(financialPlans).where(eq(financialPlans.clientId, cid));
     const [client] = await db.select().from(clients).where(eq(clients.id, cid));
@@ -1105,7 +1203,9 @@ r.get("/clients/:clientId/financial-planning-report", async (req: AuthRequest, r
 
 r.post("/clients/:clientId/financial-plan-report", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.clientId;
-  if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
+  let _owns = false;
+    try { _owns = await ownsClient(cid, req.userId!); } catch (e: any) { return res.status(500).json({ message: "Auth check failed: " + e.message }); }
+    if (!_owns) return res.status(404).json({ message: "Not found" });
   try {
     const { plan } = req.body;
     if (!plan) return res.status(400).json({ message: "plan is required" });
@@ -1137,7 +1237,9 @@ r.post("/clients/:clientId/financial-plan-report", async (req: AuthRequest, res:
 
 r.post("/clients/:clientId/generate-plan", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.clientId;
-  if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
+  let _owns = false;
+    try { _owns = await ownsClient(cid, req.userId!); } catch (e: any) { return res.status(500).json({ message: "Auth check failed: " + e.message }); }
+    if (!_owns) return res.status(404).json({ message: "Not found" });
   try {
     // PIPEDA: log before sending data to Anthropic
     await auditAnthropicCall({
@@ -1223,7 +1325,9 @@ const cleaned = start !== -1 && end !== -1 ? rawText.slice(start, end + 1) : raw
 
 r.get("/clients/:clientId/saved-plans", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.clientId;
-  if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
+  let _owns = false;
+    try { _owns = await ownsClient(cid, req.userId!); } catch (e: any) { return res.status(500).json({ message: "Auth check failed: " + e.message }); }
+    if (!_owns) return res.status(404).json({ message: "Not found" });
   const rows = await db.select({ id: aiRecommendations.id, title: aiRecommendations.title, createdAt: aiRecommendations.createdAt, content: aiRecommendations.content }).from(aiRecommendations)
     .where(and(eq(aiRecommendations.clientId, cid), eq(aiRecommendations.category, "financial_plan")));
   res.json(rows.map(r => ({ ...r, plan: (() => { try { return JSON.parse(r.content ?? "{}"); } catch { return null; } })() })));
@@ -1242,7 +1346,9 @@ export { r as financialRouter };
 
 r.get("/clients/:id/scenario-comparisons", isAuthenticated, async (req: AuthRequest, res: Response) => {
   const cid = +req.params.id;
-  if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
+  let _owns = false;
+    try { _owns = await ownsClient(cid, req.userId!); } catch (e: any) { return res.status(500).json({ message: "Auth check failed: " + e.message }); }
+    if (!_owns) return res.status(404).json({ message: "Not found" });
   const rows = await db.select().from(scenarioComparisons)
     .where(eq(scenarioComparisons.clientId, cid));
   res.json(rows);
@@ -1250,7 +1356,9 @@ r.get("/clients/:id/scenario-comparisons", isAuthenticated, async (req: AuthRequ
 
 r.post("/clients/:id/scenario-comparisons", isAuthenticated, async (req: AuthRequest, res: Response) => {
   const cid = +req.params.id;
-  if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
+  let _owns = false;
+    try { _owns = await ownsClient(cid, req.userId!); } catch (e: any) { return res.status(500).json({ message: "Auth check failed: " + e.message }); }
+    if (!_owns) return res.status(404).json({ message: "Not found" });
   const { label, scenarioIds, notes } = req.body;
   if (!Array.isArray(scenarioIds) || scenarioIds.length < 2) {
     return res.status(400).json({ message: "scenarioIds must be an array of 2–3 projection IDs" });
@@ -1278,7 +1386,9 @@ r.delete("/scenario-comparisons/:id", isAuthenticated, async (req: AuthRequest, 
 r.post("/clients/:id/retirement/:projId/project", isAuthenticated, async (req: AuthRequest, res: Response) => {
   const cid    = +req.params.id;
   const projId = +req.params.projId;
-  if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
+  let _owns = false;
+    try { _owns = await ownsClient(cid, req.userId!); } catch (e: any) { return res.status(500).json({ message: "Auth check failed: " + e.message }); }
+    if (!_owns) return res.status(404).json({ message: "Not found" });
 
   const [proj] = await db.select().from(retirementProjections)
     .where(eq(retirementProjections.id, projId));
@@ -1332,7 +1442,9 @@ r.post("/clients/:id/retirement/:projId/project", isAuthenticated, async (req: A
 r.get("/clients/:id/retirement/:projId/projection-data", isAuthenticated, async (req: AuthRequest, res: Response) => {
   const cid    = +req.params.id;
   const projId = +req.params.projId;
-  if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
+  let _owns = false;
+    try { _owns = await ownsClient(cid, req.userId!); } catch (e: any) { return res.status(500).json({ message: "Auth check failed: " + e.message }); }
+    if (!_owns) return res.status(404).json({ message: "Not found" });
 
   const [proj] = await db.select().from(retirementProjections)
     .where(eq(retirementProjections.id, projId));
@@ -1347,14 +1459,18 @@ r.get("/clients/:id/retirement/:projId/projection-data", isAuthenticated, async 
 
 r.get("/clients/:id/ltc-analyses", isAuthenticated, async (req: AuthRequest, res: Response) => {
   const cid = +req.params.id;
-  if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
+  let _owns = false;
+    try { _owns = await ownsClient(cid, req.userId!); } catch (e: any) { return res.status(500).json({ message: "Auth check failed: " + e.message }); }
+    if (!_owns) return res.status(404).json({ message: "Not found" });
   const rows = await db.select().from(ltcAnalyses).where(eq(ltcAnalyses.clientId, cid));
   res.json(rows);
 });
 
 r.post("/clients/:id/ltc-analyses", isAuthenticated, async (req: AuthRequest, res: Response) => {
   const cid = +req.params.id;
-  if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
+  let _owns = false;
+    try { _owns = await ownsClient(cid, req.userId!); } catch (e: any) { return res.status(500).json({ message: "Auth check failed: " + e.message }); }
+    if (!_owns) return res.status(404).json({ message: "Not found" });
   const b = req.body;
   const { runLTCEngine } = await import("../engine/ltcEngine.js");
   const result = runLTCEngine({
@@ -1423,7 +1539,9 @@ export default r;
 
 r.get("/clients/:id/di-analyses", isAuthenticated, async (req: AuthRequest, res: Response) => {
   const cid = +req.params.id;
-  if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
+  let _owns = false;
+    try { _owns = await ownsClient(cid, req.userId!); } catch (e: any) { return res.status(500).json({ message: "Auth check failed: " + e.message }); }
+    if (!_owns) return res.status(404).json({ message: "Not found" });
   const rows = await db.select().from(diAnalyses).where(eq(diAnalyses.clientId, cid));
   res.json(rows);
 });
@@ -1449,7 +1567,9 @@ async function runDI(b: any) {
 
 r.post("/clients/:id/di-analyses", isAuthenticated, async (req: AuthRequest, res: Response) => {
   const cid = +req.params.id;
-  if (!await ownsClient(cid, req.userId!)) return res.status(404).json({ message: "Not found" });
+  let _owns = false;
+    try { _owns = await ownsClient(cid, req.userId!); } catch (e: any) { return res.status(500).json({ message: "Auth check failed: " + e.message }); }
+    if (!_owns) return res.status(404).json({ message: "Not found" });
   const b = req.body;
   const result = await runDI(b);
   const [row] = await (db.insert(diAnalyses) as any).values({

@@ -205,6 +205,19 @@ if (process.env.NODE_ENV === "production") {
   });
 }
 
+// ── Global JSON error handler ───────────────────────────────────────────────
+// Ensures unhandled Express errors return JSON, not HTML error pages
+app.use((err: any, req: any, res: any, next: any) => {
+  if (res.headersSent) return next(err);
+  const status = err.status || err.statusCode || 500;
+  const message = err.message || "Internal server error";
+  console.error("[global-error-handler]", err.stack ?? err.message);
+  if (req.path.startsWith("/api/")) {
+    return res.status(status).json({ message });
+  }
+  next(err);
+});
+
 runMigrations().then(() => {
   app.listen(PORT, "0.0.0.0", () => logger.info({ port: PORT }, "FP server started"));
 });

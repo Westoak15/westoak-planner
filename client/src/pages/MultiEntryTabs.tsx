@@ -195,7 +195,7 @@ function ExtraFields({ draft, onChange, spouseName, dependants, t }: { draft: NW
             <select value={draft.rrspContributor} onChange={e => onChange("rrspContributor", e.target.value)} className={SELECT_CLS}>
               <option value="">{t.netWorth.selectContributor}</option>
               <option value="client">{t.common.primary}</option>
-              <option value={t.common.spouse}>{t.common.spouse}</option>
+              <option value="spouse">{t.common.spouse}</option>
             </select>
           </div>
         )}
@@ -203,7 +203,7 @@ function ExtraFields({ draft, onChange, spouseName, dependants, t }: { draft: NW
     );
   }
 
-  if (["RRSP","TFSA",t.netWorth.nonRegistered].includes(draft.category)) {
+  if (["RRSP","TFSA","Non-Registered"].includes(draft.category)) {
     elems.push(
       <div key="holdingType" className="flex items-center gap-1.5">
         <span className="text-xs text-[var(--text-tertiary)]">Type:</span>
@@ -215,7 +215,7 @@ function ExtraFields({ draft, onChange, spouseName, dependants, t }: { draft: NW
     );
   }
 
-  if (draft.category === t.netWorth.nonRegistered && spouseName) {
+  if (draft.category === "Non-Registered" && spouseName) {
     elems.push(
       <label key={t.common.joint} className="flex items-center gap-1.5 text-xs text-[var(--text-secondary)] cursor-pointer">
         <input type="checkbox" checked={draft.jointWithSpouse} onChange={e => onChange("jointWithSpouse", e.target.checked)} className="w-3.5 h-3.5 rounded accent-[var(--accent-cyan)]" />
@@ -489,7 +489,7 @@ export function NetWorthTab({ clientId, client, t }: { clientId: number; t: T; c
     const cat = form.category ?? "";
     if (cat === "RRSP" && form.isSpousal) { m.spousal = true; m.contributor = form.rrspContributor; }
     if ((form as any).monthlyPayment) m.monthlyPayment = (form as any).monthlyPayment;
-    if (["RRSP", "TFSA", t.netWorth.nonRegistered].includes(cat) && form.holdingType) m.holdingType = form.holdingType;
+    if (["RRSP", "TFSA", "Non-Registered"].includes(cat) && form.holdingType) m.holdingType = form.holdingType;
     if (cat === "Employer Stock Options" && form.stockOptionType) m.stockOptionType = form.stockOptionType;
     if (cat === "Real Estate (other)") {
       if (form.propertyType) m.propertyType = form.propertyType;
@@ -508,7 +508,7 @@ export function NetWorthTab({ clientId, client, t }: { clientId: number; t: T; c
     try {
       const m = buildMeta(editForm);
       let owner = editForm.owner ?? "primary";
-      if (editForm.jointWithSpouse && editForm.category === t.netWorth.nonRegistered) owner = "joint";
+      if (editForm.jointWithSpouse && editForm.category === "Non-Registered") owner = "joint";
       await api.put(`/api/net-worth/${editingId}`, {
         category: editForm.category, name: editForm.name || editForm.category,
         owner, value: editForm.value, notes: editForm.notes || null,
@@ -533,7 +533,7 @@ export function NetWorthTab({ clientId, client, t }: { clientId: number; t: T; c
       await Promise.all(valid.map(async d => {
         const m = buildMeta(d as any);
         let owner = d.owner;
-        if (d.jointWithSpouse && d.category === t.netWorth.nonRegistered) owner = "joint";
+        if (d.jointWithSpouse && d.category === "Non-Registered") owner = "joint";
         const propName = d.name || d.category;
         const isProperty = d.category === "Principal Residence" || d.category === "Real Estate (other)";
         const mortgageVal = Number(d.mortgageBalance || 0);
@@ -585,7 +585,7 @@ export function NetWorthTab({ clientId, client, t }: { clientId: number; t: T; c
     const chips: React.ReactNode[] = [];
     if (entry.category === "RRSP" && m.spousal)
       chips.push(<span key="sp" className="text-[10px] bg-cyan-50 text-cyan-600 px-1.5 py-0.5 rounded font-mono">Spousal · {m.contributor}</span>);
-    if (m.linkedAssetName && entry.category === t.netWorth.mortgage)
+    if (m.linkedAssetName && entry.category === "Mortgage")
       chips.push(<span key="lnk" className="text-[10px] bg-cyan-50 text-cyan-600 px-1.5 py-0.5 rounded font-mono">↪ {m.linkedAssetName}</span>);
     if (m.holdingType)
       chips.push(<span key="ht" className="text-[10px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded font-mono">{m.holdingType}</span>);
@@ -683,7 +683,7 @@ export function NetWorthTab({ clientId, client, t }: { clientId: number; t: T; c
                         <label className={LABEL_CLS}>{t.common.owner}</label>
                         <select value={d.owner} onChange={e => updateDraft(draftIdx, "owner", e.target.value)} className={SELECT_CLS}>
                           <option value={t.common.primary}>{primaryName || t.common.primary}</option>
-                          {spouseName && <option value={t.common.spouse}>{spouseName}</option>}
+                          {spouseName && <option value="spouse">{spouseName}</option>}
                           {spouseName && <option value={t.common.joint}>{t.common.joint}</option>}
                         </select>
                       </div>
@@ -746,7 +746,7 @@ export function NetWorthTab({ clientId, client, t }: { clientId: number; t: T; c
                           <label className={LABEL_CLS}>{t.common.owner}</label>
                           <select value={editForm.owner ?? "primary"} onChange={ev => setEditForm(f => ({ ...f, owner: ev.target.value }))} className={SELECT_CLS}>
                             <option value={t.common.primary}>{primaryName || t.common.primary}</option>
-                            {spouseName && <option value={t.common.spouse}>{spouseName}</option>}
+                            {spouseName && <option value="spouse">{spouseName}</option>}
                             {spouseName && <option value={t.common.joint}>{t.common.joint}</option>}
                           </select>
                         </div>
@@ -767,7 +767,7 @@ export function NetWorthTab({ clientId, client, t }: { clientId: number; t: T; c
                       </div>
                       {/* Extra fields for edit */}
                       <div className="flex flex-wrap gap-3 mb-3">
-                        {["RRSP", "TFSA", t.netWorth.nonRegistered].includes(editForm.category ?? "") && (
+                        {["RRSP", "TFSA", "Non-Registered"].includes(editForm.category ?? "") && (
                           <>
                             {editForm.category === "RRSP" && (
                               <>
@@ -781,7 +781,7 @@ export function NetWorthTab({ clientId, client, t }: { clientId: number; t: T; c
                                     <select value={editForm.rrspContributor ?? ""} onChange={ev => setEditForm(f => ({ ...f, rrspContributor: ev.target.value }))} className="border border-slate-200 rounded-lg px-2 py-1 text-sm">
                                       <option value="">Select…</option>
                                       <option value="client">{primaryName || t.common.primary}</option>
-                                      {spouseName && <option value={t.common.spouse}>{spouseName}</option>}
+                                      {spouseName && <option value="spouse">{spouseName}</option>}
                                     </select>
                                   </div>
                                 )}
@@ -794,7 +794,7 @@ export function NetWorthTab({ clientId, client, t }: { clientId: number; t: T; c
                                 {HOLDING_TYPES.map(h => <option key={h} value={h}>{holdingLabel(h, t)}</option>)}
                               </select>
                             </div>
-                            {editForm.category === t.netWorth.nonRegistered && spouseName && (
+                            {editForm.category === "Non-Registered" && spouseName && (
                               <label className="flex items-center gap-1.5 text-xs text-slate-600 cursor-pointer">
                                 <input type="checkbox" checked={!!editForm.jointWithSpouse} onChange={ev => setEditForm(f => ({ ...f, jointWithSpouse: ev.target.checked, owner: ev.target.checked ? "joint" : f.owner }))} className="w-3.5 h-3.5 rounded" />
                                 Jointly held with spouse
@@ -1061,7 +1061,7 @@ export function RetirementTab({ clientId, client, person = "primary" }: { client
     if (!rows.length || !client) return;
     const updates: Promise<any>[] = [];
     rows.forEach(r => {
-      const isSpouseRow = r.label === client.spouseFirstName || r.label === t.common.spouse;
+      const isSpouseRow = r.label === client.spouseFirstName || (r.label === "Spouse" || r.(label === "Spouse" || label === t.common.spouse));
       const correctRetAge = isSpouseRow
         ? (client.spouseRetirementAge ?? 65)
         : (client.retirementAge ?? 65);
@@ -1083,10 +1083,10 @@ export function RetirementTab({ clientId, client, person = "primary" }: { client
     const sum = (arr: any[], cat: string) => arr.filter(e => e.category === cat).reduce((s: number, e: any) => s + Number(e.value), 0);
     const pRrsp   = sum(primary, "RRSP")   + sum(joint, "RRSP")   / 2;
     const pTfsa   = sum(primary, "TFSA")   + sum(joint, "TFSA")   / 2;
-    const pNonReg = sum(primary, t.netWorth.nonRegistered) + sum(joint, t.netWorth.nonRegistered) / 2;
+    const pNonReg = sum(primary, "Non-Registered") + sum(joint, "Non-Registered") / 2;
     const sRrsp   = sum(spouse,  "RRSP")   + sum(joint, "RRSP")   / 2;
     const sTfsa   = sum(spouse,  "TFSA")   + sum(joint, "TFSA")   / 2;
-    const sNonReg = sum(spouse,  t.netWorth.nonRegistered) + sum(joint, t.netWorth.nonRegistered) / 2;
+    const sNonReg = sum(spouse,  "Non-Registered") + sum(joint, "Non-Registered") / 2;
 
  // Calculate pension income from DBPP plans
     const dbppIncome = pensions
@@ -1204,12 +1204,12 @@ export function RetirementTab({ clientId, client, person = "primary" }: { client
   // Filter rows and drafts by person
   const filteredRows = rows.filter(r => {
     if (person === "primary")  return !r.label?.includes("&") && r.label !== spouseName && r.label !== t.common.spouse;
-    if (person === "spouse")   return r.label === spouseName || r.label === t.common.spouse;
+    if (person === "spouse")   return r.label === spouseName || (r.label === "Spouse" || r.(label === "Spouse" || label === t.common.spouse));
     return true; // combined shows all
   });
   const filteredDrafts = drafts.filter(d => {
     if (person === "primary")  return !d.label?.includes("&") && d.label !== spouseName && d.label !== t.common.spouse;
-    if (person === "spouse")   return d.label === spouseName || d.label === t.common.spouse;
+    if (person === "spouse")   return d.label === spouseName || (d.label === "Spouse" || d.(label === "Spouse" || label === t.common.spouse));
     return true;
   });
 
@@ -1227,7 +1227,7 @@ export function RetirementTab({ clientId, client, person = "primary" }: { client
   const labelColor = (label: string | null) => {
     if (!label) return "text-blue-600";
     if (label.includes("&")) return "text-indigo-600";
-    if (label === spouseName || label === t.common.spouse) return "text-pink-600";
+    if (label === spouseName || (label === "Spouse" || label === t.common.spouse)) return "text-pink-600";
     return "text-blue-600";
   };
 

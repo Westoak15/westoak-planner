@@ -23,6 +23,7 @@ import {
   scenarioComparisons,
   ltcAnalyses,
   diAnalyses,
+  savedReports,
 } from "../../shared/schema.js";
 import { isAuthenticated, type AuthRequest } from "../auth/index.js";
 import { safe, ownsClient, ownsPlan } from "../fpUtils.js";

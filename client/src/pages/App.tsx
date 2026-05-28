@@ -76,11 +76,11 @@ function householdScore(ov: Overview | null): number {
   return Math.max(0, score);
 }
 
-function scoreLabel(s: number): { label: string; cls: string; dot: string } {
-  if (s >= 85) return { label: tAdv.dashboard.statusOptimized,  cls: "text-emerald-600 bg-emerald-50 border-emerald-100", dot: "bg-emerald-400" };
-  if (s >= 70) return { label: "Review Needed", cls: "text-blue-600    bg-blue-50    border-blue-100",    dot: "bg-blue-400" };
-  if (s >= 50) return { label: "Planning Gaps", cls: "text-amber-600   bg-amber-50   border-amber-100",   dot: "bg-amber-400" };
-  return               { label: "Critical",      cls: "text-red-600    bg-red-50     border-red-100",      dot: "bg-red-400" };
+function scoreLabel(s: number, t: T = translations.en): { label: string; cls: string; dot: string } {
+  if (s >= 85) return { label: t.dashboard.statusOptimized,  cls: "text-emerald-600 bg-emerald-50 border-emerald-100", dot: "bg-emerald-400" };
+  if (s >= 70) return { label: t.dashboard.statusReview,     cls: "text-blue-600    bg-blue-50    border-blue-100",    dot: "bg-blue-400" };
+  if (s >= 50) return { label: t.dashboard.statusGaps,       cls: "text-amber-600   bg-amber-50   border-amber-100",   dot: "bg-amber-400" };
+  return               { label: t.dashboard.statusCritical,  cls: "text-red-600    bg-red-50     border-red-100",      dot: "bg-red-400" };
 }
 
 function fmtNw(nw: number | null): string {
@@ -93,13 +93,14 @@ function fmtNw(nw: number | null): string {
 // ── Household Row ─────────────────────────────────────────────────────────────
 
 function HouseholdRow({
-  c, onSelect, onDelete, onOvReady, keyboardActive,
+  c, onSelect, onDelete, onOvReady, keyboardActive, tAdv = translations.en,
 }: {
   c: Client;
   onSelect: (c: Client) => void;
   onDelete: (id: number) => void;
   onOvReady?: (id: number, ov: Overview) => void;
   keyboardActive?: boolean;
+  tAdv?: T;
 }) {
   const [ov,       setOv]       = useState<Overview | null>(null);
   const [expanded, setExpanded] = useState(false);
@@ -112,7 +113,7 @@ function HouseholdRow({
   }, [c.id]);
 
   const score      = householdScore(ov);
-  const { label: statusLabel, cls: statusCls, dot: dotCls } = scoreLabel(score);
+  const { label: statusLabel, cls: statusCls, dot: dotCls } = scoreLabel(score, tAdv);
   const nw         = ov?.netWorth ?? null;
   const actionCount = ov
     ? ov.pendingAi + (ov.retirementProjections === 0 ? 1 : 0) + (ov.insuranceAnalyses === 0 ? 1 : 0)
@@ -508,7 +509,7 @@ function ClientsTab({ onSelect, tAdv = translations.en }: { onSelect: (c: Client
           ) : (
             sorted.map((c, idx) => (
               <HouseholdRow
-                key={c.id} c={c}
+                key={c.id} c={c} tAdv={tAdv}
                 onSelect={onSelect}
                 onDelete={deleteClient}
                 onOvReady={(id, ov) => setOvData(prev => ({ ...prev, [id]: ov }))}

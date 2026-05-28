@@ -52,6 +52,7 @@ export function ReportsTab({ clientId, t = translations.en, locale = 'en' }: { c
   const [generating, setGenerating] = useState(false);
   const [savedList, setSavedList]   = useState<SavedReport[]>([]);
   const [savedView, setSavedView]   = useState<"builder"|"saved">("builder");
+  const [reportLocale, setReportLocale] = useState<string>(locale);
   const [saving, setSaving]         = useState(false);
   const [saveName, setSaveName]     = useState("");
   const [loadingSaved, setLoadingSaved] = useState(false);
@@ -109,7 +110,7 @@ export function ReportsTab({ clientId, t = translations.en, locale = 'en' }: { c
           "Content-Type": "application/json",
           Authorization: `Bearer ${token()}`,
         },
-        body: JSON.stringify({ sections, locale }),
+        body: JSON.stringify({ sections, locale: reportLocale }),
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
@@ -252,6 +253,17 @@ ${bodies.join('\n<div class="report-divider"></div>\n')}
           <p className="text-sm text-slate-500 mt-0.5">{t.report.selectAndGenerate}</p>
         </div>
         <div className="flex items-center gap-3">
+          {/* Report language toggle — independent of UI language */}
+          <div className="flex items-center rounded-lg border border-slate-200 overflow-hidden text-xs">
+            <button
+              onClick={() => setReportLocale("en")}
+              className={`px-2.5 py-1.5 font-medium transition-colors ${reportLocale === "en" ? "bg-[#0c1e3a] text-white" : "text-slate-500 hover:bg-slate-50"}`}
+            >EN</button>
+            <button
+              onClick={() => setReportLocale("fr")}
+              className={`px-2.5 py-1.5 font-medium transition-colors ${reportLocale === "fr" ? "bg-[#0c1e3a] text-white" : "text-slate-500 hover:bg-slate-50"}`}
+            >FR</button>
+          </div>
           <button onClick={selectAll}  className="text-xs text-slate-500 hover:text-slate-800 transition-colors">{t.report.all}</button>
           <button onClick={selectNone} className="text-xs text-slate-500 hover:text-slate-800 transition-colors">{t.report.none}</button>
           {selected.size > 0 && (

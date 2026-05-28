@@ -110,9 +110,12 @@ export const REPORT_CSS = `
   .badge{display:inline-block;padding:2px 8px;border-radius:99px;font-size:10px;font-weight:600;letter-spacing:.3px}
   .badge.green{background:var(--green-bg);color:var(--green)}.badge.red{background:var(--red-bg);color:var(--red)}.badge.amber{background:var(--amber-bg);color:var(--amber)}.badge.blue{background:var(--light-blue);color:var(--blue)}.badge.navy{background:var(--navy);color:white}
   .no-break{page-break-inside:avoid}
+  #printBtn,.print-btn{display:none!important}
+  @media screen { #printBtn,.print-btn { display:flex!important; } }
   @media print{
+    #printBtn,.print-btn{display:none!important}
     body{background:white}
-    .page{width:100%;margin:0;padding:18mm 20mm;box-shadow:none;page-break-after:always}
+    .page{width:100%;margin:0;padding:0.75in 0.85in;box-shadow:none;page-break-after:always}
     .page:last-child{page-break-after:avoid}
     thead{display:table-header-group}
   }

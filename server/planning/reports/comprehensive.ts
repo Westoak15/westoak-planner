@@ -212,9 +212,17 @@ export function generateComprehensiveReport(
 
   const lang = inputs.meta.locale === "fr" ? "fr" : "en";
   const printLabel = inputs.meta.locale === "fr" ? "Imprimer / Enregistrer PDF" : "Print / Save as PDF";
-  const printBtn = `<button class="print-btn" onclick="window.print()">
-    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+  const printBtn = `<div class="print-btn" id="printBtn" role="button" tabindex="0"
+    onclick="window.print()"
+    onkeydown="if(event.key==='Enter'||event.key===' ')window.print()"
+    style="position:fixed;top:16px;right:16px;z-index:9999;display:flex;align-items:center;gap:8px;background:#0F2B4C;color:white;border:none;border-radius:8px;padding:10px 20px;font-size:13px;font-weight:600;cursor:pointer;box-shadow:0 2px 16px rgba(0,0,0,.25);font-family:Inter,system-ui,sans-serif;user-select:none;">
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
     ${printLabel}
-  </button>`;
+  </div>
+  <script>
+    document.addEventListener("keydown", function(e) {
+      if ((e.ctrlKey || e.metaKey) && e.key === "p") { e.preventDefault(); window.print(); }
+    });
+  </script>`;
   return `<!DOCTYPE html>\n<html lang="${lang}">\n<head>\n<meta charset="UTF-8">\n<title>${inputs.meta.reportTitle} \u2014 ${inputs.meta.client.fullName}</title>\n<style>${REPORT_CSS}</style>\n</head>\n<body>\n${printBtn}\n${coverPage(inputs.meta, tocItems)}\n${sections.join("\n")}\n</body>\n</html>`;
 }

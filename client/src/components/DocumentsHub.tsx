@@ -9,9 +9,10 @@ interface Props {
   clientId: number;
   client?: any;
   t?: T;
+  advisorLocale?: string;
 }
 
-export function DocumentsHub({ clientId, client, t = translations.en }: Props) {
+export function DocumentsHub({ clientId, client, t = translations.en, advisorLocale = "en" }: Props) {
   const [subtab, setSubtab] = useState<"reports" | "letters">("reports");
 
   return (

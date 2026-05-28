@@ -637,7 +637,7 @@ function ClientDetail({ client, onBack, onPlanSelect, onUpdate, onLocaleChange, 
   const [editing, setEditing]   = useState(false);
   const [form, setForm]         = useState<Partial<Client>>({ ...client });
   const [busy, setBusy]         = useState(false);
-  const [newPlanName, setNewPlanName] = useState(tAdv.client.financialPlanName);
+  const [newPlanName, setNewPlanName] = useState(t.client.financialPlanName);
   const u = (k: keyof Client, v: any) => setForm(f => ({ ...f, [k]: v }));
 
   // Jurisdiction-aware region list
@@ -646,7 +646,7 @@ function ClientDetail({ client, onBack, onPlanSelect, onUpdate, onLocaleChange, 
   const regions = jurisdiction === "US"
     ? ["AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA","HI","ID","IL","IN","IA","KS","KY","LA","ME","MD","MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ","NM","NY","NC","ND","OH","OK","OR","PA","RI","SC","SD","TN","TX","UT","VT","VA","WA","WV","WI","WY"]
     : PROVINCES;
-  const regionLabel = jurisdiction === "US" ? tAdv.client.stateLabel : tAdv.client.provinceLabel;
+  const regionLabel = jurisdiction === "US" ? t.client.stateLabel : t.client.provinceLabel;
   const defaultRegion = jurisdiction === "US" ? "CA" : "ON";
 
   useEffect(() => {
@@ -656,7 +656,7 @@ function ClientDetail({ client, onBack, onPlanSelect, onUpdate, onLocaleChange, 
   async function save() {
     setBusy(true);
     try { const updated = await api.patch<Client>(`/api/clients/${client.id}`, form); setEditing(false); onUpdate(updated); }
-    catch (e: any) {toast({ title: tAdv.common.error, description: e.message, variant: "destructive" }) }
+    catch (e: any) {toast({ title: t.common.error, description: e.message, variant: "destructive" }) }
     finally { setBusy(false); }
   }
 
@@ -664,7 +664,7 @@ function ClientDetail({ client, onBack, onPlanSelect, onUpdate, onLocaleChange, 
     try {
       const updated = await api.patch<Client>(`/api/clients/${client.id}`, data);
       onUpdate(updated);
-    } catch (e: any) { toast({ title: tAdv.common.error, description: e.message, variant: "destructive" }); }
+    } catch (e: any) { toast({ title: t.common.error, description: e.message, variant: "destructive" }); }
   }
 
   async function deletePlan(planId: number) {

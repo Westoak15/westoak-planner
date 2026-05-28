@@ -147,7 +147,20 @@ export const translations = {
        lifeExpectancy:        "Life Expectancy",
        province:              "Province",
     
-    },
+    
+       addHousehold:          "Add Household",
+       avgScore:              "Avg Score",
+       colActions:            "Actions",
+       colAlerts:             "Alerts",
+       colHousehold:          "Household",
+       colNetWorth:           "Net Worth",
+       colNextAction:         "Next Action",
+       colScoreStatus:        "Score / Status",
+       householdQueue:        "Household Queue",
+       householdsCount:       "households",
+       newHousehold:          "New Household",
+       searchHouseholds:      "Search households…",
+       sortLabel:             "Sort:",},
 
     // ── Net Worth ──────────────────────────────────────────────────────────────
     netWorth: {
@@ -1595,7 +1608,20 @@ export const translations = {
        lifeExpectancy:        "Espérance de vie",
        province:              "Province",
     
-    },
+    
+       addHousehold:          "Ajouter un ménage",
+       avgScore:              "Score moyen",
+       colActions:            "Actions",
+       colAlerts:             "Alertes",
+       colHousehold:          "Ménage",
+       colNetWorth:           "Valeur nette",
+       colNextAction:         "Prochaine action",
+       colScoreStatus:        "Score / Statut",
+       householdQueue:        "File des ménages",
+       householdsCount:       "ménages",
+       newHousehold:          "Nouveau ménage",
+       searchHouseholds:      "Rechercher des ménages…",
+       sortLabel:             "Trier :",},
 
     // ── Net Worth ──────────────────────────────────────────────────────────────
     netWorth: {

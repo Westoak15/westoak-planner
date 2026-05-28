@@ -300,7 +300,7 @@ export function InsightLedDashboard({ clientId, client, onNavigate, t = translat
     const totalAssets = safeNum(ov?.totalAssets);
     if (totalAssets <= 0) return 0;
     const investable = nw
-      .filter(e => e.type === "asset" && ["RRSP", "TFSA", t.dashboard.nonRegistered].includes(e.category))
+      .filter(e => e.type === "asset" && ["RRSP", "TFSA", "Non-Registered"].includes(e.category))
       .reduce((s, e) => s + safeNum(e.value), 0);
     const pct = Math.round((investable / totalAssets) * 100);
     return Number.isFinite(pct) ? pct : 0;

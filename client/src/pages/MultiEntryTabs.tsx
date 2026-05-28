@@ -682,9 +682,9 @@ export function NetWorthTab({ clientId, client, t }: { clientId: number; t: T; c
                       <div>
                         <label className={LABEL_CLS}>{t.common.owner}</label>
                         <select value={d.owner} onChange={e => updateDraft(draftIdx, "owner", e.target.value)} className={SELECT_CLS}>
-                          <option value={t.common.primary}>{primaryName || t.common.primary}</option>
+                          <option value="primary">{primaryName || t.common.primary}</option>
                           {spouseName && <option value="spouse">{spouseName}</option>}
-                          {spouseName && <option value={t.common.joint}>{t.common.joint}</option>}
+                          {spouseName && <option value="joint">{t.common.joint}</option>}
                         </select>
                       </div>
                       <div>
@@ -745,9 +745,9 @@ export function NetWorthTab({ clientId, client, t }: { clientId: number; t: T; c
                         <div>
                           <label className={LABEL_CLS}>{t.common.owner}</label>
                           <select value={editForm.owner ?? "primary"} onChange={ev => setEditForm(f => ({ ...f, owner: ev.target.value }))} className={SELECT_CLS}>
-                            <option value={t.common.primary}>{primaryName || t.common.primary}</option>
+                            <option value="primary">{primaryName || t.common.primary}</option>
                             {spouseName && <option value="spouse">{spouseName}</option>}
-                            {spouseName && <option value={t.common.joint}>{t.common.joint}</option>}
+                            {spouseName && <option value="joint">{t.common.joint}</option>}
                           </select>
                         </div>
                         <div>

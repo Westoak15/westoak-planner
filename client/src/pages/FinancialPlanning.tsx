@@ -1029,7 +1029,7 @@ function RESPTab({ clientId, planId }: { clientId: number; planId: number | null
             <form onSubmit={handleSubmit} className="space-y-4" data-testid="form-fp-resp">
               <div className="grid grid-cols-2 gap-4">
                 <div><label className="text-sm font-semibold">Child Name</label><input required value={form.childName} onChange={e => setForm({ ...form, childName: e.target.value })} data-testid="input-fp-resp-name" className="w-full px-3 py-2 rounded-xl border mt-1" /></div>
-                <div><label className="text-sm font-semibold">Account Type</label><select value={form.accountType} onChange={e => setForm({ ...form, accountType: e.target.value })} data-testid="select-fp-resp-type" className="w-full px-3 py-2 rounded-xl border mt-1"><option value="RESP">RESP</option><option value="RDSP">RDSP</option><option value={t.common.other}>{t.common.other}</option></select></div>
+                <div><label className="text-sm font-semibold">Account Type</label><select value={form.accountType} onChange={e => setForm({ ...form, accountType: e.target.value })} data-testid="select-fp-resp-type" className="w-full px-3 py-2 rounded-xl border mt-1"><option value="RESP">RESP</option><option value="RDSP">RDSP</option><option value="Other">{t.common.other}</option></select></div>
               </div>
               <div className="grid grid-cols-3 gap-4">
                 <div><label className="text-sm font-semibold">Current Age</label><input type="number" required value={form.childAge} onChange={e => setForm({ ...form, childAge: e.target.value })} data-testid="input-fp-resp-age" className="w-full px-3 py-2 rounded-xl border mt-1" /></div>
@@ -2714,7 +2714,7 @@ export function EstateNotesTab({ clientId, planId, client }: { clientId: number;
         ))}
       </div>
       {notes.length === 0 && <div className="text-center py-12 text-muted-foreground border border-dashed border-border rounded-2xl">No estate planning notes yet.</div>}
-      <EstateScorecard notes={notes as any[]} province={(assumptions as any[]).find(a => a.scenario === t.common.medium)?.province} />
+      <EstateScorecard notes={notes as any[]} province={(assumptions as any[]).find(a => a.scenario === "Moderate")?.province} />
       {showAdd && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl w-full max-w-md shadow-2xl p-6">

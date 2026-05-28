@@ -625,8 +625,8 @@ export function PoliciesTab({ clientId, client, t }: Props) {
               <div key={s.label} className="px-4 py-3">
                 <div className="text-[9px] font-semibold uppercase tracking-widest text-slate-400 mb-1">{s.label}</div>
                 <div className={`text-sm font-bold leading-none ${
-                  s.label === t.insurance.disability && !s.hi ? "text-red-600" :
-                  s.label === t.insurance.expiringSoon && expiringPolicies.length > 0 ? "text-amber-600" :
+                  s.label === "Disability" && !s.hi ? "text-red-600" :
+                  s.label === "Expiring Soon" && expiringPolicies.length > 0 ? "text-amber-600" :
                   "text-slate-900"
                 }`}>{s.value}</div>
                 <div className="text-[9px] text-slate-400 mt-0.5">{s.sub}</div>

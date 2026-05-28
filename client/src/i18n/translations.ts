@@ -2796,7 +2796,6 @@ export const translations = {
       estateValue2:          "Valeur successorale à l'espérance de vie",
       scenarioComp:          "Comparaison de scénarios",
     },
-    },
 
 } as const;
 

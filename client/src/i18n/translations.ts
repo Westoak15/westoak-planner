@@ -147,7 +147,7 @@ export const translations = {
        lifeExpectancy:        "Life Expectancy",
        province:              "Province",
     
-       error:                 "Error",},
+    },
 
     // ── Net Worth ──────────────────────────────────────────────────────────────
     netWorth: {
@@ -1595,7 +1595,7 @@ export const translations = {
        lifeExpectancy:        "Espérance de vie",
        province:              "Province",
     
-       error:                 "Erreur",},
+    },
 
     // ── Net Worth ──────────────────────────────────────────────────────────────
     netWorth: {

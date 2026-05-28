@@ -41,8 +41,9 @@ export function coverPage(meta:ReportMeta,sections:string[]):string{
 export function pageHeader(meta:ReportMeta,section:string):string{
   return `<div class="doc-header"><div class="doc-header-client">${meta.client.fullName}</div><div class="doc-header-right">${section}<br>${meta.reportDate}</div></div>`;
 }
-export function pageFooter(page:number,total:number,firm:string):string{
-  return `<div class="doc-footer"><span>${firm} &mdash; ${L(meta,"Confidential","Confidentiel")}</span><span>Page ${page}</span></div>`;
+export function pageFooter(page:number,total:number,firm:string,locale?:string):string{
+  const conf = locale === "fr" ? "Confidentiel" : "Confidential";
+  return `<div class="doc-footer"><span>${firm} &mdash; ${conf}</span><span>Page ${page}</span></div>`;
 }
 export function sectionHeader(eyebrow:string,title:string,subtitle?:string):string{
   return `<div class="section-header"><div class="section-eyebrow">${eyebrow}</div><div class="section-title">${title}</div>${subtitle?`<div class="section-subtitle">${subtitle}</div>`:""}</div>`;

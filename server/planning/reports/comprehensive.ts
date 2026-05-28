@@ -21,7 +21,7 @@ function retirementSection(inputs: ComprehensiveReportInputs, r: RetirementProje
   ${callout(`<strong>RRSP vs. TFSA Strategy:</strong> ${r.rrspVsTfsaRationale}`,r.rrspVsTfsaRecommendation==="rrsp"?"info":r.rrspVsTfsaRecommendation==="tfsa"?"success":"info")}
   ${dataTable("Year-by-Year Projection (Every 5 Years)",[{label:"Age"},{label:"Year"},{label:"RRSP/RRIF",right:true},{label:"TFSA",right:true},{label:"Non-Reg",right:true},{label:"Total Portfolio",right:true},{label:"Withdrawal",right:true},{label:"Gross Income",right:true}],rows)}
   ${r.shortfallOrSurplus<0?callout(`<strong>Action Required:</strong> Projected annual retirement income shortfall of ${fmt.dollar(Math.abs(r.shortfallOrSurplus))}. Consider increasing annual savings or adjusting the retirement age.`,"warning"):callout(`<strong>On Track:</strong> Current savings trajectory projects a surplus of ${fmt.dollar(r.shortfallOrSurplus)} annually in retirement.`,"success")}
-  ${pageFooter(1,10,inputs.meta.advisor.companyName)}</div>`;
+  ${pageFooter(1,10,inputs.meta.advisor.companyName,inputs.meta.locale)}</div>`;
 }
 
 function taxSection(inputs: ComprehensiveReportInputs, r: TaxProjection): string {
@@ -32,7 +32,7 @@ function taxSection(inputs: ComprehensiveReportInputs, r: TaxProjection): string
   ${dataTable("Federal Tax Bracket Breakdown",[{label:"Bracket"},{label:"Rate",right:true},{label:"Income in Bracket",right:true},{label:"Tax in Bracket",right:true},{label:"Cumulative Tax",right:true}],r.bracketBreakdown.map(b=>[b.bracket,fmt.pct(b.rate),fmt.dollar(b.incomeInBracket),fmt.dollar(b.taxInBracket),fmt.dollar(b.cumulative)]))}
   ${dataTable("5-Year Tax Projection (2% Annual Income Growth)",[{label:"Year"},{label:"Projected Income",right:true},{label:"Projected Tax",right:true},{label:"Effective Rate",right:true},{label:"Marginal Rate",right:true}],r.fiveYearProjection.map(row=>[row.year.toString(),fmt.dollar(row.projectedIncome),fmt.dollar(row.projectedTax),fmt.pct(row.effectiveRate),fmt.pct(row.marginalRate)]))}
   ${r.recommendations.length>0?sectionHeader("","Tax Planning Recommendations")+recommendationList(r.recommendations.map(rec=>({priority:rec.priority,category:rec.category,text:rec.recommendation,saving:rec.estimatedSaving}))):""}
-  ${pageFooter(2,10,inputs.meta.advisor.companyName)}</div>`;
+  ${pageFooter(2,10,inputs.meta.advisor.companyName,inputs.meta.locale)}</div>`;
 }
 
 function rrspSection(inputs: ComprehensiveReportInputs, r: RrspAnalysis): string {
@@ -44,7 +44,7 @@ function rrspSection(inputs: ComprehensiveReportInputs, r: RrspAnalysis): string
   ${lineChart("RRSP Balance Projection",[{label:"RRSP Balance",data:r.yearByYear.map(row=>({x:row.age,y:row.closingBalance})),color:"#1E5FA8"},{label:"Cumulative Contributions",data:r.yearByYear.map(row=>({x:row.age,y:row.cumulativeContributions})),color:"#C9A84C"}])}
   ${dataTable("RRSP Growth Projection",[{label:"Age"},{label:"Year"},{label:"Opening Balance",right:true},{label:"Contribution",right:true},{label:"Growth",right:true},{label:"Closing Balance",right:true},{label:"Tax Refund",right:true}],rows)}
   ${callout(`<strong>Home Buyers Plan (HBP):</strong> First-time homebuyers may withdraw up to ${fmt.dollar(r.homeByersAmount)} from their RRSP tax-free, repayable over 15 years. &nbsp;<strong>Lifelong Learning Plan (LLP):</strong> Up to ${fmt.dollar(r.lifelongLearningAmount)} for full-time education, repayable over 10 years.`,"info")}
-  ${pageFooter(3,10,inputs.meta.advisor.companyName)}</div>`;
+  ${pageFooter(3,10,inputs.meta.advisor.companyName,inputs.meta.locale)}</div>`;
 }
 
 function tfsaSection(inputs: ComprehensiveReportInputs, r: TfsaAnalysis): string {
@@ -55,7 +55,7 @@ function tfsaSection(inputs: ComprehensiveReportInputs, r: TfsaAnalysis): string
   ${lineChart("TFSA vs. Taxable Account \u2014 Tax-Free Advantage",[{label:"TFSA Balance",data:r.taxFreeSavingsVsTaxable.map(row=>({x:row.year,y:row.tfsaBalance})),color:"#1E5FA8"},{label:"Taxable Account",data:r.taxFreeSavingsVsTaxable.map(row=>({x:row.year,y:row.taxableBalance})),color:"#C9A84C"},{label:"TFSA Advantage",data:r.taxFreeSavingsVsTaxable.map(row=>({x:row.year,y:row.tfsaAdvantage})),color:"#1A7A4A"}])}
   ${callout(r.withdrawalStrategy,"info")}
   ${dataTable("TFSA Growth Projection",[{label:"Age"},{label:"Year"},{label:"Annual Limit",right:true},{label:"Cumulative Room",right:true},{label:"Opening Balance",right:true},{label:"Contribution",right:true},{label:"Growth",right:true},{label:"Closing Balance",right:true}],rows)}
-  ${pageFooter(4,10,inputs.meta.advisor.companyName)}</div>`;
+  ${pageFooter(4,10,inputs.meta.advisor.companyName,inputs.meta.locale)}</div>`;
 }
 
 function capitalGainsSection(inputs: ComprehensiveReportInputs, r: CapitalGainsAnalysis): string {
@@ -65,7 +65,7 @@ function capitalGainsSection(inputs: ComprehensiveReportInputs, r: CapitalGainsA
   ${r.disposalBreakdown.length>0?dataTable("Disposal Breakdown",[{label:"Asset"},{label:"Proceeds",right:true},{label:"ACB",right:true},{label:"Gain",right:true},{label:"Tax",right:true}],r.disposalBreakdown.map(d=>[d.description,d.proceeds,d.acb,d.gain,d.estimatedTax])):""}
   ${r.timingRecommendations.length>0?callout(`<strong>Timing Strategies:</strong> ${r.timingRecommendations.join(" &nbsp;|&nbsp; ")}`,"info"):""}
   ${r.harvestingOpportunities.length>0?callout(`<strong>Harvesting Opportunities:</strong> ${r.harvestingOpportunities.join(" &nbsp;|&nbsp; ")}`,"success"):""}
-  ${pageFooter(5,10,inputs.meta.advisor.companyName)}</div>`;
+  ${pageFooter(5,10,inputs.meta.advisor.companyName,inputs.meta.locale)}</div>`;
 }
 
 function incomeSplittingSection(inputs: ComprehensiveReportInputs, r: IncomeSplittingAnalysis): string {
@@ -78,7 +78,7 @@ function incomeSplittingSection(inputs: ComprehensiveReportInputs, r: IncomeSpli
   ],["Combined",fmt.dollar(r.currentCombinedTax),"—",fmt.dollar(r.combinedAfterSplitTax),"—",fmt.dollar(r.totalAnnualSaving)])}
   ${strats.length>0?`<div class="section-title mb-12">Available Strategies</div><div class="rec-list">${strats.map(s=>`<div class="rec-item ${s.eligible?"medium":"low"}"><div class="rec-icon">${s.eligible?"&#9873;":"&#8212;"}</div><div class="rec-body"><div class="rec-category">${s.name.toUpperCase()} ${s.eligible?badge("ELIGIBLE","green"):badge("NOT ELIGIBLE","red")}</div><div class="rec-text">${s.description}</div>${s.eligible&&s.annualSaving>0?`<div class="rec-saving">Annual saving: ${fmt.dollar(s.annualSaving)} \u2014 ${s.actionRequired}</div>`:s.actionRequired?`<div class="rec-text" style="color:var(--gray-400);font-size:11px">${s.actionRequired}</div>`:""}</div></div>`).join("")}</div>`:""}
   ${r.spousalRrspRecommended?callout(`Contributing to a spousal RRSP saves ${fmt.pct(r.comparison?.beforeSplitting?.effectivePrimary??0 - (r.comparison?.afterSplitting?.effectivePrimary??0))} on withdrawals. ${r.spousalRrspRationale}`,"success"):""}
-  ${pageFooter(6,10,inputs.meta.advisor.companyName)}</div>`;
+  ${pageFooter(6,10,inputs.meta.advisor.companyName,inputs.meta.locale)}</div>`;
 }
 
 function insuranceSection(inputs: ComprehensiveReportInputs, r: InsuranceAnalysis): string {
@@ -88,14 +88,14 @@ function insuranceSection(inputs: ComprehensiveReportInputs, r: InsuranceAnalysi
   ${metricGrid([{label:"Human Life Value",value:fmt.dollar(r.hlvValue)},{label:"HLV Gap",value:fmt.dollar(r.hlvGap),variant:r.hlvGap>0?"amber":""},{label:"Needs-Based Requirement",value:fmt.dollar(r.needsBasedCapitalNeeded)},{label:"Needs-Based Gap",value:fmt.dollar(r.needsBasedGap),variant:r.needsBasedGap>0?"amber":"green"}])}
   ${dataTable("Disability & Critical Illness",[{label:"Coverage Type"},{label:"Monthly Need",right:true},{label:"Existing",right:true},{label:"Gap",right:true},{label:"Est. Premium",right:true}],[["Long-term Disability",fmt.dollar(r.monthlyDisabilityNeed)+"/mo",fmt.dollar(r.existingDisabilityCoverage)+"/mo",fmt.dollar(r.disabilityGap)+"/mo",fmt.dollar(r.estimatedDisabilityPremium)+"/mo"],["Critical Illness (Lump Sum)",fmt.dollar(r.recommendedCICoverage),fmt.dollar(inputs.insurance?.existingCriticalIllness??0),fmt.dollar(r.ciGap),fmt.dollar(r.estimatedCIPremium)+"/mo"]])}
   ${r.recommendations.length>0?recommendationList(r.recommendations.map(rec=>({priority:rec.priority,category:rec.type,text:rec.rationale,saving:rec.coverageAmount}))):""}
-  ${pageFooter(7,10,inputs.meta.advisor.companyName)}</div>`;
+  ${pageFooter(7,10,inputs.meta.advisor.companyName,inputs.meta.locale)}</div>`;
 }
 
 function educationSection(inputs: ComprehensiveReportInputs, r: EducationAnalysis): string {
   return `<div class="page">${pageHeader(inputs.meta,"Education Planning")}${sectionHeader("Section 8","Education Planning (RESP)","CESG, CLB & Projection")}
   ${metricGrid([{label:"Total CESG Received",value:fmt.dollar(r.totalCesgReceived),variant:"green"},{label:"Projected RESP Value",value:fmt.dollar(r.totalProjectedRespValue),variant:"navy"},{label:"Estimated Education Cost",value:fmt.dollar(r.totalEstimatedEducationCost)},{label:"Surplus / Shortfall",value:fmt.dollar(r.shortfallOrSurplus),variant:r.shortfallOrSurplus>=0?"green":"red"}])}
   ${r.children.map(child=>`<div class="section-title mb-8">${child.name} (Age ${child.age})</div>${metricGrid([{label:"Projected RESP",value:fmt.dollar(child.projectedRespBalance),variant:"blue"},{label:"Education Cost",value:fmt.dollar(child.estimatedEducationCost)},{label:"Total CESG",value:fmt.dollar(child.totalCesgForChild),variant:"green"},{label:"Surplus/Shortfall",value:fmt.dollar(child.shortfallOrSurplus),variant:child.shortfallOrSurplus>=0?"green":"red"}],4)}${dataTable(`${child.name} — RESP Growth`,[{label:"Year"},{label:"Age"},{label:"Contribution",right:true},{label:"CESG",right:true},{label:"Growth",right:true},{label:"Balance",right:true}],child.yearByYear.filter((_,i)=>i%2===0).slice(0,10).map(row=>[row.year.toString(),row.childAge.toString(),fmt.dollar(row.contribution),fmt.dollar(row.cesg+row.additionalCesg),fmt.dollar(row.growth),fmt.dollar(row.closingBalance)]))}`).join("")}
-  ${pageFooter(8,10,inputs.meta.advisor.companyName)}</div>`;
+  ${pageFooter(8,10,inputs.meta.advisor.companyName,inputs.meta.locale)}</div>`;
 }
 
 function estateSection(inputs: ComprehensiveReportInputs, r: EstateAnalysis): string {
@@ -116,7 +116,7 @@ function estateSection(inputs: ComprehensiveReportInputs, r: EstateAnalysis): st
   <div class="rec-list">${docItems.map(d=>`<div class="rec-item ${d.has?"low":"immediate"}"><div class="rec-icon">${d.has?"&#9745;":"&#9888;"}</div><div class="rec-body"><div class="rec-category">${d.name} ${d.has?badge("IN PLACE","green"):badge("MISSING","red")}</div><div class="rec-text">${d.rec}</div></div></div>`).join("")}</div>
   ${r.recommendations.length>0?recommendationList(r.recommendations.map(rec=>({priority:rec.priority,category:rec.category,text:rec.recommendation,saving:rec.estimatedSaving}))):""}
   ${callout(`<strong>Estate Liquidity Needed:</strong> ${fmt.dollar(r.estimatedLiquidityNeeded)} required to cover taxes and probate fees on death.${r.lifeInsuranceSuggested>0?` A life insurance policy of ${fmt.dollar(r.lifeInsuranceSuggested)} is recommended to provide tax-free liquidity.`:" Current assets provide sufficient liquidity."}`,r.lifeInsuranceSuggested>0?"warning":"success")}
-  ${pageFooter(9,10,inputs.meta.advisor.companyName)}</div>`;
+  ${pageFooter(9,10,inputs.meta.advisor.companyName,inputs.meta.locale)}</div>`;
 }
 
 function debtSection(inputs: ComprehensiveReportInputs, r: DebtAnalysis): string {
@@ -131,7 +131,7 @@ function debtSection(inputs: ComprehensiveReportInputs, r: DebtAnalysis): string
   ${dataTable("Monthly Cash Flow Budget",[{label:"Category"},{label:"Monthly Amount",right:true},{label:"Annual",right:true},{label:"% of Net Income",right:true}],[["Gross Income",fmt.dollar(r.monthlyBudget.grossIncome),fmt.dollar(r.monthlyBudget.grossIncome*12),"100%"],["Less: Taxes",`(${fmt.dollar(r.monthlyBudget.taxes)})`,`(${fmt.dollar(r.monthlyBudget.taxes*12)})`,""],[`Net Income`,fmt.dollar(r.monthlyBudget.netIncome),fmt.dollar(r.monthlyBudget.netIncome*12),"100%"],["Housing",fmt.dollar(r.monthlyBudget.housing),fmt.dollar(r.monthlyBudget.housing*12),fmt.pct(r.monthlyBudget.housing/Math.max(r.monthlyBudget.netIncome,1))],["Transportation",fmt.dollar(r.monthlyBudget.transportation),fmt.dollar(r.monthlyBudget.transportation*12),fmt.pct(r.monthlyBudget.transportation/Math.max(r.monthlyBudget.netIncome,1))],["Food",fmt.dollar(r.monthlyBudget.food),fmt.dollar(r.monthlyBudget.food*12),fmt.pct(r.monthlyBudget.food/Math.max(r.monthlyBudget.netIncome,1))],["Debt Payments",fmt.dollar(r.monthlyBudget.debtPayments),fmt.dollar(r.monthlyBudget.debtPayments*12),fmt.pct(r.monthlyBudget.debtPayments/Math.max(r.monthlyBudget.netIncome,1))],["Savings",fmt.dollar(r.monthlyBudget.savings),fmt.dollar(r.monthlyBudget.savings*12),fmt.pct(r.monthlyBudget.savings/Math.max(r.monthlyBudget.netIncome,1))],["Discretionary",fmt.dollar(r.monthlyBudget.discretionary),fmt.dollar(r.monthlyBudget.discretionary*12),fmt.pct(r.monthlyBudget.discretionary/Math.max(r.monthlyBudget.netIncome,1))]],["Monthly Surplus",fmt.dollar(r.monthlyBudget.surplus),fmt.dollar(r.monthlyBudget.surplus*12),fmt.pct(r.monthlyBudget.surplus/Math.max(r.monthlyBudget.netIncome,1))])}
   ${r.avalancheOrder.length>0?dataTable(`Debt Payoff \u2014 Avalanche Method (Saves ${fmt.dollar(r.avalancheInterestSaved)} vs Snowball)`,[{label:"Priority"},{label:"Debt"},{label:"Balance",right:true},{label:"Rate",right:true},{label:"Min Payment",right:true},{label:"Payoff Date"},{label:"Total Interest",right:true}],r.avalancheOrder.map(d=>[`#${d.payoffOrder}`,d.name,fmt.dollar(d.balance),fmt.pct(d.interestRate),fmt.dollar(d.minimumPayment),d.payoffDate,fmt.dollar(d.totalInterestPaid)])):""}
   ${r.recommendations.length>0?recommendationList(r.recommendations.map(rec=>({priority:rec.priority,category:rec.category,text:rec.recommendation,saving:rec.monthlyImpact*12}))):""}
-  ${pageFooter(10,10,inputs.meta.advisor.companyName)}</div>`;
+  ${pageFooter(10,10,inputs.meta.advisor.companyName,inputs.meta.locale)}</div>`;
 }
 
 // ── Display-only sections (no engine calculation, just raw DB data) ──────────
@@ -154,7 +154,7 @@ function networthSection(inputs: ComprehensiveReportInputs): string {
   ${assets.length>0?dataTable("Assets",[{label:"Category"},{label:"Description"},{label:"Owner"},{label:"Value",right:true}],assets.map(e=>[e.category,e.name||e.category,e.owner==="spouse"?"Spouse":e.owner==="joint"?"Joint":"Primary",Number(e.value)])):""}
   ${liabs.length>0?dataTable("Liabilities",[{label:"Category"},{label:"Description"},{label:"Balance",right:true}],liabs.map(e=>[e.category,e.name||e.category,Number(e.value)])):""}
   ${allocationData.length>0?barChart("Asset Allocation by Category",allocationData):""}
-  ${pageFooter(0,0,inputs.meta.advisor.companyName)}</div>`;
+  ${pageFooter(0,0,inputs.meta.advisor.companyName,inputs.meta.locale)}</div>`;
 }
 
 function cashflowSection(inputs: ComprehensiveReportInputs): string {
@@ -170,7 +170,7 @@ function cashflowSection(inputs: ComprehensiveReportInputs): string {
   ${metricGrid([{label:"Monthly Income",value:fmt.dollar(annualIncome/12)+"/mo",variant:"green"},{label:"Monthly Expenses",value:fmt.dollar(totalMonthly)+"/mo"},{label:"Annual Expenses",value:fmt.dollar(totalMonthly*12)+"/yr"},{label:"Monthly Surplus",value:fmt.dollar(monthlySurplus)+"/mo",variant:monthlySurplus>=0?"green":"red"}])}
   ${rows.length>0?dataTable("Monthly Expenses",[{label:"Category"},{label:"Description"},{label:"Monthly",right:true},{label:"Annual",right:true}],rows.map(e=>[e.category,e.description||e.category,Number(e.monthlyAmount??0),Number(e.monthlyAmount??0)*12])):callout("No expense entries found. Add expenses in the Cash Flow tab.","info")}
   ${Object.keys(catGroups).length>0?barChart("Spending by Category",Object.entries(catGroups).map(([label,value])=>({label,value}))):""}
-  ${pageFooter(0,0,inputs.meta.advisor.companyName)}</div>`;
+  ${pageFooter(0,0,inputs.meta.advisor.companyName,inputs.meta.locale)}</div>`;
 }
 
 function goalsSection(inputs: ComprehensiveReportInputs): string {
@@ -184,7 +184,7 @@ function goalsSection(inputs: ComprehensiveReportInputs): string {
   return `<div class="page">${pageHeader(inputs.meta,"Financial Goals")}${sectionHeader("Goals","Financial Goals Status",`${goals.length} goals \u2014 as of ${inputs.meta.reportDate}`)}
   ${metricGrid([{label:"Total Goals",value:goals.length.toString()},{label:"Active",value:active.length.toString(),variant:"navy"},{label:"Completed",value:completed.length.toString(),variant:"green"},{label:"Total Target",value:fmt.dollar(totalTarget)}])}
   ${goals.length>0?dataTable("Goals Summary",[{label:"Goal"},{label:"Type"},{label:"Target Amount",right:true},{label:"Target Year"},{label:"Priority"},{label:"Status"}],sorted.map(g=>[g.title,String(g.goalType??"—").replace(/_/g," "),Math.abs(Number(g.targetAmount??0)),g.targetYear?g.targetYear.toString():"—",String(g.priority??"medium").toUpperCase(),(g.status??"active").replace(/_/g," ").toUpperCase()])):callout("No financial goals found. Add goals in the Goals tab.","info")}
-  ${pageFooter(0,0,inputs.meta.advisor.companyName)}</div>`;
+  ${pageFooter(0,0,inputs.meta.advisor.companyName,inputs.meta.locale)}</div>`;
 }
 
 export function generateComprehensiveReport(

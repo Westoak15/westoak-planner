@@ -155,9 +155,10 @@ planningRouter.post("/report/:clientId", async (req: AuthRequest, res: Response)
   try {
     const userId   = req.userId!;
     const clientId = parseInt(req.params.clientId, 10);
-    const { sections = "all", overrides = {} } = req.body as {
+    const { sections = "all", overrides = {}, locale = "en" } = req.body as {
       sections: string | string[];
       overrides: Record<string, any>;
+      locale?: string;
     };
 
     const ALL_SECTIONS = ["retirement","tax","rrsp","tfsa","capitalGains","incomeSplitting","insurance","education","estate","debt","networth","cashflow","goals"];
@@ -170,12 +171,16 @@ planningRouter.post("/report/:clientId", async (req: AuthRequest, res: Response)
     if (!people) return res.status(404).json({ error: "Client not found" });
 
     const { client, advisor, annualIncome: clientAnnualIncome, spouseAnnualIncome: clientSpouseAnnualIncome } = people;
+    const isFr = locale === "fr";
     const meta: ReportMeta = {
       client, advisor,
       reportDate:   today(),
-      reportTitle:  "Comprehensive Financial Plan",
-      disclaimer:   "This plan does not constitute investment advice. Past performance is not indicative of future results. Please consult a registered financial planner.",
+      reportTitle:  isFr ? "Plan financier complet" : "Comprehensive Financial Plan",
+      disclaimer:   isFr
+        ? "Ce plan ne constitue pas un conseil en placement. Les performances passées ne préjugent pas des performances futures. Veuillez consulter un planificateur financier autorisé."
+        : "This plan does not constitute investment advice. Past performance is not indicative of future results. Please consult a registered financial planner.",
       confidential: true,
+      locale,
     };
 
     // ── Load DB rows ──────────────────────────────────────────────────────────

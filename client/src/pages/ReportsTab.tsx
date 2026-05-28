@@ -38,7 +38,7 @@ const CATEGORY_COLORS: Record<string, string> = {
 
 const CATEGORY_ORDER = ["summary","networth","retirement","insurance","cashflow","goals","taxestate"];
 
-export function ReportsTab({ clientId, t = translations.en }: { clientId: number; t?: T }) {
+export function ReportsTab({ clientId, t = translations.en, locale = 'en' }: { clientId: number; t?: T; locale?: string }) {
   const [selected, setSelected]   = useState<Set<string>>(new Set());
   const [generating, setGenerating] = useState(false);
   const REPORT_SECTIONS = makeReportSections(t);
@@ -63,7 +63,7 @@ export function ReportsTab({ clientId, t = translations.en }: { clientId: number
           "Content-Type": "application/json",
           Authorization: `Bearer ${token()}`,
         },
-        body: JSON.stringify({ sections }),
+        body: JSON.stringify({ sections, locale }),
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));

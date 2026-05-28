@@ -2,6 +2,11 @@
 import type { ReportMeta } from "../types.js";
 import { PROVINCE_NAMES } from "../data/taxData2024.js";
 
+// ── Bilingual labels ──────────────────────────────────────────────────────────
+function L(meta: ReportMeta, en: string, fr: string): string {
+  return meta.locale === "fr" ? fr : en;
+}
+
 export const fmt = {
   dollar:(n:number,decimals=0)=>new Intl.NumberFormat("en-CA",{style:"currency",currency:"CAD",minimumFractionDigits:decimals,maximumFractionDigits:decimals}).format(n),
   pct:(n:number,decimals=1)=>`${(n*100).toFixed(decimals)}%`,
@@ -17,19 +22,19 @@ export function coverPage(meta:ReportMeta,sections:string[]):string{
   return `<div class="page cover">
   <div class="cover-header">
     <div class="cover-logo-row"><div><div class="cover-firm-name">${advisor.companyName}</div>${advisor.licenseNumber?`<div class="cover-date">Licence: ${advisor.licenseNumber}</div>`:""}</div><div class="cover-date">${reportDate}</div></div>
-    <div style="padding:64px 0 48px"><div class="cover-label">Confidential Financial Plan</div><div class="cover-main-title">${reportTitle}</div><div class="cover-client-name">Prepared for ${client.fullName}</div></div>
+    <div style="padding:64px 0 48px"><div class="cover-label">${L(meta,"Confidential Financial Plan","Plan financier confidentiel")}</div><div class="cover-main-title">${reportTitle}</div><div class="cover-client-name">${L(meta,"Prepared for","Préparé pour")} ${client.fullName}</div></div>
     <div class="cover-gold-bar"></div>
   </div>
   <div class="cover-body">
-    <div class="cover-info-block"><div class="cover-info-label">Client</div><div class="cover-info-value">${client.fullName}</div>${client.spouseFirstName?`<div class="cover-info-value" style="margin-top:4px">${client.spouseFirstName} ${client.spouseLastName||""}</div>`:""}</div>
-    <div class="cover-info-block"><div class="cover-info-label">Date of Birth</div><div class="cover-info-value">${formatDate(client.dateOfBirth)} (Age ${client.age})</div></div>
-    <div class="cover-info-block"><div class="cover-info-label">Province</div><div class="cover-info-value">${PROVINCE_NAMES[client.province]}</div></div>
-    <div class="cover-info-block"><div class="cover-info-label">Advisor</div><div class="cover-info-value">${advisor.fullName}</div></div>
-    <div class="cover-info-block"><div class="cover-info-label">Report Date</div><div class="cover-info-value">${reportDate}</div></div>
-    <div class="cover-info-block"><div class="cover-info-label">Plan Reference</div><div class="cover-info-value">${meta.planId?`Plan #${meta.planId}`:"Draft"}</div></div>
-    <div class="cover-sections"><div class="cover-sections-title">This Report Contains</div><div class="cover-toc">${sections.map(s=>`<div class="cover-toc-item"><div class="cover-toc-dot"></div>${s}</div>`).join("")}</div></div>
+    <div class="cover-info-block"><div class="cover-info-label">${L(meta,"Client","Client")}</div><div class="cover-info-value">${client.fullName}</div>${client.spouseFirstName?`<div class="cover-info-value" style="margin-top:4px">${client.spouseFirstName} ${client.spouseLastName||""}</div>`:""}</div>
+    <div class="cover-info-block"><div class="cover-info-label">${L(meta,"Date of Birth","Date de naissance")}</div><div class="cover-info-value">${formatDate(client.dateOfBirth)} (${L(meta,"Age","Âge")} ${client.age})</div></div>
+    <div class="cover-info-block"><div class="cover-info-label">${L(meta,"Province","Province")}</div><div class="cover-info-value">${PROVINCE_NAMES[client.province]}</div></div>
+    <div class="cover-info-block"><div class="cover-info-label">${L(meta,"Advisor","Conseiller")}</div><div class="cover-info-value">${advisor.fullName}</div></div>
+    <div class="cover-info-block"><div class="cover-info-label">${L(meta,"Report Date","Date du rapport")}</div><div class="cover-info-value">${reportDate}</div></div>
+    <div class="cover-info-block"><div class="cover-info-label">${L(meta,"Plan Reference","Référence du plan")}</div><div class="cover-info-value">${meta.planId?`Plan #${meta.planId}`:L(meta,"Draft","Ébauche")}</div></div>
+    <div class="cover-sections"><div class="cover-sections-title">${L(meta,"This Report Contains","Ce rapport contient")}</div><div class="cover-toc">${sections.map(s=>`<div class="cover-toc-item"><div class="cover-toc-dot"></div>${s}</div>`).join("")}</div></div>
   </div>
-  <div class="cover-footer"><strong>Confidential:</strong> This financial plan has been prepared exclusively for ${client.fullName} by ${advisor.fullName} of ${advisor.companyName}. The information contained herein is based on data provided by the client and is subject to change. This plan is not a guarantee of future performance and should be reviewed annually or upon major life events. ${meta.disclaimer}</div>
+  <div class="cover-footer"><strong>${L(meta,"Confidential:","Confidentiel :")}</strong> ${L(meta,`This financial plan has been prepared exclusively for ${client.fullName} by ${advisor.fullName} of ${advisor.companyName}. The information contained herein is based on data provided by the client and is subject to change. This plan is not a guarantee of future performance and should be reviewed annually or upon major life events.`,`Ce plan financier a été préparé exclusivement pour ${client.fullName} par ${advisor.fullName} de ${advisor.companyName}. Les informations contenues sont basées sur les données fournies par le client et sont sujettes à modification. Ce plan ne constitue pas une garantie de performance future et devrait être révisé annuellement ou lors de changements de vie importants.`)} ${meta.disclaimer}</div>
 </div>`;
 }
 
@@ -37,7 +42,7 @@ export function pageHeader(meta:ReportMeta,section:string):string{
   return `<div class="doc-header"><div class="doc-header-client">${meta.client.fullName}</div><div class="doc-header-right">${section}<br>${meta.reportDate}</div></div>`;
 }
 export function pageFooter(page:number,total:number,firm:string):string{
-  return `<div class="doc-footer"><span>${firm} &mdash; Confidential</span><span>Page ${page}</span></div>`;
+  return `<div class="doc-footer"><span>${firm} &mdash; ${L(meta,"Confidential","Confidentiel")}</span><span>Page ${page}</span></div>`;
 }
 export function sectionHeader(eyebrow:string,title:string,subtitle?:string):string{
   return `<div class="section-header"><div class="section-eyebrow">${eyebrow}</div><div class="section-title">${title}</div>${subtitle?`<div class="section-subtitle">${subtitle}</div>`:""}</div>`;

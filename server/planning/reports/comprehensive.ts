@@ -210,5 +210,11 @@ export function generateComprehensiveReport(
   if (inputs.rawExpenses && inputs.rawExpenses.length > 0) { tocItems.push("Cash Flow & Budget");           sections.push(cashflowSection(inputs)); }
   if (inputs.rawGoals    && inputs.rawGoals.length    > 0) { tocItems.push("Financial Goals");              sections.push(goalsSection(inputs)); }
 
-  return `<!DOCTYPE html>\n<html lang="en">\n<head>\n<meta charset="UTF-8">\n<title>${inputs.meta.reportTitle} \u2014 ${inputs.meta.client.fullName}</title>\n<style>${REPORT_CSS}</style>\n</head>\n<body>\n${coverPage(inputs.meta, tocItems)}\n${sections.join("\n")}\n</body>\n</html>`;
+  const lang = inputs.meta.locale === "fr" ? "fr" : "en";
+  const printLabel = inputs.meta.locale === "fr" ? "Imprimer / Enregistrer PDF" : "Print / Save as PDF";
+  const printBtn = `<button class="print-btn" onclick="window.print()">
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+    ${printLabel}
+  </button>`;
+  return `<!DOCTYPE html>\n<html lang="${lang}">\n<head>\n<meta charset="UTF-8">\n<title>${inputs.meta.reportTitle} \u2014 ${inputs.meta.client.fullName}</title>\n<style>${REPORT_CSS}</style>\n</head>\n<body>\n${printBtn}\n${coverPage(inputs.meta, tocItems)}\n${sections.join("\n")}\n</body>\n</html>`;
 }

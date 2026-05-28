@@ -197,7 +197,7 @@ export interface CashFlowBudget { grossIncome: number; taxes: number; netIncome:
 export interface DebtRecommendation { priority: "high" | "medium" | "low"; category: string; recommendation: string; monthlyImpact: number; }
 export interface DebtAnalysis { totalDebt: number; totalMonthlyDebt: number; totalMonthlyIncome: number; totalMonthlyExpenses: number; monthlySurplusOrDeficit: number; grossDebtServiceRatio: number; totalDebtServiceRatio: number; debtToIncomeRatio: number; avalancheOrder: DebtPayoffItem[]; snowballOrder: DebtPayoffItem[]; avalancheInterestSaved: number; avalancheMonthsSaved: number; snowballMotivationScore: number; recommendedStrategy: "avalanche" | "snowball"; monthlyBudget: CashFlowBudget; annualCashFlow: number; savingsRate: number; emergencyFundMonthsCovered: number; emergencyFundStatus: "adequate" | "building" | "critical"; recommendations: DebtRecommendation[]; debtFreeDate: string; }
 
-export interface ReportMeta { client: PlanningClient; advisor: PlanningAdvisor; reportDate: string; reportTitle: string; disclaimer: string; confidential: boolean; planId?: number; }
+export interface ReportMeta { client: PlanningClient; advisor: PlanningAdvisor; reportDate: string; reportTitle: string; disclaimer: string; confidential: boolean; planId?: number; locale?: string; }
 
 // Raw data rows passed through for display-only sections (no engine calculation)
 export interface RawNwEntry    { type: string; category: string; name: string; value: string; owner?: string | null; }

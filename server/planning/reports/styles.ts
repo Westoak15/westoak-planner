@@ -12,7 +12,7 @@ export const REPORT_CSS = `
   }
   html { font-size: 13px; }
   body { font-family:'Inter',system-ui,sans-serif; color:var(--text); background:#F0F2F5; line-height:1.6; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
-  .page { width:794px; min-height:1123px; margin:0 auto 32px; background:white; padding:48px 56px; box-shadow:0 4px 24px rgba(0,0,0,.10); }
+  .page { width:816px; min-height:1056px; margin:0 auto 28px; background:white; padding:44px 54px; box-shadow:0 4px 24px rgba(0,0,0,.10); }
   .cover { display:flex; flex-direction:column; min-height:1060px; background:white; }
   .cover-header { background:var(--navy); color:white; padding:40px 56px 32px; margin:-48px -56px 0; }
   .cover-logo-row { display:flex; align-items:center; justify-content:space-between; margin-bottom:48px; }
@@ -116,5 +116,5 @@ export const REPORT_CSS = `
     .page:last-child{page-break-after:avoid}
     thead{display:table-header-group}
   }
-  @page{size:A4;margin:18mm 20mm}
+  @page{size:letter portrait;margin:0.75in 0.85in}
 `;

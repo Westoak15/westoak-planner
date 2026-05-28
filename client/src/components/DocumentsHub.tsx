@@ -33,7 +33,7 @@ export function DocumentsHub({ clientId, client, t = translations.en }: Props) {
       onSubtabChange={(k) => setSubtab(k as "reports" | "letters")}
     >
       <div className="p-6">
-        {subtab === "reports" && <ReportsTab clientId={clientId} t={t} />}
+        {subtab === "reports" && <ReportsTab clientId={clientId} t={t} locale={advisorLocale ?? "en"} />}
         {subtab === "letters" && <LettersTab clientId={clientId} client={client} />}
       </div>
     </HubShell>

@@ -1334,7 +1334,7 @@ export default function App() {
             <TaxEstateHub clientId={client.id} client={client} person={person} onPersonChange={setPerson} t={tClient} />
           )}
           {tab === "documents" && client && (
-            <DocumentsHub clientId={client.id} client={client} t={tClient} />
+            <DocumentsHub clientId={client.id} client={client} t={tClient} advisorLocale={advisorLocale} />
           )}
           {tab === "fp" && client && (
             <FinancialPlanHub clientId={client.id} client={client} t={tClient} />

@@ -1040,7 +1040,13 @@ export const translations = {
        summaryLabel:          "Summary",
        goalsReport:           "Goals",
        taxEstate:             "Tax & Estate",
-    },
+    
+       savedReports:          "Saved Reports",
+       noSavedReports:        "No saved reports yet. Generate a report to save it here.",
+       open:                  "Open",
+       deleteReportConfirm:   "Delete this saved report?",
+       generatedReport:       "Generated Report",
+       saveReport:            "Save to Client File",},
 
     // ── AI Insights ───────────────────────────────────────────────────────────
     ai: {
@@ -2487,7 +2493,13 @@ export const translations = {
        summaryLabel:          "Résumé",
        goalsReport:           "Objectifs",
        taxEstate:             "Impôt et succession",
-    },
+    
+       savedReports:          "Rapports sauvegardés",
+       noSavedReports:        "Aucun rapport sauvegardé. Générez un rapport pour le sauvegarder ici.",
+       open:                  "Ouvrir",
+       deleteReportConfirm:   "Supprimer ce rapport sauvegardé?",
+       generatedReport:       "Rapport généré",
+       saveReport:            "Sauvegarder dans le dossier client",},
 
     // ── AI Insights ───────────────────────────────────────────────────────────
     ai: {

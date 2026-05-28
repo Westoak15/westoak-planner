@@ -583,3 +583,14 @@ export const diAnalyses = pgTable("di_analyses", {
 });
 export type DiAnalysis       = typeof diAnalyses.$inferSelect;
 export type InsertDiAnalysis = typeof diAnalyses.$inferInsert;
+
+export const savedReports = pgTable("saved_reports", {
+  id:          serial("id").primaryKey(),
+  clientId:    integer("client_id").notNull(),
+  title:       text("title").notNull(),
+  locale:      text("locale").notNull().default("en"),
+  sections:    text("sections").notNull().default("all"),
+  htmlContent: text("html_content").notNull(),
+  generatedAt: timestamp("generated_at").notNull().defaultNow(),
+  advisorId:   integer("advisor_id"),
+});

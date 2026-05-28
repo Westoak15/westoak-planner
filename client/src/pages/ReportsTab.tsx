@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { FileText, Download, Loader2, BookOpen } from "lucide-react";
+import { FileText, Download, Loader2, BookOpen, Archive, Clock, Trash2, ExternalLink } from "lucide-react";
 import { translations, type T } from "../i18n/translations";
 
 interface ReportSection {
@@ -8,6 +8,15 @@ interface ReportSection {
   description: string;
   category: string;
   sections: string[];  // planning engine sections to request
+}
+
+
+interface SavedReport {
+  id: number;
+  title: string;
+  locale: string;
+  sections: string;
+  generatedAt: string;
 }
 
 function makeReportSections(t: T): ReportSection[] {
@@ -41,6 +50,43 @@ const CATEGORY_ORDER = ["summary","networth","retirement","insurance","cashflow"
 export function ReportsTab({ clientId, t = translations.en, locale = 'en' }: { clientId: number; t?: T; locale?: string }) {
   const [selected, setSelected]   = useState<Set<string>>(new Set());
   const [generating, setGenerating] = useState(false);
+  const [savedList, setSavedList]   = useState<SavedReport[]>([]);
+  const [savedView, setSavedView]   = useState<"builder"|"saved">("builder");
+  const [saving, setSaving]         = useState(false);
+  const [saveName, setSaveName]     = useState("");
+  const [loadingSaved, setLoadingSaved] = useState(false);
+
+  // Load saved reports
+  const loadSaved = async () => {
+    setLoadingSaved(true);
+    try {
+      const res = await fetch(`/api/clients/${clientId}/saved-reports`,
+        { headers: { Authorization: `Bearer ${token()}` } });
+      if (res.ok) setSavedList(await res.json());
+    } catch {}
+    finally { setLoadingSaved(false); }
+  };
+
+  // Open a saved report
+  const openSaved = async (id: number) => {
+    try {
+      const res = await fetch(`/api/saved-reports/${id}`,
+        { headers: { Authorization: `Bearer ${token()}` } });
+      if (!res.ok) return;
+      const row = await res.json();
+      const blob = new Blob([row.htmlContent], { type: "text/html" });
+      const url  = URL.createObjectURL(blob);
+      window.open(url, "_blank");
+    } catch {}
+  };
+
+  // Delete a saved report
+  const deleteSaved = async (id: number) => {
+    if (!confirm(t.report.deleteReportConfirm ?? "Delete this saved report?")) return;
+    await fetch(`/api/saved-reports/${id}`,
+      { method: "DELETE", headers: { Authorization: `Bearer ${token()}` } });
+    setSavedList(prev => prev.filter(r => r.id !== id));
+  };
   const REPORT_SECTIONS = makeReportSections(t);
   const CATEGORY_LABELS: Record<string, string> = {
     "summary":    t.report.catSummary,
@@ -147,6 +193,57 @@ ${bodies.join('\n<div class="report-divider"></div>\n')}
     <div className="p-6 max-w-5xl mx-auto">
 
       {/* Header */}
+      {/* Tab toggle */}
+      <div className="flex gap-2 mb-6">
+        <button onClick={() => setSavedView("builder")}
+          className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${savedView==="builder" ? "bg-[var(--brand-navy)] text-white" : "bg-[var(--bg-input)] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]"}`}>
+          <BookOpen className="w-3.5 h-3.5" />{t.report.reportBuilder ?? "Report Builder"}
+        </button>
+        <button onClick={() => { setSavedView("saved"); loadSaved(); }}
+          className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${savedView==="saved" ? "bg-[var(--brand-navy)] text-white" : "bg-[var(--bg-input)] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]"}`}>
+          <Archive className="w-3.5 h-3.5" />{t.report.savedReports ?? "Saved Reports"}
+          {savedList.length > 0 && <span className="ml-1 bg-white/20 text-xs px-1.5 py-0.5 rounded-full">{savedList.length}</span>}
+        </button>
+      </div>
+
+      {savedView === "saved" && (
+        <div className="space-y-3">
+          {loadingSaved && <div className="flex items-center gap-2 text-[var(--text-secondary)] text-sm"><Loader2 className="w-4 h-4 animate-spin" />{t.common.loading}</div>}
+          {!loadingSaved && savedList.length === 0 && (
+            <div className="text-center py-12 text-[var(--text-tertiary)]">
+              <Archive className="w-10 h-10 mx-auto mb-3 opacity-30" />
+              <p className="text-sm">{t.report.noSavedReports ?? "No saved reports yet. Generate a report to save it here."}</p>
+            </div>
+          )}
+          {savedList.map(r => (
+            <div key={r.id} className="flex items-center justify-between p-4 bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-xl">
+              <div className="flex items-center gap-3 min-w-0">
+                <FileText className="w-5 h-5 text-[var(--brand-teal)] flex-shrink-0" />
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-[var(--text-primary)] truncate">{r.title}</p>
+                  <p className="text-xs text-[var(--text-tertiary)] flex items-center gap-1 mt-0.5">
+                    <Clock className="w-3 h-3" />
+                    {new Date(r.generatedAt).toLocaleDateString(locale === "fr" ? "fr-CA" : "en-CA", { year:"numeric", month:"short", day:"numeric", hour:"2-digit", minute:"2-digit" })}
+                    <span className="ml-2 uppercase tracking-wide">{r.locale}</span>
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <button onClick={() => openSaved(r.id)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-[var(--brand-navy)] text-white text-xs font-medium rounded-lg hover:opacity-80 transition-opacity">
+                  <ExternalLink className="w-3.5 h-3.5" />{t.report.open ?? "Open"}
+                </button>
+                <button onClick={() => deleteSaved(r.id)}
+                  className="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {savedView === "builder" && <>
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-xl font-bold text-slate-900 flex items-center gap-2">
@@ -260,5 +357,7 @@ ${bodies.join('\n<div class="report-divider"></div>\n')}
         </div>
       )}
     </div>
+    </>
+    }
   );
 }

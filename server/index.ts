@@ -69,6 +69,17 @@ async function runMigrations() {
     `CREATE INDEX IF NOT EXISTS audit_log_action_idx ON audit_log(action)`,
     `CREATE INDEX IF NOT EXISTS audit_log_created_at_idx ON audit_log(created_at)`,
     `CREATE INDEX IF NOT EXISTS audit_log_external_processor_idx ON audit_log(external_processor)`,
+    `CREATE TABLE IF NOT EXISTS saved_reports (
+      id            SERIAL PRIMARY KEY,
+      client_id     INTEGER NOT NULL,
+      title         TEXT NOT NULL,
+      locale        TEXT NOT NULL DEFAULT 'en',
+      sections      TEXT NOT NULL DEFAULT 'all',
+      html_content  TEXT NOT NULL,
+      generated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      advisor_id    INTEGER
+    )`,
+    `CREATE INDEX IF NOT EXISTS saved_reports_client_idx ON saved_reports(client_id)`,
   ];
   for (const sql of migrations) {
     for (const p of [poolCA, ...(process.env.DATABASE_URL_US ? [poolUS] : [])]) {

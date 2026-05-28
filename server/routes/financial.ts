@@ -1340,6 +1340,58 @@ r.delete("/saved-plans/:id", async (req: AuthRequest, res: Response) => {
   res.json({ ok: true });
 });
 
+
+// ── Saved Reports ─────────────────────────────────────────────────────────────
+
+r.post("/clients/:clientId/saved-reports", async (req: AuthRequest, res: Response) => {
+  const cid = +req.params.clientId;
+  let _owns = false;
+  try { _owns = await ownsClient(cid, req.userId!); } catch (e: any) { return res.status(500).json({ message: "Auth check failed: " + e.message }); }
+  if (!_owns) return res.status(404).json({ message: "Not found" });
+  try {
+    const { title, locale = "en", sections = "all", htmlContent } = req.body;
+    if (!htmlContent) return res.status(400).json({ message: "htmlContent required" });
+    const [row] = await db.insert(savedReports).values({
+      clientId: cid, title: title || "Report", locale, sections,
+      htmlContent, advisorId: req.userId ?? null,
+    }).returning({ id: savedReports.id, generatedAt: savedReports.generatedAt });
+    res.json(row);
+  } catch (e: any) { res.status(500).json({ message: e.message }); }
+});
+
+r.get("/clients/:clientId/saved-reports", async (req: AuthRequest, res: Response) => {
+  const cid = +req.params.clientId;
+  let _owns = false;
+  try { _owns = await ownsClient(cid, req.userId!); } catch (e: any) { return res.status(500).json({ message: "Auth check failed: " + e.message }); }
+  if (!_owns) return res.status(404).json({ message: "Not found" });
+  const rows = await db.select({
+    id: savedReports.id, title: savedReports.title, locale: savedReports.locale,
+    sections: savedReports.sections, generatedAt: savedReports.generatedAt,
+  }).from(savedReports).where(eq(savedReports.clientId, cid))
+    .orderBy(savedReports.generatedAt);
+  res.json(rows);
+});
+
+r.get("/saved-reports/:id", async (req: AuthRequest, res: Response) => {
+  const [row] = await db.select().from(savedReports).where(eq(savedReports.id, +req.params.id));
+  if (!row) return res.status(404).json({ message: "Not found" });
+  let _owns = false;
+  try { _owns = await ownsClient(row.clientId, req.userId!); } catch (e: any) { return res.status(500).json({ message: "Auth check failed: " + e.message }); }
+  if (!_owns) return res.status(404).json({ message: "Not found" });
+  res.json(row);
+});
+
+r.delete("/saved-reports/:id", async (req: AuthRequest, res: Response) => {
+  const [row] = await db.select({ id: savedReports.id, clientId: savedReports.clientId })
+    .from(savedReports).where(eq(savedReports.id, +req.params.id));
+  if (!row) return res.status(404).json({ message: "Not found" });
+  let _owns = false;
+  try { _owns = await ownsClient(row.clientId, req.userId!); } catch (e: any) { return res.status(500).json({ message: "Auth check failed: " + e.message }); }
+  if (!_owns) return res.status(404).json({ message: "Not found" });
+  await db.delete(savedReports).where(eq(savedReports.id, row.id));
+  res.json({ ok: true });
+});
+
 export { r as financialRouter };
 
 // ── Scenario Comparisons ──────────────────────────────────────────────────────

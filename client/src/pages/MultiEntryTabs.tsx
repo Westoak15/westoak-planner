@@ -1061,7 +1061,7 @@ export function RetirementTab({ clientId, client, person = "primary" }: { client
     if (!rows.length || !client) return;
     const updates: Promise<any>[] = [];
     rows.forEach(r => {
-      const isSpouseRow = r.label === client.spouseFirstName || (r.label === "Spouse" || r.(label === "Spouse" || label === t.common.spouse));
+      const isSpouseRow = r.label === client.spouseFirstName || (r.label === "Spouse" || r.label === t.common.spouse);
       const correctRetAge = isSpouseRow
         ? (client.spouseRetirementAge ?? 65)
         : (client.retirementAge ?? 65);
@@ -1204,12 +1204,12 @@ export function RetirementTab({ clientId, client, person = "primary" }: { client
   // Filter rows and drafts by person
   const filteredRows = rows.filter(r => {
     if (person === "primary")  return !r.label?.includes("&") && r.label !== spouseName && r.label !== t.common.spouse;
-    if (person === "spouse")   return r.label === spouseName || (r.label === "Spouse" || r.(label === "Spouse" || label === t.common.spouse));
+    if (person === "spouse")   return r.label === spouseName || (r.label === "Spouse" || r.label === t.common.spouse);
     return true; // combined shows all
   });
   const filteredDrafts = drafts.filter(d => {
     if (person === "primary")  return !d.label?.includes("&") && d.label !== spouseName && d.label !== t.common.spouse;
-    if (person === "spouse")   return d.label === spouseName || (d.label === "Spouse" || d.(label === "Spouse" || label === t.common.spouse));
+    if (person === "spouse")   return d.label === spouseName || (d.label === "Spouse" || (d.label === "Spouse" || d.label === t.common.spouse));
     return true;
   });
 

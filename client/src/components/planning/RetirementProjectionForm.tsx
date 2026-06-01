@@ -1,4 +1,5 @@
 import { useLocale } from "../../hooks/useLocale";
+import { translations, type T } from "../../i18n/translations";
 import { useState, useEffect, useMemo } from "react";
 import React from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -16,7 +17,7 @@ async function apiFetch(url: string, init?: RequestInit) {
   const res = await fetch(url, { ...init, headers: { ...authHeaders(), ...(init?.headers ?? {}) } });
   if (!res.ok) {
     const err = await res.json().catch(() => ({ message: res.statusText }));
-    throw new Error(err.message ?? t.common.requestFailed);
+    throw new Error(err.message ?? "Request failed");
   }
   return res.json();
 }

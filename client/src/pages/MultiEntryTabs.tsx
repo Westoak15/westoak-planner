@@ -432,7 +432,7 @@ export function NetWorthTab({ clientId, client, t }: { clientId: number; t: T; c
   const spouseName  = client?.spouseFirstName ? `${client.spouseFirstName} ${client.spouseLastName ?? ""}`.trim() : "";
   const primaryName = client ? `${client.firstName} ${client.lastName}` : t.common.primary;
 
-  const load = () => api.get<NWEntry[]>(`/api/clients/${clientId}/net-worth`).then(raw => setEntries(raw.map(normalizeCat)));
+  const load = () => api.get<NWEntry[]>(`/api/clients/${clientId}/net-worth`).then(raw => setEntries(raw.map(e => normalizeCat(e))));
   useEffect(() => { load(); }, [clientId]);
 
   const assets = entries.filter(e => e.type === "asset");

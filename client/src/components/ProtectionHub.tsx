@@ -25,6 +25,7 @@ interface Props {
   client?: any;
   person: "primary" | "spouse" | "combined";
   onPersonChange: (p: "primary" | "spouse" | "combined") => void;
+  t?: T;
 }
 
 const fmt$ = (n: number) =>

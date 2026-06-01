@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Users, PiggyBank, DollarSign, Shield, Target, Brain, ChevronRight } from "lucide-react";
+import { translations, type T } from "../i18n/translations";
 
 interface Client {
   id: number;

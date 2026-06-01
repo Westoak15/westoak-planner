@@ -369,7 +369,7 @@ export function ExpensesTab({ clientId, addTrigger = 0, t = translations.en }: {
                 <BarChart data={sortedCats.map(c => ({ name: c.cat.split(" ")[0], value: Math.round(c.total), full: c.cat }))} layout="vertical" margin={{ top: 0, right: 10, left: 10, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
                   <XAxis type="number" tick={{ fontSize: 10 }} tickFormatter={v => `$${(v/1000).toFixed(0)}k`} />
-                  <YAxis type={t.common.category} dataKey={t.common.name} tick={{ fontSize: 10 }} width={60} />
+                  <YAxis type="category" dataKey="name" tick={{ fontSize: 10 }} width={60} />
                   <Tooltip
                     wrapperStyle={{ zIndex: 50 }}
                     contentStyle={{ backgroundColor: "#fff", border: "1px solid #e2e8f0", borderRadius: "8px", fontSize: "12px" }}

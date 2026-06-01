@@ -422,7 +422,7 @@ function ClientsTab({ onSelect, tAdv = translations.en }: { onSelect: (c: Client
             <div className="flex items-center gap-1 text-[10px] text-slate-400">
               <span>{tAdv.common.sortLabel}</span>
               {([["score",tAdv.common.colScoreStatus],["name",tAdv.common.colHousehold],["nw",tAdv.common.colNetWorth]] as [string,string][]).map(([k, l]) => (
-                <button key={k} onClick={() => setSortBy(k)}
+                <button key={k} onClick={() => setSortBy(k as any)}
                   className={`px-2 py-1 rounded transition-colors font-medium ${sortBy === k ? "bg-blue-600 text-white" : "hover:bg-slate-100 text-slate-500"}`}>
                   {l}
                 </button>
@@ -1170,14 +1170,12 @@ export default function App() {
   //              in which case the sidebar locale overrides (so QC advisors
   //              serving EN residents can flip the whole UI to EN).
   const advisorLocale: ClientLocale = advisorLocaleStr === "fr" ? "fr" : "en";
-  const tAdvisor: T = translations[advisorLocale];
+  const tAdvisor = (translations[advisorLocale as keyof typeof translations] ?? translations.en) as T;
   // tClient rule:
   //  - If advisor sidebar is FR (QC default OR manual toggle): show FR everywhere
   //  - Otherwise: follow the client's own preferredLanguage setting
   //    (so an EN advisor serving a QC client gets FR client-facing content)
-  const tClient: T = advisorLocale === "fr"
-    ? translations["fr"]
-    : translations[clientLocale];
+  const tClient = (advisorLocale === "fr" ? translations["fr"] : (translations[clientLocale as keyof typeof translations] ?? translations.en)) as T;
   const clientName = client ? `${client.firstName} ${client.lastName}` : undefined;
   const hasSpouse = !!client?.spouseFirstName;
   // Person toggle is rendered by HubShell inside each hub / PlanningDocFlow.
@@ -1290,7 +1288,7 @@ export default function App() {
             </div>
           )}
           {tab === "agents"  && <AgentsTab />}
-          {tab === "overview" && client && <ClientOverview client={client} onNavigate={(tab) => setTab(tab as Tab)} t={tAdvisor} />}
+          {tab === "overview" && client && <ClientOverview client={client as any} onNavigate={(tab) => setTab(tab as Tab)} t={tAdvisor} />}
           {tab === "profile"  && client && <ClientDetail client={client} onBack={() => setTab("overview" as Tab)} onPlanSelect={selectPlan} onUpdate={setClient} onLocaleChange={setClientLocale} t={tAdvisor} advisorLocale={advisorLocale} level={level} />}
           {tab === "dashboard" && client && <InsightLedDashboard clientId={client.id} client={client} t={tAdvisor} onNavigate={(tab) => { const [tabKey, subtab] = tab.split(":"); setTab(tabKey as Tab); setNwSubtabHint(subtab); }} />}
 

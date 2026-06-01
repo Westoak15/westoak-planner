@@ -668,7 +668,7 @@ export function ScenarioComparisonPanel({ clientId, onClose, t = translations.en
                   </tr>
                 </thead>
                 <tbody>
-                  {rows.map((row, ri) => {
+                  {rows.map((row: any, ri: number) => {
                     const values = compared.map((p, i) => row.get(p, i));
                     const isHighlight = ["portfolio","funded","surplus","estate"].includes(row.key);
                     return (
@@ -746,7 +746,7 @@ export function ScenarioComparisonPanel({ clientId, onClose, t = translations.en
                       </tr>
                     </thead>
                     <tbody>
-                      {pageAges.map((row, ri) => (
+                      {pageAges.map((row: any, ri: number) => (
                         <tr key={row.age} className={`border-b border-gray-100 ${row.isRetired ? "bg-blue-50/20" : ""} ${ri % 2 === 0 ? "" : "bg-gray-50/30"}`}>
                           <td className="px-3 py-1.5 font-medium text-gray-700">
                             {row.age}

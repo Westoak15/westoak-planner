@@ -27,6 +27,14 @@ export function RetirementHub({ clientId, client, person, onPersonChange, t = tr
   const [comparing, setComparing] = React.useState(false);
   const [subtab, setSubtab] = useState<Subtab>("pension");
   const hasSpouse = !!client?.spouseFirstName;
+  const isUs = (client?.jurisdiction ?? "CA") === "US";
+
+  const subtabs = [
+    { key: "pension",    label: t.retirement.pension,      icon: Building2,    badgeTone: "purple" as const },
+    ...(!isUs ? [{ key: "meltdown", label: t.retirement.rrspMeltdown, icon: TrendingDown, badge: "NEW", badgeTone: "cyan" as const }] : []),
+    { key: "strategist", label: t.retirement.strategist,   icon: Sparkles,     badge: "AI",  badgeTone: "purple" as const },
+    { key: "projection", label: t.retirement.projection,   icon: TrendingUp,   badgeTone: "cyan" as const },
+  ];
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -39,15 +47,10 @@ export function RetirementHub({ clientId, client, person, onPersonChange, t = tr
               <Calendar className="w-3.5 h-3.5" /> Projection through age 95
             </span>
             <span>•</span>
-            <span>Pension, savings & meltdown strategy under one roof</span>
+            <span>Pension, savings & {isUs ? "strategy" : "meltdown strategy"} under one roof</span>
           </>
         }
-        subtabs={[
-          { key: "pension",    label: t.retirement.pension,     icon: Building2,    badgeTone: "purple" },
-          { key: "meltdown",   label: t.retirement.rrspMeltdown, icon: TrendingDown, badge: "NEW", badgeTone: "cyan" },
-          { key: "strategist", label: t.retirement.strategist, icon: Sparkles, badge: "AI", badgeTone: "purple" },
-          { key: "projection", label: t.retirement.projection,  icon: TrendingUp,   badgeTone: "cyan" },
-        ]}
+        subtabs={subtabs}
         activeSubtab={subtab}
         onSubtabChange={(k) => setSubtab(k as Subtab)}
         personToggle={{
@@ -82,7 +85,7 @@ export function RetirementHub({ clientId, client, person, onPersonChange, t = tr
           {subtab === "pension" && (
             <PensionTab clientId={clientId} client={client} person={person === "combined" ? "primary" : person} t={t} />
           )}
-          {subtab === "meltdown" && (
+          {subtab === "meltdown" && !isUs && (
             <MeltdownTab clientId={clientId} client={client} person={person} />
           )}
           {subtab === "strategist" && (

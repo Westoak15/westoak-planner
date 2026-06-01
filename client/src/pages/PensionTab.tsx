@@ -52,6 +52,15 @@ const INDEXING_TYPES = [
   { key: "partial", label: "Partial CPI (50%)" },
   { key: "fixed",   label: "Fixed Rate" },
 ];
+function indexingLabel(key: string, t: T): string {
+  const m: Record<string,string> = {
+    none: t.retirement.noIndexing,
+    cpi:  "CPI",
+    partial: "CPI 50%",
+    fixed: "Fixed",
+  };
+  return m[key] ?? key;
+}
 
 const fmt$ = (v: string | number | null) => {
   if (!v) return "—";
@@ -110,7 +119,7 @@ const emptyPlan = (owner = "primary", retirementAge = 65, pensionType = "dbpp", 
   bestAverageEarnings: salary ? String(salary) : "",
   currentBalance: "", employerMatchPct: "", retirementAge,
   indexingType: "balanced", indexingRate: "", bridgeBenefit: "",
-  bridgeBenefitEndAge: 65, survivorBenefitPct: "65", isVested: true, notes: "",
+  bridgeBenefitEndAge: 65, survivorBenefitPct: "0.60", isVested: true, notes: "",
 });
 
 export function PensionTab({ clientId, client, person = "primary", t }: {
@@ -360,7 +369,7 @@ export function PensionTab({ clientId, client, person = "primary", t }: {
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
           <div className="bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-2xl my-4">
             <div className="flex justify-between items-center px-6 pt-6 pb-4 border-b border-gray-100">
-              <h2 className="text-lg font-bold text-gray-900">{editingId ? "Edit Plan" : "Add Pension Plan"}</h2>
+              <h2 className="text-lg font-bold text-gray-900">{editingId ? t.retirement.editPensionPlan : t.retirement.addPensionPlan}</h2>
               <button onClick={() => setShowForm(false)} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
             </div>
 
@@ -368,7 +377,7 @@ export function PensionTab({ clientId, client, person = "primary", t }: {
               {/* Type + Owner */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs font-semibold text-gray-500 mb-1 block">Plan Type</label>
+                  <label className="text-xs font-semibold text-gray-500 mb-1 block">{t.retirement.planType}</label>
                   <select value={form.pensionType} onChange={e => upd("pensionType", e.target.value)} className={INPUT}>
                     {PENSION_TYPES.map(t => <option key={t.key} value={t.key}>{t.label}</option>)}
                   </select>
@@ -385,11 +394,11 @@ export function PensionTab({ clientId, client, person = "primary", t }: {
               {/* Employer */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs font-semibold text-gray-500 mb-1 block">Employer Name</label>
+                  <label className="text-xs font-semibold text-gray-500 mb-1 block">{t.retirement.employerName}</label>
                   <input value={form.employerName ?? ""} onChange={e => upd("employerName", e.target.value)} className={INPUT} placeholder="e.g. Ontario Teachers'" />
                 </div>
                 <div>
-                  <label className="text-xs font-semibold text-gray-500 mb-1 block">Pension Start Age</label>
+                  <label className="text-xs font-semibold text-gray-500 mb-1 block">{t.retirement.pensionStartAge}</label>
                   <input type="number" value={form.retirementAge ?? 65} onChange={e => upd("retirementAge", +e.target.value)} className={INPUT} />
                 </div>
               </div>
@@ -397,29 +406,29 @@ export function PensionTab({ clientId, client, person = "primary", t }: {
               {/* DBPP fields */}
               {form.pensionType === "dbpp" && (
                 <>
-                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Defined Benefit Details</p>
+                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest">{t.retirement.definedBenefitDetails}</p>
                   <div className="grid grid-cols-3 gap-3">
                     <div>
-                      <label className="text-xs font-semibold text-gray-500 mb-1 block">Accrual Rate</label>
+                      <label className="text-xs font-semibold text-gray-500 mb-1 block">{t.retirement.accrualRate}</label>
                       <input type="number" step="0.001" value={form.accrualRate ?? "0.02"} onChange={e => upd("accrualRate", e.target.value)} className={INPUT} />
                       <p className="text-[10px] text-gray-400 mt-0.5">e.g. 0.02 = 2% per year</p>
                     </div>
                     <div>
-                      <label className="text-xs font-semibold text-gray-500 mb-1 block">Years of Service</label>
+                      <label className="text-xs font-semibold text-gray-500 mb-1 block">{t.retirement.yearsOfService}</label>
                       <input type="number" value={form.yearsOfService ?? ""} onChange={e => upd("yearsOfService", e.target.value)} className={INPUT} placeholder="Current years" />
                     </div>
                     <div>
-                      <label className="text-xs font-semibold text-gray-500 mb-1 block">Projected Years at Ret.</label>
+                      <label className="text-xs font-semibold text-gray-500 mb-1 block">{t.retirement.projectedYearsAtRet}</label>
                       <input type="number" value={form.projectedYearsAtRetirement ?? ""} onChange={e => upd("projectedYearsAtRetirement", e.target.value)} className={INPUT} />
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="text-xs font-semibold text-gray-500 mb-1 block">Best Average Earnings ($)</label>
+                      <label className="text-xs font-semibold text-gray-500 mb-1 block">{t.retirement.bestAvgEarnings}</label>
                       <input type="number" value={form.bestAverageEarnings ?? ""} onChange={e => upd("bestAverageEarnings", e.target.value)} className={INPUT} placeholder="Best 5-year avg" />
                     </div>
                     <div>
-                      <label className="text-xs font-semibold text-gray-500 mb-1 block">Indexing</label>
+                      <label className="text-xs font-semibold text-gray-500 mb-1 block">{t.retirement.indexingLabel}</label>
                       <select value={form.indexingType ?? "none"} onChange={e => upd("indexingType", e.target.value)} className={INPUT}>
                         {INDEXING_TYPES.map(t => <option key={t.key} value={t.key}>{t.label}</option>)}
                       </select>
@@ -427,15 +436,15 @@ export function PensionTab({ clientId, client, person = "primary", t }: {
                   </div>
                   <div className="grid grid-cols-3 gap-3">
                     <div>
-                      <label className="text-xs font-semibold text-gray-500 mb-1 block">Bridge Benefit ($)</label>
+                      <label className="text-xs font-semibold text-gray-500 mb-1 block">{t.retirement.bridgeBenefit}</label>
                       <input type="number" value={form.bridgeBenefit ?? ""} onChange={e => upd("bridgeBenefit", e.target.value)} className={INPUT} placeholder="Optional" />
                     </div>
                     <div>
-                      <label className="text-xs font-semibold text-gray-500 mb-1 block">Bridge Ends Age</label>
+                      <label className="text-xs font-semibold text-gray-500 mb-1 block">{t.retirement.bridgeEndsAge}</label>
                       <input type="number" value={form.bridgeBenefitEndAge ?? 65} onChange={e => upd("bridgeBenefitEndAge", +e.target.value)} className={INPUT} />
                     </div>
                     <div>
-                      <label className="text-xs font-semibold text-gray-500 mb-1 block">Survivor Benefit</label>
+                      <label className="text-xs font-semibold text-gray-500 mb-1 block">{t.retirement.survivorBenefitLabel}</label>
                       <select value={form.survivorBenefitPct ?? "0.60"} onChange={e => upd("survivorBenefitPct", e.target.value)} className={INPUT}>
                         <option value="0">None</option>
                         <option value="0.50">50%</option>
@@ -487,7 +496,7 @@ export function PensionTab({ clientId, client, person = "primary", t }: {
         <input type="number" value={form.retirementAge ?? 65} onChange={e => upd("retirementAge", +e.target.value)} className={INPUT} />
       </div>
       <div>
-        <label className="text-xs font-semibold text-gray-500 mb-1 block">Survivor Benefit</label>
+        <label className="text-xs font-semibold text-gray-500 mb-1 block">{t.retirement.survivorBenefitLabel}</label>
         <select value={form.survivorBenefitPct ?? "0"} onChange={e => upd("survivorBenefitPct", e.target.value)} className={INPUT}>
           <option value="0">None</option>
           <option value="0.50">50%</option>
@@ -497,7 +506,7 @@ export function PensionTab({ clientId, client, person = "primary", t }: {
         </select>
       </div>
       <div>
-        <label className="text-xs font-semibold text-gray-500 mb-1 block">Indexing</label>
+        <label className="text-xs font-semibold text-gray-500 mb-1 block">{t.retirement.indexingLabel}</label>
         <select value={form.indexingType ?? "none"} onChange={e => upd("indexingType", e.target.value)} className={INPUT}>
           {INDEXING_TYPES.map(t => <option key={t.key} value={t.key}>{t.label}</option>)}
         </select>
@@ -624,7 +633,7 @@ export function PensionTab({ clientId, client, person = "primary", t }: {
                 <label className="flex items-center gap-2 cursor-pointer pt-1">
                   <input type="checkbox" checked={!!form.isVested} onChange={e => upd("isVested", e.target.checked)}
                     className="w-4 h-4 rounded border-gray-300 text-cyan-600 focus:ring-cyan-500" />
-                  <span className="text-sm font-medium text-gray-700">Plan is vested</span>
+                  <span className="text-sm font-medium text-gray-700">{t.retirement.planIsVested}</span>
                 </label>
                 <div>
                   <label className="text-xs font-semibold text-gray-500 mb-1 block">Notes</label>

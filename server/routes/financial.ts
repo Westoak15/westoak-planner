@@ -1231,8 +1231,15 @@ r.post("/clients/:clientId/financial-plan-report", async (req: AuthRequest, res:
 
     const { generateFinancialPlanReport } = await import("../services/reportGenerator.js") as any;
     const html = generateFinancialPlanReport({ plan, client: clientRow, locale: (clientRow.preferredLanguage ?? "en") as any });
-    res.setHeader("Content-Type", "text/html; charset=utf-8");
-    res.send(html);
+
+    // Generate PDF via headless Chromium and stream directly to browser
+    const { generatePdfFromHtml } = await import("../services/pdfService.js") as any;
+    const pdfBuffer = await generatePdfFromHtml(html);
+    const safeName = `${(clientRow.firstName ?? "client").replace(/[^a-z0-9]/gi, "_")}_Financial_Plan_${new Date().toISOString().slice(0,10)}.pdf`;
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", `inline; filename="${safeName}"`);
+    res.setHeader("Content-Length", pdfBuffer.length);
+    res.send(pdfBuffer);
   } catch (e: any) { console.error("[financial-plan-report] FULL ERROR:", e?.stack ?? e); res.status(500).json({ message: e?.message ?? "Unknown error", detail: e?.stack?.split("\n")[1] ?? "" }); }
 });
 

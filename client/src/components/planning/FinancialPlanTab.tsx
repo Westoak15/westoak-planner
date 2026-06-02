@@ -426,10 +426,9 @@ export function FinancialPlanTab({ clientId, clientName, t = translations.en }: 
         body: JSON.stringify({ plan }),
       });
       if (!res.ok) { let msg = t.plan.error; try { const e = await res.json(); msg = e.message ?? msg; } catch {} throw new Error(msg); }
-      const html = await res.text();
-      const blob = new Blob([html], { type: "text/html" });
-      const win  = window.open(URL.createObjectURL(blob), "_blank");
-      if (!win) alert("Please allow pop-ups to view the report");
+      const pdfBlob = await res.blob();
+      const url = URL.createObjectURL(pdfBlob);
+      window.open(url, "_blank");
     } catch (e: any) {
       setError(e.message);
     } finally {

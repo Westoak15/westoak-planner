@@ -1799,13 +1799,15 @@ export function generateFinancialPlanReport(data: {
     <div class="section-subtitle">${locale === "fr" ? "Classées par impact — implémenter dans l’ordre" : "Ranked by impact — implement in order"}</div>
   </div>
   ${actions.map((a: any) => `
-  <div style="display:flex;gap:16px;padding:12px 16px;border-radius:8px;border:1px solid #e5e7eb;margin-bottom:10px;page-break-inside:avoid;">
-    <div style="width:28px;height:28px;border-radius:50%;background:${a.priority === "high" ? "#dc2626" : "#d97706"};color:white;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;">${a.rank}</div>
-    <div style="flex:1;">
-      <div style="font-size:13px;font-weight:600;color:#111827;margin-bottom:3px;">${esc(a.title ?? "")}</div>
-      <div style="font-size:12px;color:#4b5563;">${esc(a.description ?? "")}</div>
+  <div style="display:flex;gap:12px;padding:10px 14px;border-radius:8px;border:1px solid #e5e7eb;margin-bottom:8px;page-break-inside:avoid;width:100%;box-sizing:border-box;">
+    <div style="width:24px;height:24px;border-radius:50%;background:${a.priority === "high" || a.priority === "critical" ? "#dc2626" : "#d97706"};color:white;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;margin-top:1px;">${a.rank}</div>
+    <div style="flex:1;min-width:0;">
+      <div style="display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin-bottom:2px;">
+        <div style="font-size:12px;font-weight:600;color:#111827;">${esc(a.title ?? "")}</div>
+        <div style="font-size:10px;color:#9ca3af;white-space:nowrap;flex-shrink:0;">${esc(a.timeline ?? "")}</div>
+      </div>
+      <div style="font-size:11px;color:#4b5563;line-height:1.5;">${esc(a.description ?? "")}</div>
     </div>
-    <div style="font-size:10px;color:#9ca3af;white-space:nowrap;margin-top:2px;">${esc(a.timeline ?? "")}</div>
   </div>`).join("")}
   <div class="doc-footer">
     <span>${esc(firm)} — ${locale === "fr" ? "Confidentiel" : "Confidential"}</span><span>${esc(name)} — Financial Plan — ${esc(dateStr)}</span>

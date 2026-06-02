@@ -428,7 +428,14 @@ export function FinancialPlanTab({ clientId, clientName, t = translations.en }: 
       if (!res.ok) { let msg = t.plan.error; try { const e = await res.json(); msg = e.message ?? msg; } catch {} throw new Error(msg); }
       const pdfBlob = await res.blob();
       const url = URL.createObjectURL(pdfBlob);
-      window.open(url, "_blank");
+      const a = document.createElement("a");
+      a.href = url;
+      a.target = "_blank";
+      a.download = `${clientName ?? "Financial_Plan"}_${new Date().toISOString().slice(0,10)}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 10_000);
     } catch (e: any) {
       setError(e.message);
     } finally {

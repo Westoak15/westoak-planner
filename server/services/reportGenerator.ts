@@ -1846,31 +1846,38 @@ export function generateFinancialPlanReport(data: {
     const sLabel = statusLabel[sec.status] ?? sec.status;
     const recs   = sec.recommendations ?? [];
 
-    return `
-<div class="section no-break" style="page-break-before:always;">
-  <div class="section-header">
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
-      <span style="font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:${sColor};">${sLabel.toUpperCase()}</span>
-      <span style="display:inline-flex;align-items:center;gap:4px;font-size:10px;color:${sColor};background:${sColor}18;border:1px solid ${sColor}40;padding:2px 8px;border-radius:99px;font-weight:700;">${sec.score ?? "—"}/5</span>
+  return `
+<div class="section" style="page-break-before:always;">
+  <div style="margin-bottom:16px;padding-bottom:12px;border-bottom:3px solid ${sColor};">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+      <span style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:${sColor};background:${sColor}18;border:1px solid ${sColor}40;padding:3px 10px;border-radius:99px;">${sLabel.toUpperCase()}</span>
+      <span style="font-size:11px;font-weight:700;color:${sColor};">${sec.score ?? "—"}/5</span>
     </div>
-    <div style="font-family:Georgia,serif;font-size:28px;font-weight:normal;color:var(--navy);line-height:1.2;margin-bottom:4px;">${esc(sec.title ?? "")}</div>
+    <div style="font-family:Georgia,serif;font-size:26px;font-weight:normal;color:var(--navy);line-height:1.2;">${esc(sec.title ?? "")}</div>
   </div>
-  ${(sec.narrative ?? "").split("\n\n").filter((p: string) => p.trim()).map((p: string) => `<p style="font-size:12px;margin-bottom:6px;line-height:1.5;">${esc(p.trim())}</p>`).join("")}
+  <div style="column-count:1;">
+    ${(sec.narrative ?? "").split("\n\n").filter((p: string) => p.trim()).map((p: string) => `<p style="font-size:11.5px;margin-bottom:7px;line-height:1.55;color:#1f2937;">${esc(p.trim())}</p>`).join("")}
+  </div>
   ${recs.length > 0 ? `
-  <div style="margin-top:16px;page-break-inside:avoid;">
-    <h3 style="font-size:14px;font-weight:600;color:var(--navy);margin-bottom:10px;margin-top:16px;page-break-after:avoid;border-bottom:1px solid var(--border);padding-bottom:6px;">${locale === "fr" ? "Recommandations" : "Recommendations"}</h3>
+  <div style="margin-top:14px;">
+    <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--navy);margin-bottom:10px;padding-bottom:5px;border-bottom:1px solid #e5e7eb;">${locale === "fr" ? "Recommandations" : "Recommendations"}</div>
     ${recs.map((r: any) => `
-    <div style="padding:10px 14px;border-radius:8px;border-left:3px solid ${priorityColor[r.priority] ?? "#9ca3af"};background:#f9fafb;margin-bottom:8px;page-break-inside:avoid;">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
-        <span style="font-size:9px;font-weight:700;text-transform:uppercase;color:${priorityColor[r.priority] ?? "#9ca3af"};background:${(priorityColor[r.priority] ?? "#9ca3af")}18;border:1px solid ${(priorityColor[r.priority] ?? "#9ca3af")}40;padding:1px 6px;border-radius:99px;">${esc(r.priority ?? "")}</span>
-        <span style="font-size:10px;color:#9ca3af;">${esc(r.timeline ?? "")}</span>
+    <div style="display:flex;gap:10px;padding:8px 12px;border-radius:6px;border-left:3px solid ${priorityColor[r.priority] ?? "#9ca3af"};background:#f9fafb;margin-bottom:7px;page-break-inside:avoid;">
+      <div style="flex-shrink:0;padding-top:1px;">
+        <span style="font-size:8px;font-weight:700;text-transform:uppercase;color:${priorityColor[r.priority] ?? "#9ca3af"};background:${(priorityColor[r.priority] ?? "#9ca3af")}18;border:1px solid ${(priorityColor[r.priority] ?? "#9ca3af")}40;padding:1px 5px;border-radius:99px;white-space:nowrap;">${esc(String(r.priority ?? "").toUpperCase())}</span>
       </div>
-      <div style="font-size:12px;font-weight:600;color:#111827;margin-bottom:3px;">${esc(r.action ?? "")}</div>
-      ${r.impact ? `<div style="font-size:11px;color:#16a34a;"><strong>Impact:</strong> ${esc(r.impact)}</div>` : ""}
+      <div style="flex:1;min-width:0;">
+        <div style="display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin-bottom:2px;">
+          <div style="font-size:11.5px;font-weight:600;color:#111827;">${esc(r.action ?? "")}</div>
+          <div style="font-size:9px;color:#9ca3af;white-space:nowrap;flex-shrink:0;">${esc(r.timeline ?? "")}</div>
+        </div>
+        ${r.impact ? `<div style="font-size:10.5px;color:#16a34a;line-height:1.4;"><strong>Impact:</strong> ${esc(r.impact)}</div>` : ""}
+      </div>
     </div>`).join("")}
   </div>` : ""}
-  <div class="doc-footer">
-    <span>${esc(firm)} — ${locale === "fr" ? "Confidentiel" : "Confidential"}</span><span>${esc(name)} — ${esc(sec.title ?? "")} — ${esc(dateStr)}</span>
+  <div style="margin-top:20px;padding-top:8px;border-top:1px solid #e5e7eb;display:flex;justify-content:space-between;font-size:9px;color:#9ca3af;">
+    <span>${esc(firm)} — ${locale === "fr" ? "Confidentiel" : "Confidential"}</span>
+    <span>${esc(name)} — ${esc(sec.title ?? "")} — ${esc(dateStr)}</span>
   </div>
 </div>`;
   }).join("\n");

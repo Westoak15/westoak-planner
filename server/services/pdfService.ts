@@ -1,7 +1,7 @@
 /**
  * pdfService.ts
- * Generates a PDF from an HTML string using puppeteer-core + @sparticuz/chromium.
- * On Alpine Linux (Fly.io), uses the system Chromium installed via apk.
+ * Generates a PDF from an HTML string using puppeteer-core.
+ * On Fly.io Alpine, uses system Chromium installed via apk.
  */
 
 import puppeteerCore from "puppeteer-core";
@@ -11,28 +11,26 @@ let _executablePath: string | null = null;
 async function getExecutablePath(): Promise<string> {
   if (_executablePath) return _executablePath;
 
-  // On Fly.io Alpine, use system Chromium installed via apk
   const systemChromium = process.env.PUPPETEER_EXECUTABLE_PATH ?? "/usr/bin/chromium-browser";
-
-  // In local dev, fall back to @sparticuz/chromium
   const fs = await import("fs");
   if (fs.existsSync(systemChromium)) {
     _executablePath = systemChromium;
     return _executablePath;
   }
 
-  // Local dev fallback — use @sparticuz/chromium
+  // Local dev fallback
   try {
     const chromium = await import("@sparticuz/chromium");
     _executablePath = await chromium.default.executablePath();
     return _executablePath!;
   } catch {
-    throw new Error("No Chromium executable found. Set PUPPETEER_EXECUTABLE_PATH or install @sparticuz/chromium.");
+    throw new Error("No Chromium executable found.");
   }
 }
 
 export async function generatePdfFromHtml(html: string): Promise<Buffer> {
   const executablePath = await getExecutablePath();
+  console.log("[pdfService] launching Chromium at:", executablePath);
 
   const browser = await puppeteerCore.launch({
     executablePath,
@@ -44,27 +42,33 @@ export async function generatePdfFromHtml(html: string): Promise<Buffer> {
       "--disable-gpu",
       "--no-first-run",
       "--no-zygote",
-      "--single-process",
       "--disable-extensions",
+      "--disable-web-security",
+      "--run-all-compositor-stages-before-draw",
     ],
   });
 
+  console.log("[pdfService] browser launched");
+
   try {
     const page = await browser.newPage();
+    console.log("[pdfService] new page created");
 
-    // Set content and wait for fonts/images to load
-    await page.setContent(html, { waitUntil: "domcontentloaded", timeout: 30_000 });
+    // Inject CSS to hide toolbar before setting content
+    const htmlWithHiddenToolbar = html.replace(
+      "</head>",
+      `<style>.report-toolbar{display:none!important;}body{padding-top:0!important;}</style></head>`
+    );
 
-    // Wait for page to fully settle
-    await new Promise(resolve => setTimeout(resolve, 1000));
-
-    // Hide the toolbar before printing
-    await page.addStyleTag({
-      content: `.report-toolbar { display: none !important; } body { padding-top: 0 !important; }`,
+    await page.setContent(htmlWithHiddenToolbar, {
+      waitUntil: "domcontentloaded",
+      timeout: 30_000,
     });
+    console.log("[pdfService] content set");
 
-    // Small additional settle time after style injection
-    await new Promise(resolve => setTimeout(resolve, 200));
+    // Wait for layout to fully settle
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    console.log("[pdfService] settled, generating PDF");
 
     const pdf = await page.pdf({
       format: "Letter",
@@ -73,8 +77,10 @@ export async function generatePdfFromHtml(html: string): Promise<Buffer> {
       displayHeaderFooter: false,
     });
 
+    console.log("[pdfService] PDF generated, bytes:", pdf.length);
     return Buffer.from(pdf);
   } finally {
     await browser.close();
+    console.log("[pdfService] browser closed");
   }
 }

@@ -1234,7 +1234,13 @@ r.post("/clients/:clientId/financial-plan-report", async (req: AuthRequest, res:
 
     // Generate PDF via headless Chromium and stream directly to browser
     const { generatePdfFromHtml } = await import("../services/pdfService.js") as any;
-    const pdfBuffer = await generatePdfFromHtml(html);
+    console.log("[financial-plan-report] starting PDF generation");
+    const pdfBuffer = await generatePdfFromHtml(html).catch((err: any) => {
+      console.error("[financial-plan-report] PDF generation error:", err?.message ?? err);
+      console.error("[financial-plan-report] PDF stack:", err?.stack ?? "no stack");
+      throw err;
+    });
+    console.log("[financial-plan-report] PDF generated, size:", pdfBuffer.length);
     const safeName = `${(clientRow.firstName ?? "client").replace(/[^a-z0-9]/gi, "_")}_Financial_Plan_${new Date().toISOString().slice(0,10)}.pdf`;
     res.setHeader("Content-Type", "application/pdf");
     res.setHeader("Content-Disposition", `inline; filename="${safeName}"`);

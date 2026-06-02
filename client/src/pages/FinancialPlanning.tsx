@@ -2798,11 +2798,12 @@ const deleteSession = async (runId: string) => {
   }
 };
 
-  const priorityOrder: Record<string, number> = { high: 0, medium: 1, low: 2 };
+  const priorityOrder: Record<string, number> = { high: 0, medium: 1, low: 2, "1": 0, "2": 0, "3": 1, "4": 1, "5": 2 };
 
-  const priorityBadge = (priority: string) => {
+  const priorityBadge = (priority: any) => {
+    const p = String(priority ?? "medium").toLowerCase();
     const colors: Record<string, string> = { high: "bg-red-100 text-red-700", medium: "bg-yellow-100 text-yellow-700", low: "bg-green-100 text-green-700" };
-    return <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${colors[priority] || colors.medium}`}>{priority}</span>;
+    return <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${colors[p] || colors.medium}`}>{p}</span>;
   };
 
   const statusIcon = (status: string) => {

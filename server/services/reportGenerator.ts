@@ -1820,7 +1820,7 @@ export function generateFinancialPlanReport(data: {
     <div class="section-title-lg">${locale === "fr" ? "Résumé exécutif" : "Executive Summary"}</div>
   </div>
   ${(es.narrative ?? "").split("\n\n").filter((p: string) => p.trim()).map((p: string) => `<p>${esc(p.trim())}</p>`).join("")}
-  <div class="two-col" style="margin-top:20px;">
+  <div class="two-col" style="margin-top:20px;page-break-inside:avoid;">
     <div>
       <h3 style="color:#16a34a;font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;margin-bottom:10px;">${locale === "fr" ? "Points forts" : "Key Strengths"}</h3>
       ${(es.keyStrengths ?? []).map((s: string) => `
@@ -1848,7 +1848,7 @@ export function generateFinancialPlanReport(data: {
     const recs   = sec.recommendations ?? [];
 
     return `
-<div class="section no-break">
+<div class="section no-break" style="page-break-before:always;">
   <div class="section-header">
     <div class="section-eyebrow" style="display:flex;align-items:center;gap:12px;">
       <span>${sLabel.toUpperCase()}</span>
@@ -1858,8 +1858,8 @@ export function generateFinancialPlanReport(data: {
   </div>
   ${(sec.narrative ?? "").split("\n\n").filter((p: string) => p.trim()).map((p: string) => `<p>${esc(p.trim())}</p>`).join("")}
   ${recs.length > 0 ? `
-  <div style="margin-top:16px;">
-    <h3 style="font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:#0F2B4C;margin-bottom:10px;">${locale === "fr" ? "Recommandations" : "Recommendations"}</h3>
+  <div style="margin-top:16px;page-break-inside:avoid;">
+    <h3 style="font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:#0F2B4C;margin-bottom:10px;page-break-after:avoid;">${locale === "fr" ? "Recommandations" : "Recommendations"}</h3>
     ${recs.map((r: any) => `
     <div style="padding:10px 14px;border-radius:8px;border-left:3px solid ${priorityColor[r.priority] ?? "#9ca3af"};background:#f9fafb;margin-bottom:8px;page-break-inside:avoid;">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">

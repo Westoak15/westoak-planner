@@ -39,6 +39,19 @@ r.use((req: any, res: any, next: any) => {
   return isAuthenticated(req, res, next);
 });
 
+// Test PDF Printing
+r.get("/test-pdf", async (_req: any, res: Response) => {
+  try {
+    const { generatePdfFromHtml } = await import("../services/pdfService.js") as any;
+    const pdf = await generatePdfFromHtml("<html><body><h1>PDF Test</h1><p>If you can read this, Chromium is working.</p></body></html>");
+    res.setHeader("Content-Type", "application/pdf");
+    res.send(pdf);
+  } catch (e: any) {
+    console.error("[test-pdf]", e.message, e.stack);
+    res.status(500).json({ message: e.message, stack: e.stack });
+  }
+});
+
 // ─────────────────────────────────────────────────────────────────────────────
 // OVERVIEW
 // ─────────────────────────────────────────────────────────────────────────────

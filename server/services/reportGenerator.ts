@@ -119,7 +119,7 @@ function htmlShell(title: string, body: string): string {
     .report-toolbar { display:none !important; }
     thead { display:table-header-group; }
   }
-  @page { size:letter; margin:15mm 18mm; }
+  @page { size:letter; margin:15mm 15mm; }
   .report-toolbar { position:fixed; top:0; left:0; right:0; z-index:999; background:white; border-bottom:1px solid var(--border); height:46px; display:flex; align-items:center; justify-content:space-between; padding:0 32px; }
   .report-toolbar .tb-title { font-size:12px; font-weight:600; color:var(--navy); }
   .print-btn { display:flex; align-items:center; gap:6px; padding:5px 14px; font-size:12px; font-weight:500; background:white; color:var(--navy); border:1px solid var(--border); border-radius:6px; cursor:pointer; }

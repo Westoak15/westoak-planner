@@ -179,14 +179,17 @@ function SectionCard({ section, forceExpand = false }: { section: PlanSection; f
             <div className="space-y-2">
               <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Recommendations</p>
               {section.recommendations.map((rec, i) => {
-                const p = PRIORITY_CONFIG[rec.priority] ?? PRIORITY_CONFIG.medium;
+                const rawP = typeof rec.priority === "number"
+  ? rec.priority <= 1 ? "high" : rec.priority <= 3 ? "medium" : "low"
+  : String(rec.priority ?? "medium").toLowerCase();
+const p = PRIORITY_CONFIG[rawP as keyof typeof PRIORITY_CONFIG] ?? PRIORITY_CONFIG.medium;
                 return (
                   <div key={i} className="bg-white rounded-lg border border-white/80 p-3 shadow-sm">
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1 flex-wrap">
                           <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded border ${p.color}`}>
-                            {rec.priority.toUpperCase()}
+                            {rawP.toUpperCase()}
                           </span>
                           <span className="flex items-center gap-1 text-[10px] text-gray-400">
                             <Calendar className="w-2.5 h-2.5" />

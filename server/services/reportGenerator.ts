@@ -37,7 +37,7 @@ function htmlShell(title: string, body: string): string {
   }
   html { font-size:13px; }
   body { font-family:'Inter',system-ui,sans-serif; color:var(--text); background:#F0F2F5; line-height:1.6; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
-  .page { width:794px; min-height:1123px; margin:0 auto 32px; background:white; padding:48px 56px; box-shadow:0 4px 24px rgba(0,0,0,.10); }
+  .page { width:816px; min-height:1056px; margin:0 auto 32px; background:white; padding:48px 44px; box-shadow:0 4px 24px rgba(0,0,0,.10); }
   /* Cover */
   .cover { display:flex; flex-direction:column; min-height:1060px; }
   .cover-header { background:var(--navy); color:white; padding:40px 56px 32px; margin:-48px -56px 0; }
@@ -93,7 +93,7 @@ function htmlShell(title: string, body: string): string {
   .callout strong { font-weight:600; }
   /* Layout */
   .two-col { display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-bottom:16px; }
-  .section { width:794px; margin:0 auto 24px; background:white; padding:40px 56px; box-shadow:0 4px 24px rgba(0,0,0,.08); }
+  .section { width:816px; margin:0 auto 24px; background:white; padding:40px 44px; box-shadow:0 4px 24px rgba(0,0,0,.08); }
   .person-card { border:1px solid var(--border); border-radius:8px; padding:16px; }
   .person-card.primary { border-top:4px solid var(--teal); }
   .person-card.spouse { border-top:4px solid #7C3AED; }
@@ -119,7 +119,7 @@ function htmlShell(title: string, body: string): string {
     .report-toolbar { display:none !important; }
     thead { display:table-header-group; }
   }
-  @page { size:A4; margin:18mm 20mm; }
+  @page { size:letter; margin:15mm 18mm; }
   .report-toolbar { position:fixed; top:0; left:0; right:0; z-index:999; background:white; border-bottom:1px solid var(--border); height:46px; display:flex; align-items:center; justify-content:space-between; padding:0 32px; }
   .report-toolbar .tb-title { font-size:12px; font-weight:600; color:var(--navy); }
   .print-btn { display:flex; align-items:center; gap:6px; padding:5px 14px; font-size:12px; font-weight:500; background:white; color:var(--navy); border:1px solid var(--border); border-radius:6px; cursor:pointer; }

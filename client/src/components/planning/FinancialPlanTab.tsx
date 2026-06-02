@@ -449,9 +449,8 @@ export function FinancialPlanTab({ clientId, clientName, t = translations.en }: 
 
           if (payload.startsWith("[DONE]::")) {
             // Decode the complete plan JSON from base64
-            const planJson = JSON.parse(
-              atob(payload.slice(8))
-            );
+            const doneBytes = Uint8Array.from(atob(payload.slice(8)), c => c.charCodeAt(0));
+            const planJson = JSON.parse(new TextDecoder("utf-8").decode(doneBytes));
             setPlan(planJson);
             setView("plan");
             setStreamProgress("");
@@ -459,9 +458,10 @@ export function FinancialPlanTab({ clientId, clientName, t = translations.en }: 
             return;
           }
 
-          // Regular chunk — base64-encoded text fragment
+          // Regular chunk — base64-encoded UTF-8 text fragment
           try {
-            const chunk = atob(payload);
+            const bytes = Uint8Array.from(atob(payload), c => c.charCodeAt(0));
+            const chunk = new TextDecoder("utf-8").decode(bytes);
             charCount += chunk.length;
             setStreamProgress(`Writing plan… ${charCount.toLocaleString()} chars`);
           } catch { /* ignore decode errors on partial chunks */ }

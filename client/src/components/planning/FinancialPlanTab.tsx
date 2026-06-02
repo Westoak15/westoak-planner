@@ -156,7 +156,7 @@ function SectionCard({ section, forceExpand = false }: { section: PlanSection; f
             </span>
           </div>
           {!isExpanded && (
-            <p className="text-xs text-gray-500 mt-0.5 line-clamp-1">{(String(section.narrative ?? "")).split("\n")[0].slice(0, 120)}...</p>
+            <p className="text-xs text-gray-500 mt-0.5 line-clamp-1">{(Array.isArray(section.narrative) ? section.narrative[0] : String(section.narrative ?? "")).slice(0, 120)}...</p>
           )}
         </div>
         <div className="flex items-center gap-2 flex-shrink-0 ml-2">
@@ -169,7 +169,7 @@ function SectionCard({ section, forceExpand = false }: { section: PlanSection; f
         <div className="px-4 pb-4 border-t border-white/50 pt-3 fp-section-expanded">
           {/* Narrative */}
           <div className="prose prose-sm max-w-none mb-4">
-            {(String(section.narrative ?? "")).split("\n\n").map((para, i) => (
+            {(Array.isArray(section.narrative) ? section.narrative : String(section.narrative ?? "").split("\n\n")).map((para: string, i: number) => (
               para.trim() && <p key={i} className="text-sm text-gray-700 leading-relaxed mb-2">{para.trim()}</p>
             ))}
           </div>
@@ -313,7 +313,7 @@ function ExecutiveSummary({ es }: { es: FinancialPlan["executiveSummary"] }) {
     <div className="bg-white border border-gray-200 rounded-xl p-4">
       <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide mb-3">Executive Summary</p>
       <div className="space-y-2 mb-4">
-        {(String(es.narrative ?? "")).split("\n\n").map((para, i) => (
+        {(Array.isArray(es.narrative) ? es.narrative : String(es.narrative ?? "").split("\n\n")).map((para: string, i: number) => (
           para.trim() && <p key={i} className="text-sm text-gray-700 leading-relaxed">{para.trim()}</p>
         ))}
       </div>

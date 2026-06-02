@@ -53,7 +53,7 @@ export async function generatePdfFromHtml(html: string): Promise<Buffer> {
     const page = await browser.newPage();
 
     // Set content and wait for fonts/images to load
-    await page.setContent(html, { waitUntil: "networkidle0", timeout: 30_000 });
+    await page.setContent(html, { waitUntil: "load", timeout: 30_000 });
 
     // Hide the toolbar before printing
     await page.addStyleTag({

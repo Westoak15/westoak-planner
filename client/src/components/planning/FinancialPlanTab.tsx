@@ -73,6 +73,54 @@ interface SavedPlan {
   plan:      FinancialPlan | null;
 }
 
+// ── Normalize plan from Claude (handles array narratives, numeric priorities) ─
+
+function toStr(v: any): string {
+  if (Array.isArray(v)) return v.map(s => String(s ?? "").trim()).filter(Boolean).join("\n\n");
+  return String(v ?? "");
+}
+
+function toPriority(v: any): "high" | "medium" | "low" {
+  if (typeof v === "number") return v <= 1 ? "high" : v <= 3 ? "medium" : "low";
+  const s = String(v ?? "medium").toLowerCase();
+  if (s === "high" || s === "1" || s === "critical") return "high";
+  if (s === "low"  || s === "4" || s === "5")        return "low";
+  return "medium";
+}
+
+function normalizePlan(raw: any): FinancialPlan {
+  const es = raw?.executiveSummary ?? {};
+  return {
+    ...raw,
+    executiveSummary: {
+      score:        Number(es.score ?? 3),
+      headline:     toStr(es.headline),
+      narrative:    toStr(es.narrative),
+      keyStrengths: (Array.isArray(es.keyStrengths) ? es.keyStrengths : []).map(toStr),
+      keyGaps:      (Array.isArray(es.keyGaps)      ? es.keyGaps      : []).map(toStr),
+    },
+    sections: (Array.isArray(raw?.sections) ? raw.sections : []).map((s: any) => ({
+      ...s,
+      narrative:       toStr(s.narrative),
+      recommendations: (Array.isArray(s.recommendations) ? s.recommendations : []).map((r: any) => ({
+        ...r,
+        priority: toPriority(r.priority),
+        action:   toStr(r.action),
+        impact:   toStr(r.impact),
+        timeline: toStr(r.timeline),
+      })),
+    })),
+    priorityActions: (Array.isArray(raw?.priorityActions) ? raw.priorityActions : []).map((a: any) => ({
+      ...a,
+      priority:    toPriority(a.priority),
+      description: toStr(a.description),
+      title:       toStr(a.title),
+      timeline:    toStr(a.timeline),
+    })),
+    disclaimer: toStr(raw?.disclaimer),
+  };
+}
+
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 const token = () => localStorage.getItem("fp_token") ?? "";
@@ -156,7 +204,7 @@ function SectionCard({ section, forceExpand = false }: { section: PlanSection; f
             </span>
           </div>
           {!isExpanded && (
-            <p className="text-xs text-gray-500 mt-0.5 line-clamp-1">{(Array.isArray(section.narrative) ? section.narrative[0] : String(section.narrative ?? "")).slice(0, 120)}...</p>
+            <p className="text-xs text-gray-500 mt-0.5 line-clamp-1">{(String(section.narrative ?? "")).split("\n")[0].slice(0, 120)}...</p>
           )}
         </div>
         <div className="flex items-center gap-2 flex-shrink-0 ml-2">
@@ -169,7 +217,7 @@ function SectionCard({ section, forceExpand = false }: { section: PlanSection; f
         <div className="px-4 pb-4 border-t border-white/50 pt-3 fp-section-expanded">
           {/* Narrative */}
           <div className="prose prose-sm max-w-none mb-4">
-            {(Array.isArray(section.narrative) ? section.narrative : String(section.narrative ?? "").split("\n\n")).map((para: string, i: number) => (
+            {(String(section.narrative ?? "")).split("\n\n").map((para, i) => (
               para.trim() && <p key={i} className="text-sm text-gray-700 leading-relaxed mb-2">{para.trim()}</p>
             ))}
           </div>
@@ -179,17 +227,15 @@ function SectionCard({ section, forceExpand = false }: { section: PlanSection; f
             <div className="space-y-2">
               <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Recommendations</p>
               {section.recommendations.map((rec, i) => {
-                const rawP = typeof rec.priority === "number"
-  ? rec.priority <= 1 ? "high" : rec.priority <= 3 ? "medium" : "low"
-  : String(rec.priority ?? "medium").toLowerCase();
-const p = PRIORITY_CONFIG[rawP as keyof typeof PRIORITY_CONFIG] ?? PRIORITY_CONFIG.medium;
+                const p = PRIORITY_CONFIG[rec.priority as keyof typeof PRIORITY_CONFIG] ?? PRIORITY_CONFIG.medium;
+                const priorityLabel = String(rec.priority ?? "medium").toUpperCase();
                 return (
                   <div key={i} className="bg-white rounded-lg border border-white/80 p-3 shadow-sm">
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1 flex-wrap">
                           <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded border ${p.color}`}>
-                            {rawP.toUpperCase()}
+                            {priorityLabel}
                           </span>
                           <span className="flex items-center gap-1 text-[10px] text-gray-400">
                             <Calendar className="w-2.5 h-2.5" />
@@ -313,7 +359,7 @@ function ExecutiveSummary({ es }: { es: FinancialPlan["executiveSummary"] }) {
     <div className="bg-white border border-gray-200 rounded-xl p-4">
       <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide mb-3">Executive Summary</p>
       <div className="space-y-2 mb-4">
-        {(Array.isArray(es.narrative) ? es.narrative : String(es.narrative ?? "").split("\n\n")).map((para: string, i: number) => (
+        {String(es.narrative ?? "").split("\n\n").map((para, i) => (
           para.trim() && <p key={i} className="text-sm text-gray-700 leading-relaxed">{para.trim()}</p>
         ))}
       </div>
@@ -395,7 +441,7 @@ export function FinancialPlanTab({ clientId, clientName, t = translations.en }: 
 
   function loadFromHistory(s: SavedPlan) {
     console.log("[load-history] plan:", s.plan ? "exists" : "null", "keys:", s.plan ? Object.keys(s.plan) : []);
-    if (s.plan) { setPlan(s.plan); setView("plan"); }
+    if (s.plan) { setPlan(normalizePlan(s.plan)); setView("plan"); }
     else { setError("This saved plan could not be loaded — the data may be corrupted."); }
   }
 
@@ -454,17 +500,16 @@ export function FinancialPlanTab({ clientId, clientName, t = translations.en }: 
             // Decode the complete plan JSON from base64
             const doneBytes = Uint8Array.from(atob(payload.slice(8)), c => c.charCodeAt(0));
             const planJson = JSON.parse(new TextDecoder("utf-8").decode(doneBytes));
-            setPlan(planJson);
+            setPlan(normalizePlan(planJson));
             setView("plan");
             setStreamProgress("");
             await loadSaved();
             return;
           }
 
-          // Regular chunk — base64-encoded UTF-8 text fragment
+          // Regular chunk — base64-encoded text fragment
           try {
-            const bytes = Uint8Array.from(atob(payload), c => c.charCodeAt(0));
-            const chunk = new TextDecoder("utf-8").decode(bytes);
+            const chunk = atob(payload);
             charCount += chunk.length;
             setStreamProgress(`Writing plan… ${charCount.toLocaleString()} chars`);
           } catch { /* ignore decode errors on partial chunks */ }

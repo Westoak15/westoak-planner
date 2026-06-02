@@ -53,12 +53,18 @@ export async function generatePdfFromHtml(html: string): Promise<Buffer> {
     const page = await browser.newPage();
 
     // Set content and wait for fonts/images to load
-    await page.setContent(html, { waitUntil: "load", timeout: 30_000 });
+    await page.setContent(html, { waitUntil: "domcontentloaded", timeout: 30_000 });
+
+    // Wait for page to fully settle
+    await new Promise(resolve => setTimeout(resolve, 1000));
 
     // Hide the toolbar before printing
     await page.addStyleTag({
       content: `.report-toolbar { display: none !important; } body { padding-top: 0 !important; }`,
     });
+
+    // Small additional settle time after style injection
+    await new Promise(resolve => setTimeout(resolve, 200));
 
     const pdf = await page.pdf({
       format: "Letter",

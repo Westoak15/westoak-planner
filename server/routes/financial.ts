@@ -1397,7 +1397,12 @@ r.post("/clients/:clientId/generate-plan-stream", async (req: AuthRequest, res: 
 
     let plan: any;
     try { plan = JSON.parse(cleaned); }
-    catch { return sendError("Failed to parse AI response — JSON was malformed"); }
+    catch (parseErr: any) {
+      console.error("[generate-plan-stream] JSON parse failed. First 500 chars:", fullText.slice(0, 500));
+      console.error("[generate-plan-stream] Last 500 chars:", fullText.slice(-500));
+      console.error("[generate-plan-stream] cleaned first 200:", cleaned.slice(0, 200));
+      return sendError("Failed to parse AI response — JSON was malformed");
+    }
 
     plan.generatedAt  = new Date().toISOString();
     plan.clientId     = cid;

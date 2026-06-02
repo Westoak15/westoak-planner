@@ -2913,7 +2913,19 @@ const deleteSession = async (runId: string) => {
                             {priorityBadge(rec.priority)}
                             <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded uppercase">{rec.category}</span>
                           </div>
-                          <p className="text-sm text-muted-foreground leading-relaxed">{rec.content}</p>
+                          <p className="text-sm text-muted-foreground leading-relaxed">
+  {(() => {
+    if (rec.category === "financial_plan") {
+      try {
+        const plan = typeof rec.content === "string" ? JSON.parse(rec.content) : rec.content;
+        const es = plan?.executiveSummary;
+        if (es) return `Score ${es.score}/5 — ${es.headline}. ${es.keyStrengths?.length ?? 0} strengths, ${es.keyGaps?.length ?? 0} gaps identified across ${plan.sections?.length ?? 0} planning sections.`;
+      } catch {}
+      return "Financial plan generated — open the Financial Plan tab to view.";
+    }
+    return rec.content;
+  })()}
+</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-1 shrink-0">

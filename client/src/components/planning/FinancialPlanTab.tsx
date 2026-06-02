@@ -345,13 +345,14 @@ function ExecutiveSummary({ es }: { es: FinancialPlan["executiveSummary"] }) {
 // ── Main Component ────────────────────────────────────────────────────────────
 
 export function FinancialPlanTab({ clientId, clientName, t = translations.en }: { clientId: number; clientName?: string; t?: T }) {
-  const [plan, setPlan]         = useState<FinancialPlan | null>(null);
-  const [saved, setSaved]       = useState<SavedPlan[]>([]);
-  const [loading, setLoading]   = useState(false);
+  const [plan, setPlan]               = useState<FinancialPlan | null>(null);
+  const [saved, setSaved]             = useState<SavedPlan[]>([]);
+  const [loading, setLoading]         = useState(false);
   const [loadingSaved, setLoadingSaved] = useState(false);
-  const [error, setError]       = useState<string | null>(null);
-  const [view, setView]         = useState<"plan" | "history">("plan");
-  const [expandAll, setExpandAll] = useState(false);
+  const [error, setError]             = useState<string | null>(null);
+  const [view, setView]               = useState<"plan" | "history">("plan");
+  const [expandAll, setExpandAll]     = useState(false);
+  const [streamProgress, setStreamProgress] = useState<string>("");
 
   // Inject print styles once
   useEffect(() => {
@@ -409,28 +410,71 @@ export function FinancialPlanTab({ clientId, clientName, t = translations.en }: 
   async function generate() {
     setLoading(true);
     setError(null);
+    setStreamProgress("");
+
     try {
-      const res = await fetch(`/api/clients/${clientId}/generate-plan`, {
-        method: "POST",
+      const res = await fetch(`/api/clients/${clientId}/generate-plan-stream`, {
+        method:  "POST",
         headers: { Authorization: `Bearer ${token()}`, "Content-Type": "application/json" },
-        body: JSON.stringify({}),
+        body:    JSON.stringify({}),
       });
-      if (!res.ok) {
+
+      if (!res.ok || !res.body) {
         let message = `Generation failed (${res.status})`;
         try { const e = await res.json(); message = e.message ?? message; } catch {}
         throw new Error(message);
       }
-      const data = await res.json();
-      console.log("[generate-plan] response keys:", Object.keys(data));
-      console.log("[generate-plan] has executiveSummary:", !!data.executiveSummary);
-      console.log("[generate-plan] has sections:", !!data.sections, data.sections?.length);
-      setPlan(data);
-      setView("plan");
-      await loadSaved();
+
+      const reader  = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer    = "";
+      let charCount = 0;
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() ?? "";
+
+        for (const line of lines) {
+          if (!line.startsWith("data: ")) continue;
+          const payload = line.slice(6).trim();
+          if (!payload) continue;
+
+          if (payload.startsWith("[ERROR]::")) {
+            throw new Error(payload.slice(9));
+          }
+
+          if (payload.startsWith("[DONE]::")) {
+            // Decode the complete plan JSON from base64
+            const planJson = JSON.parse(
+              atob(payload.slice(8))
+            );
+            setPlan(planJson);
+            setView("plan");
+            setStreamProgress("");
+            await loadSaved();
+            return;
+          }
+
+          // Regular chunk — base64-encoded text fragment
+          try {
+            const chunk = atob(payload);
+            charCount += chunk.length;
+            setStreamProgress(`Writing plan… ${charCount.toLocaleString()} chars`);
+          } catch { /* ignore decode errors on partial chunks */ }
+        }
+      }
+
+      throw new Error("Stream ended without a complete plan. Please try again.");
+
     } catch (e: any) {
       setError(e.message);
     } finally {
       setLoading(false);
+      setStreamProgress("");
     }
   }
 
@@ -493,13 +537,18 @@ export function FinancialPlanTab({ clientId, clientName, t = translations.en }: 
           <Loader2 className="w-8 h-8 text-[#0c1e3a] animate-spin mx-auto mb-4" />
           <p className="font-semibold text-gray-700">Analysing client data…</p>
           <p className="text-sm text-gray-400 mt-1">
-            Claude is reviewing all 8 planning areas. This takes 15–30 seconds.
+            {streamProgress || "Connecting to Claude…"}
           </p>
-          <div className="mt-4 flex justify-center gap-1">
+          <div className="mt-4 flex justify-center gap-1 flex-wrap">
             {["Net Worth", "Retirement", "Insurance", "Debt", "Tax", "Estate", "Goals", "Education"].map(a => (
               <span key={a} className="text-[10px] bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">{a}</span>
             ))}
           </div>
+          {streamProgress && (
+            <div className="mt-3 w-48 mx-auto bg-gray-100 rounded-full h-1.5 overflow-hidden">
+              <div className="h-full bg-[#0c1e3a] rounded-full animate-pulse" style={{ width: "60%" }} />
+            </div>
+          )}
         </div>
       )}
 

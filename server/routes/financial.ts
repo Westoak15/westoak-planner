@@ -1236,6 +1236,197 @@ r.post("/clients/:clientId/financial-plan-report", async (req: AuthRequest, res:
   } catch (e: any) { console.error("[financial-plan-report] FULL ERROR:", e?.stack ?? e); res.status(500).json({ message: e?.message ?? "Unknown error", detail: e?.stack?.split("\n")[1] ?? "" }); }
 });
 
+// ── Streaming generate-plan (SSE) — fixes Cloudflare 524 timeout ─────────────
+// Streams Anthropic chunks to the browser so Cloudflare sees activity immediately.
+// Sends: data: <base64-chunk>\n\n  per text delta
+//        data: [DONE]::<base64-full-plan-json>\n\n  when complete
+//        data: [ERROR]::<message>\n\n  on failure
+r.post("/clients/:clientId/generate-plan-stream", async (req: AuthRequest, res: Response) => {
+  const cid = +req.params.clientId;
+  let _owns = false;
+  try { _owns = await ownsClient(cid, req.userId!); } catch (e: any) { return res.status(500).json({ message: "Auth check failed: " + e.message }); }
+  if (!_owns) return res.status(404).json({ message: "Not found" });
+
+  // Set SSE headers immediately — Cloudflare sees an active response right away
+  res.setHeader("Content-Type", "text/event-stream");
+  res.setHeader("Cache-Control", "no-cache");
+  res.setHeader("Connection", "keep-alive");
+  res.setHeader("X-Accel-Buffering", "no");
+  res.flushHeaders();
+
+  // Heartbeat every 15s to keep proxies from closing an idle connection
+  const heartbeat = setInterval(() => { res.write(": heartbeat\n\n"); }, 15_000);
+
+  const sendEvent = (data: string) => res.write(`data: ${data}\n\n`);
+  const sendError = (msg: string) => { sendEvent(`[ERROR]::${msg}`); clearInterval(heartbeat); res.end(); };
+
+  try {
+    await auditAnthropicCall({
+      req, action: AuditAction.AI_FINANCIAL_PLAN,
+      clientId: cid,
+      dataCategories: [
+        DataCategory.PERSONAL_INFO, DataCategory.INCOME, DataCategory.NET_WORTH,
+        DataCategory.RETIREMENT,    DataCategory.INSURANCE, DataCategory.DEBT,
+        DataCategory.TAX,           DataCategory.ESTATE,    DataCategory.EDUCATION,
+        DataCategory.GOALS,         DataCategory.PENSION,
+      ],
+      purposeCode: "financial_plan",
+    });
+
+    const [clientRows, nw, ret, ins, edu, debt, tax, estate, goals, pensions] = await Promise.all([
+      db.select().from(clients).where(eq(clients.id, cid)),
+      db.select().from(netWorthEntries).where(eq(netWorthEntries.clientId, cid)),
+      db.select().from(retirementProjections).where(eq(retirementProjections.clientId, cid)),
+      db.select().from(insuranceAnalyses).where(eq(insuranceAnalyses.clientId, cid)),
+      db.select().from(educationPlans).where(eq(educationPlans.clientId, cid)),
+      db.select().from(debtEntries).where(eq(debtEntries.clientId, cid)),
+      db.select().from(taxPlanningNotes).where(eq(taxPlanningNotes.clientId, cid)),
+      db.select().from(estatePlanningNotes).where(eq(estatePlanningNotes.clientId, cid)),
+      db.select().from(financialGoals).where(eq(financialGoals.clientId, cid)),
+      (db as any).select().from((await import("../../shared/schema.js") as any).pensionPlans)
+        .where(eq((await import("../../shared/schema.js") as any).pensionPlans.clientId, cid))
+        .catch(() => []),
+    ]);
+
+    const client = clientRows[0];
+    if (!client) return sendError("Client not found");
+
+    const assets      = nw.filter(e => e.type === "asset").reduce((s, e) => s + Number(e.value), 0);
+    const liabilities = nw.filter(e => e.type === "liability").reduce((s, e) => s + Number(e.value), 0);
+    const retProj     = ret[0] as any;
+    const insData     = ins[0] as any;
+
+    const context = {
+      client: {
+        name: `${client.firstName} ${client.lastName}`,
+        age: client.dateOfBirth ? new Date().getFullYear() - new Date(client.dateOfBirth as string).getFullYear() : null,
+        spouseName: client.spouseFirstName ? `${client.spouseFirstName} ${(client as any).spouseLastName ?? ""}`.trim() : null,
+        province: (client as any).province ?? "ON",
+        annualIncome: Number((client as any).annualIncome ?? 0),
+        spouseIncome: Number((client as any).spouseAnnualIncome ?? 0),
+        retirementAge: (client as any).retirementAge ?? 65,
+        maritalStatus: (client as any).maritalStatus ?? "unknown",
+        employmentStatus: (client as any).employmentStatus ?? "unknown",
+      },
+      netWorth: {
+        totalAssets: assets, totalLiabilities: liabilities, netWorth: assets - liabilities,
+        assets:      nw.filter(e => e.type === "asset").map(e => ({ name: e.name, category: e.category, value: Number(e.value) })),
+        liabilities: nw.filter(e => e.type === "liability").map(e => ({ name: e.name, category: e.category, value: Number(e.value) })),
+      },
+      retirement: retProj ? {
+        currentAge: retProj.currentAge, retirementAge: retProj.retirementAge, lifeExpectancy: retProj.lifeExpectancy,
+        rrspBalance: Number(retProj.rrspBalance ?? 0), tfsaBalance: Number(retProj.tfsaBalance ?? 0),
+        nonRegBalance: Number(retProj.nonRegBalance ?? 0), annualContribution: Number(retProj.annualContribution ?? 0),
+        desiredIncome: Number(retProj.desiredRetirementIncome ?? 0), pensionIncome: Number(retProj.pensionIncome ?? 0),
+        cppMonthly: Number(retProj.cppMonthly ?? 0), oasMonthly: Number(retProj.oasMonthly ?? 0),
+        successRate: Number(retProj.successRate ?? 0), projectedBalance: Number(retProj.projectedBalance ?? 0),
+        shortfallSurplus: Number(retProj.shortfallSurplus ?? 0),
+      } : null,
+      insurance: insData ? {
+        lifeInsuranceGap: Number((insData as any).lifeInsuranceGap ?? 0),
+        disabilityGap:    Number((insData as any).disabilityGap ?? 0),
+        criticalIllnessGap: Number((insData as any).criticalIllnessGap ?? 0),
+      } : null,
+      debt: [
+        ...debt.map(d => ({ name: d.name, category: d.category, balance: Number(d.balance), interestRate: Number(d.interestRate), minimumPayment: Number(d.minimumPayment) })),
+        ...nw.filter(e => e.type === "liability" && !debt.find(d => d.name?.toLowerCase() === e.name?.toLowerCase()))
+           .map(e => ({ name: e.name, category: e.category, balance: Number(e.value), interestRate: null, minimumPayment: null })),
+      ],
+      education: edu.map(e => ({ childName: (e as any).childName, targetAmount: Number((e as any).targetAmount ?? 0), currentBalance: Number((e as any).currentBalance ?? 0), targetAge: (e as any).targetAge, childAge: (e as any).childAge })),
+      goals:     goals.slice(0, 5).map(g => ({ title: g.title, goalType: g.goalType, targetAmount: Number(g.targetAmount ?? 0), targetYear: g.targetYear, priority: g.priority, status: g.status })),
+      tax:       tax.slice(0, 3).map(t => ({ category: (t as any).category, title: (t as any).title, content: (t as any).content })),
+      estate:    estate.slice(0, 3).map(e => ({ category: (e as any).category, title: (e as any).title, content: (e as any).content })),
+      pensions,
+    };
+
+    const apiKey = process.env.ANTHROPIC_API_KEY;
+    if (!apiKey) return sendError("ANTHROPIC_API_KEY not configured");
+
+    const claudeRes = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-api-key": apiKey, "anthropic-version": "2023-06-01" },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-6",
+        max_tokens: 8000,
+        stream: true,
+        system: `You are a senior Canadian Certified Financial Planner (CFP) with 20 years of experience. Generate a comprehensive written financial plan for a Canadian client. Your analysis must be specific, quantitative where data is available, and written in clear advisor language suitable for client presentation. Respond ONLY with a valid JSON object — no preamble, no markdown fences, no explanation outside the JSON.`,
+        messages: [{ role: "user", content: `Generate a comprehensive financial plan. Client data:\n\n${JSON.stringify(context, null, 2)}\n\nReturn JSON with: executiveSummary (score 1-5, headline, narrative 3-4 paragraphs, keyStrengths[], keyGaps[]), sections[] (id, title, score 1-5, status, narrative, recommendations[{priority, action, impact, timeline}]), priorityActions[] (rank 1-5, title, description, section, priority, timeline), disclaimer string.` }],
+      }),
+    });
+
+    if (!claudeRes.ok || !claudeRes.body) {
+      const errText = await claudeRes.text().catch(() => "unknown");
+      return sendError(`Anthropic error ${claudeRes.status}: ${errText}`);
+    }
+
+    // Stream chunks to the browser
+    let fullText = "";
+    const reader  = claudeRes.body.getReader();
+    const decoder = new TextDecoder();
+    let buf = "";
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buf += decoder.decode(value, { stream: true });
+      const lines = buf.split("\n");
+      buf = lines.pop() ?? "";
+      for (const line of lines) {
+        if (!line.startsWith("data: ")) continue;
+        const raw = line.slice(6).trim();
+        if (raw === "[DONE]") continue;
+        try {
+          const evt = JSON.parse(raw);
+          if (evt.type === "content_block_delta" && evt.delta?.type === "text_delta") {
+            const chunk = evt.delta.text ?? "";
+            fullText += chunk;
+            sendEvent(Buffer.from(chunk).toString("base64"));
+          }
+        } catch { /* ignore malformed SSE lines */ }
+      }
+    }
+
+    // Parse completed JSON
+    const startObj = fullText.indexOf("{");
+    const startArr = fullText.indexOf("[");
+    const start    = startObj !== -1 && (startArr === -1 || startObj < startArr) ? startObj : startArr;
+    const end      = start !== -1 && fullText[start] === "[" ? fullText.lastIndexOf("]") : fullText.lastIndexOf("}");
+    const cleaned  = start !== -1 && end !== -1
+      ? fullText.slice(start, end + 1)
+      : fullText.replace(/^```json\s*/i, "").replace(/```\s*$/i, "").trim();
+
+    let plan: any;
+    try { plan = JSON.parse(cleaned); }
+    catch { return sendError("Failed to parse AI response — JSON was malformed"); }
+
+    plan.generatedAt  = new Date().toISOString();
+    plan.clientId     = cid;
+    plan.clientName   = `${client.firstName} ${client.lastName}`;
+    plan.dataSnapshot = {
+      netWorth:    assets - liabilities,
+      totalDebt:   debt.length > 0 ? debt.reduce((s, d) => s + Number(d.balance), 0) : liabilities,
+      successRate: retProj ? Number(retProj.successRate ?? 0) : null,
+    };
+
+    await (db.insert(aiRecommendations) as any).values({
+      clientId: cid,
+      title:    "Financial Plan — " + new Date().toLocaleDateString("en-CA"),
+      content:  JSON.stringify(plan),
+      category: "financial_plan",
+      priority: "high",
+      status:   "active",
+    }).catch(() => {});
+
+    sendEvent(`[DONE]::${Buffer.from(JSON.stringify(plan)).toString("base64")}`);
+    clearInterval(heartbeat);
+    res.end();
+
+  } catch (e: any) {
+    console.error("[generate-plan-stream]", e.message);
+    sendError(e.message);
+  }
+});
+
 r.post("/clients/:clientId/generate-plan", async (req: AuthRequest, res: Response) => {
   const cid = +req.params.clientId;
   let _owns = false;

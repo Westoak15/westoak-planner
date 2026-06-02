@@ -93,7 +93,12 @@ function htmlShell(title: string, body: string): string {
   .callout strong { font-weight:600; }
   /* Layout */
   .two-col { display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-bottom:16px; }
-  .section { width:816px; margin:0 auto 24px; background:white; padding:40px 44px; box-shadow:0 4px 24px rgba(0,0,0,.08); }
+  ..section { width:816px; margin:0 auto 24px; background:white; padding:32px 28px; box-shadow:0 4px 24px rgba(0,0,0,.08); }
+  .section-header { margin-bottom:20px; border-bottom:2px solid var(--navy); padding-bottom:14px; }
+  .section-eyebrow { font-size:10px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:var(--gray-400); margin-bottom:6px; }
+  .section-title-lg { font-family:Georgia,serif; font-size:26px; font-weight:normal; color:var(--navy); line-height:1.2; margin-bottom:4px; }
+  .section-subtitle { font-size:12px; color:var(--gray-400); margin-top:4px; }
+  .summary-grid-4 { grid-template-columns:repeat(4,1fr) !important; }
   .person-card { border:1px solid var(--border); border-radius:8px; padding:16px; }
   .person-card.primary { border-top:4px solid var(--teal); }
   .person-card.spouse { border-top:4px solid #7C3AED; }
@@ -250,17 +255,6 @@ function buildCoverSheet(opts: {
       </div>
     </div>
   </div>
-
-  <!-- Footer disclaimer -->
-  <div style="background:var(--lgray);padding:16px 56px;border-top:1px solid var(--mgray);">
-    <p style="font-size:8pt;color:var(--gray);line-height:1.5;margin:0;">
-${opts.locale === "fr"
-        ? `<strong>Confidentiel :</strong> Ce rapport a été préparé exclusivement pour ${esc(opts.clientName)} et est destiné à un usage personnel uniquement. Les informations contenues dans ce document sont basées sur les données fournies et sont sujettes à modification. Ce document ne constitue pas un conseil financier, juridique ou fiscal. Veuillez consulter des professionnels qualifiés avant de prendre des décisions financières.`
-        : `<strong>Confidential:</strong> This report has been prepared solely for ${esc(opts.clientName)} and is intended for personal use only. The information contained herein is based on data provided and is subject to change. This document does not constitute financial, legal, or tax advice. Please consult qualified professionals before making financial decisions.`
-      }
-    </p>
-  </div>
-
 </div>`;
 }
 
@@ -1761,29 +1755,41 @@ export function generateFinancialPlanReport(data: {
     <div class="section-title-lg">${locale === "fr" ? "Évaluation globale" : "Overall Assessment"}</div>
   </div>
   <div class="summary-grid summary-grid-4">
-    <div class="metric-card navy">
-      <div class="metric-label">${locale === "fr" ? "Score global" : "Overall Score"}</div>
-      <div class="metric-value" style="font-size:32px">${es.score ?? "—"}/5</div>
-      <div class="metric-sub">${locale === "fr" ? "Cote de santé du plan" : "Plan health rating"}</div>
+    <div class="metric-card navy"><div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px;">
+    <div class="metric-card navy" style="padding:12px 14px;">
+      <div class="metric-label" style="font-size:9px;white-space:nowrap;">${locale === "fr" ? "Score global" : "Overall Score"}</div>
+      <div class="metric-value" style="font-size:28px;line-height:1.1;">${es.score ?? "—"}/5</div>
+      <div class="metric-sub" style="font-size:9px;white-space:nowrap;">${locale === "fr" ? "Cote de santé" : "Plan health rating"}</div>
     </div>
-    <div class="metric-card">
-      <div class="metric-label">${L.netWorth}</div>
-      <div class="metric-value">${fmtCad(Number(plan.dataSnapshot?.netWorth ?? 0))}</div>
-      <div class="metric-sub">${locale === "fr" ? "Position actuelle" : "Current position"}</div>
+    <div class="metric-card" style="padding:12px 14px;">
+      <div class="metric-label" style="font-size:9px;white-space:nowrap;">${L.netWorth}</div>
+      <div class="metric-value" style="font-size:18px;line-height:1.2;">${fmtCad(Number(plan.dataSnapshot?.netWorth ?? 0))}</div>
+      <div class="metric-sub" style="font-size:9px;white-space:nowrap;">${locale === "fr" ? "Position actuelle" : "Current position"}</div>
     </div>
-    <div class="metric-card">
-      <div class="metric-label">${L.totalDebt ?? (locale === "fr" ? "Total des dettes" : "Total Debt")}</div>
-      <div class="metric-value">${fmtCad(Number(plan.dataSnapshot?.totalDebt ?? 0))}</div>
-      <div class="metric-sub">${locale === "fr" ? "Obligations en cours" : "Outstanding obligations"}</div>
+    <div class="metric-card" style="padding:12px 14px;">
+      <div class="metric-label" style="font-size:9px;white-space:nowrap;">${L.totalDebt ?? (locale === "fr" ? "Total des dettes" : "Total Debt")}</div>
+      <div class="metric-value" style="font-size:18px;line-height:1.2;">${fmtCad(Number(plan.dataSnapshot?.totalDebt ?? 0))}</div>
+      <div class="metric-sub" style="font-size:9px;white-space:nowrap;">${locale === "fr" ? "Obligations en cours" : "Outstanding"}</div>
     </div>
-    <div class="metric-card ${(plan.dataSnapshot?.successRate ?? 0) >= 85 ? "green" : (plan.dataSnapshot?.successRate ?? 0) >= 70 ? "amber" : "red"}">
-      <div class="metric-label">${locale === "fr" ? "Succès retraite" : "Retirement Success"}</div>
-      <div class="metric-value">${plan.dataSnapshot?.successRate != null ? plan.dataSnapshot.successRate.toFixed(0) + "%" : "—"}</div>
-      <div class="metric-sub">${locale === "fr" ? "Probabilité Monte-Carlo" : "Monte Carlo probability"}</div>
+    <div class="metric-card ${(plan.dataSnapshot?.successRate ?? 0) >= 85 ? "green" : (plan.dataSnapshot?.successRate ?? 0) >= 70 ? "amber" : "red"}" style="padding:12px 14px;">
+      <div class="metric-label" style="font-size:9px;white-space:nowrap;">${locale === "fr" ? "Succès retraite" : "Retirement Success"}</div>
+      <div class="metric-value" style="font-size:18px;line-height:1.2;">${plan.dataSnapshot?.successRate != null ? plan.dataSnapshot.successRate.toFixed(0) + "%" : "—"}</div>
+      <div class="metric-sub" style="font-size:9px;white-space:nowrap;">${locale === "fr" ? "Monte-Carlo" : "Monte Carlo probability"}</div>
     </div>
   </div>
-  <div class="callout info">
-    <strong>${esc(es.headline ?? "")}</strong>
+  <div class="callout info" style="margin-bottom:12px;">
+    <strong style="font-size:14px;">${esc(es.headline ?? "")}</strong>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:0;">
+    ${sections.slice(0,8).map((s: any) => {
+      const sc = statusColor[s.status] ?? "#9ca3af";
+      const sl = statusLabel[s.status] ?? s.status;
+      return `<div style="padding:8px 10px;border-radius:6px;border:1px solid ${sc}40;background:${sc}08;">
+        <div style="font-size:9px;font-weight:700;color:${sc};text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px;">${sl}</div>
+        <div style="font-size:11px;font-weight:600;color:#111827;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc((s.title ?? "").split(" ").slice(0,3).join(" "))}</div>
+        <div style="font-size:13px;font-weight:700;color:${scoreColor(s.score ?? 0)};margin-top:2px;">${s.score ?? "—"}/5</div>
+      </div>`;
+    }).join("")}
   </div>
 </div>`;
 
@@ -1843,16 +1849,16 @@ export function generateFinancialPlanReport(data: {
     return `
 <div class="section no-break" style="page-break-before:always;">
   <div class="section-header">
-    <div class="section-eyebrow" style="display:flex;align-items:center;gap:12px;">
-      <span>${sLabel.toUpperCase()}</span>
-      <span style="display:inline-flex;align-items:center;gap:4px;font-size:10px;color:${sColor};background:${sColor}18;border:1px solid ${sColor}40;padding:2px 8px;border-radius:99px;">${sec.score ?? "—"}/5</span>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+      <span style="font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:${sColor};">${sLabel.toUpperCase()}</span>
+      <span style="display:inline-flex;align-items:center;gap:4px;font-size:10px;color:${sColor};background:${sColor}18;border:1px solid ${sColor}40;padding:2px 8px;border-radius:99px;font-weight:700;">${sec.score ?? "—"}/5</span>
     </div>
-    <div class="section-title-lg">${esc(sec.title ?? "")}</div>
+    <div style="font-family:Georgia,serif;font-size:28px;font-weight:normal;color:var(--navy);line-height:1.2;margin-bottom:4px;">${esc(sec.title ?? "")}</div>
   </div>
-  ${(sec.narrative ?? "").split("\n\n").filter((p: string) => p.trim()).map((p: string) => `<p>${esc(p.trim())}</p>`).join("")}
+  ${(sec.narrative ?? "").split("\n\n").filter((p: string) => p.trim()).map((p: string) => `<p style="font-size:12px;margin-bottom:6px;line-height:1.5;">${esc(p.trim())}</p>`).join("")}
   ${recs.length > 0 ? `
   <div style="margin-top:16px;page-break-inside:avoid;">
-    <h3 style="font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:#0F2B4C;margin-bottom:10px;page-break-after:avoid;">${locale === "fr" ? "Recommandations" : "Recommendations"}</h3>
+    <h3 style="font-size:14px;font-weight:600;color:var(--navy);margin-bottom:10px;margin-top:16px;page-break-after:avoid;border-bottom:1px solid var(--border);padding-bottom:6px;">${locale === "fr" ? "Recommandations" : "Recommendations"}</h3>
     ${recs.map((r: any) => `
     <div style="padding:10px 14px;border-radius:8px;border-left:3px solid ${priorityColor[r.priority] ?? "#9ca3af"};background:#f9fafb;margin-bottom:8px;page-break-inside:avoid;">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">

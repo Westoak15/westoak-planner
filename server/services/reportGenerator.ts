@@ -37,7 +37,7 @@ function htmlShell(title: string, body: string): string {
   }
   html { font-size:13px; }
   body { font-family:'Inter',system-ui,sans-serif; color:var(--text); background:#F0F2F5; line-height:1.6; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
-  .page { width:816px; min-height:1056px; margin:0 auto 32px; background:white; padding:48px 44px; box-shadow:0 4px 24px rgba(0,0,0,.10); }
+  .section { width:816px; margin:0 auto 24px; background:white; padding:40px 32px; box-shadow:0 4px 24px rgba(0,0,0,.08); }
   /* Cover */
   .cover { display:flex; flex-direction:column; min-height:1060px; }
   .cover-header { background:var(--navy); color:white; padding:40px 56px 32px; margin:-48px -56px 0; }
@@ -114,12 +114,12 @@ function htmlShell(title: string, body: string): string {
   @media screen { body { padding-top:46px; } }
   @media print {
     body { background:white; padding-top:0 !important; }
-    .page,.section { width:100%; margin:0; padding:18mm 20mm; box-shadow:none; page-break-after:always; }
+    .page,.section { width:100%; margin:0; padding:8mm 0; box-shadow:none; page-break-after:always; }
     .page:last-child,.section:last-child { page-break-after:avoid; }
     .report-toolbar { display:none !important; }
     thead { display:table-header-group; }
   }
-  @page { size:letter; margin:15mm 15mm; }
+  @page { size:letter; margin:15mm 10mm; }
   .report-toolbar { position:fixed; top:0; left:0; right:0; z-index:999; background:white; border-bottom:1px solid var(--border); height:46px; display:flex; align-items:center; justify-content:space-between; padding:0 32px; }
   .report-toolbar .tb-title { font-size:12px; font-weight:600; color:var(--navy); }
   .print-btn { display:flex; align-items:center; gap:6px; padding:5px 14px; font-size:12px; font-weight:500; background:white; color:var(--navy); border:1px solid var(--border); border-radius:6px; cursor:pointer; }
@@ -1785,9 +1785,6 @@ export function generateFinancialPlanReport(data: {
   <div class="callout info">
     <strong>${esc(es.headline ?? "")}</strong>
   </div>
-  <div class="doc-footer">
-    <span>${esc(firm)} — ${locale === "fr" ? "Confidentiel" : "Confidential"}</span><span>${esc(name)} — Financial Plan — ${esc(dateStr)}</span>
-  </div>
 </div>`;
 
   // ── Priority Actions ───────────────────────────────────────────────────────
@@ -1809,9 +1806,6 @@ export function generateFinancialPlanReport(data: {
       <div style="font-size:11px;color:#4b5563;line-height:1.5;">${esc(a.description ?? "")}</div>
     </div>
   </div>`).join("")}
-  <div class="doc-footer">
-    <span>${esc(firm)} — ${locale === "fr" ? "Confidentiel" : "Confidential"}</span><span>${esc(name)} — Financial Plan — ${esc(dateStr)}</span>
-  </div>
 </div>` : "";
 
   // ── Executive Summary ──────────────────────────────────────────────────────
@@ -1837,9 +1831,6 @@ export function generateFinancialPlanReport(data: {
         <span style="color:#dc2626;font-weight:700;">→</span>${esc(g)}
       </div>`).join("")}
     </div>
-  </div>
-  <div class="doc-footer">
-    <span>${esc(firm)} — ${locale === "fr" ? "Confidentiel" : "Confidential"}</span><span>${esc(name)} — Financial Plan — ${esc(dateStr)}</span>
   </div>
 </div>`;
 
@@ -1879,12 +1870,7 @@ export function generateFinancialPlanReport(data: {
   }).join("\n");
 
   // ── Disclaimer ─────────────────────────────────────────────────────────────
-  const disclaimer = `
-<div class="section">
-  <div style="padding:16px 20px;background:#f9fafb;border-radius:8px;border:1px solid #e5e7eb;">
-    <p style="font-size:10px;color:#6b7280;line-height:1.6;margin:0;">${esc(plan.disclaimer ?? "This financial plan has been prepared based on information provided. It does not constitute legal, tax, or investment advice.")}</p>
-  </div>
-</div>`;
+  const disclaimer = ""; // Moved to PDF footer via Puppeteer displayHeaderFooter
 
   const body = [cover, overallScore, priorityActionsHtml, execSummary, sectionPages, disclaimer].join("\n");
   return htmlShell(`Financial Plan - ${name}`, body);

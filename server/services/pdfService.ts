@@ -85,11 +85,18 @@ export async function generatePdfFromHtml(html: string): Promise<Buffer> {
     // Wait for layout to settle
     await new Promise(resolve => setTimeout(resolve, 800));
 
+   const footerText = "This report is based on information and assumptions provided by you. It is intended as a guide only and does not constitute legal, tax, or investment advice. Projections are hypothetical and not a guarantee of future results. Please consult your tax advisor before implementing any strategies contained herein.";
+
     const pdf = await page.pdf({
       format: "Letter",
       printBackground: true,
-      margin: { top: "15mm", bottom: "15mm", left: "18mm", right: "18mm" },
-      displayHeaderFooter: false,
+      margin: { top: "15mm", bottom: "18mm", left: "10mm", right: "10mm" },
+      displayHeaderFooter: true,
+      headerTemplate: `<span></span>`,
+      footerTemplate: `
+        <div style="width:100%;font-size:7px;color:#9ca3af;padding:0 10mm;box-sizing:border-box;text-align:center;line-height:1.4;">
+          ${footerText}
+        </div>`,
     });
 
     console.log("[pdfService] PDF done, bytes:", pdf.length);

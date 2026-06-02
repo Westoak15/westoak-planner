@@ -1,24 +1,22 @@
 /**
  * pdfService.ts
  * Generates a PDF from an HTML string using puppeteer-core.
- * On Fly.io Alpine, uses system Chromium installed via apk.
+ * Keeps a warm browser instance to avoid cold-start overhead.
  */
 
-import puppeteerCore from "puppeteer-core";
+import puppeteerCore, { Browser } from "puppeteer-core";
 
 let _executablePath: string | null = null;
+let _browser: Browser | null = null;
 
 async function getExecutablePath(): Promise<string> {
   if (_executablePath) return _executablePath;
-
   const systemChromium = process.env.PUPPETEER_EXECUTABLE_PATH ?? "/usr/bin/chromium-browser";
   const fs = await import("fs");
   if (fs.existsSync(systemChromium)) {
     _executablePath = systemChromium;
     return _executablePath;
   }
-
-  // Local dev fallback
   try {
     const chromium = await import("@sparticuz/chromium");
     _executablePath = await chromium.default.executablePath();
@@ -28,11 +26,21 @@ async function getExecutablePath(): Promise<string> {
   }
 }
 
-export async function generatePdfFromHtml(html: string): Promise<Buffer> {
+async function getBrowser(): Promise<Browser> {
+  if (_browser) {
+    try {
+      // Check if browser is still alive
+      await _browser.version();
+      return _browser;
+    } catch {
+      _browser = null;
+    }
+  }
+
   const executablePath = await getExecutablePath();
   console.log("[pdfService] launching Chromium at:", executablePath);
 
-  const browser = await puppeteerCore.launch({
+  _browser = await puppeteerCore.launch({
     executablePath,
     headless: true,
     args: [
@@ -44,31 +52,38 @@ export async function generatePdfFromHtml(html: string): Promise<Buffer> {
       "--no-zygote",
       "--disable-extensions",
       "--disable-web-security",
-      "--run-all-compositor-stages-before-draw",
     ],
   });
 
-  console.log("[pdfService] browser launched");
+  console.log("[pdfService] browser ready");
+  return _browser;
+}
+
+// Pre-warm the browser on module load
+getExecutablePath().then(() => getBrowser()).catch(e => {
+  console.error("[pdfService] pre-warm failed:", e.message);
+});
+
+export async function generatePdfFromHtml(html: string): Promise<Buffer> {
+  const browser = await getBrowser();
+  const page = await browser.newPage();
+
+  console.log("[pdfService] generating PDF, HTML size:", html.length);
 
   try {
-    const page = await browser.newPage();
-    console.log("[pdfService] new page created");
-
-    // Inject CSS to hide toolbar before setting content
-    const htmlWithHiddenToolbar = html.replace(
+    // Inject toolbar-hide CSS directly into HTML
+    const htmlReady = html.replace(
       "</head>",
       `<style>.report-toolbar{display:none!important;}body{padding-top:0!important;}</style></head>`
     );
 
-    await page.setContent(htmlWithHiddenToolbar, {
+    await page.setContent(htmlReady, {
       waitUntil: "domcontentloaded",
-      timeout: 30_000,
+      timeout: 60_000,
     });
-    console.log("[pdfService] content set");
 
-    // Wait for layout to fully settle
-    await new Promise(resolve => setTimeout(resolve, 500));
-    console.log("[pdfService] settled, generating PDF");
+    // Wait for layout to settle
+    await new Promise(resolve => setTimeout(resolve, 800));
 
     const pdf = await page.pdf({
       format: "Letter",
@@ -77,10 +92,9 @@ export async function generatePdfFromHtml(html: string): Promise<Buffer> {
       displayHeaderFooter: false,
     });
 
-    console.log("[pdfService] PDF generated, bytes:", pdf.length);
+    console.log("[pdfService] PDF done, bytes:", pdf.length);
     return Buffer.from(pdf);
   } finally {
-    await browser.close();
-    console.log("[pdfService] browser closed");
+    await page.close();
   }
 }

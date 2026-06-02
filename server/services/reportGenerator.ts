@@ -129,7 +129,7 @@ function htmlShell(title: string, body: string): string {
 <body>
 <div class="report-toolbar">
   <span class="tb-title" id="tb-title">Financial Plan</span>
-  <button class="print-btn" onclick="window.print()">
+  <button class="print-btn" id="print-btn">
     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
       <path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
       <rect x="6" y="14" width="12" height="8"/>
@@ -137,7 +137,7 @@ function htmlShell(title: string, body: string): string {
     Print / Save PDF
   </button>
 </div>
-<script>document.addEventListener('DOMContentLoaded',function(){var t=document.getElementById('tb-title');if(t)t.textContent=document.title.replace(/ [-–].*/,'');});</script>
+<script>document.addEventListener('DOMContentLoaded',function(){var t=document.getElementById('tb-title');if(t)t.textContent=document.title.replace(/ [-—].*/,'');var b=document.getElementById('print-btn');if(b)b.addEventListener('click',function(){window.print();});});</script>
 ${body}</body>
 </html>`;
 }

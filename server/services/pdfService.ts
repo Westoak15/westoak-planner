@@ -67,7 +67,7 @@ export async function generatePdfFromHtml(html: string): Promise<Buffer> {
     console.log("[pdfService] content set");
 
     // Wait for layout to fully settle
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    await new Promise(resolve => setTimeout(resolve, 500));
     console.log("[pdfService] settled, generating PDF");
 
     const pdf = await page.pdf({
